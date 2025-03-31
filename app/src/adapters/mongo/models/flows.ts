@@ -1,0 +1,37 @@
+import mongoose, { Document, Model } from "mongoose";
+
+export interface ModelFlowsDoc extends Document {
+  type: "marketing" | "chatbot";
+  name: string;
+  data: any;
+  accountId: number;
+  businessIds: number[];
+}
+
+export const ModelFlows: Model<ModelFlowsDoc> = mongoose.model<ModelFlowsDoc>(
+  "Flows",
+  new mongoose.Schema({
+    _id: Number,
+    type: {
+      type: String,
+      required: true,
+      enum: ["marketing", "chatbot"],
+    },
+    name: {
+      type: String,
+      required: true,
+    },
+    data: {
+      type: Object,
+      required: true,
+    },
+    accountId: {
+      type: Number,
+      required: true,
+    },
+    businessIds: {
+      type: [Number],
+      required: true,
+    },
+  })
+);

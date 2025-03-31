@@ -1,0 +1,57 @@
+
+services:
+  redis_junplid:
+    image: redis:alpine 
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6375:6379"
+    volumes:
+      - ./redis:/data
+    networks:
+      - rede_junplid
+
+  mongo_junplid:
+    image: mongo:6.0 
+    restart: always
+    volumes:
+      - ./data-mongo:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: Chatbot
+      MONGO_INITDB_ROOT_USERNAME: userdefault
+      MONGO_INITDB_ROOT_PASSWORD: passworddefault
+    networks:
+      - rede_junplid
+
+  postgres_junplid:
+    image: postgres:15-alpine
+    restart: always 
+    environment:
+      POSTGRES_DB: junplid
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    networks:
+      - rede_junplid
+
+  junplid:
+    container_name: junplid
+    depends_on:
+      - postgres_junplid
+      - redis_junplid
+      - mongo_junplid
+    build: ./app
+    ports:
+      - 4000:4000
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./app:/app
+      - /app/node_modules
+    networks:
+      - rede_junplid
+
+networks:
+  rede_junplid:

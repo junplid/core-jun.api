@@ -1,0 +1,1 @@
+export interface GetStatusSessionWhatsappPublicRepository_I {}

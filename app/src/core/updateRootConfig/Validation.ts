@@ -1,0 +1,34 @@
+import { NextFunction, Request, Response } from "express";
+import { Joi } from "express-validation";
+import { UpdateRootConfigBodyDTO_I } from "./DTO";
+
+export const updateRootConfigValidation = (
+  req: Request<any, any, UpdateRootConfigBodyDTO_I>,
+  res: Response,
+  next: NextFunction
+) => {
+  const schemaValidation = Joi.object({
+    rootId: Joi.number().required(),
+    "token-asaas": Joi.string().allow(""),
+    "endpoint-asaas": Joi.string().allow(""),
+    host: Joi.string().allow(""),
+    port: Joi.number(),
+    secure: Joi.boolean(),
+    authUser: Joi.string().allow(""),
+    authPass: Joi.string().allow(""),
+    email: Joi.string().allow(""),
+  });
+
+  const validation = schemaValidation.validate(req.body, { abortEarly: false });
+
+  if (validation.error) {
+    const errors = validation.error.details.map((detail) => ({
+      message: detail.message,
+      path: detail.path,
+      type: detail.type,
+    }));
+    return res.status(400).json({ errors });
+  }
+
+  next();
+};
