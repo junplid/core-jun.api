@@ -93,7 +93,7 @@ RouterV1Private_Put.put(
 );
 
 RouterV1Private_Put.put(
-  "/business/:id",
+  "/businesses/:id",
   updateBusinessOnAccountValidation,
   (req, res, next) =>
     VerifySubUserMiddleware(req, res, next, {

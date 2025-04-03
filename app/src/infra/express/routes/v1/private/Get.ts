@@ -7,8 +7,8 @@ import { getAuthorizationAccountController } from "../../../../../core/getAuthor
 import { getAuthorizationAccountValidation } from "../../../../../core/getAuthorizationAccount/Validation";
 import { getBoardsTrelloForSelectController } from "../../../../../core/getBoardsTrelloForSelect";
 import { getBoardsTrelloForSelectValidation } from "../../../../../core/getBoardsTrelloForSelect/Validation";
-import { getBusinessIdOnAccountController } from "../../../../../core/getBusinessIdOnAccount";
-import { getBusinessIdOnAccountValidation } from "../../../../../core/getBusinessIdOnAccount/Validation";
+import { getBusinessIdOnAccountController } from "../../../../../core/getBusiness";
+import { getBusinessIdOnAccountValidation } from "../../../../../core/getBusiness/Validation";
 import { getBusinessesController } from "../../../../../core/getBusinesses";
 import { getBusinessValidation } from "../../../../../core/getBusinesses/Validation";
 import { getBusinessOnAccountForSelectController } from "../../../../../core/getBusinessOnAccountForSelect";
@@ -231,6 +231,8 @@ import { getFacebookIntegrationsForSelectValidation } from "../../../../../core/
 import { getFacebookIntegrationsForSelectController } from "../../../../../core/getFacebookIntegrationsForSelect";
 import { getCustomerValidation } from "../../../../../core/getCustomer/Validation";
 import { getCustomerController } from "../../../../../core/getCustomer";
+import { getBusinessDetailsValidation } from "../../../../../core/getBusinessDetails/Validation";
+import { getBusinessDetailsController } from "../../../../../core/getBusinessDetails";
 
 const RouterV1Private_Get = Router();
 
@@ -334,6 +336,13 @@ RouterV1Private_Get.get(
   removeSubUserUid,
   getBusinessIdOnAccountValidation,
   getBusinessIdOnAccountController
+);
+
+RouterV1Private_Get.get(
+  "/businesses/:id/details",
+  removeSubUserUid,
+  getBusinessDetailsValidation,
+  getBusinessDetailsController
 );
 
 RouterV1Private_Get.get(
