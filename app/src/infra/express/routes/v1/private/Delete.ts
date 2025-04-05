@@ -198,14 +198,8 @@ RouterV1Private_Delete.delete(
 );
 
 RouterV1Private_Delete.delete(
-  "/flow/:flowId",
+  "/flows/:flowId",
   deleteFlowValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Delete",
-      entity: "flows",
-    }),
-  removeSubUserUid,
   deleteFlowController
 );
 

@@ -346,8 +346,7 @@ RouterV1Private_Get.get(
 );
 
 RouterV1Private_Get.get(
-  "/business-options",
-  removeSubUserUid,
+  "/businesses/options",
   getBusinessOnAccountForSelectValidation,
   getBusinessOnAccountForSelectController
 );
@@ -821,16 +820,10 @@ RouterV1Private_Get.get(
   getSectorDetailsController
 );
 
-RouterV1Private_Get.get(
-  "/flow/:id",
-  removeSubUserUid,
-  getFlowValidation,
-  getFlowController
-);
+RouterV1Private_Get.get("/flows/:id", getFlowValidation, getFlowController);
 
 RouterV1Private_Get.get(
-  "/flow/details/:id",
-  removeSubUserUid,
+  "/flows/:id/details",
   getFlowDetailsValidation,
   getFlowDetailsController
 );

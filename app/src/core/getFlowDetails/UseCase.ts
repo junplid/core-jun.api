@@ -26,11 +26,14 @@ export class GetFlowDetailsUseCase {
 
     return {
       message: "OK!",
-      status: 201,
-      flows: {
-        name: flow.name,
+      status: 200,
+      flow: {
+        id: flow._id,
         business,
+        name: flow.name,
         type: flow.type,
+        createAt: flow.createdAt,
+        updateAt: flow.updatedAt,
       },
     };
   }

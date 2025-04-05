@@ -1,15 +1,28 @@
 import { Request, Response } from "express";
-import { UpdateFlowBodyDTO_I, UpdateFlowParamsDTO_I } from "./DTO";
+import {
+  UpdateFlowBodyDTO_I,
+  UpdateFlowParamsDTO_I,
+  UpdateFlowQueryDTO_I,
+} from "./DTO";
 import { UpdateFlowUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
 export const UpdateFlowController = (useCase: UpdateFlowUseCase) => {
   const execute = async (
-    req: Request<UpdateFlowParamsDTO_I, any, UpdateFlowBodyDTO_I>,
+    req: Request<
+      UpdateFlowParamsDTO_I,
+      any,
+      UpdateFlowBodyDTO_I,
+      UpdateFlowQueryDTO_I
+    >,
     res: Response
   ): Promise<Response> => {
     try {
-      const data = await useCase.run({ ...req.body, ...req.params });
+      const data = await useCase.run({
+        ...req.body,
+        ...req.params,
+        ...req.query,
+      });
       return res.status(200).json(data);
     } catch (error: any) {
       if (error instanceof ErrorResponse) {

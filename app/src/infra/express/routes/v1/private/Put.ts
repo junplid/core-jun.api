@@ -256,8 +256,7 @@ RouterV1Private_Put.put(
 );
 
 RouterV1Private_Put.put(
-  "/flow/:id",
-  removeSubUserUid,
+  "/flows/:id",
   updateFlowValidation,
   updateFlowController
 );

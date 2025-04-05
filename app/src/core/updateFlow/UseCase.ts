@@ -8,16 +8,26 @@ export class UpdateFlowUseCase {
 
   async run({ accountId, id, ...dto }: UpdateFlowDTO_I) {
     try {
-      await ModelFlows.findOneAndUpdate({ _id: id, accountId }, { $set: dto });
-      const findBusiness = await prisma.business.findMany({
+      const nextFlow = await ModelFlows.findOneAndUpdate(
+        { _id: id, accountId },
+        { $set: dto }
+      );
+
+      if (!nextFlow) {
+        throw new ErrorResponse(400).toast({
+          title: `Fluxo de conversa não foi encontrado`,
+          type: "error",
+        });
+      }
+      const businesses = await prisma.business.findMany({
         where: { id: { in: dto.businessIds } },
-        select: { name: true },
+        select: { name: true, id: true },
       });
 
       return {
         message: "OK!",
         status: 200,
-        flow: { business: findBusiness.join(", ") },
+        flow: { businesses, updateAt: nextFlow.updatedAt },
       };
     } catch (error) {
       throw new ErrorResponse(400).toast({

@@ -2,11 +2,16 @@ export interface UpdateFlowParamsDTO_I {
   id: number;
 }
 
-export interface UpdateFlowBodyDTO_I {
-  accountId: number;
+export interface UpdateFlowQueryDTO_I {
   name?: string;
   businessIds?: number[];
-  type?: "marketing" | "chatbot";
+  type?: "marketing" | "chatbot" | "universal";
 }
 
-export type UpdateFlowDTO_I = UpdateFlowBodyDTO_I & UpdateFlowParamsDTO_I;
+export interface UpdateFlowBodyDTO_I {
+  accountId: number;
+}
+
+export type UpdateFlowDTO_I = UpdateFlowBodyDTO_I &
+  UpdateFlowParamsDTO_I &
+  UpdateFlowQueryDTO_I;

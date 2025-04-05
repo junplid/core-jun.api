@@ -1,14 +1,16 @@
 import { NextFunction, Request, Response } from "express";
-import { GetFlowsDTO_I } from "./DTO";
+import { GetFlowsBodyDTO_I, GetFlowsQueryDTO_I } from "./DTO";
 import { Joi } from "express-validation";
 
 export const getFlowsValidation = (
-  req: Request<any, any, GetFlowsDTO_I>,
+  req: Request<any, any, GetFlowsBodyDTO_I, GetFlowsQueryDTO_I>,
   res: Response,
   next: NextFunction
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
+    name: Joi.string().optional(),
+    page: Joi.number().optional(),
   });
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });
@@ -21,6 +23,8 @@ export const getFlowsValidation = (
     }));
     return res.status(400).json({ errors });
   }
+
+  if (req.query.page) req.query.page = Number(req.query.page);
 
   next();
 };

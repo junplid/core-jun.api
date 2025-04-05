@@ -20,7 +20,7 @@ export class GetFlowUseCase {
 
     return {
       message: "OK!",
-      status: 201,
+      status: 200,
       flows: {
         name: flow.name,
         businessIds: flow.businessIds,

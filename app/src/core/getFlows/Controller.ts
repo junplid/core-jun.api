@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { GetFlowsDTO_I } from "./DTO";
+import { GetFlowsBodyDTO_I, GetFlowsQueryDTO_I } from "./DTO";
 import { GetFlowsUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
 export const GetFlowsController = (useCase: GetFlowsUseCase) => {
   const execute = async (
-    req: Request<any, any, GetFlowsDTO_I>,
+    req: Request<any, any, GetFlowsBodyDTO_I, GetFlowsQueryDTO_I>,
     res: Response
   ): Promise<Response> => {
     try {

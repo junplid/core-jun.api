@@ -1,21 +1,31 @@
+import { ModelFlows } from "../../adapters/mongo/models/flows";
+import { prisma } from "../../adapters/Prisma/client";
 import { GetFlowsDTO_I } from "./DTO";
-import { GetFlowsRepository_I } from "./Repository";
 
 export class GetFlowsUseCase {
-  constructor(private repository: GetFlowsRepository_I) {}
+  constructor() {}
 
-  async run(dto: GetFlowsDTO_I) {
-    const flows = await this.repository.fetch(dto);
+  async run({ page = 0, ...dto }: GetFlowsDTO_I) {
+    const flows = await ModelFlows.find({
+      accountId: dto.accountId,
+      name: { $regex: dto.name || "", $options: "i" },
+    })
+      .skip(page * 15)
+      .limit(15);
+
     const nextFlows = await Promise.all(
       flows.map(async (flow) => {
-        const dataBusiness = await this.repository.fetchBusiness({
-          businessIds: flow.businessIds,
+        const businesses = await prisma.business.findMany({
+          where: { id: { in: flow.businessIds } },
+          select: { name: true, id: true },
         });
         return {
-          name: flow.name,
           id: flow._id,
+          name: flow.name,
           type: flow.type,
-          business: dataBusiness.join(", "),
+          createAt: flow.createdAt,
+          updateAt: flow.updatedAt,
+          businesses,
         };
       })
     );
