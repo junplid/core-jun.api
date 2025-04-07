@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response, Router } from "express";
+import { Router } from "express";
 import { getAccountUserController } from "../../../../../core/getAccountUserPublic";
 import { getAccountUserValidation } from "../../../../../core/getAccountUserPublic/Validation";
 import { getAudienceOnAccountForSelectController } from "../../../../../core/getAudienceOnAccountForSelect";
@@ -236,56 +236,38 @@ import { getBusinessDetailsController } from "../../../../../core/getBusinessDet
 
 const RouterV1Private_Get = Router();
 
-// RouterV1Private_Get.get("/plans");
-
-const removeSubUserUid = (
-  req: Request<any, any, any, any>,
-  res: Response,
-  next: NextFunction
-) => {
-  const { subUserUid, ...reqb } = req.body;
-  req.body = reqb;
-  return next();
-};
-
 RouterV1Private_Get.get(
   "/contacts-wa",
-  removeSubUserUid,
   getContactWAOnAccountValidation,
   getContactWAOnAccountController
 );
 
 RouterV1Private_Get.get(
   "/connections-wa",
-  removeSubUserUid,
   getConnectionsWAValidation,
   getConnectionsWAController
 );
 
 RouterV1Private_Get.get(
   "/connection-wa/:id",
-  removeSubUserUid,
   getConnectionWAValidation,
   getConnectionWAController
 );
 
 RouterV1Private_Get.get(
   "/connection-wa/fields/:id",
-  removeSubUserUid,
   getFieldsConnectionWAValidation,
   getFieldsConnectionWAController
 );
 
 RouterV1Private_Get.get(
   "/connection-wa-user/:id",
-  removeSubUserUid,
   getConnectionWAUserValidation,
   getConnectionWAUserController
 );
 
 RouterV1Private_Get.get(
   "/status-session-whatsapp/:connectionId",
-  removeSubUserUid,
   getStatusSessionWhatsappPublicValidation,
   getStatusSessionWhatsappPublicController
 );
@@ -296,37 +278,24 @@ RouterV1Private_Get.get(
   getAccountUserController
 );
 
-RouterV1Private_Get.get(
-  "/tags",
-  removeSubUserUid,
-  getTagsValidation,
-  getTagsController
-);
+RouterV1Private_Get.get("/tags", getTagsValidation, getTagsController);
 
-RouterV1Private_Get.get(
-  "/tag/:id",
-  removeSubUserUid,
-  getTagValidation,
-  getTagController
-);
+RouterV1Private_Get.get("/tag/:id", getTagValidation, getTagController);
 
 RouterV1Private_Get.get(
   "/tag/details/:id",
-  removeSubUserUid,
   getTagDetailsValidation,
   getTagDetailsController
 );
 
 RouterV1Private_Get.get(
   "/variable",
-  removeSubUserUid,
   getVariableBusinessValidation,
   getVariableBusinessController
 );
 
 RouterV1Private_Get.get(
   "/businesses",
-  removeSubUserUid,
   getBusinessValidation,
   getBusinessesController
 );
@@ -339,483 +308,397 @@ RouterV1Private_Get.get(
 
 RouterV1Private_Get.get(
   "/businesses/:id",
-  removeSubUserUid,
   getBusinessIdOnAccountValidation,
   getBusinessIdOnAccountController
 );
 
 RouterV1Private_Get.get(
   "/businesses/:id/details",
-  removeSubUserUid,
   getBusinessDetailsValidation,
   getBusinessDetailsController
 );
 
 RouterV1Private_Get.get(
   "/campaign-options",
-  removeSubUserUid,
   getCampaignOnAccountForSelectValidation,
   getCampaignOnAccountForSelectController
 );
 
 RouterV1Private_Get.get(
   "/audience-options",
-  removeSubUserUid,
   getAudienceOnAccountForSelectValidation,
   getAudienceOnAccountForSelectController
 );
 
 RouterV1Private_Get.get(
   "/campaign-parameters",
-  removeSubUserUid,
   getCampaignParameterValidation,
   getCampaignParameterController
 );
 
 RouterV1Private_Get.get(
   "/campaign-parameter/:id",
-  removeSubUserUid,
   getCampaignParameterIdValidation,
   getCampaignParameterIdController
 );
 
 RouterV1Private_Get.get(
   "/tag-options/:businessIds",
-  removeSubUserUid,
   getTagForSelectValidation,
   getTagForSelectController
 );
 
 RouterV1Private_Get.get(
   "/variable-options/:businessIds",
-  removeSubUserUid,
   getVariableForSelectValidation,
   getVariableForSelectController
 );
 
 RouterV1Private_Get.get(
   "/campaign-audiences",
-  removeSubUserUid,
   getCampaignAudiencesValidation,
   getCampaignAudiencesController
 );
 
-RouterV1Private_Get.get(
-  "/flows",
-  removeSubUserUid,
-  getFlowsValidation,
-  getFlowsController
-);
+RouterV1Private_Get.get("/flows", getFlowsValidation, getFlowsController);
 
 RouterV1Private_Get.get(
   "/flow-data/:id",
-  removeSubUserUid,
   getDataFlowIdValidation,
   getDataFlowIdController
 );
 
 RouterV1Private_Get.get(
   "/parameters-options",
-  removeSubUserUid,
   getParametersOnAccountForSelectValidation,
   getParametersOnAccountForSelectController
 );
 
 RouterV1Private_Get.get(
-  "/flows-options",
-  removeSubUserUid,
-
+  "/flows/options",
   getFlowOnBusinessForSelectValidation,
   getFlowOnBusinessForSelectController
 );
 
 RouterV1Private_Get.get(
   "/connectionswa-options",
-  removeSubUserUid,
   getConnectionsOnBusinessForSelectValidation,
   getConnectionsOnBusinessForSelectController
 );
 
 RouterV1Private_Get.get(
   "/campaigns",
-  removeSubUserUid,
   getCampaignsValidation,
   getCampaignsController
 );
 
 RouterV1Private_Get.get(
   "/static-file",
-  removeSubUserUid,
   getStaticFileValidation,
   getStaticFileController
 );
 
 RouterV1Private_Get.get(
   "/checkpoints-options",
-  removeSubUserUid,
   getCheckPointsForSelectValidation,
   getCheckPointsForSelectController
 );
 
 RouterV1Private_Get.get(
   "/checkpoints",
-  removeSubUserUid,
   getCheckPointsValidation,
   getCheckPointsController
 );
 
 RouterV1Private_Get.get(
   "/campaign-audience-options",
-  removeSubUserUid,
   getCampaignAudienceForSelectValidation,
   getCampaignAudienceForSelectController
 );
 
 RouterV1Private_Get.get(
   "/campaign-parameter-ranges",
-  removeSubUserUid,
   getCampaignParameterRangesValidation,
   getCampaignParameterRangesController
 );
 
 RouterV1Private_Get.get(
   "/supervisors",
-  removeSubUserUid,
   getSupervisorsValidation,
   getSupervisorsController
 );
 
 RouterV1Private_Get.get(
   "/sectors-attendants",
-  removeSubUserUid,
   getSectorsAttendantsValidation,
   getSectorsAttendantsController
 );
 
 RouterV1Private_Get.get(
   "/sectors-options",
-  removeSubUserUid,
   getSectorsForSelectValidation,
   getSectorsForSelectController
 );
 
 RouterV1Private_Get.get(
   "/supervisors-options",
-  removeSubUserUid,
   geSupervisorsForSelectValidation,
   geSupervisorsForSelectController
 );
 
 RouterV1Private_Get.get(
   "/sectors-attendants-options",
-  removeSubUserUid,
   getSectorsAttendantsForSelectValidation,
   getSectorsAttendantsForSelectController
 );
 
 RouterV1Private_Get.get(
   "/sectors-attendants/:id",
-  removeSubUserUid,
   getSectorsAttendantValidation,
   getSectorsAttendantController
 );
 
-RouterV1Private_Get.get(
-  "/sectors",
-  removeSubUserUid,
-  getSectorsValidation,
-  getSectorsController
-);
+RouterV1Private_Get.get("/sectors", getSectorsValidation, getSectorsController);
 
 RouterV1Private_Get.get(
   "/emails-services-configuration",
-  removeSubUserUid,
   getEmailsServicesConfigurationValidation,
   getEmailsServicesConfigurationController
 );
 
 RouterV1Private_Get.get(
   "/email-service-configuration/:id",
-  removeSubUserUid,
   getEmailServiceConfigurationValidation,
   getEmailServiceConfigurationController
 );
 
 RouterV1Private_Get.get(
   "/email-service-configuration/details/:id",
-  removeSubUserUid,
   getEmailServiceConfigurationDetailsValidation,
   getEmailServiceConfigurationDetailsController
 );
 
 RouterV1Private_Get.get(
   "/email-service-configuration-options",
-  removeSubUserUid,
   getEmailServiceConfigurationForSelectValidation,
   getEmailServiceConfigurationForSelectController
 );
 
 RouterV1Private_Get.get(
   "/links-tracking-pixel",
-  removeSubUserUid,
   getLinksTrackingPixelValidation,
   getLinksTrackingPixelController
 );
 
 RouterV1Private_Get.get(
   "/link-tracking-pixel-options",
-  removeSubUserUid,
   getLinkTrackingPixelForSelectValidation,
   getLinkTrackingPixelForSelectController
 );
 
 RouterV1Private_Get.get(
   "/authorization-account",
-  removeSubUserUid,
   getAuthorizationAccountValidation,
   getAuthorizationAccountController
 );
 
 RouterV1Private_Get.get(
   "/chatbots",
-  removeSubUserUid,
   getChabotsValidation,
   getChabotsController
 );
 
 RouterV1Private_Get.get(
   "/chatbot/:id",
-  removeSubUserUid,
   getChatbotValidation,
   getChatbotController
 );
 
 RouterV1Private_Get.get(
   "/chatbot/details/:id",
-  removeSubUserUid,
   getChatbotDetailsValidation,
   getChatbotDetailsController
 );
 
 RouterV1Private_Get.get(
   "/chatbot-options",
-  removeSubUserUid,
   getChabotsForSelectValidation,
   getChabotsForSelectController
 );
 
 RouterV1Private_Get.get(
   "/integration/details/:id",
-  removeSubUserUid,
   getIntegrationDetailsValidation,
   getIntegrationDetailsController
 );
 
 RouterV1Private_Get.get(
   "/integration/:id",
-  removeSubUserUid,
   getIntegrationValidation,
   getIntegrationController
 );
 
 RouterV1Private_Get.get(
   "/integrations",
-  removeSubUserUid,
   getIntegrationsValidation,
   getIntegrationsController
 );
 
 RouterV1Private_Get.get(
   "/integrations-options",
-  removeSubUserUid,
   getIntegrationsForSelectValidation,
   getIntegrationsForSelectController
 );
 
 RouterV1Private_Get.get(
   "/boards-trello-options/:integrationId",
-  removeSubUserUid,
   getBoardsTrelloForSelectValidation,
   getBoardsTrelloForSelectController
 );
 
 RouterV1Private_Get.get(
   "/list-boards-trello-options/:integrationId/:boardId",
-  removeSubUserUid,
   getListOfBoardTrelloForSelectValidation,
   getListOfBoardTrelloForSelectController
 );
 
 RouterV1Private_Get.get(
   "/data-dashboard",
-  removeSubUserUid,
   getDataDashboardValidation,
   getDataDashboardController
 );
 
 RouterV1Private_Get.get(
   "/sub-user",
-  removeSubUserUid,
   getSubAccountsValidation,
   getSubAccountsController
 );
 
 RouterV1Private_Get.get(
   "/sub-user/:id",
-  removeSubUserUid,
   getSubAccountValidation,
   getSubAccountController
 );
 
 RouterV1Private_Get.get(
   "/sub-user/details/:id",
-  removeSubUserUid,
   getSubAccountDetailsValidation,
   getSubAccountDetailsController
 );
 
-RouterV1Private_Get.get(
-  "/plans",
-  removeSubUserUid,
-  getPlansValidation,
-  getPlansController
-);
+RouterV1Private_Get.get("/plans", getPlansValidation, getPlansController);
 RouterV1Private_Get.get(
   "/periods-plan/:planId",
-  removeSubUserUid,
   getPeriodsPlanPublicValidation,
   getPeriodsPlanPublicController
 );
 
-RouterV1Private_Get.get(
-  "/plan/:id",
-  removeSubUserUid,
-  getPlanValidation,
-  getPlanController
-);
+RouterV1Private_Get.get("/plan/:id", getPlanValidation, getPlanController);
 
 RouterV1Private_Get.get(
   "/customer",
-  removeSubUserUid,
   getCustomerValidation,
   getCustomerController
 );
 
 RouterV1Private_Get.get(
   "/extra-packages",
-  removeSubUserUid,
   getExtraPackagesValidation,
   getExtraPackagesController
 );
 
 RouterV1Private_Get.get(
   "/extra-package/:id",
-  removeSubUserUid,
   getExtraPackageValidation,
   getExtraPackageController
 );
 
 RouterV1Private_Get.get(
   "/funil-kanban",
-  removeSubUserUid,
   getFunnelKanbansValidation,
   getFunnelKanbansController
 );
 
 RouterV1Private_Get.get(
   "/funil-kanban-columns-options",
-  removeSubUserUid,
   geKanbanColumnForSelectFlowValidation,
   geKanbanColumnForSelectFlowController
 );
 
 RouterV1Private_Get.get(
   "/funil-kanban-options",
-  removeSubUserUid,
   geKanbanForSelectValidation,
   geKanbanForSelectController
 );
 
 RouterV1Private_Get.get(
   "/credit-cards",
-  removeSubUserUid,
   getCreditCardValidation,
   getCreditCardController
 );
 
 RouterV1Private_Get.get(
   "/my-account",
-  removeSubUserUid,
   getMyAccountValidation,
   getMyAccountController
 );
 
 RouterV1Private_Get.get(
   "/discount-coupom/:code",
-  removeSubUserUid,
   getDiscountCoupomValidation,
   getDiscountCoupomController
 );
 
 RouterV1Private_Get.get(
   "/subscriptions",
-  removeSubUserUid,
   getSubscriptionsADMValidation,
   getSubscriptionsADMController
 );
 
 RouterV1Private_Get.get(
   "/payments-subscription/:id",
-  removeSubUserUid,
   getPaymentsSubscriptionsADMValidation,
   getPaymentsSubscriptionsADMController
 );
 
 RouterV1Private_Get.get(
   "/payments",
-  removeSubUserUid,
   getPaymentsADMValidation,
   getPaymentsADMController
 );
 
 RouterV1Private_Get.get(
   "/funil-kanban/:id",
-  removeSubUserUid,
   getFunnelKanbanADMValidation,
   getFunnelKanbanADMController
 );
 
 RouterV1Private_Get.get(
   "/supervisor/:id",
-  removeSubUserUid,
   getSupervisorValidation,
   getSupervisorController
 );
 
 RouterV1Private_Get.get(
   "/supervisor/details/:id",
-  removeSubUserUid,
   getSupervisorDetailsValidation,
   getSupervisorDetailsController
 );
 
 RouterV1Private_Get.get(
   "/sectors-attendants/details/:id",
-  removeSubUserUid,
   getSectorsAttendantDetailsValidation,
   getSectorsAttendantDetailsController
 );
 
 RouterV1Private_Get.get(
   "/sector/:id",
-  removeSubUserUid,
   getSectorValidation,
   getSectorController
 );
 
 RouterV1Private_Get.get(
   "/sector/details/:id",
-  removeSubUserUid,
   getSectorDetailsValidation,
   getSectorDetailsController
 );
@@ -830,231 +713,198 @@ RouterV1Private_Get.get(
 
 RouterV1Private_Get.get(
   "/variable/:id",
-  removeSubUserUid,
   getVariableValidation,
   getVariableController
 );
 
 RouterV1Private_Get.get(
   "/variable/details/:id",
-  removeSubUserUid,
   getVariableDetailsValidation,
   getVariableDetailsController
 );
 
 RouterV1Private_Get.get(
   "/checkpoint/:id",
-  removeSubUserUid,
   getCheckpointValidation,
   getCheckpointController
 );
 
 RouterV1Private_Get.get(
   "/checkpoint/details/:id",
-  removeSubUserUid,
   getCheckpointDetailsValidation,
   getCheckpointDetailsController
 );
 
 RouterV1Private_Get.get(
   "/link-tracking-pixel/:id",
-  removeSubUserUid,
   getLinkTrackingPixelValidation,
   getLinkTrackingPixelController
 );
 
 RouterV1Private_Get.get(
   "/link-tracking-pixel/details/:id",
-  removeSubUserUid,
   getLinkTrackingPixelDetailsValidation,
   getLinkTrackingPixelDetailsController
 );
 
 RouterV1Private_Get.get(
   "/campaign-audience/:id",
-  removeSubUserUid,
   getCampaignAudienceValidation,
   getCampaignAudienceController
 );
 
 RouterV1Private_Get.get(
   "/campaign-audience/details/:id",
-  removeSubUserUid,
   getCampaignAudienceDetailsValidation,
   getCampaignAudienceDetailsController
 );
 
 RouterV1Private_Get.get(
   "/campaign-parameter/details/:id",
-  removeSubUserUid,
   getCampaignParameterDetailsValidation,
   getCampaignParameterDetailsController
 );
 
 RouterV1Private_Get.get(
   "/campaign-ondemand/:id",
-  removeSubUserUid,
   getCampaignOndemandValidation,
   getCampaignOndemandController
 );
 
 RouterV1Private_Get.get(
   "/campaign-ondemand/details/:id",
-  removeSubUserUid,
   getCampaignOndemandDetailsValidation,
   getCampaignOndemandDetailsController
 );
 
 RouterV1Private_Get.get(
   "/campaign/:id",
-  removeSubUserUid,
   getCampaignValidation,
   getCampaignController
 );
 
 RouterV1Private_Get.get(
   "/campaign/details/:id",
-  removeSubUserUid,
   getCampaignDetailsValidation,
   getCampaignDetailsController
 );
 
 RouterV1Private_Get.get(
   "/geolocations",
-  removeSubUserUid,
   getGeolocationsValidation,
   getGeolocationsController
 );
 
 RouterV1Private_Get.get(
   "/geolocations/:id",
-  removeSubUserUid,
   getGeolocationValidation,
   getGeolocationController
 );
 
 RouterV1Private_Get.get(
   "/geolocations/details/:id",
-  removeSubUserUid,
   getGeolocationDetailsValidation,
   getGeolocationDetailsController
 );
 
 RouterV1Private_Get.get(
   "/geolocations-options",
-  removeSubUserUid,
   getGeolocationForSelectValidation,
   getGeolocationForSelectController
 );
 
 RouterV1Private_Get.get(
   "/campaign-audience/:id/export/download",
-  removeSubUserUid,
   getFileCampaignAudienceValidation,
   getFileCampaignAudienceController
 );
 
 RouterV1Private_Get.get(
   "/campaign-audience/:id/export/link",
-  removeSubUserUid,
   getLinkFileCampaignAudienceValidation,
   getLinkFileCampaignAudienceController
 );
 
 RouterV1Private_Get.get(
   "/integration-ai-options",
-  removeSubUserUid,
   getIntegrationAiForSelectValidation,
   getIntegrationAiForSelectController
 );
 
 RouterV1Private_Get.get(
   "/integration-ai/:id",
-  removeSubUserUid,
   getIntegrationAiValidation,
   getIntegrationAiController
 );
 
 RouterV1Private_Get.get(
   "/integrations-ai",
-  removeSubUserUid,
   getIntegrationsAiValidation,
   getIntegrationsAiController
 );
 
 RouterV1Private_Get.get(
   "/integrations-ai/details/:id",
-  removeSubUserUid,
   getIntegrationAiDetailsValidation,
   getIntegrationAiDetailsController
 );
 
 RouterV1Private_Get.get(
   "/attendant-ai/:id",
-  removeSubUserUid,
   getAttendantAiValidation,
   getAttendantAiController
 );
 
 RouterV1Private_Get.get(
   "/attendant-ai-options",
-  removeSubUserUid,
   getAttendantAiForSelectValidation,
   getAttendantAiForSelectController
 );
 
 RouterV1Private_Get.get(
   "/attendants-ai",
-  removeSubUserUid,
   getAttendantsAiValidation,
   getAttendantsAiController
 );
 
 RouterV1Private_Get.get(
   "/attendant-ai/details/:id",
-  removeSubUserUid,
   getAttendantAiDetailsValidation,
   getAttendantAiDetailsController
 );
 
 RouterV1Private_Get.get(
   "/facebook-integration/:id/business-options",
-  removeSubUserUid,
   getBusinessFacebookIntegrationForSelectValidation,
   getBusinessFacebookIntegrationForSelectController
 );
 
 RouterV1Private_Get.get(
   "/facebook-integration/:id/pixels-options/:fbBusinessId",
-  removeSubUserUid,
   getPixelsFacebookIntegrationForSelectValidation,
   getPixelsFacebookIntegrationForSelectController
 );
 
 RouterV1Private_Get.get(
   "/facebook-integrations",
-  removeSubUserUid,
   getFacebookIntegrationsValidation,
   getFacebookIntegrationsController
 );
 
 RouterV1Private_Get.get(
   "/facebook-integration/:id",
-  removeSubUserUid,
   getFacebookIntegrationValidation,
   getFacebookIntegrationController
 );
 
 RouterV1Private_Get.get(
   "/facebook-integration/details/:id",
-  removeSubUserUid,
   getFacebookIntegrationDetailsValidation,
   getFacebookIntegrationDetailsController
 );
 
 RouterV1Private_Get.get(
   "/facebook-integrations-options",
-  removeSubUserUid,
   getFacebookIntegrationsForSelectValidation,
   getFacebookIntegrationsForSelectController
 );

@@ -6,11 +6,11 @@ import { ErrorResponse } from "../../utils/ErrorResponse";
 export class CreateFlowUseCase {
   constructor() {}
 
-  async run(dto: CreateFlowDTO_I) {
+  async run({ businessIds, ...dto }: CreateFlowDTO_I) {
     const existName = await ModelFlows.count({
       name: dto.name,
       accountId: dto.accountId,
-      businessIds: dto.businessIds,
+      businessIds: businessIds || [],
     });
 
     if (existName) {
@@ -45,7 +45,7 @@ export class CreateFlowUseCase {
     });
 
     const businesses = await prisma.business.findMany({
-      where: { id: { in: dto.businessIds } },
+      where: { id: { in: businessIds || [] } },
       select: { name: true, id: true },
     });
 

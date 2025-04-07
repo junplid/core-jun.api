@@ -19,8 +19,11 @@ export const getFlowOnBusinessForSelectValidation = (
     businessIds: Joi.string().optional(),
     accountId: Joi.number().required(),
     type: Joi.string()
-      .regex(/^(marketing|chatbot)(?:-(marketing|chatbot)+)*$/)
+      .regex(
+        /^(marketing|chatbot|universal)(?:-(marketing|chatbot|universal)+)*$/
+      )
       .optional(),
+    name: Joi.string().optional(),
   });
 
   const validation = schemaValidation.validate(
@@ -47,6 +50,7 @@ export const getFlowOnBusinessForSelectValidation = (
     req.query.type = String(req.query.type).split("-") as (
       | "marketing"
       | "chatbot"
+      | "universal"
     )[];
   }
 

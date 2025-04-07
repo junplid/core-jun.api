@@ -1,20 +1,26 @@
-import { GetFlowOnBusinessForSelectRepository_I } from "./Repository";
 import { GetFlowOnBusinessForSelectDTO_I } from "./DTO";
+import { ModelFlows } from "../../adapters/mongo/models/flows";
 
 export class GetFlowOnBusinessForSelectUseCase {
-  constructor(private repository: GetFlowOnBusinessForSelectRepository_I) {}
+  constructor() {}
 
   async run(dto: GetFlowOnBusinessForSelectDTO_I) {
-    const flows = await this.repository.fetch({
-      accountId: dto.accountId,
-      businessIds: dto.businessIds ?? [],
-      type: dto.type,
-    });
+    const data = await ModelFlows.aggregate([
+      {
+        $match: {
+          name: { $regex: dto.name || "", $options: "i" },
+          accountId: dto.accountId,
+          businessIds: { $in: dto.businessIds || [] },
+          ...(dto.type?.length && { type: { $in: dto.type } }),
+        },
+      },
+      { $project: { id: "$_id", name: "$name" } },
+    ]);
 
     return {
       message: "OK!",
       status: 200,
-      flows,
+      flows: data.map((f) => ({ id: f.id, name: f.name })),
     };
   }
 }

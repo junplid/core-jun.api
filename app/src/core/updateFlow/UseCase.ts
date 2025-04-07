@@ -30,6 +30,7 @@ export class UpdateFlowUseCase {
         flow: { businesses, updateAt: nextFlow.updatedAt },
       };
     } catch (error) {
+      console.log("Error", error);
       throw new ErrorResponse(400).toast({
         title: `Erro ao tentar atualizar fluxo`,
         type: "error",

@@ -4,7 +4,8 @@ export interface GetFlowOnBusinessForSelectBodyDTO_I {
 
 export interface GetFlowOnBusinessForSelectQueryDTO_I {
   businessIds?: number[];
-  type?: ("marketing" | "chatbot")[];
+  name?: string;
+  type?: ("marketing" | "chatbot" | "universal")[];
 }
 
 export type GetFlowOnBusinessForSelectDTO_I =

@@ -195,7 +195,7 @@ RouterV1Private_Post.post(
   createAggregationCampaignAudienceController
 );
 
-RouterV1Private_Post.post("/flow", createFlowValidation, createFlowController);
+RouterV1Private_Post.post("/flows", createFlowValidation, createFlowController);
 
 RouterV1Private_Post.post(
   "/campaign-ondemand",

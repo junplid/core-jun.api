@@ -40,5 +40,9 @@ export const updateFlowValidation = (
 
   req.params.id = Number(req.params.id);
 
+  if (req.query.businessIds?.length) {
+    req.query.businessIds = req.query.businessIds.map((id) => Number(id));
+  }
+
   next();
 };

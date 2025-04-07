@@ -10,10 +10,10 @@ export const createFlowValidation = (
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
     subUserUid: Joi.string().optional(),
-    businessIds: Joi.array().items(Joi.number()).required(),
+    businessIds: Joi.array().items(Joi.number()).optional(),
     name: Joi.string().required(),
     type: Joi.string()
-      .regex(/(chatbot|marketing)/)
+      .regex(/(chatbot|marketing|universal)/)
       .required(),
   });
 
