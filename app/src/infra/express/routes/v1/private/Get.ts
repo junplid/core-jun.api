@@ -332,6 +332,12 @@ RouterV1Private_Get.get(
 );
 
 RouterV1Private_Get.get(
+  "/businesses/options",
+  getBusinessOnAccountForSelectValidation,
+  getBusinessOnAccountForSelectController
+);
+
+RouterV1Private_Get.get(
   "/businesses/:id",
   removeSubUserUid,
   getBusinessIdOnAccountValidation,
@@ -343,12 +349,6 @@ RouterV1Private_Get.get(
   removeSubUserUid,
   getBusinessDetailsValidation,
   getBusinessDetailsController
-);
-
-RouterV1Private_Get.get(
-  "/businesses/options",
-  getBusinessOnAccountForSelectValidation,
-  getBusinessOnAccountForSelectController
 );
 
 RouterV1Private_Get.get(

@@ -123,16 +123,6 @@ import { createFacebookIntegrationController } from "../../../../../core/createF
 
 const RouterV1Private_Post = Router();
 
-const removeSubUserUid = (
-  req: Request<any, any, any, any>,
-  res: Response,
-  next: NextFunction
-) => {
-  const { subUserUid, ...reqb } = req.body;
-  req.body = reqb;
-  return next();
-};
-
 RouterV1Private_Post.post(
   "/buy-plan",
   createBuyPlanValidation,
@@ -148,168 +138,74 @@ RouterV1Private_Post.post(
 RouterV1Private_Post.post(
   "/connection-whatsapp",
   createConnetionWhatsappValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "connections",
-    }),
-  removeSubUserUid,
   createConnectionWhatsappController
 );
 
 RouterV1Private_Post.post(
   "/campaign-parameter",
   createParameterValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "campaignParameters",
-    }),
-  removeSubUserUid,
   createParameterController
 );
 
 RouterV1Private_Post.post(
   "/tag",
   createTagOnBusinessValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "tags",
-    }),
-  removeSubUserUid,
   createTagOnBusinessController
 );
 
 RouterV1Private_Post.post(
-  "/business",
+  "/businesses",
   createBusinessValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "business",
-    }),
-  removeSubUserUid,
   createBusinessController
 );
 
 RouterV1Private_Post.post(
   "/contactwa-account",
   createContactWAOnAccountValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "contactWAOnAccount",
-    }),
-  removeSubUserUid,
   createContactWAOnAccountController
 );
 
 RouterV1Private_Post.post(
   "/campaign-audience/ondemand",
   createOnDemandAudienceValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "campaignAudience",
-    }),
-  removeSubUserUid,
   createOnDemandAudienceController
 );
 
 RouterV1Private_Post.post(
   "/campaign-audience/static",
   createStaticCampaignAudienceValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "campaignAudience",
-    }),
-  removeSubUserUid,
   createStaticCampaignAudienceController
 );
 
 RouterV1Private_Post.post(
   "/campaign-audience/import",
   createImportCampaignAudienceValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "campaignAudience",
-    }),
-  removeSubUserUid,
   createImportCampaignAudienceController
 );
 
 RouterV1Private_Post.post(
   "/campaign-audience/interactions",
   createInteractionsCampaignAudienceValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "campaignAudience",
-    }),
-  removeSubUserUid,
   createInteractionsCampaignAudienceController
 );
 
 RouterV1Private_Post.post(
   "/campaign-audience/aggregation",
   createAggregationCampaignAudienceValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "campaignAudience",
-    }),
-  removeSubUserUid,
   createAggregationCampaignAudienceController
 );
 
-RouterV1Private_Post.post(
-  "/flow",
-  createFlowValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "flows",
-    }),
-  removeSubUserUid,
-  createFlowController
-);
-
-// RouterV1Private_Post.post(
-//   "/campaign",
-//   createCampaignValidation,
-//   (req, res, next) =>
-//     VerifySubUserMiddleware(req, res, next, {
-//       type: "Create",
-//       entity: "campaign",
-//     }),
-//   removeSubUserUid,
-//   createCampaignController
-// );
+RouterV1Private_Post.post("/flow", createFlowValidation, createFlowController);
 
 RouterV1Private_Post.post(
   "/campaign-ondemand",
   createCampaignOndemandValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "campaign",
-    }),
-  removeSubUserUid,
   createCampaignOndemandController
 );
 
 RouterV1Private_Post.post(
   "/variable",
   createVariableValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "variables",
-    }),
-  removeSubUserUid,
   createVariableController
 );
 
@@ -355,72 +251,36 @@ RouterV1Private_Post.post(
 RouterV1Private_Post.post(
   "/checkpoint",
   createCheckPointValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "checkpoint",
-    }),
-  removeSubUserUid,
   createCheckPointController
 );
 
 RouterV1Private_Post.post(
   "/supervisor",
   createSupervisorValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "supervisors",
-    }),
-  removeSubUserUid,
   createSupervisorController
 );
 
 RouterV1Private_Post.post(
   "/sector-attendant",
   createSectorAttendantValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "sectorAttendants",
-    }),
-  removeSubUserUid,
   createSectorAttendantController
 );
 
 RouterV1Private_Post.post(
   "/sector",
   createSectorValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "sector",
-    }),
-  removeSubUserUid,
   createSectorController
 );
 
 RouterV1Private_Post.post(
   "/email-service-configuration",
   createEmailServiceConfigurationValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "emailService",
-    }),
-  removeSubUserUid,
   createEmailServiceConfigurationController
 );
 
 RouterV1Private_Post.post(
   "/link-tracking-pixel",
   createLinkTackingPixelValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "customizationLink",
-    }),
-  removeSubUserUid,
   createLinkTackingPixelController
 );
 
@@ -433,234 +293,179 @@ RouterV1Private_Post.post(
 RouterV1Private_Post.post(
   "/chatbot",
   createChatbotValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "chatbot",
-    }),
-  removeSubUserUid,
   createChatbotController
 );
 
 RouterV1Private_Post.post(
   "/integration",
   createIntegrationValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "integration",
-    }),
-  removeSubUserUid,
   createIntegrationController
 );
 
 RouterV1Private_Post.post(
   "/sub-user",
   createSubAccountValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "users",
-    }),
-  removeSubUserUid,
   createSubAccountController
 );
 
 RouterV1Private_Post.post(
   "/clone-sub-user/:id",
   cloneSubAccountValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "users",
-    }),
-  removeSubUserUid,
   cloneSubAccountController
 );
 
 RouterV1Private_Post.post(
   "/funil-kanban",
   createKanbanValidation,
-  (req, res, next) =>
-    VerifySubUserMiddleware(req, res, next, {
-      type: "Create",
-      entity: "sector",
-    }),
-  removeSubUserUid,
   createKanbanController
 );
 
 RouterV1Private_Post.post(
   "/costumer",
-  removeSubUserUid,
   createCustomerAsaasValidation,
   createCustomerAsaasController
 );
 
 RouterV1Private_Post.post(
   "/credit-card",
-  removeSubUserUid,
   createCreditCardValidation,
   createCreditCardController
 );
 
 RouterV1Private_Post.post(
   "/clone-business/:id",
-  removeSubUserUid,
   createCloneBusinessValidation,
   createCloneBusinessController
 );
 
 RouterV1Private_Post.post(
   "/clone-connection-whatsapp/:id",
-  removeSubUserUid,
   createCloneConnectionWaValidation,
   createCloneConnectionWaController
 );
 
 RouterV1Private_Post.post(
   "/clone-funnel-kanban/:id",
-  removeSubUserUid,
   createCloneFunnelKanbanWaValidation,
   createCloneFunnelKanbanWaController
 );
 
 RouterV1Private_Post.post(
   "/clone-supervisor/:id",
-  removeSubUserUid,
   cloneSupervisorValidation,
   cloneSupervisorController
 );
 
 RouterV1Private_Post.post(
   "/clone-sector-attendant/:id",
-  removeSubUserUid,
   createCloneSectorAttendantValidation,
   createCloneSectorAttendantController
 );
 
 RouterV1Private_Post.post(
   "/clone-sector/:id",
-  removeSubUserUid,
   createCloneSectorValidation,
   createCloneSectorController
 );
 
 RouterV1Private_Post.post(
   "/clone-flow/:id",
-  removeSubUserUid,
   createCloneFlowValidation,
   createCloneFlowController
 );
 
 RouterV1Private_Post.post(
   "/clone-tag/:id",
-  removeSubUserUid,
   cloneTagValidation,
   cloneTagController
 );
 
 RouterV1Private_Post.post(
   "/clone-variable/:id",
-  removeSubUserUid,
   cloneVariableValidation,
   cloneVariableController
 );
 
 RouterV1Private_Post.post(
   "/clone-checkpoint/:id",
-  removeSubUserUid,
   cloneCheckpointValidation,
   cloneCheckpointController
 );
 
 RouterV1Private_Post.post(
   "/clone-link-tracking-pixel/:id",
-  removeSubUserUid,
   cloneLinkTackingPixelValidation,
   cloneLinkTackingPixelController
 );
 
 RouterV1Private_Post.post(
   "/clone-audience/:id",
-  removeSubUserUid,
   cloneAudienceValidation,
   cloneAudienceController
 );
 
 RouterV1Private_Post.post(
   "/clone-campaign-parameter/:id",
-  removeSubUserUid,
   cloneCampaignParameterValidation,
   cloneCampaignParameterController
 );
 
 RouterV1Private_Post.post(
   "/clone-campaign-ondemand/:id",
-  removeSubUserUid,
   cloneCampaignOndemandValidation,
   cloneCampaignOndemandController
 );
 
 RouterV1Private_Post.post(
   "/contact-campaign-audience",
-  removeSubUserUid,
   createContactCampaignAudienceValidation,
   createContactCampaignAudienceController
 );
 
 RouterV1Private_Post.post(
   "/clone-campaign/:id",
-  removeSubUserUid,
   cloneCampaignValidation,
   cloneCampaignController
 );
 
 RouterV1Private_Post.post(
   "/clone-chatbot/:id",
-  removeSubUserUid,
   createCloneChatbotValidation,
   createCloneChatbotController
 );
 
 RouterV1Private_Post.post(
   "/geolocation",
-  removeSubUserUid,
   createGeolocationBusinessValidation,
   createGeolocationBusinessController
 );
 
 RouterV1Private_Post.post(
   "/clone-geolocation/:id",
-  removeSubUserUid,
   cloneGeolocationValidation,
   cloneGeolocationController
 );
 
 RouterV1Private_Post.post(
   "/clone-email-service-configuration/:id",
-  removeSubUserUid,
   cloneEmailServiceConfigurationValidation,
   cloneEmailServiceConfigurationController
 );
 
 RouterV1Private_Post.post(
   "/clone-integration/:id",
-  removeSubUserUid,
   cloneIntegrationValidation,
   cloneIntegrationController
 );
 
 RouterV1Private_Post.post(
   "/integration-ai",
-  removeSubUserUid,
   createIntegrationAiValidation,
   createIntegrationAiController
 );
 
 RouterV1Private_Post.post(
   "/clone-integration-ai/:id",
-  removeSubUserUid,
   createCloneintegrationAiValidation,
   createCloneintegrationAiController
 );
@@ -695,21 +500,18 @@ RouterV1Private_Post.post(
 
 RouterV1Private_Post.post(
   "/clone-attendant-ai/:id",
-  removeSubUserUid,
   createCloneAttendantAiValidation,
   createCloneAttendantAiController
 );
 
 RouterV1Private_Post.post(
   "/clone-facebook-integration/:id",
-  removeSubUserUid,
   cloneFacebookIntegrationValidation,
   cloneFacebookIntegrationController
 );
 
 RouterV1Private_Post.post(
   "/facebook-integration",
-  removeSubUserUid,
   createFacebookIntegrationValidation,
   createFacebookIntegrationController
 );

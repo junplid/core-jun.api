@@ -1,28 +1,33 @@
+import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { UpdateBusinessOnAccountDTO_I } from "./DTO";
-import { UpdateBusinessOnAccountRepository_I } from "./Repository";
 
 export class UpdateBusinessOnAccountUseCase {
-  constructor(private repository: UpdateBusinessOnAccountRepository_I) {}
+  constructor() {}
 
   async run({ id, accountId, ...dto }: UpdateBusinessOnAccountDTO_I) {
-    const exist = await this.repository.fetchExist({
-      accountId,
-      id,
+    const exist = await prisma.business.findFirst({
+      where: { accountId, id },
+      select: { id: true },
     });
 
     if (!exist) {
       throw new ErrorResponse(400).toast({
-        title: `Negócio não foi encontrado`,
+        title: `Empresa não foi encontrada`,
         type: "error",
       });
     }
 
-    await this.repository.update({ accountId, id }, dto);
+    const { updateAt } = await prisma.business.update({
+      where: { accountId, id },
+      data: dto,
+      select: { updateAt: true },
+    });
 
     return {
       message: "OK!",
       status: 200,
+      business: { updateAt },
     };
   }
 }
