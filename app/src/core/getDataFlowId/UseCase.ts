@@ -10,6 +10,6 @@ export class GetDataFlowIdUseCase {
       accountId: dto.accountId,
     });
 
-    return { message: "OK!", status: 200, ...data };
+    return { message: "OK!", status: 200, flow: data };
   }
 }

@@ -363,7 +363,7 @@ RouterV1Private_Get.get(
 RouterV1Private_Get.get("/flows", getFlowsValidation, getFlowsController);
 
 RouterV1Private_Get.get(
-  "/flow-data/:id",
+  "/flows/:id/data",
   getDataFlowIdValidation,
   getDataFlowIdController
 );
