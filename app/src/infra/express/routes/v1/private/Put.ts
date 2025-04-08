@@ -111,7 +111,7 @@ RouterV1Private_Put.put(
 );
 
 RouterV1Private_Put.put(
-  "/flow-data/:id",
+  "/flows/:id/data",
   updateDataFlowValidation,
   (req, res, next) =>
     VerifySubUserMiddleware(req, res, next, {

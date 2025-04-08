@@ -13,28 +13,7 @@ export const updateDataFlowValidation = (
     id: Joi.number().required(),
     data: Joi.object({
       edges: Joi.array().items(Joi.any()).required(),
-      nodes: Joi.array()
-        .items(
-          Joi.object({
-            selectable: Joi.boolean().optional(),
-            id: Joi.string().required(),
-            type: Joi.string().required(),
-            position: Joi.object({
-              x: Joi.number().required(),
-              y: Joi.number().required(),
-            }),
-            positionAbsolute: Joi.object({
-              x: Joi.number().required(),
-              y: Joi.number().required(),
-            }),
-            data: Joi.any().optional(),
-            selected: Joi.boolean().optional(),
-            dragging: Joi.boolean().optional(),
-            height: Joi.number().optional(),
-            width: Joi.number().optional(),
-          })
-        )
-        .required(),
+      nodes: Joi.array().items(Joi.any()).required(),
     }).required(),
   });
 
