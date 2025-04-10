@@ -9,12 +9,23 @@ export const updateDataFlowValidation = (
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
-    subUserUid: Joi.string().optional(),
     id: Joi.number().required(),
-    data: Joi.object({
-      edges: Joi.array().items(Joi.any()).required(),
-      nodes: Joi.array().items(Joi.any()).required(),
-    }).required(),
+    nodes: Joi.array()
+      .items(
+        Joi.object({
+          type: Joi.valid("upset", "delete"),
+          node: Joi.object(),
+        })
+      )
+      .optional(),
+    edges: Joi.array()
+      .items(
+        Joi.object({
+          type: Joi.valid("upset", "delete"),
+          edge: Joi.object(),
+        })
+      )
+      .optional(),
   });
 
   const validation = schemaValidation.validate(

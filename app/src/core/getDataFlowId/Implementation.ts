@@ -12,7 +12,6 @@ export class CraeteFlowImplementation implements GetDataFlowIdRepository_I {
     businessIds: number[];
   }> {
     try {
-      console.log(filter);
       const data = await this.modelFlows.aggregate([
         { $match: filter },
         {

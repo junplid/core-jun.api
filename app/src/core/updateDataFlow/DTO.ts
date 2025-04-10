@@ -4,7 +4,14 @@ export interface UpdateDataFlowParamsDTO_I {
 
 export interface UpdateDataFlowBodyDTO_I {
   accountId: number;
-  data: any;
+  nodes?: {
+    type: "upset" | "delete";
+    node: { id: string; [x: string]: any };
+  }[];
+  edges?: {
+    type: "upset" | "delete";
+    edge: { id: string; [x: string]: any };
+  }[];
 }
 
 export type UpdateDataFlowDTO_I = UpdateDataFlowBodyDTO_I &
