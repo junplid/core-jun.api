@@ -3,13 +3,12 @@ import { NextFunction, Request, Response } from "express";
 import { Joi } from "express-validation";
 import {
   GetVariableForSelectBodyDTO_I,
-  GetVariableForSelectParamsDTO_I,
   GetVariableForSelectQueryDTO_I,
 } from "./DTO";
 
 export const getVariableForSelectValidation = (
   req: Request<
-    GetVariableForSelectParamsDTO_I,
+    any,
     any,
     GetVariableForSelectBodyDTO_I,
     GetVariableForSelectQueryDTO_I
@@ -19,11 +18,11 @@ export const getVariableForSelectValidation = (
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
-    type: Joi.string()
-      .regex(/system|dynamics|constant/)
+    type: Joi.array()
+      .items(Joi.string().valid("dynamics", "constant", "system"))
       .optional(),
     name: Joi.string().allow(""),
-    businessIds: Joi.string().required(),
+    businessIds: Joi.array().items(Joi.number()).optional(),
   });
 
   const validation = schemaValidation.validate(
@@ -40,14 +39,7 @@ export const getVariableForSelectValidation = (
     return res.status(400).json({ errors });
   }
 
-  req.params.businessIds = (req.params.businessIds as unknown as string)
-    .split("-")
-    .map((b) => Number(b));
-
-  if (req.query.type) {
-    const listType = String(req.query.type).split("-");
-    req.query.type = [...listType] as TypeVariable[];
-  }
+  req.query.businessIds = req.query.businessIds?.map((b) => Number(b));
 
   next();
 };

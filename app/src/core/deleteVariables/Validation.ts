@@ -9,7 +9,7 @@ export const deleteVariableValidation = (
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
-    variableId: Joi.number().required(),
+    id: Joi.number().required(),
     subUserUid: Joi.string().optional(),
   });
 
@@ -27,7 +27,7 @@ export const deleteVariableValidation = (
     return res.status(400).json({ errors });
   }
 
-  req.params.variableId = Number(req.params.variableId);
+  req.params.id = Number(req.params.id);
 
   next();
 };

@@ -25,11 +25,12 @@ export class GetVariableUseCase {
       });
     }
 
-    const { type, VariableOnBusiness, ...variable } = vars;
+    const { VariableOnBusiness, ...variable } = vars;
     return {
       message: "OK!",
       status: 200,
       variable: {
+        id: dto.id,
         ...variable,
         businessIds: VariableOnBusiness.map((s) => s.Business.id),
       },

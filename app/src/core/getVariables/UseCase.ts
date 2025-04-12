@@ -17,6 +17,7 @@ export class GetVariableBusinessUseCase {
       select: {
         id: true,
         name: true,
+        value: true,
         type: true,
         VariableOnBusiness: {
           select: { Business: { select: { name: true, id: true } } },

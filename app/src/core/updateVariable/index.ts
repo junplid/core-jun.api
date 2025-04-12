@@ -1,5 +1,6 @@
-import { UpdateVariableBusinessController } from "./Controller";
-import { UpdateVariableBusinessUseCase } from "./UseCase";
+import { UpdateVariableController } from "./Controller";
+import { UpdateVariableUseCase } from "./UseCase";
 
-export const updateVariableBusinessController =
-  UpdateVariableBusinessController(new UpdateVariableBusinessUseCase()).execute;
+export const updateVariableController = UpdateVariableController(
+  new UpdateVariableUseCase()
+).execute;

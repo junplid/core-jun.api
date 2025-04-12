@@ -289,9 +289,27 @@ RouterV1Private_Get.get(
 );
 
 RouterV1Private_Get.get(
-  "/variable",
+  "/variables",
   getVariableBusinessValidation,
   getVariableBusinessController
+);
+
+RouterV1Private_Get.get(
+  "/variables/options",
+  getVariableForSelectValidation,
+  getVariableForSelectController
+);
+
+RouterV1Private_Get.get(
+  "/variables/:id",
+  getVariableValidation,
+  getVariableController
+);
+
+RouterV1Private_Get.get(
+  "/variables/:id/details",
+  getVariableDetailsValidation,
+  getVariableDetailsController
 );
 
 RouterV1Private_Get.get(
@@ -346,12 +364,6 @@ RouterV1Private_Get.get(
   "/tag-options/:businessIds",
   getTagForSelectValidation,
   getTagForSelectController
-);
-
-RouterV1Private_Get.get(
-  "/variable-options/:businessIds",
-  getVariableForSelectValidation,
-  getVariableForSelectController
 );
 
 RouterV1Private_Get.get(
@@ -709,18 +721,6 @@ RouterV1Private_Get.get(
   "/flows/:id/details",
   getFlowDetailsValidation,
   getFlowDetailsController
-);
-
-RouterV1Private_Get.get(
-  "/variable/:id",
-  getVariableValidation,
-  getVariableController
-);
-
-RouterV1Private_Get.get(
-  "/variable/details/:id",
-  getVariableDetailsValidation,
-  getVariableDetailsController
 );
 
 RouterV1Private_Get.get(

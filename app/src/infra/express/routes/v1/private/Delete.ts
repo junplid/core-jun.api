@@ -139,7 +139,7 @@ RouterV1Private_Delete.delete(
 );
 
 RouterV1Private_Delete.delete(
-  "/variable/:variableId",
+  "/variables/:id",
   deleteVariableValidation,
   (req, res, next) =>
     VerifySubUserMiddleware(req, res, next, {

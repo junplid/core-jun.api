@@ -1,17 +1,17 @@
 import { NextFunction, Request, Response } from "express";
 import {
-  UpdateVariableBusinessBodyDTO_I,
-  UpdateVariableBusinessParamsDTO_I,
-  UpdateVariableBusinessQueryDTO_I,
+  UpdateVariableBodyDTO_I,
+  UpdateVariableParamsDTO_I,
+  UpdateVariableQueryDTO_I,
 } from "./DTO";
 import { Joi } from "express-validation";
 
-export const updateVariableBusinessValidation = (
+export const updateVariableValidation = (
   req: Request<
-    UpdateVariableBusinessParamsDTO_I,
+    UpdateVariableParamsDTO_I,
     any,
-    UpdateVariableBusinessBodyDTO_I,
-    UpdateVariableBusinessQueryDTO_I
+    UpdateVariableBodyDTO_I,
+    UpdateVariableQueryDTO_I
   >,
   res: Response,
   next: NextFunction

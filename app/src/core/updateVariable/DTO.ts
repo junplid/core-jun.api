@@ -1,17 +1,18 @@
-export interface UpdateVariableBusinessBodyDTO_I {
+export interface UpdateVariableBodyDTO_I {
   accountId: number;
 }
 
-export interface UpdateVariableBusinessParamsDTO_I {
+export interface UpdateVariableParamsDTO_I {
   id: number;
 }
 
-export interface UpdateVariableBusinessQueryDTO_I {
+export interface UpdateVariableQueryDTO_I {
   name?: string;
   value?: string;
   businessIds?: number[];
+  type?: "constant" | "dynamics";
 }
 
-export type UpdateVariableBusinessDTO_I = UpdateVariableBusinessQueryDTO_I &
-  UpdateVariableBusinessParamsDTO_I &
-  UpdateVariableBusinessBodyDTO_I;
+export type UpdateVariableDTO_I = UpdateVariableQueryDTO_I &
+  UpdateVariableParamsDTO_I &
+  UpdateVariableBodyDTO_I;

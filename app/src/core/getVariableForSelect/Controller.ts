@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import {
   GetVariableForSelectBodyDTO_I,
-  GetVariableForSelectParamsDTO_I,
   GetVariableForSelectQueryDTO_I,
 } from "./DTO";
 import { GetVariableForSelectUseCase } from "./UseCase";
@@ -12,7 +11,7 @@ export const GetVariableForSelectController = (
 ) => {
   const execute = async (
     req: Request<
-      GetVariableForSelectParamsDTO_I,
+      any,
       any,
       GetVariableForSelectBodyDTO_I,
       GetVariableForSelectQueryDTO_I
@@ -22,7 +21,6 @@ export const GetVariableForSelectController = (
     try {
       const data = await useCase.run({
         ...req.body,
-        ...req.params,
         ...req.query,
       });
       return res.status(200).json(data);

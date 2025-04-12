@@ -1,5 +1,5 @@
 export interface DeleteVariableParamsDTO_I {
-  variableId: number;
+  id: number;
 }
 
 export interface DeleteVariableBodyDTO_I {

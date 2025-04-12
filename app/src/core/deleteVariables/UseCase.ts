@@ -1,25 +1,22 @@
-import { DeleteVariableRepository_I } from "./Repository";
 import { DeleteVariableDTO_I } from "./DTO";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { prisma } from "../../adapters/Prisma/client";
 
 export class DeleteVariableUseCase {
-  constructor(private repository: DeleteVariableRepository_I) {}
+  constructor() {}
 
   async run(dto: DeleteVariableDTO_I) {
-    const fetchVariableId = await this.repository.fetchExist(dto);
+    const exist = await prisma.variable.count({ where: dto });
 
-    if (!fetchVariableId) {
+    if (!exist) {
       throw new ErrorResponse(400).toast({
         title: `Variável não encontrada`,
         type: "error",
       });
     }
 
-    await this.repository.delete({ variableId: dto.variableId });
+    await prisma.variable.delete({ where: dto });
 
-    return {
-      message: "OK!",
-      status: 200,
-    };
+    return { message: "OK!", status: 200 };
   }
 }

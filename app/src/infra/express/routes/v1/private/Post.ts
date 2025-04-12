@@ -204,7 +204,7 @@ RouterV1Private_Post.post(
 );
 
 RouterV1Private_Post.post(
-  "/variable",
+  "/variables",
   createVariableValidation,
   createVariableController
 );

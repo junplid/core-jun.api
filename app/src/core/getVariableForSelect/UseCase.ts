@@ -1,16 +1,25 @@
-import { GetVariableForSelectRepository_I } from "./Repository";
 import { GetVariableForSelectDTO_I } from "./DTO";
+import { prisma } from "../../adapters/Prisma/client";
 
 export class GetVariableForSelectUseCase {
-  constructor(private repository: GetVariableForSelectRepository_I) {}
+  constructor() {}
 
   async run(dto: GetVariableForSelectDTO_I) {
-    const tags = await this.repository.get(dto);
+    const variables = await prisma.variable.findMany({
+      where: {
+        ...(dto.type?.length && { type: { in: dto.type } }),
+        VariableOnBusiness: {
+          some: {
+            businessId: { in: dto.businessIds },
+            Business: { accountId: dto.accountId },
+          },
+        },
+        ...(dto.name && { name: { contains: dto.name } }),
+      },
+      orderBy: { id: "desc" },
+      select: { name: true, id: true, value: true },
+    });
 
-    return {
-      message: "OK!",
-      status: 200,
-      tags,
-    };
+    return { message: "OK!", status: 200, variables };
   }
 }

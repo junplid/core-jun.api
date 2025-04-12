@@ -35,8 +35,8 @@ import { updateSectorValidation } from "../../../../../core/updateSector/Validat
 import { updateSectorController } from "../../../../../core/updateSector";
 import { updateFlowValidation } from "../../../../../core/updateFlow/Validation";
 import { updateFlowController } from "../../../../../core/updateFlow";
-import { updateVariableBusinessValidation } from "../../../../../core/updateVariable/Validation";
-import { updateVariableBusinessController } from "../../../../../core/updateVariable";
+import { updateVariableValidation } from "../../../../../core/updateVariable/Validation";
+import { updateVariableController } from "../../../../../core/updateVariable";
 import { updateCheckpointValidation } from "../../../../../core/updateCheckpoint/Validation";
 import { updateCheckpointController } from "../../../../../core/updateCheckpoint";
 import { updateLinkTackingPixelValidation } from "../../../../../core/updateLinkTackingPixel/Validation";
@@ -262,10 +262,9 @@ RouterV1Private_Put.put(
 );
 
 RouterV1Private_Put.put(
-  "/variable/:id",
-  removeSubUserUid,
-  updateVariableBusinessValidation,
-  updateVariableBusinessController
+  "/variables/:id",
+  updateVariableValidation,
+  updateVariableController
 );
 
 RouterV1Private_Put.put(

@@ -1,16 +1,11 @@
-import { UpdateVariableBusinessDTO_I } from "./DTO";
+import { UpdateVariableDTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
-export class UpdateVariableBusinessUseCase {
+export class UpdateVariableUseCase {
   constructor() {}
 
-  async run({
-    id,
-    accountId,
-    businessIds,
-    ...dto
-  }: UpdateVariableBusinessDTO_I) {
+  async run({ id, accountId, businessIds, ...dto }: UpdateVariableDTO_I) {
     const fetchVariableId = await prisma.variable.count({
       where: { id, accountId },
     });

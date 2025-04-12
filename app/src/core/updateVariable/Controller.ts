@@ -1,21 +1,19 @@
 import { Request, Response } from "express";
 import {
-  UpdateVariableBusinessBodyDTO_I,
-  UpdateVariableBusinessParamsDTO_I,
-  UpdateVariableBusinessQueryDTO_I,
+  UpdateVariableBodyDTO_I,
+  UpdateVariableParamsDTO_I,
+  UpdateVariableQueryDTO_I,
 } from "./DTO";
-import { UpdateVariableBusinessUseCase } from "./UseCase";
+import { UpdateVariableUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
-export const UpdateVariableBusinessController = (
-  useCase: UpdateVariableBusinessUseCase
-) => {
+export const UpdateVariableController = (useCase: UpdateVariableUseCase) => {
   const execute = async (
     req: Request<
-      UpdateVariableBusinessParamsDTO_I,
+      UpdateVariableParamsDTO_I,
       any,
-      UpdateVariableBusinessBodyDTO_I,
-      UpdateVariableBusinessQueryDTO_I
+      UpdateVariableBodyDTO_I,
+      UpdateVariableQueryDTO_I
     >,
     res: Response
   ): Promise<Response> => {
