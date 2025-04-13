@@ -5,9 +5,9 @@ import { GetVariableDetailsDTO_I } from "./DTO";
 export class GetVariableDetailsUseCase {
   constructor() {}
 
-  async run(dto: GetVariableDetailsDTO_I) {
+  async run({ accountId, id }: GetVariableDetailsDTO_I) {
     const vars = await prisma.variable.findFirst({
-      where: { ...dto, type: { not: "system" } },
+      where: { id, OR: [{ accountId }, { accountId: null }] },
       select: {
         type: true,
         name: true,
@@ -30,7 +30,7 @@ export class GetVariableDetailsUseCase {
       message: "OK!",
       status: 200,
       variable: {
-        id: dto.id,
+        id,
         ...variable,
         business: VariableOnBusiness.map((s) => s.Business),
       },

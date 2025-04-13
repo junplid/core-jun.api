@@ -1,5 +1,4 @@
 import { prisma } from "../../adapters/Prisma/client";
-import { getVariableSystem } from "../../libs/VariablesSystem";
 import { GetVariableBusinessDTO_I } from "./DTO";
 
 export class GetVariableBusinessUseCase {
@@ -7,6 +6,7 @@ export class GetVariableBusinessUseCase {
 
   async run({ businessIds, accountId, ...dto }: GetVariableBusinessDTO_I) {
     const fetch = await prisma.variable.findMany({
+      orderBy: { id: "desc" },
       where: {
         ...(businessIds?.length && {
           VariableOnBusiness: { some: { businessId: { in: businessIds } } },
