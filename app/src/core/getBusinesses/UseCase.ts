@@ -9,6 +9,7 @@ export class GetBusinessesUseCase {
     const skip = (page - 1) * pageSize;
 
     const businesses = await prisma.business.findMany({
+      orderBy: { createAt: "desc" },
       where: {
         accountId,
         ...(dto.name && {

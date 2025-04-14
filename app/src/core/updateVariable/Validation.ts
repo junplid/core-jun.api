@@ -5,6 +5,7 @@ import {
   UpdateVariableQueryDTO_I,
 } from "./DTO";
 import { Joi } from "express-validation";
+import { ErrorResponse } from "../../utils/ErrorResponse";
 
 export const updateVariableValidation = (
   req: Request<
@@ -21,9 +22,8 @@ export const updateVariableValidation = (
     id: Joi.number().required(),
     value: Joi.string(),
     name: Joi.string(),
-    businessIds: Joi.string()
-      .regex(/^[0-9]+(-[0-9]+)*$/)
-      .optional(),
+    type: Joi.string().valid("constant", "dynamics"),
+    businessIds: Joi.array().items(Joi.number()).optional(),
   });
 
   const validation = schemaValidation.validate(
@@ -40,11 +40,20 @@ export const updateVariableValidation = (
     return res.status(400).json({ errors });
   }
 
+  if (req.query.type === "constant" && !req.query.value) {
+    const { statusCode, ...rest } = new ErrorResponse(400)
+      .input({
+        text: "Campo obrigatório.",
+        path: "value",
+      })
+      .getResponse();
+
+    return res.status(statusCode).json(rest);
+  }
+
   req.params.id = Number(req.params.id);
-  if (req.query.businessIds) {
-    req.query.businessIds = String(req.query.businessIds)
-      .split("-")
-      .map((s) => Number(s));
+  if (req.query.businessIds?.length) {
+    req.query.businessIds = req.query.businessIds.map((s) => Number(s));
   }
   next();
 };

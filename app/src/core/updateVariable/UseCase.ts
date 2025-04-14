@@ -33,10 +33,7 @@ export class UpdateVariableUseCase {
           }),
         },
       });
-      return {
-        message: "OK!",
-        status: 200,
-      };
+      return { message: "OK!", status: 200 };
     } catch (error) {
       throw new ErrorResponse(400).toast({
         title: `Não foi possivel atualizar a variável!`,

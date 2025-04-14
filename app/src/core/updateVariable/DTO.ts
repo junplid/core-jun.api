@@ -8,7 +8,7 @@ export interface UpdateVariableParamsDTO_I {
 
 export interface UpdateVariableQueryDTO_I {
   name?: string;
-  value?: string;
+  value?: string | null;
   businessIds?: number[];
   type?: "constant" | "dynamics";
 }
