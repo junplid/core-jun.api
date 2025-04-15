@@ -1,18 +1,18 @@
 import { Router } from "express";
 
 import { MiddlewareAuth } from "../../../middlewares/auth";
-import { MiddlewareAuthAccount } from "../../../middlewares/authAccount";
+// import { MiddlewareAuthAccount } from "../../../middlewares/authAccount";
 
-import { asaasWebHookChargesController } from "../../../../services/Assas/WebHooks/Charges";
-import { asaasWebHookChargesValidation } from "../../../../services/Assas/WebHooks/Charges/Validation";
-import RouterV1Access_Delete from "./access/Delete";
-import RouterV1Access_Get from "./access/Get";
-import RouterV1Access_Post from "./access/Post";
-import RouterV1Access_Put from "./access/Put";
-import RouterV1HumanService_Delete from "./human-service/Delete";
-import RouterV1HumanService_Get from "./human-service/Get";
-import RouterV1HumanService_Post from "./human-service/Post";
-import RouterV1HumanService_Put from "./human-service/Put";
+// import { asaasWebHookChargesController } from "../../../../services/Assas/WebHooks/Charges";
+// import { asaasWebHookChargesValidation } from "../../../../services/Assas/WebHooks/Charges/Validation";
+// import RouterV1Access_Delete from "./access/Delete";
+// import RouterV1Access_Get from "./access/Get";
+// import RouterV1Access_Post from "./access/Post";
+// import RouterV1Access_Put from "./access/Put";
+// import RouterV1HumanService_Delete from "./human-service/Delete";
+// import RouterV1HumanService_Get from "./human-service/Get";
+// import RouterV1HumanService_Post from "./human-service/Post";
+// import RouterV1HumanService_Put from "./human-service/Put";
 import RouterV1Private_Delete from "./private/Delete";
 import RouterV1Private_Get from "./private/Get";
 import RouterV1Private_Post from "./private/Post";
@@ -38,7 +38,7 @@ routerv1.use(
   "/private",
   async (req, res, next) =>
     await MiddlewareAuth({
-      expected: ["adm", "subUser"],
+      expected: ["adm"],
       express: { next, req, res },
     }),
   RouterV1Private_Post,
@@ -60,33 +60,33 @@ routerv1.use(
   RouterV1Root_Put
 );
 
-routerv1.use(
-  "/human-service",
-  async (req, res, next) =>
-    await MiddlewareAuth({
-      expected: ["attendant", "supervisor"],
-      express: { next, req, res },
-    }),
-  RouterV1HumanService_Delete,
-  RouterV1HumanService_Get,
-  RouterV1HumanService_Post,
-  RouterV1HumanService_Put
-);
+// routerv1.use(
+//   "/human-service",
+//   async (req, res, next) =>
+//     await MiddlewareAuth({
+//       expected: ["attendant", "supervisor"],
+//       express: { next, req, res },
+//     }),
+//   RouterV1HumanService_Delete,
+//   RouterV1HumanService_Get,
+//   RouterV1HumanService_Post,
+//   RouterV1HumanService_Put
+// );
 
-routerv1.use(
-  "/access",
-  async (req, res, next) =>
-    await MiddlewareAuthAccount({ express: { next, req, res } }),
-  RouterV1Access_Post,
-  RouterV1Access_Get,
-  RouterV1Access_Delete,
-  RouterV1Access_Put
-);
+// routerv1.use(
+//   "/access",
+//   async (req, res, next) =>
+//     await MiddlewareAuthAccount({ express: { next, req, res } }),
+//   RouterV1Access_Post,
+//   RouterV1Access_Get,
+//   RouterV1Access_Delete,
+//   RouterV1Access_Put
+// );
 
-routerv1.post(
-  "/payment",
-  asaasWebHookChargesValidation,
-  asaasWebHookChargesController
-);
+// routerv1.post(
+//   "/payment",
+//   asaasWebHookChargesValidation,
+//   asaasWebHookChargesController
+// );
 
 export default routerv1;

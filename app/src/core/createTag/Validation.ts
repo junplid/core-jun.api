@@ -1,20 +1,17 @@
 import { NextFunction, Request, Response } from "express";
 import { Joi } from "express-validation";
-import { CreateTagOnBusinessDTO_I } from "./DTO";
+import { CreateTagDTO_I } from "./DTO";
 
-export const createTagOnBusinessValidation = (
-  req: Request<any, any, CreateTagOnBusinessDTO_I>,
+export const createTagValidation = (
+  req: Request<any, any, CreateTagDTO_I>,
   res: Response,
   next: NextFunction
 ) => {
   const schemaValidation = Joi.object({
     name: Joi.string().required(),
     accountId: Joi.number().required(),
-    businessIds: Joi.array().items(Joi.number()).required(),
-    type: Joi.string()
-      .regex(/(audience|contactwa)/)
-      .required(),
-    subUserUid: Joi.string().optional(),
+    businessIds: Joi.array().items(Joi.number()).optional(),
+    type: Joi.string().valid("audience", "contactwa").required(),
   });
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });

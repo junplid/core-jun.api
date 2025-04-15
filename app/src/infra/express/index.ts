@@ -38,21 +38,19 @@ const startServer = async (): Promise<void> => {
       );
     }
 
-    await ensureDir(resolve(__dirname, "../../bin/instructions"));
-    await ensureDir(resolve(__dirname, "../../bin/chats-ai"));
     if (!pathExistsSync(resolve(__dirname, "../../bin/connections.json"))) {
       await writeFile(resolve(__dirname, "../../bin/connections.json"), `[]`);
     }
 
-    const rPath = "../../..";
-    await ensureDir(resolve(__dirname, rPath + "/static/audio"));
-    await ensureDir(resolve(__dirname, rPath + "/static/file"));
-    await ensureDir(resolve(__dirname, rPath + "/static/image"));
-    await ensureDir(resolve(__dirname, rPath + "/static/pdf"));
-    await ensureDir(resolve(__dirname, rPath + "/static/video"));
-    await ensureDir(
-      resolve(__dirname, rPath + "/static/documents-contact-account")
-    );
+    // const rPath = "../../..";
+    // await ensureDir(resolve(__dirname, rPath + "/static/audio"));
+    // await ensureDir(resolve(__dirname, rPath + "/static/file"));
+    // await ensureDir(resolve(__dirname, rPath + "/static/image"));
+    // await ensureDir(resolve(__dirname, rPath + "/static/pdf"));
+    // await ensureDir(resolve(__dirname, rPath + "/static/video"));
+    // await ensureDir(
+    //   resolve(__dirname, rPath + "/static/documents-contact-account")
+    // );
     await ensureDir(resolve(__dirname, "../../bin/chatbot-queue"));
 
     console.log(chalk.blue("DATABASE#2 -", chalk.cyan("Conectando...")));

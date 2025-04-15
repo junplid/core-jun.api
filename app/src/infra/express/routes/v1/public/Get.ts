@@ -1,58 +1,58 @@
-import { Request, Response, Router, static as static_ } from "express";
+import { Request, Response, Router } from "express";
 import { Joi } from "express-validation";
-import { resolve } from "path";
+// import { resolve } from "path";
 import { prisma } from "../../../../../adapters/Prisma/client";
 import {
   createTokenAuth,
   decodeTokenAuth,
 } from "../../../../../helpers/authToken";
 
-import passport from "passport";
-import session from "express-session";
-import FacebookStrategy from "passport-facebook";
-import { getPlanValidation } from "../../../../../core/getPlan/Validation";
-import { getPlanController } from "../../../../../core/getPlan";
-import { getDiscountCoupomValidation } from "../../../../../core/getDiscountCoupom/Validation";
-import { getDiscountCoupomController } from "../../../../../core/getDiscountCoupom";
+// import passport from "passport";
+// import session from "express-session";
+// import FacebookStrategy from "passport-facebook";
+// import { getPlanValidation } from "../../../../../core/getPlan/Validation";
+// import { getPlanController } from "../../../../../core/getPlan";
+// import { getDiscountCoupomValidation } from "../../../../../core/getDiscountCoupom/Validation";
+// import { getDiscountCoupomController } from "../../../../../core/getDiscountCoupom";
 
 const RouterV1Public_Get = Router();
 
-RouterV1Public_Get.use(
-  "/images",
-  static_(resolve(__dirname, "../../../../../../static/image"))
-);
+// RouterV1Public_Get.use(
+//   "/images",
+//   static_(resolve(__dirname, "../../../../../../static/image"))
+// );
 
-RouterV1Public_Get.use(
-  "/config",
-  static_(resolve(__dirname, "../../../../../config"))
-);
+// RouterV1Public_Get.use(
+//   "/config",
+//   static_(resolve(__dirname, "../../../../../config"))
+// );
 
-RouterV1Public_Get.use(
-  "/audios",
-  static_(resolve(__dirname, "../../../../../../static/audio"))
-);
+// RouterV1Public_Get.use(
+//   "/audios",
+//   static_(resolve(__dirname, "../../../../../../static/audio"))
+// );
 
-RouterV1Public_Get.use(
-  "/files",
-  static_(resolve(__dirname, "../../../../../../static/file"))
-);
+// RouterV1Public_Get.use(
+//   "/files",
+//   static_(resolve(__dirname, "../../../../../../static/file"))
+// );
 
-RouterV1Public_Get.use(
-  "/videos",
-  static_(resolve(__dirname, "../../../../../../static/video"))
-);
+// RouterV1Public_Get.use(
+//   "/videos",
+//   static_(resolve(__dirname, "../../../../../../static/video"))
+// );
 
-RouterV1Public_Get.use(
-  "/text",
-  static_(resolve(__dirname, "../../../../../../static/text"))
-);
+// RouterV1Public_Get.use(
+//   "/text",
+//   static_(resolve(__dirname, "../../../../../../static/text"))
+// );
 
-RouterV1Public_Get.use(
-  "/documents-contact-account",
-  static_(
-    resolve(__dirname, "../../../../../../static/documents-contact-account")
-  )
-);
+// RouterV1Public_Get.use(
+//   "/documents-contact-account",
+//   static_(
+//     resolve(__dirname, "../../../../../../static/documents-contact-account")
+//   )
+// );
 
 RouterV1Public_Get.use(
   "/some-token-recover-password/:type",
@@ -105,33 +105,33 @@ RouterV1Public_Get.use(
           return res.status(200).json({ message: "Não autorizado.", ntoken });
         }
 
-        if (req.params.type === "human-service") {
-          if (result.type !== "attendant" && result.type !== "supervisor") {
-            return res.status(401).json({ message: "Não autorizado." });
-          }
-          const supervsor = await prisma.supervisors.findFirst({
-            where: { id: result.id },
-            select: { id: true, hash: true },
-          });
-          const attendant = await prisma.sectorsAttendants.findFirst({
-            where: { id: result.id },
-            select: { id: true, hash: true },
-          });
+        // if (req.params.type === "human-service") {
+        //   if (result.type !== "attendant" && result.type !== "supervisor") {
+        //     return res.status(401).json({ message: "Não autorizado." });
+        //   }
+        //   const supervsor = await prisma.supervisors.findFirst({
+        //     where: { id: result.id },
+        //     select: { id: true, hash: true },
+        //   });
+        //   const attendant = await prisma.sectorsAttendants.findFirst({
+        //     where: { id: result.id },
+        //     select: { id: true, hash: true },
+        //   });
 
-          if (!attendant && !supervsor) {
-            return res.status(401).json({ message: "Não autorizado." });
-          }
+        //   if (!attendant && !supervsor) {
+        //     return res.status(401).json({ message: "Não autorizado." });
+        //   }
 
-          const ntoken = await createTokenAuth(
-            {
-              id: result.id,
-              type: attendant ? "attendant" : "supervisor",
-              hash: (attendant?.hash || supervsor?.hash) as string,
-            },
-            "recover-password-whabot-confirm"
-          );
-          return res.status(200).json({ message: "Não autorizado.", ntoken });
-        }
+        //   const ntoken = await createTokenAuth(
+        //     {
+        //       id: result.id,
+        //       type: attendant ? "attendant" : "supervisor",
+        //       hash: (attendant?.hash || supervsor?.hash) as string,
+        //     },
+        //     "recover-password-whabot-confirm"
+        //   );
+        //   return res.status(200).json({ message: "Não autorizado.", ntoken });
+        // }
       })
       .catch(() => {
         return res.status(401).json({ message: "Não autorizado." });
@@ -139,13 +139,13 @@ RouterV1Public_Get.use(
   }
 );
 
-RouterV1Public_Get.get("/plan/:id", getPlanValidation, getPlanController);
+// RouterV1Public_Get.get("/plan/:id", getPlanValidation, getPlanController);
 
-RouterV1Public_Get.get(
-  "/discount-coupom/:code",
-  getDiscountCoupomValidation,
-  getDiscountCoupomController
-);
+// RouterV1Public_Get.get(
+//   "/discount-coupom/:code",
+//   getDiscountCoupomValidation,
+//   getDiscountCoupomController
+// );
 
 // RouterV1Public_Get.use(
 //   session({

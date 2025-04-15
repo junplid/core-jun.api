@@ -6,18 +6,18 @@ import { updateHelpSessionController } from "../../../../../core/updateAboutWhab
 import { updateHelpSessionValidation } from "../../../../../core/updateAboutWhabot/Validation";
 // import { updateConfigAppController } from "../../../../../core/updateConfigApp";
 // import { updateConfigAppValidation } from "../../../../../core/updateConfigApp/Validation";
-import { updateRootCampaignParameterRangesConfigController } from "../../../../../core/updateRootCampaignParameterRangesConfig";
-import { updateRootCampaignParameterRangesConfigValidation } from "../../../../../core/updateRootCampaignParameterRangesConfig/Validation";
+// import { updateRootCampaignParameterRangesConfigController } from "../../../../../core/updateRootCampaignParameterRangesConfig";
+// import { updateRootCampaignParameterRangesConfigValidation } from "../../../../../core/updateRootCampaignParameterRangesConfig/Validation";
 import { updateRootUserController } from "../../../../../core/updateRootUser";
 import { updateRootUserValidation } from "../../../../../core/updateRootUser/Validation";
-import { updateAffiliateController } from "../../../../../core/updateAffiliate";
-import { updateAffiliateValidation } from "../../../../../core/updateAffiliate/Validation";
-import { updateCouponValidation } from "../../../../../core/updateCoupon/Validation";
-import { updateCouponController } from "../../../../../core/updateCoupon";
+// import { updateAffiliateController } from "../../../../../core/updateAffiliate";
+// import { updateAffiliateValidation } from "../../../../../core/updateAffiliate/Validation";
+// import { updateCouponValidation } from "../../../../../core/updateCoupon/Validation";
+// import { updateCouponController } from "../../../../../core/updateCoupon";
 import { updateRootConfigController } from "../../../../../core/updateRootConfig";
 import { updateRootConfigValidation } from "../../../../../core/updateRootConfig/Validation";
-import { updatePlanValidation } from "../../../../../core/updatePlan/Validation";
-import { updatePlanController } from "../../../../../core/updatePlan";
+// import { updatePlanValidation } from "../../../../../core/updatePlan/Validation";
+// import { updatePlanController } from "../../../../../core/updatePlan";
 
 const RouterV1Root_Put = Router();
 
@@ -48,11 +48,11 @@ RouterV1Root_Put.put(
 //   updateConfigAppController
 // );
 
-RouterV1Root_Put.put(
-  "/campaign-parameter-range/:id",
-  updateRootCampaignParameterRangesConfigValidation,
-  updateRootCampaignParameterRangesConfigController
-);
+// RouterV1Root_Put.put(
+//   "/campaign-parameter-range/:id",
+//   updateRootCampaignParameterRangesConfigValidation,
+//   updateRootCampaignParameterRangesConfigController
+// );
 
 RouterV1Root_Put.put(
   "/help/help-session/:page",
@@ -60,17 +60,17 @@ RouterV1Root_Put.put(
   updateHelpSessionController
 );
 
-RouterV1Root_Put.put(
-  "/affiliate/:id",
-  updateAffiliateValidation,
-  updateAffiliateController
-);
+// RouterV1Root_Put.put(
+//   "/affiliate/:id",
+//   updateAffiliateValidation,
+//   updateAffiliateController
+// );
 
-RouterV1Root_Put.put(
-  "/coupon/:id",
-  updateCouponValidation,
-  updateCouponController
-);
+// RouterV1Root_Put.put(
+//   "/coupon/:id",
+//   updateCouponValidation,
+//   updateCouponController
+// );
 
 RouterV1Root_Put.put(
   "/root-config",
@@ -78,6 +78,6 @@ RouterV1Root_Put.put(
   updateRootConfigController
 );
 
-RouterV1Root_Put.put("/plan/:id", updatePlanValidation, updatePlanController);
+// RouterV1Root_Put.put("/plan/:id", updatePlanValidation, updatePlanController);
 
 export default RouterV1Root_Put;

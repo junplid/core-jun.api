@@ -1,27 +1,10 @@
 import { sign, verify } from "jsonwebtoken";
 
-export type Result =
-  | {
-      id: number;
-      hash: string;
-      type: "root" | "adm" | "attendant" | "supervisor";
-    }
-  | {
-      uid: string;
-      type: "subUser";
-    }
-  | {
-      id: number;
-      type: "api";
-      flowStateId: number;
-      linkTrackingPixelId: number;
-      campaignId?: number;
-      flowId: number;
-      contactsWAOnAccountId: number;
-      connectionWhatsId: number;
-    }
-  | { id: number; type: "api-ondemand" }
-  | { id: number; accountId: number; hash: string; type: "api-export" };
+export type Result = {
+  id: number;
+  hash: string;
+  type: "root" | "adm";
+};
 
 export const createTokenAuth = async (
   data: Result,

@@ -17,221 +17,216 @@ model RootUsers {
 }
 
 model RootConnectionWA {
-  id           Int                   @id @default(autoincrement())
-  connectionId Int?
-  Connection   ConnectionOnBusiness? @relation(fields: [connectionId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-
-  @@index([id, connectionId])
-}
-
-enum TypeExtraPackages {
-  business
-  connections
-  users
-  attendants
-  flows
-  marketingSends
-  chatbotConversations
-  contactsWA
-  schedulingTool
-  documentsTool
-  multiserviceTool
-  databaseTool
-  storageSize
-}
-
-enum TypeCycleExtraPackages {
-  WEEKLY
-  BIWEEKLY
-  MONTHLY
-  BIMONTHLY
-  QUARTERLY
-  SEMIANNUALLY
-  YEARLY
-}
-
-model ExtraPackages {
-  id                    Int                     @id @default(autoincrement())
-  type                  TypeExtraPackages
-  name                  String
-  allPlans              Boolean                 @default(false)
-  status                Boolean                 @default(false)
-  newSubscribers        Boolean                 @default(false)
-  description           String?
-  amount                Int // refereci a quantidade que o recurso vai ter(TYPE: CONEXÕES, ...)
-  textOnPage            String?
-  periodValidityStart   DateTime?
-  periodValidityEnd     DateTime?
-  cycle                 TypeCycleExtraPackages
-  price                 Decimal                 @db.Decimal(6, 2)
-  createAt              DateTime                @default(now())
-  updateAt              DateTime                @default(now()) @updatedAt
-  ExtraPackageOnPlans   ExtraPackageOnPlans[]
-  AccountSubscriptions  AccountSubscriptions[]
-  ApplicableCoupons     ApplicableCoupons[]
-  ExtraPackageOnAccount ExtraPackageOnAccount[]
-
-  @@index([id, name, newSubscribers, status])
-}
-
-model ExtraPackageOnPlans {
   id             Int           @id @default(autoincrement())
-  extraPackageId Int
-  ExtraPackages  ExtraPackages @relation(fields: [extraPackageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  planId         Int
-  Plan           Plan          @relation(fields: [planId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  connectionWAId Int?
+  ConnectionWA   ConnectionWA? @relation(fields: [connectionWAId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
-  @@index([id, extraPackageId, planId])
+  @@index([id, connectionWAId])
 }
 
-model Geolocation {
-  id                    Int                     @id @default(autoincrement())
-  name                  String
-  address               String?
-  latitude              String
-  longitude             String
-  // ADICIONAR EM TODAS AS ROTAS DO GEO A COLUNA (accountId)
-  accountId             Int
-  Account               Account                 @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  GeolocationOnBusiness GeolocationOnBusiness[]
+// enum TypeExtraPackages {
+//   business
+//   connections
+//   users
+//   attendants
+//   flows
+//   marketingSends
+//   chatbotConversations
+//   contactsWA
+//   schedulingTool
+//   documentsTool
+//   multiserviceTool
+//   databaseTool
+//   storageSize
+// }
 
-  @@index([id, name])
-}
+// enum TypeCycleExtraPackages {
+//   WEEKLY
+//   BIWEEKLY
+//   MONTHLY
+//   BIMONTHLY
+//   QUARTERLY
+//   SEMIANNUALLY
+//   YEARLY
+// }
 
-model GeolocationOnBusiness {
-  id            Int         @id @default(autoincrement())
-  geolocationId Int
-  Geolocation   Geolocation @relation(fields: [geolocationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  businessId    Int
-  Business      Business    @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+// model ExtraPackages {
+//   id                    Int                     @id @default(autoincrement())
+//   type                  TypeExtraPackages
+//   name                  String
+//   allPlans              Boolean                 @default(false)
+//   status                Boolean                 @default(false)
+//   newSubscribers        Boolean                 @default(false)
+//   description           String?
+//   amount                Int // refereci a quantidade que o recurso vai ter(TYPE: CONEXÕES, ...)
+//   textOnPage            String?
+//   periodValidityStart   DateTime?
+//   periodValidityEnd     DateTime?
+//   cycle                 TypeCycleExtraPackages
+//   price                 Decimal                 @db.Decimal(6, 2)
+//   createAt              DateTime                @default(now())
+//   updateAt              DateTime                @default(now()) @updatedAt
+//   ExtraPackageOnPlans   ExtraPackageOnPlans[]
+//   AccountSubscriptions  AccountSubscriptions[]
+//   ApplicableCoupons     ApplicableCoupons[]
+//   ExtraPackageOnAccount ExtraPackageOnAccount[]
 
-  @@index([id, geolocationId, businessId])
-}
+//   @@index([id, name, newSubscribers, status])
+// }
+
+// model ExtraPackageOnPlans {
+//   id             Int           @id @default(autoincrement())
+//   extraPackageId Int
+//   ExtraPackages  ExtraPackages @relation(fields: [extraPackageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   planId         Int
+//   Plan           Plan          @relation(fields: [planId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, extraPackageId, planId])
+// }
+
+// model Geolocation {
+//   id                    Int                     @id @default(autoincrement())
+//   name                  String
+//   address               String?
+//   latitude              String
+//   longitude             String
+//   // ADICIONAR EM TODAS AS ROTAS DO GEO A COLUNA (accountId)
+//   accountId             Int
+//   Account               Account                 @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   GeolocationOnBusiness GeolocationOnBusiness[]
+
+//   @@index([id, name])
+// }
+
+// model GeolocationOnBusiness {
+//   id            Int         @id @default(autoincrement())
+//   geolocationId Int
+//   Geolocation   Geolocation @relation(fields: [geolocationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   businessId    Int
+//   Business      Business    @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, geolocationId, businessId])
+// }
 
 model Account {
-  id                        Int                         @id @default(autoincrement())
-  isUsedFreeTrialTime       Boolean                     @default(false)
-  name                      String?                     @db.VarChar(50)
-  email                     String                      @unique @db.VarChar(200)
-  cpfCnpj                   String                      @unique
-  hash                      String                      @default(uuid())
-  emailVerified             Boolean                     @default(false)
-  password                  String
-  type                      TypeAccount?
-  customerId                String?
-  createAt                  DateTime                    @default(now())
-  updateAt                  DateTime                    @default(now()) @updatedAt
-  status                    Boolean                     @default(false)
-  available                 Boolean                     @default(false)
-  assetsUsedId              Int
-  AccountAssetsUsed         AccountAssetsUsed           @relation(fields: [assetsUsedId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  planId                    Int?
-  Plan                      Plan?                       @relation(fields: [planId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  contactWAId               Int                         @unique
-  ContactsWA                ContactsWA                  @relation(fields: [contactWAId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  CampaignParameter         CampaignParameter[]
-  ContactsWAOnAccount       ContactsWAOnAccount[]
-  Business                  Business[]
-  Tag                       Tag[]
-  Variable                  Variable[]
-  Campaign                  Campaign[]
-  StaticPaths               StaticPaths[]
-  CheckPoint                CheckPoint[]
-  Sectors                   Sectors[]
-  SectorsMessages           SectorsMessages[]
-  LackResponses             LackResponses[]
-  FunnelKanban              FunnelKanban[]
-  StepsFunnelKanban         StepsFunnelKanban[]
-  Audience                  Audience[]
-  Supervisors               Supervisors[]
-  SectorsAttendants         SectorsAttendants[]
-  EmailServiceConfiguration EmailServiceConfiguration[]
-  LinkTrackingPixel         LinkTrackingPixel[]
-  AccountAuthorization      AccountAuthorization?
-  Chatbot                   Chatbot[]
-  CardsTrello               CardsTrello[]
-  Integrations              Integrations[]
-  SubAccount                SubAccount[]
-  AccountSubscriptions      AccountSubscriptions[]
-  CreditCardsAccount        CreditCardsOnAccount[]
-  HandleAccountAffiliates   HandleAccountAffiliates[]
-  ExtraPackageOnAccount     ExtraPackageOnAccount[]
-  Geolocation               Geolocation[]
-  LinkTrackingPixelEvents   LinkTrackingPixelEvents[]
-  ArtificialIntelligence    ArtificialIntelligence[]
-  AttendantOnAI             AttendantOnAI[]
-  FacebookIntegration       FacebookIntegration[]
+  id                  Int                   @id @default(autoincrement())
+  isUsedFreeTrialTime Boolean               @default(false)
+  name                String?               @db.VarChar(50)
+  email               String                @unique @db.VarChar(200)
+  cpfCnpj             String                @unique
+  hash                String                @default(uuid())
+  emailVerified       Boolean               @default(false)
+  password            String
+  // type                      TypeAccount?
+  customerId          String?
+  createAt            DateTime              @default(now())
+  updateAt            DateTime              @default(now()) @updatedAt
+  status              Boolean               @default(false)
+  available           Boolean               @default(false)
+  assetsUsedId        Int
+  AccountAssetsUsed   AccountAssetsUsed     @relation(fields: [assetsUsedId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  // planId                    Int?
+  // Plan                      Plan?                       @relation(fields: [planId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  contactWAId         Int                   @unique
+  ContactsWA          ContactsWA            @relation(fields: [contactWAId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  // CampaignParameter         CampaignParameter[]
+  ContactsWAOnAccount ContactsWAOnAccount[]
+  Business            Business[]
+  Tag                 Tag[]
+  Variable            Variable[]
+  // Campaign                  Campaign[]
+  StaticPaths         StaticPaths[]
+  // Checkpoint                Checkpoint[]
+  // Sectors                   Sectors[]
+  // SectorsMessages           SectorsMessages[]
+  // LackResponses             LackResponses[]
+  // FunnelKanban              FunnelKanban[]
+  // StepsFunnelKanban         StepsFunnelKanban[]
+  // Audience                  Audience[]
+  // Supervisors               Supervisors[]
+  // SectorsAttendants         SectorsAttendants[]
+  // EmailServiceConfiguration EmailServiceConfiguration[]
+  // LinkTrackingPixel         LinkTrackingPixel[]
+  // AccountAuthorization      AccountAuthorization?
+  Chatbot             Chatbot[]
+  // CardsTrello               CardsTrello[]
+  // Integrations              Integrations[]
+  // SubAccount                SubAccount[]
+  // AccountSubscriptions      AccountSubscriptions[]
+  // CreditCardsAccount        CreditCardsOnAccount[]
+  // HandleAccountAffiliates   HandleAccountAffiliates[]
+  // ExtraPackageOnAccount     ExtraPackageOnAccount[]
+  // Geolocation               Geolocation[]
+  // LinkTrackingPixelEvents   LinkTrackingPixelEvents[]
+  // ArtificialIntelligence    ArtificialIntelligence[]
+  // AttendantOnAI             AttendantOnAI[]
+  // FacebookIntegration       FacebookIntegration[]
 
-  @@index([id, email, hash])
+  @@index([id, email, hash, status, available, isUsedFreeTrialTime])
 }
 
 model AccountAssetsUsed {
-  id             Int @id @default(autoincrement())
-  business       Int @default(0)
-  users          Int @default(0)
-  attendants     Int @default(0)
-  flow           Int @default(0)
-  marketingSends Int @default(0)
-  chatbots       Int @default(0)
-  contactsWA     Int @default(0)
+  id       Int @id @default(autoincrement())
+  chatbots Int @default(0)
+  leads    Int @default(0)
 
   Account Account[]
 
   @@index([id])
 }
 
-// pacotes extra anexados ao ADM
-model ExtraPackageOnAccount {
-  id           Int           @id @default(autoincrement())
-  accountId    Int
-  Account      Account       @relation(fields: [accountId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  extraId      Int
-  ExtraPackage ExtraPackages @relation(fields: [extraId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+// // pacotes extra anexados ao ADM
+// model ExtraPackageOnAccount {
+//   id           Int           @id @default(autoincrement())
+//   accountId    Int
+//   Account      Account       @relation(fields: [accountId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+//   extraId      Int
+//   ExtraPackage ExtraPackages @relation(fields: [extraId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
-  @@index([accountId])
-}
+//   @@index([accountId])
+// }
 
-enum TypeCreditCardBand {
-  VISA
-  MASTERCARD
-  ELO
-  DINERS
-  DISCOVER
-  AMEX
-  HIPERCARD
-  CABAL
-  BANESCARD
-  CREDZ
-  SOROCRED
-  CREDSYSTEM
-  JCB
-  UNKNOWN
-}
+// enum TypeCreditCardBand {
+//   VISA
+//   MASTERCARD
+//   ELO
+//   DINERS
+//   DISCOVER
+//   AMEX
+//   HIPERCARD
+//   CABAL
+//   BANESCARD
+//   CREDZ
+//   SOROCRED
+//   CREDSYSTEM
+//   JCB
+//   UNKNOWN
+// }
 
-model CreditCardsOnAccount {
-  id                   Int                    @id @default(autoincrement())
-  token                String
-  name                 String
-  band                 TypeCreditCardBand
-  numberCard           String
-  createAt             DateTime               @default(now())
-  accountId            Int
-  Account              Account                @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  AccountSubscriptions AccountSubscriptions[]
+// model CreditCardsOnAccount {
+//   id                   Int                    @id @default(autoincrement())
+//   token                String
+//   name                 String
+//   band                 TypeCreditCardBand
+//   numberCard           String
+//   createAt             DateTime               @default(now())
+//   accountId            Int
+//   Account              Account                @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   AccountSubscriptions AccountSubscriptions[]
 
-  @@index([id])
-}
+//   @@index([id])
+// }
 
-enum TypeStatusAccountSubscriptions {
-  ON
-  OFF
-  WAITING
-}
+// enum TypeStatusAccountSubscriptions {
+//   ON
+//   OFF
+//   WAITING
+// }
 
-enum TypeAccountSubscriptions {
-  PLAN
-  EXTRA
-}
+// enum TypeAccountSubscriptions {
+//   PLAN
+//   EXTRA
+// }
 
 // enum StatusAccountSubscriptions {
 //   REQUESTED
@@ -243,285 +238,285 @@ enum TypeAccountSubscriptions {
 // ESSA TABELA É NESCESSARIO PARA PEGAR O planPeriodsId ou extraPackageId;
 // ESSA TABELA PODERIA SER EXCLUIDA FACILMENTE PASSANDO O planPeriodsId ou extraPackageId E O TIPO "PLAN"|"EXTRA" no external da subscription
 
-enum BillingType {
-  PIX
-  CREDIT_CARD
-  BOLETO
-}
+// enum BillingType {
+//   PIX
+//   CREDIT_CARD
+//   BOLETO
+// }
 
-model AccountSubscriptions {
-  id                 Int                      @id @default(autoincrement())
-  subscriptionsId    String
-  deleted            Boolean                  @default(false)
-  type               TypeAccountSubscriptions
-  billingType        BillingType
-  dateOfCancellation DateTime?
-  planPeriodsId      Int?
-  PlanPeriods        PlanPeriods?             @relation(fields: [planPeriodsId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  couponId           Int?
-  Coupon             Coupons?                 @relation(fields: [couponId], references: [id], onUpdate: Cascade, onDelete: SetNull)
-  creditCardId       Int?
-  CreditCard         CreditCardsOnAccount?    @relation(fields: [creditCardId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  extraPackageId     Int?
-  ExtraPackage       ExtraPackages?           @relation(fields: [extraPackageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  accountId          Int
-  Account            Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  createAt           DateTime                 @default(now())
-  updateAt           DateTime                 @default(now()) @updatedAt
+// model AccountSubscriptions {
+//   id                 Int                      @id @default(autoincrement())
+//   subscriptionsId    String
+//   deleted            Boolean                  @default(false)
+//   type               TypeAccountSubscriptions
+//   billingType        BillingType
+//   dateOfCancellation DateTime?
+//   planPeriodsId      Int?
+//   PlanPeriods        PlanPeriods?             @relation(fields: [planPeriodsId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+//   couponId           Int?
+//   Coupon             Coupons?                 @relation(fields: [couponId], references: [id], onUpdate: Cascade, onDelete: SetNull)
+//   creditCardId       Int?
+//   CreditCard         CreditCardsOnAccount?    @relation(fields: [creditCardId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+//   extraPackageId     Int?
+//   ExtraPackage       ExtraPackages?           @relation(fields: [extraPackageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+//   accountId          Int
+//   Account            Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   createAt           DateTime                 @default(now())
+//   updateAt           DateTime                 @default(now()) @updatedAt
 
-  @@index([id, accountId, subscriptionsId, type])
-}
+//   @@index([id, accountId, subscriptionsId, type])
+// }
 
-model SubAccount {
-  id                          Int                          @id @default(autoincrement())
-  interrupted                 Boolean                      @default(false)
-  uid                         String                       @default(uuid())
-  name                        String                       @db.VarChar(50)
-  email                       String                       @unique @db.VarChar(200)
-  password                    String
-  createAt                    DateTime                     @default(now())
-  updateAt                    DateTime                     @default(now()) @updatedAt
-  status                      Boolean                      @default(false)
-  accountId                   Int
-  Account                     Account                      @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  SubAccountPermissionsCreate SubAccountPermissionsCreate?
-  SubAccountPermissionsDelete SubAccountPermissionsDelete?
-  SubAccountPermissionsUpdate SubAccountPermissionsUpdate?
+// model SubAccount {
+//   id                          Int                          @id @default(autoincrement())
+//   interrupted                 Boolean                      @default(false)
+//   uid                         String                       @default(uuid())
+//   name                        String                       @db.VarChar(50)
+//   email                       String                       @unique @db.VarChar(200)
+//   password                    String
+//   createAt                    DateTime                     @default(now())
+//   updateAt                    DateTime                     @default(now()) @updatedAt
+//   status                      Boolean                      @default(false)
+//   accountId                   Int
+//   Account                     Account                      @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   SubAccountPermissionsCreate SubAccountPermissionsCreate?
+//   SubAccountPermissionsDelete SubAccountPermissionsDelete?
+//   SubAccountPermissionsUpdate SubAccountPermissionsUpdate?
 
-  @@index([id, email, accountId])
-}
+//   @@index([id, email, accountId])
+// }
 
-model SubAccountPermissionsCreate {
-  id                 Int        @id @default(autoincrement())
-  campaign           Boolean    @default(false)
-  business           Boolean    @default(false)
-  sector             Boolean    @default(false)
-  sectorAttendants   Boolean    @default(false)
-  flows              Boolean    @default(false)
-  emailService       Boolean    @default(false)
-  chatbot            Boolean    @default(false)
-  campaignAudience   Boolean    @default(false)
-  contactWAOnAccount Boolean    @default(false)
-  uploadFile         Boolean    @default(false)
-  checkpoint         Boolean    @default(false)
-  integration        Boolean    @default(false)
-  dataFlow           Boolean    @default(false)
-  campaignOndemand   Boolean    @default(false)
-  campaignParameters Boolean    @default(false)
-  connections        Boolean    @default(false)
-  supervisors        Boolean    @default(false)
-  servicesConfig     Boolean    @default(false)
-  users              Boolean    @default(false)
-  tags               Boolean    @default(false)
-  variables          Boolean    @default(false)
-  customizationLink  Boolean    @default(false)
-  subAccountId       Int        @unique
-  SubAccount         SubAccount @relation(fields: [subAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+// model SubAccountPermissionsCreate {
+//   id                 Int        @id @default(autoincrement())
+//   campaign           Boolean    @default(false)
+//   business           Boolean    @default(false)
+//   sector             Boolean    @default(false)
+//   sectorAttendants   Boolean    @default(false)
+//   flows              Boolean    @default(false)
+//   emailService       Boolean    @default(false)
+//   chatbot            Boolean    @default(false)
+//   campaignAudience   Boolean    @default(false)
+//   contactWAOnAccount Boolean    @default(false)
+//   uploadFile         Boolean    @default(false)
+//   checkpoint         Boolean    @default(false)
+//   integration        Boolean    @default(false)
+//   dataFlow           Boolean    @default(false)
+//   campaignOndemand   Boolean    @default(false)
+//   campaignParameters Boolean    @default(false)
+//   connections        Boolean    @default(false)
+//   supervisors        Boolean    @default(false)
+//   servicesConfig     Boolean    @default(false)
+//   users              Boolean    @default(false)
+//   tags               Boolean    @default(false)
+//   variables          Boolean    @default(false)
+//   customizationLink  Boolean    @default(false)
+//   subAccountId       Int        @unique
+//   SubAccount         SubAccount @relation(fields: [subAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([id])
-}
+//   @@index([id])
+// }
 
-model SubAccountPermissionsDelete {
-  id                 Int        @id @default(autoincrement())
-  campaign           Boolean    @default(false)
-  business           Boolean    @default(false)
-  sector             Boolean    @default(false)
-  sectorAttendants   Boolean    @default(false)
-  flows              Boolean    @default(false)
-  emailService       Boolean    @default(false)
-  chatbot            Boolean    @default(false)
-  campaignAudience   Boolean    @default(false)
-  contactWAOnAccount Boolean    @default(false)
-  uploadFile         Boolean    @default(false)
-  checkpoint         Boolean    @default(false)
-  integration        Boolean    @default(false)
-  dataFlow           Boolean    @default(false)
-  campaignOndemand   Boolean    @default(false)
-  campaignParameters Boolean    @default(false)
-  connections        Boolean    @default(false)
-  supervisors        Boolean    @default(false)
-  servicesConfig     Boolean    @default(false)
-  users              Boolean    @default(false)
-  tags               Boolean    @default(false)
-  variables          Boolean    @default(false)
-  customizationLink  Boolean    @default(false)
-  subAccountId       Int        @unique
-  SubAccount         SubAccount @relation(fields: [subAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+// model SubAccountPermissionsDelete {
+//   id                 Int        @id @default(autoincrement())
+//   campaign           Boolean    @default(false)
+//   business           Boolean    @default(false)
+//   sector             Boolean    @default(false)
+//   sectorAttendants   Boolean    @default(false)
+//   flows              Boolean    @default(false)
+//   emailService       Boolean    @default(false)
+//   chatbot            Boolean    @default(false)
+//   campaignAudience   Boolean    @default(false)
+//   contactWAOnAccount Boolean    @default(false)
+//   uploadFile         Boolean    @default(false)
+//   checkpoint         Boolean    @default(false)
+//   integration        Boolean    @default(false)
+//   dataFlow           Boolean    @default(false)
+//   campaignOndemand   Boolean    @default(false)
+//   campaignParameters Boolean    @default(false)
+//   connections        Boolean    @default(false)
+//   supervisors        Boolean    @default(false)
+//   servicesConfig     Boolean    @default(false)
+//   users              Boolean    @default(false)
+//   tags               Boolean    @default(false)
+//   variables          Boolean    @default(false)
+//   customizationLink  Boolean    @default(false)
+//   subAccountId       Int        @unique
+//   SubAccount         SubAccount @relation(fields: [subAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([id])
-}
+//   @@index([id])
+// }
 
-model SubAccountPermissionsUpdate {
-  id                 Int        @id @default(autoincrement())
-  campaign           Boolean    @default(false)
-  business           Boolean    @default(false)
-  sector             Boolean    @default(false)
-  sectorAttendants   Boolean    @default(false)
-  flows              Boolean    @default(false)
-  emailService       Boolean    @default(false)
-  chatbot            Boolean    @default(false)
-  campaignAudience   Boolean    @default(false)
-  contactWAOnAccount Boolean    @default(false)
-  uploadFile         Boolean    @default(false)
-  checkpoint         Boolean    @default(false)
-  integration        Boolean    @default(false)
-  dataFlow           Boolean    @default(false)
-  campaignOndemand   Boolean    @default(false)
-  campaignParameters Boolean    @default(false)
-  connections        Boolean    @default(false)
-  supervisors        Boolean    @default(false)
-  servicesConfig     Boolean    @default(false)
-  users              Boolean    @default(false)
-  tags               Boolean    @default(false)
-  variables          Boolean    @default(false)
-  customizationLink  Boolean    @default(false)
-  subAccountId       Int        @unique
-  SubAccount         SubAccount @relation(fields: [subAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+// model SubAccountPermissionsUpdate {
+//   id                 Int        @id @default(autoincrement())
+//   campaign           Boolean    @default(false)
+//   business           Boolean    @default(false)
+//   sector             Boolean    @default(false)
+//   sectorAttendants   Boolean    @default(false)
+//   flows              Boolean    @default(false)
+//   emailService       Boolean    @default(false)
+//   chatbot            Boolean    @default(false)
+//   campaignAudience   Boolean    @default(false)
+//   contactWAOnAccount Boolean    @default(false)
+//   uploadFile         Boolean    @default(false)
+//   checkpoint         Boolean    @default(false)
+//   integration        Boolean    @default(false)
+//   dataFlow           Boolean    @default(false)
+//   campaignOndemand   Boolean    @default(false)
+//   campaignParameters Boolean    @default(false)
+//   connections        Boolean    @default(false)
+//   supervisors        Boolean    @default(false)
+//   servicesConfig     Boolean    @default(false)
+//   users              Boolean    @default(false)
+//   tags               Boolean    @default(false)
+//   variables          Boolean    @default(false)
+//   customizationLink  Boolean    @default(false)
+//   subAccountId       Int        @unique
+//   SubAccount         SubAccount @relation(fields: [subAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([id])
-}
+//   @@index([id])
+// }
 
-enum TypeIntegrations {
-  trello
-}
+// enum TypeIntegrations {
+//   trello
+// }
 
-model Integrations {
-  id          Int              @id @default(autoincrement())
-  interrupted Boolean          @default(false)
-  name        String
-  type        TypeIntegrations
-  key         String?
-  token       String?
-  createAt    DateTime         @default(now())
-  updateAt    DateTime         @default(now()) @updatedAt
-  accountId   Int
-  Account     Account          @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+// model Integrations {
+//   id          Int              @id @default(autoincrement())
+//   interrupted Boolean          @default(false)
+//   name        String
+//   type        TypeIntegrations
+//   key         String?
+//   token       String?
+//   createAt    DateTime         @default(now())
+//   updateAt    DateTime         @default(now()) @updatedAt
+//   accountId   Int
+//   Account     Account          @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([id, type])
-}
+//   @@index([id, type])
+// }
 
-model CardsTrello {
-  id        Int      @id @default(autoincrement())
-  cardId    String   @unique
-  createAt  DateTime @default(now())
-  accountId Int
-  Account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+// model CardsTrello {
+//   id        Int      @id @default(autoincrement())
+//   cardId    String   @unique
+//   createAt  DateTime @default(now())
+//   accountId Int
+//   Account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([id, cardId])
-}
+//   @@index([id, cardId])
+// }
 
-model AccountAuthorization {
-  id         Int     @id @default(autoincrement())
-  privateKey String
-  accountId  Int     @unique
-  Account    Account @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+// model AccountAuthorization {
+//   id         Int     @id @default(autoincrement())
+//   privateKey String
+//   accountId  Int     @unique
+//   Account    Account @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([id])
-}
+//   @@index([id])
+// }
 
-enum AmountType {
-  PERCENTAGE
-  REAL
-}
+// enum AmountType {
+//   PERCENTAGE
+//   REAL
+// }
 
-enum ApplicableTo {
-  PLANS
-  EXTRAS
-}
+// enum ApplicableTo {
+//   PLANS
+//   EXTRAS
+// }
 
-model Coupons {
-  id                   Int                    @id @default(autoincrement())
-  name                 String
-  description          String?
-  status               Boolean                @default(true)
-  activationCode       String                 @unique
-  discountType         AmountType
-  discountValue        Float
-  validFrom            DateTime?
-  validUntil           DateTime?
-  maxQuantity          Int                    @default(0)
-  quantityUsed         Int                    @default(0)
-  isValidOnRenewal     Boolean                @default(false)
-  applicableTo         String?
-  createAt             DateTime               @default(now())
-  updateAt             DateTime               @default(now()) @updatedAt
-  ApplicableCoupons    ApplicableCoupons[]
-  Affiliates           Affiliates[]
-  AccountSubscriptions AccountSubscriptions[]
+// model Coupons {
+//   id                   Int                    @id @default(autoincrement())
+//   name                 String
+//   description          String?
+//   status               Boolean                @default(true)
+//   activationCode       String                 @unique
+//   discountType         AmountType
+//   discountValue        Float
+//   validFrom            DateTime?
+//   validUntil           DateTime?
+//   maxQuantity          Int                    @default(0)
+//   quantityUsed         Int                    @default(0)
+//   isValidOnRenewal     Boolean                @default(false)
+//   applicableTo         String?
+//   createAt             DateTime               @default(now())
+//   updateAt             DateTime               @default(now()) @updatedAt
+//   ApplicableCoupons    ApplicableCoupons[]
+//   Affiliates           Affiliates[]
+//   AccountSubscriptions AccountSubscriptions[]
 
-  @@index([id])
-}
+//   @@index([id])
+// }
 
-model ApplicableCoupons {
-  id             Int            @id @default(autoincrement())
-  type           ApplicableTo
-  couponId       Int
-  Coupon         Coupons        @relation(fields: [couponId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  planId         Int?
-  Plans          Plan?          @relation(fields: [planId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  extraPackageId Int?
-  ExtraPackages  ExtraPackages? @relation(fields: [extraPackageId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+// model ApplicableCoupons {
+//   id             Int            @id @default(autoincrement())
+//   type           ApplicableTo
+//   couponId       Int
+//   Coupon         Coupons        @relation(fields: [couponId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+//   planId         Int?
+//   Plans          Plan?          @relation(fields: [planId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+//   extraPackageId Int?
+//   ExtraPackages  ExtraPackages? @relation(fields: [extraPackageId], references: [id], onUpdate: Cascade, onDelete: Cascade)
 
-  @@index([couponId, planId, extraPackageId])
-}
+//   @@index([couponId, planId, extraPackageId])
+// }
 
-enum PixKeyType {
-  CPF
-  CNPJ
-  EMAIL
-  PHONE
-  RANDOM
-}
+// enum PixKeyType {
+//   CPF
+//   CNPJ
+//   EMAIL
+//   PHONE
+//   RANDOM
+// }
 
-model Affiliates {
-  id                      Int                       @id @default(autoincrement())
-  subAccountId            String
-  reference               String                    @unique @default(uuid())
-  walletId                String
-  apiKey                  String
-  name                    String
-  description             String?
-  status                  Boolean                   @default(true)
-  email                   String                    @unique
-  pixKey                  String
-  pixKeyType              PixKeyType
-  commissionType          AmountType
-  commissionValue         Float
-  effectiveAfterDays      Int?
-  contactWAId             Int
-  ContactWA               ContactsWA                @relation(fields: [contactWAId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  couponId                Int?
-  Coupon                  Coupons?                  @relation(fields: [couponId], references: [id], onUpdate: Cascade, onDelete: SetNull)
-  createAt                DateTime                  @default(now())
-  updateAt                DateTime                  @default(now()) @updatedAt
-  HandleAccountAffiliates HandleAccountAffiliates[]
+// model Affiliates {
+//   id                      Int                       @id @default(autoincrement())
+//   subAccountId            String
+//   reference               String                    @unique @default(uuid())
+//   walletId                String
+//   apiKey                  String
+//   name                    String
+//   description             String?
+//   status                  Boolean                   @default(true)
+//   email                   String                    @unique
+//   pixKey                  String
+//   pixKeyType              PixKeyType
+//   commissionType          AmountType
+//   commissionValue         Float
+//   effectiveAfterDays      Int?
+//   contactWAId             Int
+//   ContactWA               ContactsWA                @relation(fields: [contactWAId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+//   couponId                Int?
+//   Coupon                  Coupons?                  @relation(fields: [couponId], references: [id], onUpdate: Cascade, onDelete: SetNull)
+//   createAt                DateTime                  @default(now())
+//   updateAt                DateTime                  @default(now()) @updatedAt
+//   HandleAccountAffiliates HandleAccountAffiliates[]
 
-  @@index([id, name, contactWAId, email, status])
-}
+//   @@index([id, name, contactWAId, email, status])
+// }
 
-model HandleAccountAffiliates {
-  id          Int        @id @default(autoincrement())
-  affiliateId Int
-  Affiliate   Affiliates @relation(fields: [affiliateId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  accountId   Int
-  Account     Account    @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  createAt    DateTime   @default(now())
-  updateAt    DateTime   @default(now()) @updatedAt
+// model HandleAccountAffiliates {
+//   id          Int        @id @default(autoincrement())
+//   affiliateId Int
+//   Affiliate   Affiliates @relation(fields: [affiliateId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   accountId   Int
+//   Account     Account    @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   createAt    DateTime   @default(now())
+//   updateAt    DateTime   @default(now()) @updatedAt
 
-  @@index([id, affiliateId, accountId])
-}
+//   @@index([id, affiliateId, accountId])
+// }
 
-model PlanOnPeriodsOnAccount {
-  id          Int          @id @default(autoincrement())
-  planId      Int
-  periodId    Int?
-  Plan        Plan         @relation(fields: [planId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  PlanPeriods PlanPeriods? @relation(fields: [periodId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  createAt    DateTime     @default(now())
-  updateAt    DateTime     @default(now()) @updatedAt
+// model PlanOnPeriodsOnAccount {
+//   id          Int          @id @default(autoincrement())
+//   planId      Int
+//   periodId    Int?
+//   Plan        Plan         @relation(fields: [planId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+//   PlanPeriods PlanPeriods? @relation(fields: [periodId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+//   createAt    DateTime     @default(now())
+//   updateAt    DateTime     @default(now()) @updatedAt
 
-  @@index([id])
-}
+//   @@index([id])
+// }
 
 // aceita novos usuarios; - se tiver TRUE, aceita novos usuarios, se tiver FALSE não
 
@@ -532,127 +527,127 @@ model PlanOnPeriodsOnAccount {
 //    permite renovação tornando o plano inapito para uso(mostrar no frontend 
 //    que a renovação foi desativada para o ADM escolher outro plano)
 
-model Plan {
-  id                     Int                      @id @default(autoincrement())
-  name                   String                   @db.VarChar(60)
-  acceptsNewUsers        Boolean                  @default(true)
-  activeFoSubscribers    Boolean                  @default(true)
-  allowsRenewal          Boolean                  @default(true)
-  description            String                   @db.Text
-  label                  String?
-  isDefault              Boolean                  @default(false)
-  free_trial_time        Int?
-  type                   TypePlan
-  createAt               DateTime                 @default(now())
-  updateAt               DateTime                 @default(now()) @updatedAt
-  PlanPeriods            PlanPeriods[]
-  PlanOnPeriodsOnAccount PlanOnPeriodsOnAccount[]
-  ExtraPackageOnPlans    ExtraPackageOnPlans[]
-  Account                Account[]
-  planAssetsId           Int                      @unique
-  PlanAssets             PlanAssets               @relation(fields: [planAssetsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  ApplicableCoupons      ApplicableCoupons[]
+// model Plan {
+//   id                     Int                      @id @default(autoincrement())
+//   name                   String                   @db.VarChar(60)
+//   acceptsNewUsers        Boolean                  @default(true)
+//   activeFoSubscribers    Boolean                  @default(true)
+//   allowsRenewal          Boolean                  @default(true)
+//   description            String                   @db.Text
+//   label                  String?
+//   isDefault              Boolean                  @default(false)
+//   free_trial_time        Int?
+//   type                   TypePlan
+//   createAt               DateTime                 @default(now())
+//   updateAt               DateTime                 @default(now()) @updatedAt
+//   PlanPeriods            PlanPeriods[]
+//   PlanOnPeriodsOnAccount PlanOnPeriodsOnAccount[]
+//   ExtraPackageOnPlans    ExtraPackageOnPlans[]
+//   Account                Account[]
+//   planAssetsId           Int                      @unique
+//   PlanAssets             PlanAssets               @relation(fields: [planAssetsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   ApplicableCoupons      ApplicableCoupons[]
 
-  @@index([id])
-}
+//   @@index([id])
+// }
 
-model PlanAssets {
-  id                               Int     @id @default(autoincrement())
-  business                         Int     @default(0)
-  connections                      Int     @default(0)
-  users                            Int     @default(0)
-  attendants                       Int     @default(0)
-  flow                             Int     @default(0)
-  marketingSends                   Int     @default(0)
-  storageSize                      Int     @default(0)
-  chatbots                         Int     @default(0)
-  contactsWA                       Int     @default(0)
-  nodeInitial                      Boolean @default(false)
-  nodeMessage                      Boolean @default(false)
-  nodeReply                        Boolean @default(false)
-  nodeSwitch                       Boolean @default(false)
-  nodeSendContactData              Boolean @default(false)
-  nodeSendVideo                    Boolean @default(false)
-  nodeSendPdf                      Boolean @default(false)
-  nodeSendFile                     Boolean @default(false)
-  nodeSendImage                    Boolean @default(false)
-  nodeSendAudio                    Boolean @default(false)
-  nodeSendLink                     Boolean @default(false)
-  nodeMathematicalOperators        Boolean @default(false)
-  nodeCheckPoint                   Boolean @default(false)
-  nodeInterruption                 Boolean @default(false)
-  nodeAction                       Boolean @default(false)
-  nodeEmailSending                 Boolean @default(false)
-  nodeLinkTackingPixel             Boolean @default(false)
-  nodeSendLocationGPS              Boolean @default(false)
-  nodeLogicalConditionData         Boolean @default(false)
-  nodeDistributeFlow               Boolean @default(false)
-  nodeNotifyNumber                 Boolean @default(false)
-  nodeSendHumanService             Boolean @default(false)
-  nodeInterruptionLinkTackingPixel Boolean @default(false)
-  nodeTime                         Boolean @default(false)
-  nodeWebhook                      Boolean @default(false)
-  nodeInsertLeaderInAudience       Boolean @default(false)
-  nodeWebform                      Boolean @default(false)
-  nodeNewCardTrello                Boolean @default(false)
-  nodeMenu                         Boolean @default(false)
-  Plan                             Plan?
+// model PlanAssets {
+//   id                               Int     @id @default(autoincrement())
+//   business                         Int     @default(0)
+//   connections                      Int     @default(0)
+//   users                            Int     @default(0)
+//   attendants                       Int     @default(0)
+//   flow                             Int     @default(0)
+//   marketingSends                   Int     @default(0)
+//   storageSize                      Int     @default(0)
+//   chatbots                         Int     @default(0)
+//   contactsWA                       Int     @default(0)
+//   nodeInitial                      Boolean @default(false)
+//   nodeMessage                      Boolean @default(false)
+//   nodeReply                        Boolean @default(false)
+//   nodeSwitch                       Boolean @default(false)
+//   nodeSendContactData              Boolean @default(false)
+//   nodeSendVideo                    Boolean @default(false)
+//   nodeSendPdf                      Boolean @default(false)
+//   nodeSendFile                     Boolean @default(false)
+//   nodeSendImage                    Boolean @default(false)
+//   nodeSendAudio                    Boolean @default(false)
+//   nodeSendLink                     Boolean @default(false)
+//   nodeMathematicalOperators        Boolean @default(false)
+//   nodeCheckPoint                   Boolean @default(false)
+//   nodeInterruption                 Boolean @default(false)
+//   nodeAction                       Boolean @default(false)
+//   nodeEmailSending                 Boolean @default(false)
+//   nodeLinkTackingPixel             Boolean @default(false)
+//   nodeSendLocationGPS              Boolean @default(false)
+//   nodeLogicalConditionData         Boolean @default(false)
+//   nodeDistributeFlow               Boolean @default(false)
+//   nodeNotifyNumber                 Boolean @default(false)
+//   nodeSendHumanService             Boolean @default(false)
+//   nodeInterruptionLinkTackingPixel Boolean @default(false)
+//   nodeTime                         Boolean @default(false)
+//   nodeWebhook                      Boolean @default(false)
+//   nodeInsertLeaderInAudience       Boolean @default(false)
+//   nodeWebform                      Boolean @default(false)
+//   nodeNewCardTrello                Boolean @default(false)
+//   nodeMenu                         Boolean @default(false)
+//   Plan                             Plan?
 
-  @@index([id])
-}
+//   @@index([id])
+// }
 
-enum TypeCyclePlanPeriods {
-  WEEKLY
-  BIWEEKLY
-  MONTHLY
-  BIMONTHLY
-  QUARTERLY
-  SEMIANNUALLY
-  YEARLY
-}
+// enum TypeCyclePlanPeriods {
+//   WEEKLY
+//   BIWEEKLY
+//   MONTHLY
+//   BIMONTHLY
+//   QUARTERLY
+//   SEMIANNUALLY
+//   YEARLY
+// }
 
-model PlanPeriods {
-  id                     Int                      @id @default(autoincrement())
-  label                  String?
-  cycle                  TypeCyclePlanPeriods
-  price_after_renovation Decimal?
-  price                  Decimal                  @db.Decimal(6, 2)
-  planId                 Int
-  Plan                   Plan                     @relation(fields: [planId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  PlanOnPeriodsOnAccount PlanOnPeriodsOnAccount[]
-  AccountSubscriptions   AccountSubscriptions[]
+// model PlanPeriods {
+//   id                     Int                      @id @default(autoincrement())
+//   label                  String?
+//   cycle                  TypeCyclePlanPeriods
+//   price_after_renovation Decimal?
+//   price                  Decimal                  @db.Decimal(6, 2)
+//   planId                 Int
+//   Plan                   Plan                     @relation(fields: [planId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   PlanOnPeriodsOnAccount PlanOnPeriodsOnAccount[]
+//   AccountSubscriptions   AccountSubscriptions[]
 
-  @@index([id, planId])
-}
+//   @@index([id, planId])
+// }
 
 model Business {
-  id                                          Int                                           @id @default(autoincrement())
-  interrupted                                 Boolean                                       @default(false)
-  name                                        String                                        @db.VarChar(50)
-  description                                 String?
-  accountId                                   Int
-  createAt                                    DateTime                                      @default(now())
-  updateAt                                    DateTime                                      @default(now()) @updatedAt
-  Account                                     Account                                       @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  CampaignOnBusiness                          CampaignOnBusiness[]
-  ConnectionOnBusiness                        ConnectionOnBusiness[]
-  TagOnBusiness                               TagOnBusiness[]
-  VariablesOnBusiness                         VariableOnBusiness[]
-  AudienceOnBusiness                          AudienceOnBusiness[]
-  CheckPointOnBusiness                        CheckPointOnBusiness[]
-  BusinessOnSupervisors                       BusinessOnSupervisors[]
-  Sectors                                     Sectors[]
-  Tickets                                     Tickets[]
-  HumanServiceOnBusinessOnContactsWAOnAccount HumanServiceOnBusinessOnContactsWAOnAccount[]
-  SectorsAttendants                           SectorsAttendants[]
-  EmailServiceConfigurationOnBusiness         EmailServiceConfigurationOnBusiness[]
-  LinkTrackingPixel                           LinkTrackingPixel[]
-  Chatbot                                     Chatbot[]
-  FunnelKanban                                FunnelKanban[]
-  GeolocationOnBusiness                       GeolocationOnBusiness[]
-  ArtificialIntelligenceOnBusiness            ArtificialIntelligenceOnBusiness[]
-  AttendantOnAIOnBusiness                     AttendantOnAIOnBusiness[]
-  FacebookIntegrationOnBusiness               FacebookIntegrationOnBusiness[]
+  id                  Int                  @id @default(autoincrement())
+  interrupted         Boolean              @default(false)
+  name                String               @db.VarChar(50)
+  description         String?
+  accountId           Int
+  createAt            DateTime             @default(now())
+  updateAt            DateTime             @default(now()) @updatedAt
+  Account             Account              @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  // CampaignOnBusiness                          CampaignOnBusiness[]
+  ConnectionWA        ConnectionWA[]
+  TagOnBusiness       TagOnBusiness[]
+  VariablesOnBusiness VariableOnBusiness[]
+  // AudienceOnBusiness                          AudienceOnBusiness[]
+  // CheckpointOnBusiness                        CheckpointOnBusiness[]
+  // BusinessOnSupervisors                       BusinessOnSupervisors[]
+  // Sectors                                     Sectors[]
+  // Tickets                                     Tickets[]
+  // HumanServiceOnBusinessOnContactsWAOnAccount HumanServiceOnBusinessOnContactsWAOnAccount[]
+  // SectorsAttendants                           SectorsAttendants[]
+  // EmailServiceConfigurationOnBusiness         EmailServiceConfigurationOnBusiness[]
+  // LinkTrackingPixel                           LinkTrackingPixel[]
+  Chatbot             Chatbot[]
+  // FunnelKanban                                FunnelKanban[]
+  // GeolocationOnBusiness                       GeolocationOnBusiness[]
+  // ArtificialIntelligenceOnBusiness            ArtificialIntelligenceOnBusiness[]
+  // AttendantOnAIOnBusiness                     AttendantOnAIOnBusiness[]
+  // FacebookIntegrationOnBusiness               FacebookIntegrationOnBusiness[]
 
   @@index([id, accountId])
 }
@@ -662,26 +657,26 @@ enum TypeConnetion {
   marketing
 }
 
-model ConnectionOnBusiness {
-  id                      Int                       @id @default(autoincrement())
-  interrupted             Boolean                   @default(false)
-  name                    String                    @db.VarChar(50)
-  type                    TypeConnetion
-  countShots              Int                       @default(0)
-  number                  String?
-  createAt                DateTime                  @default(now())
-  updateAt                DateTime                  @default(now()) @updatedAt
-  businessId              Int
-  Business                Business                  @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  ConnectionOnCampaign    ConnectionOnCampaign[]
-  Tickets                 Tickets[]
-  Chatbot                 Chatbot[]
-  ConnectionConfig        ConnectionConfig?
-  SectorsOnConnections    SectorsOnConnections[]
-  RootConnectionWA        RootConnectionWA[]
-  LinkTrackingPixelEvents LinkTrackingPixelEvents[]
+model ConnectionWA {
+  id               Int                @id @default(autoincrement())
+  interrupted      Boolean            @default(false)
+  name             String             @db.VarChar(50)
+  type             TypeConnetion?
+  countShots       Int                @default(0)
+  number           String?
+  createAt         DateTime           @default(now())
+  updateAt         DateTime           @default(now()) @updatedAt
+  businessId       Int?
+  Business         Business?          @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Chatbot          Chatbot[]
+  ConnectionConfig ConnectionConfig?
+  RootConnectionWA RootConnectionWA[]
+  // ConnectionOnCampaign    ConnectionOnCampaign[]
+  // Tickets                 Tickets[]
+  // SectorsOnConnections    SectorsOnConnections[]
+  // LinkTrackingPixelEvents LinkTrackingPixelEvents[]
 
-  @@index([id])
+  @@index([id, name, type, number])
 }
 
 enum WAPrivacyValue {
@@ -708,19 +703,19 @@ enum WAReadReceiptsValue {
 }
 
 model ConnectionConfig {
-  profileName          String?
-  profileStatus        String?
-  lastSeenPrivacy      WAPrivacyValue?
-  onlinePrivacy        WAPrivacyOnlineValue?
-  imgPerfilPrivacy     WAPrivacyValue?
-  statusPrivacy        WAPrivacyValue?
-  groupsAddPrivacy     WAPrivacyValueGroup?
-  readReceiptsPrivacy  WAReadReceiptsValue?
-  fileNameImgPerfil    String?
-  connectionId         Int                   @unique
-  ConnectionOnBusiness ConnectionOnBusiness  @relation(fields: [connectionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  profileName         String?
+  profileStatus       String?
+  lastSeenPrivacy     WAPrivacyValue?
+  onlinePrivacy       WAPrivacyOnlineValue?
+  imgPerfilPrivacy    WAPrivacyValue?
+  statusPrivacy       WAPrivacyValue?
+  groupsAddPrivacy    WAPrivacyValueGroup?
+  readReceiptsPrivacy WAReadReceiptsValue?
+  fileNameImgPerfil   String?
+  connectionWAId      Int                   @unique
+  ConnectionWA        ConnectionWA          @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([connectionId])
+  @@index([connectionWAId])
 }
 
 //   schedulingTool
@@ -728,102 +723,96 @@ model ConnectionConfig {
 //   multiserviceTool
 //   databaseTool
 
-model CampaignParameter {
-  id                                  Int                               @id @default(autoincrement())
-  interrupted                         Boolean                           @default(false)
-  name                                String                            @db.VarChar(60)
-  rootCampaignParameterRangesConfigId Int
-  RootCampaignParameterRangesConfig   RootCampaignParameterRangesConfig @relation(fields: [rootCampaignParameterRangesConfigId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  sendDuringHoliday                   Boolean
-  createAt                            DateTime                          @default(now())
-  updateAt                            DateTime                          @default(now()) @updatedAt
-  accountId                           Int
-  Account                             Account                           @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Campaign                            Campaign[]
-  TimesWork                           TimesWork[]
+// model CampaignParameter {
+//   id                                  Int                               @id @default(autoincrement())
+//   interrupted                         Boolean                           @default(false)
+//   name                                String                            @db.VarChar(60)
+//   rootCampaignParameterRangesConfigId Int
+//   RootCampaignParameterRangesConfig   RootCampaignParameterRangesConfig @relation(fields: [rootCampaignParameterRangesConfigId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+//   sendDuringHoliday                   Boolean
+//   createAt                            DateTime                          @default(now())
+//   updateAt                            DateTime                          @default(now()) @updatedAt
+//   accountId                           Int
+//   Account                             Account                           @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   Campaign                            Campaign[]
+//   TimesWork                           TimesWork[]
 
-  @@index([id, accountId, name])
-}
-
-enum TypeTimesWork {
-  chatbot
-  campaign_parameter
-}
+//   @@index([id, accountId, name])
+// }
 
 model TimesWork {
-  id                  Int                @id @default(autoincrement())
-  interrupted         Boolean            @default(false)
-  startTime           String?
-  endTime             String?
-  dayOfWeek           Int
-  type                TypeTimesWork
-  campaignParameterId Int?
-  CampaignParameter   CampaignParameter? @relation(fields: [campaignParameterId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  chatbotId           Int?
-  Chatbot             Chatbot?           @relation(fields: [chatbotId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id          Int      @id @default(autoincrement())
+  interrupted Boolean  @default(false)
+  startTime   String?
+  endTime     String?
+  dayOfWeek   Int
+  // campaignParameterId Int?
+  // CampaignParameter   CampaignParameter? @relation(fields: [campaignParameterId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  chatbotId   Int?
+  Chatbot     Chatbot? @relation(fields: [chatbotId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([id, campaignParameterId])
+  @@index([id, chatbotId])
 }
 
-enum TypeAudience {
-  ondemand
-  static
-  interactions
-  import
-}
+// enum TypeAudience {
+//   ondemand
+//   static
+//   interactions
+//   import
+// }
 
-// Público de campanha
-model Audience {
-  id          Int          @id @default(autoincrement())
-  interrupted Boolean      @default(false)
-  name        String       @db.VarChar(150)
-  createAt    DateTime     @default(now())
-  updateAt    DateTime     @default(now()) @updatedAt
-  type        TypeAudience
-  accountId   Int
-  Account     Account      @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+// // Público de campanha
+// model Audience {
+//   id          Int          @id @default(autoincrement())
+//   interrupted Boolean      @default(false)
+//   name        String       @db.VarChar(150)
+//   createAt    DateTime     @default(now())
+//   updateAt    DateTime     @default(now()) @updatedAt
+//   type        TypeAudience
+//   accountId   Int
+//   Account     Account      @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  ContactsWAOnAccountOnAudience ContactsWAOnAccountOnAudience[]
-  TagOnBusinessOnAudience       TagOnBusinessOnAudience[]
-  AudienceOnBusiness            AudienceOnBusiness[]
-  AudienceOnCampaign            AudienceOnCampaign[]
+//   ContactsWAOnAccountOnAudience ContactsWAOnAccountOnAudience[]
+//   TagOnAudience                 TagOnAudience[]
+//   AudienceOnBusiness            AudienceOnBusiness[]
+//   AudienceOnCampaign            AudienceOnCampaign[]
 
-  @@index([id, type])
-}
+//   @@index([id, type])
+// }
 
-model AudienceOnCampaign {
-  id         Int      @id @default(autoincrement())
-  campaignId Int
-  Campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  audienceId Int
-  Audience   Audience @relation(fields: [audienceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+// model AudienceOnCampaign {
+//   id         Int      @id @default(autoincrement())
+//   campaignId Int
+//   Campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   audienceId Int
+//   Audience   Audience @relation(fields: [audienceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([id])
-}
+//   @@index([id])
+// }
 
-// públicos de campanha do négocio
-model AudienceOnBusiness {
-  id                 Int      @id @default(autoincrement())
-  businessId         Int
-  Business           Business @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  campaignAudienceId Int
-  Audience           Audience @relation(fields: [campaignAudienceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-}
+// // públicos de campanha do négocio
+// model AudienceOnBusiness {
+//   id                 Int      @id @default(autoincrement())
+//   businessId         Int
+//   Business           Business @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   campaignAudienceId Int
+//   Audience           Audience @relation(fields: [campaignAudienceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+// }
 
-// lista de contatos do publico
-model ContactsWAOnAccountOnAudience {
-  id                   Int                 @id @default(autoincrement())
-  createAt             DateTime            @default(now())
-  updateAt             DateTime            @default(now()) @updatedAt
-  audienceId           Int
-  Audience             Audience            @relation(fields: [audienceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  contactWAOnAccountId Int
-  ContactsWAOnAccount  ContactsWAOnAccount @relation(fields: [contactWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  // ContactsWAOnAccountOnAudienceOnCampaign ContactsWAOnAccountOnAudienceOnCampaign[]
-  FlowState            FlowState[]
+// // lista de contatos do publico
+// model ContactsWAOnAccountOnAudience {
+//   id                   Int                 @id @default(autoincrement())
+//   createAt             DateTime            @default(now())
+//   updateAt             DateTime            @default(now()) @updatedAt
+//   audienceId           Int
+//   Audience             Audience            @relation(fields: [audienceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   contactWAOnAccountId Int
+//   ContactsWAOnAccount  ContactsWAOnAccount @relation(fields: [contactWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   // ContactsWAOnAccountOnAudienceOnCampaign ContactsWAOnAccountOnAudienceOnCampaign[]
+//   FlowState            FlowState[]
 
-  @@index([id, contactWAOnAccountId, audienceId])
-}
+//   @@index([id, contactWAOnAccountId, audienceId])
+// }
 
 enum TypeFlowState {
   campaign
@@ -831,67 +820,67 @@ enum TypeFlowState {
 }
 
 model FlowState {
-  id                              Int                            @id @default(autoincrement())
-  isSent                          Boolean                        @default(false)
-  firedOnDate                     DateTime?
-  isFinish                        Boolean?                       @default(false)
-  indexNode                       String?
-  connectionOnBusinessId          Int?
-  flowId                          Int?
-  type                            TypeFlowState?
-  createAt                        DateTime                       @default(now())
-  updateAt                        DateTime                       @default(now()) @updatedAt
-  campaignId                      Int?
-  Campaign                        Campaign?                      @relation(fields: [campaignId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  contactsWAOnAccountOnAudienceId Int?
-  ContactsWAOnAccountOnAudience   ContactsWAOnAccountOnAudience? @relation(fields: [contactsWAOnAccountOnAudienceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  contactsWAOnAccountId           Int?
-  ContactsWAOnAccount             ContactsWAOnAccount?           @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id                    Int                  @id @default(autoincrement())
+  isSent                Boolean              @default(false)
+  firedOnDate           DateTime?
+  isFinish              Boolean?             @default(false)
+  indexNode             String?
+  connectionWAId        Int?
+  flowId                Int?
+  type                  TypeFlowState?
+  createAt              DateTime             @default(now())
+  updateAt              DateTime             @default(now()) @updatedAt
+  // campaignId                      Int?
+  // Campaign                        Campaign?                      @relation(fields: [campaignId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  // contactsWAOnAccountOnAudienceId Int?
+  // ContactsWAOnAccountOnAudience   ContactsWAOnAccountOnAudience? @relation(fields: [contactsWAOnAccountOnAudienceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  contactsWAOnAccountId Int?
+  ContactsWAOnAccount   ContactsWAOnAccount? @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
-model ConnectionOnCampaign {
-  id                     Int                  @id @default(autoincrement())
-  connectionOnBusinessId Int
-  ConnectionOnBusiness   ConnectionOnBusiness @relation(fields: [connectionOnBusinessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  campaignOnBusinessId   Int
-  CampaignOnBusiness     CampaignOnBusiness   @relation(fields: [campaignOnBusinessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+// model ConnectionOnCampaign {
+//   id                     Int                  @id @default(autoincrement())
+//   connectionOnBusinessId Int
+//   ConnectionOnBusiness   ConnectionOnBusiness @relation(fields: [connectionOnBusinessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   campaignOnBusinessId   Int
+//   CampaignOnBusiness     CampaignOnBusiness   @relation(fields: [campaignOnBusinessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([campaignOnBusinessId, connectionOnBusinessId])
-}
+//   @@index([campaignOnBusinessId, connectionOnBusinessId])
+// }
 
-enum TypeStatusCampaign {
-  stopped
-  processing
-  paused
-  running
-  finished
-}
+// enum TypeStatusCampaign {
+//   stopped
+//   processing
+//   paused
+//   running
+//   finished
+// }
 
-model Campaign {
-  id                      Int                       @id @default(autoincrement())
-  interrupted             Boolean                   @default(false)
-  name                    String                    @db.VarChar(60)
-  status                  TypeStatusCampaign        @default(processing)
-  createAt                DateTime                  @default(now())
-  updateAt                DateTime                  @default(now()) @updatedAt
-  timeToStart             String?
-  flowId                  Int
-  isOndemand              Boolean                   @default(false)
-  description             String?
-  accountId               Int
-  Account                 Account                   @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  denialCampaignId        Int?
-  DenialCampaign          DenialCampaign?           @relation(fields: [denialCampaignId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  campaignParameterId     Int?
-  CampaignParameter       CampaignParameter?        @relation(fields: [campaignParameterId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  CampaignOnBusiness      CampaignOnBusiness[]
-  LinkTrackingPixelEvents LinkTrackingPixelEvents[]
-  AudienceOnCampaign      AudienceOnCampaign[]
-  // ContactsWAOnAccountOnAudienceOnCampaign ContactsWAOnAccountOnAudienceOnCampaign[]
-  FlowState               FlowState[]
+// model Campaign {
+//   id                      Int                       @id @default(autoincrement())
+//   interrupted             Boolean                   @default(false)
+//   name                    String                    @db.VarChar(60)
+//   status                  TypeStatusCampaign        @default(processing)
+//   createAt                DateTime                  @default(now())
+//   updateAt                DateTime                  @default(now()) @updatedAt
+//   timeToStart             String?
+//   flowId                  Int
+//   isOndemand              Boolean                   @default(false)
+//   description             String?
+//   accountId               Int
+//   Account                 Account                   @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   denialCampaignId        Int?
+//   DenialCampaign          DenialCampaign?           @relation(fields: [denialCampaignId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   campaignParameterId     Int?
+//   CampaignParameter       CampaignParameter?        @relation(fields: [campaignParameterId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+//   CampaignOnBusiness      CampaignOnBusiness[]
+//   LinkTrackingPixelEvents LinkTrackingPixelEvents[]
+//   AudienceOnCampaign      AudienceOnCampaign[]
+//   // ContactsWAOnAccountOnAudienceOnCampaign ContactsWAOnAccountOnAudienceOnCampaign[]
+//   FlowState               FlowState[]
 
-  @@index([name, accountId])
-}
+//   @@index([name, accountId])
+// }
 
 enum TypeActivation {
   message
@@ -910,14 +899,14 @@ model Chatbot {
   name                          String                         @db.VarChar(60)
   status                        Boolean?                       @default(false)
   description                   String?
-  connectionOnBusinessId        Int?
+  connectionWAId                Int?
   leadOriginList                String?
   flowId                        Int
   insertNewLeadsOnAudienceId    Int?
   insertTagsLead                String?
   typeActivation                TypeActivation?
   inputActivation               String?
-  ConnectionOnBusiness          ConnectionOnBusiness?          @relation(fields: [connectionOnBusinessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ConnectionWA                  ConnectionWA?                  @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   businessId                    Int
   Business                      Business                       @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   accountId                     Int
@@ -932,7 +921,7 @@ model Chatbot {
   updateAt                      DateTime                       @default(now()) @updatedAt
   TimesWork                     TimesWork[]
 
-  @@index([name, accountId, businessId])
+  @@index([name, accountId, businessId, status])
 }
 
 enum TypeChatbotInactivity {
@@ -1000,28 +989,28 @@ model ChatbotMessageActivationsFail {
   @@index([id])
 }
 
-model CampaignOnBusiness {
-  id                   Int                    @id @default(autoincrement())
-  businessId           Int
-  Business             Business               @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  CampaignId           Int
-  Campaign             Campaign               @relation(fields: [CampaignId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  ConnectionOnCampaign ConnectionOnCampaign[]
+// model CampaignOnBusiness {
+//   id                   Int                    @id @default(autoincrement())
+//   businessId           Int
+//   Business             Business               @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   CampaignId           Int
+//   Campaign             Campaign               @relation(fields: [CampaignId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   ConnectionOnCampaign ConnectionOnCampaign[]
 
-  @@index([id])
-}
+//   @@index([id])
+// }
 
-model DenialCampaign {
-  id                       Int        @id @default(autoincrement())
-  whoHasTag                String?
-  whoAnsweredConnection    String?
-  whoIsInFlow              String?
-  whoIsInCampaign          String?
-  whoReceivedMessageBefore String?
-  Campaign                 Campaign[]
+// model DenialCampaign {
+//   id                       Int        @id @default(autoincrement())
+//   whoHasTag                String?
+//   whoAnsweredConnection    String?
+//   whoIsInFlow              String?
+//   whoIsInCampaign          String?
+//   whoReceivedMessageBefore String?
+//   Campaign                 Campaign[]
 
-  @@index([id])
-}
+//   @@index([id])
+// }
 
 model ContactsWA {
   id                  Int                   @id @default(autoincrement())
@@ -1031,33 +1020,33 @@ model ContactsWA {
   updateAt            DateTime              @default(now()) @updatedAt
   ContactsWAOnAccount ContactsWAOnAccount[]
   Account             Account[]
-  Affiliates          Affiliates[]
+  // Affiliates          Affiliates[]
 
-  @@index([id, completeNumber])
+  @@index([id, completeNumber, createAt])
 }
 
 model ContactsWAOnAccount {
-  id                                          Int                                          @id @default(autoincrement())
-  interrupted                                 Boolean                                      @default(false)
-  name                                        String                                       @db.VarChar(150)
-  accountId                                   Int
-  contactWAId                                 Int
-  createAt                                    DateTime                                     @default(now())
-  updateAt                                    DateTime                                     @default(now()) @updatedAt
-  ContactsWA                                  ContactsWA                                   @relation(fields: [contactWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Account                                     Account                                      @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  TagOnBusinessOnContactsWAOnAccount          TagOnBusinessOnContactsWAOnAccount[]
-  ContactsWAOnAccountVariableOnBusiness       ContactsWAOnAccountVariableOnBusiness[]
-  ContactsWAOnAccountOnAudience               ContactsWAOnAccountOnAudience[]
-  CheckPointOnBusinessOnContactsWAOnAccount   CheckPointOnBusinessOnContactsWAOnAccount[]
-  HumanServiceOnBusinessOnContactsWAOnAccount HumanServiceOnBusinessOnContactsWAOnAccount?
-  Tickets                                     Tickets[]
-  ScheduledMessages                           ScheduledMessages[]
-  LinkTrackingPixelEvents                     LinkTrackingPixelEvents[]
-  FlowState                                   FlowState[]
-  DocumentsOnContact                          DocumentsOnContact[]
+  id                          Int                           @id @default(autoincrement())
+  interrupted                 Boolean                       @default(false)
+  name                        String                        @db.VarChar(150)
+  accountId                   Int
+  contactWAId                 Int
+  createAt                    DateTime                      @default(now())
+  updateAt                    DateTime                      @default(now()) @updatedAt
+  ContactsWA                  ContactsWA                    @relation(fields: [contactWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Account                     Account                       @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  TagOnContactsWAOnAccount    TagOnContactsWAOnAccount[]
+  ContactsWAOnAccountVariable ContactsWAOnAccountVariable[]
+  // ContactsWAOnAccountOnAudience               ContactsWAOnAccountOnAudience[]
+  // CheckpointOnContactsWAOnAccount             CheckpointOnContactsWAOnAccount[]
+  // HumanServiceOnBusinessOnContactsWAOnAccount HumanServiceOnBusinessOnContactsWAOnAccount?
+  // Tickets                                     Tickets[]
+  // ScheduledMessages                           ScheduledMessages[]
+  // LinkTrackingPixelEvents                     LinkTrackingPixelEvents[]
+  FlowState                   FlowState[]
+  DocumentsOnContact          DocumentsOnContact[]
 
-  @@index([id, contactWAId])
+  @@index([id, contactWAId, createAt])
 }
 
 model DocumentsOnContact {
@@ -1071,13 +1060,15 @@ model DocumentsOnContact {
 }
 
 model Tag {
-  id            Int             @id @default(autoincrement())
-  interrupted   Boolean         @default(false)
-  name          String          @db.VarChar(150)
-  accountId     Int
-  Account       Account         @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  type          TypeTag
-  TagOnBusiness TagOnBusiness[]
+  id                       Int                        @id @default(autoincrement())
+  interrupted              Boolean                    @default(false)
+  name                     String                     @db.VarChar(150)
+  accountId                Int
+  Account                  Account                    @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  type                     TypeTag
+  TagOnBusiness            TagOnBusiness[]
+  TagOnContactsWAOnAccount TagOnContactsWAOnAccount[]
+  // TagOnAudience            TagOnAudience[]
 
   @@index([name, type, accountId])
 }
@@ -1085,35 +1076,32 @@ model Tag {
 model TagOnBusiness {
   id         Int      @id @default(autoincrement())
   tagId      Int
-  Tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   businessId Int
+  Tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  TagOnBusinessOnContactsWAOnAccount TagOnBusinessOnContactsWAOnAccount[]
-  TagOnBusinessOnAudience            TagOnBusinessOnAudience[]
-
-  @@index([id, tagId])
+  @@index([id, tagId, businessId])
 }
 
-model TagOnBusinessOnAudience {
-  id                 Int           @id @default(autoincrement())
-  tagOnBusinessId    Int
-  TagOnBusiness      TagOnBusiness @relation(fields: [tagOnBusinessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  campaignAudienceId Int
-  BusinessOnAudience Audience      @relation(fields: [campaignAudienceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([tagOnBusinessId, campaignAudienceId])
-}
-
-model TagOnBusinessOnContactsWAOnAccount {
+model TagOnContactsWAOnAccount {
   id                    Int                 @id @default(autoincrement())
-  tagOnBusinessId       Int
-  TagOnBusiness         TagOnBusiness       @relation(fields: [tagOnBusinessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  tagId                 Int
+  Tag                   Tag                 @relation(fields: [tagId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   contactsWAOnAccountId Int
   ContactsWAOnAccount   ContactsWAOnAccount @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([tagOnBusinessId, contactsWAOnAccountId])
+  @@index([tagId, contactsWAOnAccountId])
 }
+
+// model TagOnAudience {
+//   id         Int      @id @default(autoincrement())
+//   tagId      Int
+//   audienceId Int
+//   Tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   Audience   Audience @relation(fields: [audienceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([tagId, audienceId])
+// }
 
 enum TypeVariable {
   dynamics
@@ -1122,38 +1110,38 @@ enum TypeVariable {
 }
 
 model Variable {
-  id                 Int                  @id @default(autoincrement())
-  interrupted        Boolean              @default(false)
-  type               TypeVariable         @default(dynamics)
-  name               String               @db.VarChar(150)
-  value              String?
-  accountId          Int?
-  Account            Account?             @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  VariableOnBusiness VariableOnBusiness[]
+  id                          Int                           @id @default(autoincrement())
+  interrupted                 Boolean                       @default(false)
+  type                        TypeVariable                  @default(dynamics)
+  name                        String                        @db.VarChar(150)
+  value                       String?
+  accountId                   Int?
+  Account                     Account?                      @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  VariableOnBusiness          VariableOnBusiness[]
+  ContactsWAOnAccountVariable ContactsWAOnAccountVariable[]
 
-  @@index([name, id, accountId])
+  @@index([name, id, accountId, type])
 }
 
 model VariableOnBusiness {
-  id                                    Int                                     @id @default(autoincrement())
-  variableId                            Int
-  businessId                            Int
-  Variable                              Variable                                @relation(fields: [variableId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Business                              Business                                @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  ContactsWAOnAccountVariableOnBusiness ContactsWAOnAccountVariableOnBusiness[]
+  id         Int      @id @default(autoincrement())
+  variableId Int
+  businessId Int
+  Variable   Variable @relation(fields: [variableId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([variableId, businessId])
 }
 
-model ContactsWAOnAccountVariableOnBusiness {
+model ContactsWAOnAccountVariable {
   id                    Int                 @id @default(autoincrement())
   value                 String
   contactsWAOnAccountId Int
+  variableId            Int
   ContactsWAOnAccount   ContactsWAOnAccount @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  variableOnBusinessId  Int
-  VariableOnBusiness    VariableOnBusiness  @relation(fields: [variableOnBusinessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Variable              Variable            @relation(fields: [variableId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@index([value, variableOnBusinessId, contactsWAOnAccountId])
+  @@index([value, variableId, contactsWAOnAccountId])
 }
 
 enum TypeStaticPath {
@@ -1176,581 +1164,581 @@ model StaticPaths {
   @@index([name, id])
 }
 
-model CheckPoint {
-  id                   Int                    @id @default(autoincrement())
-  interrupted          Boolean                @default(false)
-  name                 String
-  score                Int
-  accountId            Int
-  Account              Account                @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  createAt             DateTime               @default(now())
-  updateAt             DateTime               @default(now()) @updatedAt
-  CheckPointOnBusiness CheckPointOnBusiness[]
-
-  @@index([name, id, accountId])
-}
-
-model CheckPointOnBusiness {
-  id                                       Int                                         @id @default(autoincrement())
-  businessId                               Int
-  Business                                 Business                                    @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  checkPointId                             Int
-  CheckPoint                               CheckPoint                                  @relation(fields: [checkPointId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  CheckPointOnBusinessOnContactWAOnAccount CheckPointOnBusinessOnContactsWAOnAccount[]
-
-  @@index([id, businessId, checkPointId])
-}
-
-model CheckPointOnBusinessOnContactsWAOnAccount {
-  id                     Int                  @id @default(autoincrement())
-  checkPointOnBusinessId Int
-  CheckPointOnBusiness   CheckPointOnBusiness @relation(fields: [checkPointOnBusinessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  contactsWAOnAccountId  Int
-  ContactsWAOnAccount    ContactsWAOnAccount  @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  flowId                 Int
-  createAt               DateTime             @default(now())
-  updateAt               DateTime             @default(now()) @updatedAt
-
-  @@index([id, flowId, createAt, checkPointOnBusinessId])
-}
-
-model Supervisors {
-  id                    Int                     @id @default(autoincrement())
-  hash                  String                  @default(uuid())
-  interrupted           Boolean                 @default(false)
-  name                  String
-  username              String                  @unique
-  password              String
-  createAt              DateTime                @default(now())
-  updateAt              DateTime                @default(now()) @updatedAt
-  imageName             String?
-  accountId             Int
-  Account               Account                 @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  BusinessOnSupervisors BusinessOnSupervisors[]
-  Sectors               Sectors[]
-
-  @@index([id, username, password, hash])
-}
-
-model BusinessOnSupervisors {
-  id            Int         @id @default(autoincrement())
-  supervisorsId Int
-  Supervisors   Supervisors @relation(fields: [supervisorsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  businessId    Int
-  Business      Business    @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id, businessId, supervisorsId])
-}
-
-enum TypeBehaviorLackResponse {
-  sendSector
-  sendFlow
-  sendMessage
-  finish
-  sendAttendant
-}
-
-model Sectors {
-  id                        Int                     @id @default(autoincrement())
-  interrupted               Boolean                 @default(false)
-  status                    Boolean                 @default(true)
-  name                      String
-  messageOutsideOfficeHours String?
-  typeDistribution          TypeDistributionSectors
-  signBusiness              Boolean                 @default(false)
-  signSector                Boolean                 @default(false)
-  signAttendant             Boolean                 @default(false)
-  maximumService            Int?
-  operatingDays             String?
-  timeToSendToAllSectors    Int?
-  fromTime                  String?
-  toTime                    String?
-  addTag                    Boolean                 @default(false)
-  removeTicket              Boolean                 @default(false)
-  previewPhone              Boolean                 @default(false)
-  accountId                 Int
-  Account                   Account                 @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  supervisorsId             Int?
-  Supervisors               Supervisors?            @relation(fields: [supervisorsId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  businessId                Int
-  Business                  Business                @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  funnelKanbanId            Int?
-  FunnelKanban              FunnelKanban?           @relation(fields: [funnelKanbanId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-
-  createAt DateTime @default(now())
-  updateAt DateTime @default(now()) @updatedAt
-
-  LackResponses        LackResponses?
-  SectorsMessages      SectorsMessages?
-  SectorsAttendants    SectorsAttendants[]
-  Tickets              Tickets[]
-  SectorsOnConnections SectorsOnConnections[]
-
-  @@index([id, name, typeDistribution, operatingDays])
-}
-
-model SectorsOnConnections {
-  id                   Int                  @id @default(autoincrement())
-  sectorId             Int
-  Sectors              Sectors              @relation(fields: [sectorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  connectionId         Int
-  ConnectionOnBusiness ConnectionOnBusiness @relation(fields: [connectionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([connectionId, sectorId])
-}
-
-model SectorsAttendants {
-  id                             Int                              @id @default(autoincrement())
-  hash                           String                           @default(uuid())
-  interrupted                    Boolean                          @default(false)
-  name                           String
-  office                         String
-  status                         Boolean                          @default(false)
-  allowInsertionAndRemovalOfTags Boolean                          @default(false)
-  allowToUseQuickMessages        Boolean                          @default(false)
-  allowReOpeningATicket          Boolean                          @default(false)
-  allowStartingNewTicket         Boolean                          @default(false)
-  allowAddingNotesToLeadProfile  Boolean                          @default(false)
-  previewTicketSector            Boolean                          @default(false)
-  previewTicketBusiness          Boolean                          @default(false)
-  username                       String                           @unique
-  password                       String
-  createAt                       DateTime                         @default(now())
-  updateAt                       DateTime                         @default(now()) @updatedAt
-  imageName                      String?
-  sectorsId                      Int?
-  Sectors                        Sectors?                         @relation(fields: [sectorsId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  accountId                      Int
-  Account                        Account                          @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  businessId                     Int
-  Business                       Business                         @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  ConversationTickes             ConversationTickes[]
-  Tickets                        Tickets[]
-  NotificationsSectorsAttendants NotificationsSectorsAttendants[]
-  FastMessage                    FastMessage[]
-
-  @@index([id, username, sectorsId, accountId, businessId, hash])
-}
-
-model FastMessage {
-  id          Int               @id @default(autoincrement())
-  shortcut    String
-  value       String            @db.Text
-  attendantId Int
-  Attendant   SectorsAttendants @relation(fields: [attendantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id, shortcut])
-}
-
-enum TypeStatusNotificationSectorAttendant {
-  read
-  unread
-}
-
-model NotificationsSectorsAttendants {
-  id                 Int                                   @id @default(autoincrement())
-  subject            String
-  content            String
-  createAt           DateTime                              @default(now())
-  updateAt           DateTime                              @default(now()) @updatedAt
-  status             TypeStatusNotificationSectorAttendant @default(unread)
-  sectorsAttendantId Int
-  SectorsAttendants  SectorsAttendants                     @relation(fields: [sectorsAttendantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id, sectorsAttendantId])
-}
-
-model SectorsMessages {
-  id                         Int     @id @default(autoincrement())
-  messageWelcome             String?
-  messageWelcomeToOpenTicket String?
-  messageFinishService       String?
-  messageTransferTicket      String?
-  sectorsId                  Int     @unique
-  Sectors                    Sectors @relation(fields: [sectorsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  accountId                  Int
-  Account                    Account @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id])
-}
-
-model LackResponses {
-  id            Int                      @id @default(autoincrement())
-  valueDuration Int
-  typeDuration  TypeTimeLackResponse
-  typeBehavior  TypeBehaviorLackResponse
-  sendSector    Int?
-  sendFlow      Int?
-  sendMessage   String?
-  // sendAttendant Int?
-  finish        Boolean?
-  accountId     Int
-  Account       Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  sectorsId     Int                      @unique
-  Sectors       Sectors                  @relation(fields: [sectorsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id, typeDuration, typeBehavior, accountId, sectorsId])
-}
-
-model FunnelKanban {
-  id                Int                 @id @default(autoincrement())
-  interrupted       Boolean             @default(false)
-  name              String
-  createAt          DateTime            @default(now())
-  updateAt          DateTime            @default(now()) @updatedAt
-  StepsFunnelKanban StepsFunnelKanban[]
-  businessId        Int
-  Business          Business            @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  accountId         Int
-  Account           Account             @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Sectors           Sectors[]
-
-  @@index([id])
-}
-
-model StepsFunnelKanban {
-  id                         Int                          @id @default(autoincrement())
-  name                       String
-  color                      String                       @default("")
-  sequence                   Int
-  funnelKanbanId             Int
-  FunnelKanban               FunnelKanban                 @relation(fields: [funnelKanbanId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  accountId                  Int
-  Account                    Account                      @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  StepsFunnelKanbanOnTickets StepsFunnelKanbanOnTickets[]
-
-  @@index([id])
-}
-
-model RootCampaignParameterRangesConfig {
-  id                Int                 @id @default(autoincrement())
-  name              String
-  timeForShorts     Int
-  timeRest          Int
-  amountShorts      Int
-  sequence          Int
-  status            Boolean
-  CampaignParameter CampaignParameter[]
-
-  @@index([id, name, status])
-}
-
-enum TypeStatusTicket {
-  new
-  open
-  resolved
-}
-
-enum TypeDestinationTicket {
-  sector
-  attendant
-}
-
-model Tickets {
-  id                             Int                          @id @default(autoincrement())
-  protocol                       String
-  status                         TypeStatusTicket             @default(new)
-  deleted                        Boolean?                     @default(false)
-  createAt                       DateTime                     @default(now())
-  updateAt                       DateTime                     @default(now()) @updatedAt
-  destination                    TypeDestinationTicket
-  destinationSectorsAttendantsId Int?
-  sectorsId                      Int
-  Sectors                        Sectors                      @relation(fields: [sectorsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  sectorsAttendantsId            Int?
-  SectorsAttendants              SectorsAttendants?           @relation(fields: [sectorsAttendantsId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  businessId                     Int
-  Business                       Business                     @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  contactsWAOnAccountId          Int
-  ContactsWAOnAccount            ContactsWAOnAccount          @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  // isso aqui precisa mudar, se a conexão for excluida nao pode excluir os tickets associados a ele
-  connectionId                   Int
-  ConnectionOnBusiness           ConnectionOnBusiness         @relation(fields: [connectionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  StepsFunnelKanbanOnTickets     StepsFunnelKanbanOnTickets[]
-  ConversationTickes             ConversationTickes[]
-
-  @@index([id, protocol, contactsWAOnAccountId, status, businessId, destination, sectorsId, sectorsAttendantsId])
-}
-
-enum TypeSentBy {
-  lead
-  attendant
-  system
-}
-
-model ConversationTickes {
-  id                  Int                @id @default(autoincrement())
-  type                String
-  sentBy              TypeSentBy
-  degreesLatitude     String             @default("")
-  degreesLongitude    String             @default("")
-  address             String             @default("")
-  name                String             @default("")
-  fullName            String             @default("")
-  number              String             @default("")
-  org                 String             @default("")
-  read                Boolean            @default(false)
-  message             String             @db.Text
-  caption             String             @default("")
-  fileName            String             @default("")
-  sectorsAttendantsId Int?
-  messageKey          String?
-  SectorsAttendants   SectorsAttendants? @relation(fields: [sectorsAttendantsId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  createAt            DateTime           @default(now())
-  updateAt            DateTime           @default(now()) @updatedAt
-  ticketsId           Int
-  Tickets             Tickets            @relation(fields: [ticketsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id, sectorsAttendantsId, ticketsId])
-}
-
-model StepsFunnelKanbanOnTickets {
-  sequence            Int
-  stepsFunnelKanbanId Int
-  StepsFunnelKanban   StepsFunnelKanban @relation(fields: [stepsFunnelKanbanId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  ticketsId           Int               @id @unique
-  Tickets             Tickets           @relation(fields: [ticketsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([stepsFunnelKanbanId, ticketsId])
-}
-
-model HumanServiceOnBusinessOnContactsWAOnAccount {
-  id                     Int                      @id @default(autoincrement())
-  contactsWAOnAccountId  Int                      @unique
-  ContactsWAOnAccount    ContactsWAOnAccount      @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  businessId             Int
-  Business               Business                 @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  HumanServiceReportLead HumanServiceReportLead[]
-
-  @@index([id, contactsWAOnAccountId, businessId])
-}
-
-enum TypeHumanServiceReportLead {
-  note
-  pendency
-}
-
-model HumanServiceReportLead {
-  id                                            Int                                         @id @default(autoincrement())
-  type                                          TypeHumanServiceReportLead
-  value                                         String
-  createAt                                      DateTime                                    @default(now())
-  updateAt                                      DateTime                                    @default(now()) @updatedAt
-  humanServiceOnBusinessOnContactsWAOnAccountId Int
-  HumanServiceOnBusinessOnContactsWAOnAccount   HumanServiceOnBusinessOnContactsWAOnAccount @relation(fields: [humanServiceOnBusinessOnContactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id, type, humanServiceOnBusinessOnContactsWAOnAccountId])
-}
-
-model ScheduledMessages {
-  id                    Int                 @id @default(autoincrement())
-  message               String
-  isSent                Boolean?            @default(false)
-  date                  DateTime
-  createAt              DateTime            @default(now())
-  updateAt              DateTime            @default(now()) @updatedAt
-  contactsWAOnAccountId Int
-  ContactsWAOnAccount   ContactsWAOnAccount @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id, isSent])
-}
-
-model EmailServiceConfiguration {
-  id                                  Int                                   @id @default(autoincrement())
-  interrupted                         Boolean                               @default(false)
-  host                                String
-  port                                Int
-  secure                              Boolean?                              @default(false)
-  user                                String
-  pass                                String
-  createAt                            DateTime                              @default(now())
-  updateAt                            DateTime                              @default(now()) @updatedAt
-  accountId                           Int
-  Account                             Account                               @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  EmailServiceConfigurationOnBusiness EmailServiceConfigurationOnBusiness[]
-
-  @@index([id, accountId])
-}
-
-model EmailServiceConfigurationOnBusiness {
-  id                          Int                       @id @default(autoincrement())
-  businessId                  Int
-  Business                    Business                  @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  emailServiceConfigurationId Int
-  EmailServiceConfiguration   EmailServiceConfiguration @relation(fields: [emailServiceConfigurationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id, businessId, emailServiceConfigurationId])
-}
-
-model LinkTrackingPixel {
-  id                      Int                       @id @default(autoincrement())
-  interrupted             Boolean                   @default(false)
-  name                    String
-  link                    String
-  createAt                DateTime                  @default(now())
-  updateAt                DateTime                  @default(now()) @updatedAt
-  accountId               Int
-  Account                 Account                   @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  businessId              Int
-  Business                Business                  @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  LinkTrackingPixelEvents LinkTrackingPixelEvents[]
-
-  @@index([id, accountId, businessId])
-}
-
-model LinkTrackingPixelEvents {
-  id                    Int                  @id @default(autoincrement())
-  event                 String
-  value                 String
-  createAt              DateTime             @default(now())
-  updateAt              DateTime             @default(now()) @updatedAt
-  contactsWAOnAccountId Int
-  ContactsWAOnAccount   ContactsWAOnAccount  @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  campaignId            Int?
-  Campaign              Campaign?            @relation(fields: [campaignId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  linkTrackingPixelId   Int
-  LinkTrackingPixel     LinkTrackingPixel    @relation(fields: [linkTrackingPixelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  accountId             Int
-  Account               Account              @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  connectionWhatsId     Int
-  Connection            ConnectionOnBusiness @relation(fields: [connectionWhatsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id, event, value])
-}
-
-enum TypeArtificialIntelligence {
-  OPENAI
-  DEEPSEEK
-}
-
-enum ModelArtificialIntelligence {
-  DeepseekChat
-  DeepseekReasoner
-  Gpt4
-  Gpt4Turbo
-  Gpt4o
-  Gpt4oMini
-  O1
-  O1Mini
-  Gpt35Turbo0125
-}
-
-model ArtificialIntelligence {
-  id                               Int                                @id @default(autoincrement())
-  name                             String
-  description                      String?                            @db.Text
-  apiKey                           String
-  model                            ModelArtificialIntelligence
-  type                             TypeArtificialIntelligence
-  temperature                      Decimal?                           @default(0.1) @db.Decimal(2, 1)
-  createAt                         DateTime                           @default(now())
-  updateAt                         DateTime                           @default(now()) @updatedAt
-  accountId                        Int
-  Account                          Account                            @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  ArtificialIntelligenceOnBusiness ArtificialIntelligenceOnBusiness[]
-  AttendantOnAI                    AttendantOnAI[]
-
-  @@index([id, name, model, type, accountId])
-}
-
-model ArtificialIntelligenceOnBusiness {
-  id                     Int                    @id @default(autoincrement())
-  businessId             Int
-  Business               Business               @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  aiId                   Int
-  ArtificialIntelligence ArtificialIntelligence @relation(fields: [aiId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id, businessId, aiId])
-}
-
-model AttendantOnAI {
-  id                      Int                       @id @default(autoincrement())
-  name                    String
-  description             String?                   @db.Text
-  briefing                String?                   @db.Text
-  personality             String?                   @db.Text
-  role                    String?                   @db.Text
-  definitions             String?                   @db.Text
-  knowledgeBase           String?                   @db.Text
-  createAt                DateTime                  @default(now())
-  updateAt                DateTime                  @default(now()) @updatedAt
-  aiId                    Int
-  ArtificialIntelligence  ArtificialIntelligence    @relation(fields: [aiId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  accountId               Int
-  Account                 Account                   @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  AttendantOnAIOnBusiness AttendantOnAIOnBusiness[]
-  FilesOnAttendantOnAI    FilesOnAttendantOnAI[]
-
-  @@index([id, name, aiId, accountId])
-}
-
-model FilesOnAttendantOnAI {
-  id            Int           @id @default(autoincrement())
-  filename      String
-  originalname  String
-  attendantAIId Int
-  AttendantOnAI AttendantOnAI @relation(fields: [attendantAIId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id, originalname])
-}
-
-model AttendantOnAIOnBusiness {
-  id            Int           @id @default(autoincrement())
-  businessId    Int
-  Business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  attendantId   Int
-  AttendantOnAI AttendantOnAI @relation(fields: [attendantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id, businessId, attendantId])
-}
-
-model FacebookIntegration {
-  id                            Int                             @id @default(autoincrement())
-  name                          String
-  description                   String?
-  access_token                  String?                         @db.VarChar(240)
-  status                        Boolean                         @default(true)
-  createAt                      DateTime                        @default(now())
-  updateAt                      DateTime                        @default(now()) @updatedAt
-  accountId                     Int
-  Account                       Account                         @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  FacebookIntegrationOnBusiness FacebookIntegrationOnBusiness[]
-
-  @@index([id])
-}
-
-model FacebookIntegrationOnBusiness {
-  id                    Int                 @id @default(autoincrement())
-  businessId            Int
-  Business              Business            @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  facebookIntegrationId Int
-  FacebookIntegration   FacebookIntegration @relation(fields: [facebookIntegrationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id, businessId, facebookIntegrationId])
-}
-
-enum TypeTimeLackResponse {
-  minutes
-  hours
-}
-
-enum TypeDistributionSectors {
-  normal
-  sequential
-  balanced
-}
+// model Checkpoint {
+//   id                              Int                               @id @default(autoincrement())
+//   interrupted                     Boolean                           @default(false)
+//   name                            String
+//   score                           Int
+//   accountId                       Int
+//   Account                         Account                           @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   createAt                        DateTime                          @default(now())
+//   updateAt                        DateTime                          @default(now()) @updatedAt
+//   CheckpointOnBusiness            CheckpointOnBusiness[]
+//   CheckpointOnContactsWAOnAccount CheckpointOnContactsWAOnAccount[]
+
+//   @@index([name, id, accountId])
+// }
+
+// model CheckpointOnBusiness {
+//   id           Int        @id @default(autoincrement())
+//   businessId   Int
+//   checkpointId Int
+//   Business     Business   @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   Checkpoint   Checkpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, businessId, checkpointId])
+// }
+
+// model CheckpointOnContactsWAOnAccount {
+//   id                    Int                 @id @default(autoincrement())
+//   flowId                Int
+//   createAt              DateTime            @default(now())
+//   updateAt              DateTime            @default(now()) @updatedAt
+//   checkpointId          Int
+//   Checkpoint            Checkpoint          @relation(fields: [checkpointId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   contactsWAOnAccountId Int
+//   ContactsWAOnAccount   ContactsWAOnAccount @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, flowId, createAt, checkpointId])
+// }
+
+// model Supervisors {
+//   id                    Int                     @id @default(autoincrement())
+//   hash                  String                  @default(uuid())
+//   interrupted           Boolean                 @default(false)
+//   name                  String
+//   username              String                  @unique
+//   password              String
+//   createAt              DateTime                @default(now())
+//   updateAt              DateTime                @default(now()) @updatedAt
+//   imageName             String?
+//   accountId             Int
+//   Account               Account                 @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   BusinessOnSupervisors BusinessOnSupervisors[]
+//   Sectors               Sectors[]
+
+//   @@index([id, username, password, hash])
+// }
+
+// model BusinessOnSupervisors {
+//   id            Int         @id @default(autoincrement())
+//   supervisorsId Int
+//   Supervisors   Supervisors @relation(fields: [supervisorsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   businessId    Int
+//   Business      Business    @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, businessId, supervisorsId])
+// }
+
+// enum TypeBehaviorLackResponse {
+//   sendSector
+//   sendFlow
+//   sendMessage
+//   finish
+//   sendAttendant
+// }
+
+// model Sectors {
+//   id                        Int                     @id @default(autoincrement())
+//   interrupted               Boolean                 @default(false)
+//   status                    Boolean                 @default(true)
+//   name                      String
+//   messageOutsideOfficeHours String?
+//   typeDistribution          TypeDistributionSectors
+//   signBusiness              Boolean                 @default(false)
+//   signSector                Boolean                 @default(false)
+//   signAttendant             Boolean                 @default(false)
+//   maximumService            Int?
+//   operatingDays             String?
+//   timeToSendToAllSectors    Int?
+//   fromTime                  String?
+//   toTime                    String?
+//   addTag                    Boolean                 @default(false)
+//   removeTicket              Boolean                 @default(false)
+//   previewPhone              Boolean                 @default(false)
+//   accountId                 Int
+//   Account                   Account                 @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   supervisorsId             Int?
+//   Supervisors               Supervisors?            @relation(fields: [supervisorsId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+//   businessId                Int
+//   Business                  Business                @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   funnelKanbanId            Int?
+//   FunnelKanban              FunnelKanban?           @relation(fields: [funnelKanbanId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+//   createAt DateTime @default(now())
+//   updateAt DateTime @default(now()) @updatedAt
+
+//   LackResponses        LackResponses?
+//   SectorsMessages      SectorsMessages?
+//   SectorsAttendants    SectorsAttendants[]
+//   Tickets              Tickets[]
+//   SectorsOnConnections SectorsOnConnections[]
+
+//   @@index([id, name, typeDistribution, operatingDays])
+// }
+
+// model SectorsOnConnections {
+//   id                   Int                  @id @default(autoincrement())
+//   sectorId             Int
+//   Sectors              Sectors              @relation(fields: [sectorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   connectionWAId         Int
+//   ConnectionOnBusiness ConnectionOnBusiness @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([connectionWAId, sectorId])
+// }
+
+// model SectorsAttendants {
+//   id                             Int                              @id @default(autoincrement())
+//   hash                           String                           @default(uuid())
+//   interrupted                    Boolean                          @default(false)
+//   name                           String
+//   office                         String
+//   status                         Boolean                          @default(false)
+//   allowInsertionAndRemovalOfTags Boolean                          @default(false)
+//   allowToUseQuickMessages        Boolean                          @default(false)
+//   allowReOpeningATicket          Boolean                          @default(false)
+//   allowStartingNewTicket         Boolean                          @default(false)
+//   allowAddingNotesToLeadProfile  Boolean                          @default(false)
+//   previewTicketSector            Boolean                          @default(false)
+//   previewTicketBusiness          Boolean                          @default(false)
+//   username                       String                           @unique
+//   password                       String
+//   createAt                       DateTime                         @default(now())
+//   updateAt                       DateTime                         @default(now()) @updatedAt
+//   imageName                      String?
+//   sectorsId                      Int?
+//   Sectors                        Sectors?                         @relation(fields: [sectorsId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+//   accountId                      Int
+//   Account                        Account                          @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   businessId                     Int
+//   Business                       Business                         @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   ConversationTickes             ConversationTickes[]
+//   Tickets                        Tickets[]
+//   NotificationsSectorsAttendants NotificationsSectorsAttendants[]
+//   FastMessage                    FastMessage[]
+
+//   @@index([id, username, sectorsId, accountId, businessId, hash])
+// }
+
+// model FastMessage {
+//   id          Int               @id @default(autoincrement())
+//   shortcut    String
+//   value       String            @db.Text
+//   attendantId Int
+//   Attendant   SectorsAttendants @relation(fields: [attendantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, shortcut])
+// }
+
+// enum TypeStatusNotificationSectorAttendant {
+//   read
+//   unread
+// }
+
+// model NotificationsSectorsAttendants {
+//   id                 Int                                   @id @default(autoincrement())
+//   subject            String
+//   content            String
+//   createAt           DateTime                              @default(now())
+//   updateAt           DateTime                              @default(now()) @updatedAt
+//   status             TypeStatusNotificationSectorAttendant @default(unread)
+//   sectorsAttendantId Int
+//   SectorsAttendants  SectorsAttendants                     @relation(fields: [sectorsAttendantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, sectorsAttendantId])
+// }
+
+// model SectorsMessages {
+//   id                         Int     @id @default(autoincrement())
+//   messageWelcome             String?
+//   messageWelcomeToOpenTicket String?
+//   messageFinishService       String?
+//   messageTransferTicket      String?
+//   sectorsId                  Int     @unique
+//   Sectors                    Sectors @relation(fields: [sectorsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   accountId                  Int
+//   Account                    Account @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id])
+// }
+
+// model LackResponses {
+//   id            Int                      @id @default(autoincrement())
+//   valueDuration Int
+//   typeDuration  TypeTimeLackResponse
+//   typeBehavior  TypeBehaviorLackResponse
+//   sendSector    Int?
+//   sendFlow      Int?
+//   sendMessage   String?
+//   // sendAttendant Int?
+//   finish        Boolean?
+//   accountId     Int
+//   Account       Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   sectorsId     Int                      @unique
+//   Sectors       Sectors                  @relation(fields: [sectorsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, typeDuration, typeBehavior, accountId, sectorsId])
+// }
+
+// model FunnelKanban {
+//   id                Int                 @id @default(autoincrement())
+//   interrupted       Boolean             @default(false)
+//   name              String
+//   createAt          DateTime            @default(now())
+//   updateAt          DateTime            @default(now()) @updatedAt
+//   StepsFunnelKanban StepsFunnelKanban[]
+//   businessId        Int
+//   Business          Business            @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   accountId         Int
+//   Account           Account             @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   Sectors           Sectors[]
+
+//   @@index([id])
+// }
+
+// model StepsFunnelKanban {
+//   id                         Int                          @id @default(autoincrement())
+//   name                       String
+//   color                      String                       @default("")
+//   sequence                   Int
+//   funnelKanbanId             Int
+//   FunnelKanban               FunnelKanban                 @relation(fields: [funnelKanbanId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   accountId                  Int
+//   Account                    Account                      @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   StepsFunnelKanbanOnTickets StepsFunnelKanbanOnTickets[]
+
+//   @@index([id])
+// }
+
+// model RootCampaignParameterRangesConfig {
+//   id                Int                 @id @default(autoincrement())
+//   name              String
+//   timeForShorts     Int
+//   timeRest          Int
+//   amountShorts      Int
+//   sequence          Int
+//   status            Boolean
+//   CampaignParameter CampaignParameter[]
+
+//   @@index([id, name, status])
+// }
+
+// enum TypeStatusTicket {
+//   new
+//   open
+//   resolved
+// }
+
+// enum TypeDestinationTicket {
+//   sector
+//   attendant
+// }
+
+// model Tickets {
+//   id                             Int                          @id @default(autoincrement())
+//   protocol                       String
+//   status                         TypeStatusTicket             @default(new)
+//   deleted                        Boolean?                     @default(false)
+//   createAt                       DateTime                     @default(now())
+//   updateAt                       DateTime                     @default(now()) @updatedAt
+//   destination                    TypeDestinationTicket
+//   destinationSectorsAttendantsId Int?
+//   sectorsId                      Int
+//   Sectors                        Sectors                      @relation(fields: [sectorsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   sectorsAttendantsId            Int?
+//   SectorsAttendants              SectorsAttendants?           @relation(fields: [sectorsAttendantsId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+//   businessId                     Int
+//   Business                       Business                     @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   contactsWAOnAccountId          Int
+//   ContactsWAOnAccount            ContactsWAOnAccount          @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   // isso aqui precisa mudar, se a conexão for excluida nao pode excluir os tickets associados a ele
+//   connectionWAId                   Int
+//   ConnectionOnBusiness           ConnectionOnBusiness         @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   StepsFunnelKanbanOnTickets     StepsFunnelKanbanOnTickets[]
+//   ConversationTickes             ConversationTickes[]
+
+//   @@index([id, protocol, contactsWAOnAccountId, status, businessId, destination, sectorsId, sectorsAttendantsId])
+// }
+
+// enum TypeSentBy {
+//   lead
+//   attendant
+//   system
+// }
+
+// model ConversationTickes {
+//   id                  Int                @id @default(autoincrement())
+//   type                String
+//   sentBy              TypeSentBy
+//   degreesLatitude     String             @default("")
+//   degreesLongitude    String             @default("")
+//   address             String             @default("")
+//   name                String             @default("")
+//   fullName            String             @default("")
+//   number              String             @default("")
+//   org                 String             @default("")
+//   read                Boolean            @default(false)
+//   message             String             @db.Text
+//   caption             String             @default("")
+//   fileName            String             @default("")
+//   sectorsAttendantsId Int?
+//   messageKey          String?
+//   SectorsAttendants   SectorsAttendants? @relation(fields: [sectorsAttendantsId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+//   createAt            DateTime           @default(now())
+//   updateAt            DateTime           @default(now()) @updatedAt
+//   ticketsId           Int
+//   Tickets             Tickets            @relation(fields: [ticketsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, sectorsAttendantsId, ticketsId])
+// }
+
+// model StepsFunnelKanbanOnTickets {
+//   sequence            Int
+//   stepsFunnelKanbanId Int
+//   StepsFunnelKanban   StepsFunnelKanban @relation(fields: [stepsFunnelKanbanId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   ticketsId           Int               @id @unique
+//   Tickets             Tickets           @relation(fields: [ticketsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([stepsFunnelKanbanId, ticketsId])
+// }
+
+// model HumanServiceOnBusinessOnContactsWAOnAccount {
+//   id                     Int                      @id @default(autoincrement())
+//   contactsWAOnAccountId  Int                      @unique
+//   ContactsWAOnAccount    ContactsWAOnAccount      @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   businessId             Int
+//   Business               Business                 @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   HumanServiceReportLead HumanServiceReportLead[]
+
+//   @@index([id, contactsWAOnAccountId, businessId])
+// }
+
+// enum TypeHumanServiceReportLead {
+//   note
+//   pendency
+// }
+
+// model HumanServiceReportLead {
+//   id                                            Int                                         @id @default(autoincrement())
+//   type                                          TypeHumanServiceReportLead
+//   value                                         String
+//   createAt                                      DateTime                                    @default(now())
+//   updateAt                                      DateTime                                    @default(now()) @updatedAt
+//   humanServiceOnBusinessOnContactsWAOnAccountId Int
+//   HumanServiceOnBusinessOnContactsWAOnAccount   HumanServiceOnBusinessOnContactsWAOnAccount @relation(fields: [humanServiceOnBusinessOnContactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, type, humanServiceOnBusinessOnContactsWAOnAccountId])
+// }
+
+// model ScheduledMessages {
+//   id                    Int                 @id @default(autoincrement())
+//   message               String
+//   isSent                Boolean?            @default(false)
+//   date                  DateTime
+//   createAt              DateTime            @default(now())
+//   updateAt              DateTime            @default(now()) @updatedAt
+//   contactsWAOnAccountId Int
+//   ContactsWAOnAccount   ContactsWAOnAccount @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, isSent])
+// }
+
+// model EmailServiceConfiguration {
+//   id                                  Int                                   @id @default(autoincrement())
+//   interrupted                         Boolean                               @default(false)
+//   host                                String
+//   port                                Int
+//   secure                              Boolean?                              @default(false)
+//   user                                String
+//   pass                                String
+//   createAt                            DateTime                              @default(now())
+//   updateAt                            DateTime                              @default(now()) @updatedAt
+//   accountId                           Int
+//   Account                             Account                               @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   EmailServiceConfigurationOnBusiness EmailServiceConfigurationOnBusiness[]
+
+//   @@index([id, accountId])
+// }
+
+// model EmailServiceConfigurationOnBusiness {
+//   id                          Int                       @id @default(autoincrement())
+//   businessId                  Int
+//   Business                    Business                  @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   emailServiceConfigurationId Int
+//   EmailServiceConfiguration   EmailServiceConfiguration @relation(fields: [emailServiceConfigurationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, businessId, emailServiceConfigurationId])
+// }
+
+// model LinkTrackingPixel {
+//   id                      Int                       @id @default(autoincrement())
+//   interrupted             Boolean                   @default(false)
+//   name                    String
+//   link                    String
+//   createAt                DateTime                  @default(now())
+//   updateAt                DateTime                  @default(now()) @updatedAt
+//   accountId               Int
+//   Account                 Account                   @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   businessId              Int
+//   Business                Business                  @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   LinkTrackingPixelEvents LinkTrackingPixelEvents[]
+
+//   @@index([id, accountId, businessId])
+// }
+
+// model LinkTrackingPixelEvents {
+//   id                    Int                  @id @default(autoincrement())
+//   event                 String
+//   value                 String
+//   createAt              DateTime             @default(now())
+//   updateAt              DateTime             @default(now()) @updatedAt
+//   contactsWAOnAccountId Int
+//   ContactsWAOnAccount   ContactsWAOnAccount  @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   campaignId            Int?
+//   Campaign              Campaign?            @relation(fields: [campaignId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+//   linkTrackingPixelId   Int
+//   LinkTrackingPixel     LinkTrackingPixel    @relation(fields: [linkTrackingPixelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   accountId             Int
+//   Account               Account              @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   connectionWhatsId     Int
+//   Connection            ConnectionOnBusiness @relation(fields: [connectionWhatsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, event, value])
+// }
+
+// enum TypeArtificialIntelligence {
+//   OPENAI
+//   DEEPSEEK
+// }
+
+// enum ModelArtificialIntelligence {
+//   DeepseekChat
+//   DeepseekReasoner
+//   Gpt4
+//   Gpt4Turbo
+//   Gpt4o
+//   Gpt4oMini
+//   O1
+//   O1Mini
+//   Gpt35Turbo0125
+// }
+
+// model ArtificialIntelligence {
+//   id                               Int                                @id @default(autoincrement())
+//   name                             String
+//   description                      String?                            @db.Text
+//   apiKey                           String
+//   model                            ModelArtificialIntelligence
+//   type                             TypeArtificialIntelligence
+//   temperature                      Decimal?                           @default(0.1) @db.Decimal(2, 1)
+//   createAt                         DateTime                           @default(now())
+//   updateAt                         DateTime                           @default(now()) @updatedAt
+//   accountId                        Int
+//   Account                          Account                            @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   ArtificialIntelligenceOnBusiness ArtificialIntelligenceOnBusiness[]
+//   AttendantOnAI                    AttendantOnAI[]
+
+//   @@index([id, name, model, type, accountId])
+// }
+
+// model ArtificialIntelligenceOnBusiness {
+//   id                     Int                    @id @default(autoincrement())
+//   businessId             Int
+//   Business               Business               @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   aiId                   Int
+//   ArtificialIntelligence ArtificialIntelligence @relation(fields: [aiId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, businessId, aiId])
+// }
+
+// model AttendantOnAI {
+//   id                      Int                       @id @default(autoincrement())
+//   name                    String
+//   description             String?                   @db.Text
+//   briefing                String?                   @db.Text
+//   personality             String?                   @db.Text
+//   role                    String?                   @db.Text
+//   definitions             String?                   @db.Text
+//   knowledgeBase           String?                   @db.Text
+//   createAt                DateTime                  @default(now())
+//   updateAt                DateTime                  @default(now()) @updatedAt
+//   aiId                    Int
+//   ArtificialIntelligence  ArtificialIntelligence    @relation(fields: [aiId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   accountId               Int
+//   Account                 Account                   @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   AttendantOnAIOnBusiness AttendantOnAIOnBusiness[]
+//   FilesOnAttendantOnAI    FilesOnAttendantOnAI[]
+
+//   @@index([id, name, aiId, accountId])
+// }
+
+// model FilesOnAttendantOnAI {
+//   id            Int           @id @default(autoincrement())
+//   filename      String
+//   originalname  String
+//   attendantAIId Int
+//   AttendantOnAI AttendantOnAI @relation(fields: [attendantAIId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, originalname])
+// }
+
+// model AttendantOnAIOnBusiness {
+//   id            Int           @id @default(autoincrement())
+//   businessId    Int
+//   Business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   attendantId   Int
+//   AttendantOnAI AttendantOnAI @relation(fields: [attendantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, businessId, attendantId])
+// }
+
+// model FacebookIntegration {
+//   id                            Int                             @id @default(autoincrement())
+//   name                          String
+//   description                   String?
+//   access_token                  String?                         @db.VarChar(240)
+//   status                        Boolean                         @default(true)
+//   createAt                      DateTime                        @default(now())
+//   updateAt                      DateTime                        @default(now()) @updatedAt
+//   accountId                     Int
+//   Account                       Account                         @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   FacebookIntegrationOnBusiness FacebookIntegrationOnBusiness[]
+
+//   @@index([id])
+// }
+
+// model FacebookIntegrationOnBusiness {
+//   id                    Int                 @id @default(autoincrement())
+//   businessId            Int
+//   Business              Business            @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   facebookIntegrationId Int
+//   FacebookIntegration   FacebookIntegration @relation(fields: [facebookIntegrationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, businessId, facebookIntegrationId])
+// }
+
+// enum TypeTimeLackResponse {
+//   minutes
+//   hours
+// }
+
+// enum TypeDistributionSectors {
+//   normal
+//   sequential
+//   balanced
+// }
 
 enum TypeTag {
   contactwa
   audience
 }
 
-enum TypeAccount {
-  professional
-  personal
-}
+// enum TypeAccount {
+//   professional
+//   personal
+// }
 
-enum TypePlan {
-  free
-  paid
-}
+// enum TypePlan {
+//   free
+//   paid
+// }

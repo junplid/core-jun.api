@@ -1,13 +1,11 @@
 import { Request, Response } from "express";
-import { CreateTagOnBusinessDTO_I } from "./DTO";
-import { CreateTagOnBusinessUseCase } from "./UseCase";
+import { CreateTagDTO_I } from "./DTO";
+import { CreateTagUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
-export const CreateTagOnBusinessController = (
-  useCase: CreateTagOnBusinessUseCase
-) => {
+export const CreateTagController = (useCase: CreateTagUseCase) => {
   const execute = async (
-    req: Request<any, any, CreateTagOnBusinessDTO_I>,
+    req: Request<any, any, CreateTagDTO_I>,
     res: Response
   ): Promise<Response> => {
     try {

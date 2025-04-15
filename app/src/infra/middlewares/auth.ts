@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { prisma } from "../../adapters/Prisma/client";
 import { Result, decodeTokenAuth } from "../../helpers/authToken";
 
-type expected = "root" | "adm" | "attendant" | "supervisor" | "subUser";
+type expected = "root" | "adm";
 
 interface PropsMiddleware_I {
   expected: expected[];
@@ -16,10 +16,10 @@ interface PropsMiddleware_I {
 const keyBody = {
   root: "rootId",
   adm: "accountId",
-  subUser: "accountId",
-  attendant: "userId",
-  supervisor: "userId",
-  api: "userId",
+  // subUser: "accountId",
+  // attendant: "userId",
+  // supervisor: "userId",
+  // api: "userId",
 };
 
 export const MiddlewareAuth = async ({
@@ -72,60 +72,50 @@ export const MiddlewareAuth = async ({
     }
   }
 
-  if (tokenDecoded.type === "subUser") {
-    const accountExist = await prisma.subAccount.findFirst({
-      where: { uid: tokenDecoded.uid, status: true },
-      select: { accountId: true },
-    });
+  // if (tokenDecoded.type === "subUser") {
+  //   const accountExist = await prisma.subAccount.findFirst({
+  //     where: { uid: tokenDecoded.uid, status: true },
+  //     select: { accountId: true },
+  //   });
 
-    if (!accountExist) {
-      return res.status(401).json({
-        message: "Não authorizado! 75",
-      });
-    }
+  //   if (!accountExist) {
+  //     return res.status(401).json({
+  //       message: "Não authorizado! 75",
+  //     });
+  //   }
 
-    if (req.headers["content-type"]?.includes("multipart/form-data")) {
-      req.headers.authorization = accountExist.accountId.toString();
-      req.body.subUserUid = tokenDecoded.uid;
-    } else {
-      req.body.accountId = accountExist.accountId;
-      req.body.subUserUid = tokenDecoded.uid;
-    }
-    return next();
-  }
-  if (tokenDecoded.type === "attendant") {
-    const sectorsAttendantsAlreadyExist = await prisma.sectorsAttendants.count({
-      where: { id: tokenDecoded.id, hash: tokenDecoded.hash },
-    });
+  //   if (req.headers["content-type"]?.includes("multipart/form-data")) {
+  //     req.headers.authorization = accountExist.accountId.toString();
+  //     req.body.subUserUid = tokenDecoded.uid;
+  //   } else {
+  //     req.body.accountId = accountExist.accountId;
+  //     req.body.subUserUid = tokenDecoded.uid;
+  //   }
+  //   return next();
+  // }
+  // if (tokenDecoded.type === "attendant") {
+  //   const sectorsAttendantsAlreadyExist = await prisma.sectorsAttendants.count({
+  //     where: { id: tokenDecoded.id, hash: tokenDecoded.hash },
+  //   });
 
-    if (!sectorsAttendantsAlreadyExist) {
-      return res.status(401).json({
-        message: "Não authorizado! 96",
-      });
-    }
-  }
+  //   if (!sectorsAttendantsAlreadyExist) {
+  //     return res.status(401).json({
+  //       message: "Não authorizado! 96",
+  //     });
+  //   }
+  // }
 
-  if (tokenDecoded.type === "supervisor") {
-    const supervisorsAlreadyExist = await prisma.supervisors.count({
-      where: { id: tokenDecoded.id, hash: tokenDecoded.hash },
-    });
+  // if (tokenDecoded.type === "supervisor") {
+  //   const supervisorsAlreadyExist = await prisma.supervisors.count({
+  //     where: { id: tokenDecoded.id, hash: tokenDecoded.hash },
+  //   });
 
-    if (!supervisorsAlreadyExist) {
-      return res.status(401).json({
-        message: "Não authorizado!108",
-      });
-    }
-  }
-
-  if (
-    tokenDecoded.type === "api-ondemand" ||
-    tokenDecoded.type === "api" ||
-    tokenDecoded.type === "api-export"
-  ) {
-    return res.status(401).json({
-      message: "Não authorizado! 115",
-    });
-  }
+  //   if (!supervisorsAlreadyExist) {
+  //     return res.status(401).json({
+  //       message: "Não authorizado!108",
+  //     });
+  //   }
+  // }
 
   if (req.headers["content-type"]?.includes("multipart/form-data")) {
     req.headers.authorization = String(tokenDecoded.id);

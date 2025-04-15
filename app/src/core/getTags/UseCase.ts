@@ -19,7 +19,9 @@ export class GetTagsUseCase {
             name: true,
             id: true,
             type: true,
-            TagOnBusiness: { select: { Business: { select: { name: true } } } },
+            TagOnBusiness: {
+              select: { Business: { select: { name: true, id: true } } },
+            },
           },
         },
       },
@@ -31,7 +33,7 @@ export class GetTagsUseCase {
       tags: tags.map(({ _count, Tag: { TagOnBusiness, ...tag } }) => ({
         records: _count.TagOnBusinessOnContactsWAOnAccount,
         ...tag,
-        business: TagOnBusiness.map((s) => s.Business.name).join(", "),
+        businesses: TagOnBusiness.map((s) => s.Business),
       })),
     };
   }
