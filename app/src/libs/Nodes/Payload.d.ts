@@ -511,37 +511,37 @@ export type TypeNodesPayload =
 export type NodePayload = { id: string } & (
   | { type: "nodeInitial" }
   | { type: "nodeMessage"; data: NodeMessageData }
-  | { type: "nodeFacebookConversions"; data: NodeFacebookConversionsData }
-  | { type: "nodeAttendantAI"; data: NodeAttendantAIData }
   | { type: "nodeReply"; data: NodeReplyData }
-  | { type: "nodeValidation"; data: NodeValidationData }
-  | { type: "nodeMenu"; data: NodeMenuData }
-  | { type: "nodeSwitch"; data: NodeSwitchData }
-  | { type: "nodeSendContact"; data: NodeSendContactData }
-  | { type: "nodeSendVideo"; data: NodeSendVideoData }
-  | { type: "nodeSendPdf"; data: NodeSendPdfData }
-  | { type: "nodeSendFile"; data: NodeSendFileData }
-  | { type: "nodeSendImage"; data: NodeSendImageData }
-  | { type: "nodeSendAudio"; data: NodeSendAudioData }
-  | { type: "nodeSendLink"; data: NodeSendLinkData }
-  | { type: "nodeSendLocationGPS"; data: NodeSendLocationGPSData }
-  | { type: "nodeMathematicalOperators"; data: NodeMathematicalOperatorsData }
-  | { type: "nodeLogicalCondition"; data: NodeLogicalConditionData }
-  | { type: "nodeDistributeFlow"; data: NodeDistributeFlowData }
-  | { type: "nodeCheckPoint"; data: NodeCheckPointData }
-  | { type: "nodeInterruption"; data: NodeInterruptionData }
-  | { type: "nodeAction"; data: NodeActionData }
-  | { type: "nodeNotifyNumber"; data: NodeNotifyNumberData }
-  | { type: "nodeSendHumanService"; data: NodeSendHumanServiceData }
-  | { type: "nodeEmailSending"; data: NodeEmailSendingData }
-  | { type: "nodeLinkTranckingPixel"; data: NodeLinkTackingPixelData }
-  | {
-      type: "nodeInterruptionLinkTrackingPixel";
-      data: NodeInterruptionLinkTackingPixelData;
-    }
-  | { type: "nodeTime"; data: NodeTimeData }
-  | { type: "nodeInsertLeaderInAudience"; data: NodeInsertLeaderInAudienceData }
-  | { type: "nodeWebhook"; data: NodeWebhookData }
-  | { type: "nodeWebform"; data: NodeWebformData }
-  | { type: "nodeNewCardTrello"; data: NodeNewCardTrelloData }
 );
+// | { type: "nodeFacebookConversions"; data: NodeFacebookConversionsData }
+// | { type: "nodeAttendantAI"; data: NodeAttendantAIData }
+// | { type: "nodeValidation"; data: NodeValidationData }
+// | { type: "nodeMenu"; data: NodeMenuData }
+// | { type: "nodeSwitch"; data: NodeSwitchData }
+// | { type: "nodeSendContact"; data: NodeSendContactData }
+// | { type: "nodeSendVideo"; data: NodeSendVideoData }
+// | { type: "nodeSendPdf"; data: NodeSendPdfData }
+// | { type: "nodeSendFile"; data: NodeSendFileData }
+// | { type: "nodeSendImage"; data: NodeSendImageData }
+// | { type: "nodeSendAudio"; data: NodeSendAudioData }
+// | { type: "nodeSendLink"; data: NodeSendLinkData }
+// | { type: "nodeSendLocationGPS"; data: NodeSendLocationGPSData }
+// | { type: "nodeMathematicalOperators"; data: NodeMathematicalOperatorsData }
+// | { type: "nodeLogicalCondition"; data: NodeLogicalConditionData }
+// | { type: "nodeDistributeFlow"; data: NodeDistributeFlowData }
+// | { type: "nodeCheckPoint"; data: NodeCheckPointData }
+// | { type: "nodeInterruption"; data: NodeInterruptionData }
+// | { type: "nodeAction"; data: NodeActionData }
+// | { type: "nodeNotifyNumber"; data: NodeNotifyNumberData }
+// | { type: "nodeSendHumanService"; data: NodeSendHumanServiceData }
+// | { type: "nodeEmailSending"; data: NodeEmailSendingData }
+// | { type: "nodeLinkTranckingPixel"; data: NodeLinkTackingPixelData }
+// | {
+//     type: "nodeInterruptionLinkTrackingPixel";
+//     data: NodeInterruptionLinkTackingPixelData;
+//   }
+// | { type: "nodeTime"; data: NodeTimeData }
+// | { type: "nodeInsertLeaderInAudience"; data: NodeInsertLeaderInAudienceData }
+// | { type: "nodeWebhook"; data: NodeWebhookData }
+// | { type: "nodeWebform"; data: NodeWebformData }
+// | { type: "nodeNewCardTrello"; data: NodeNewCardTrelloData }

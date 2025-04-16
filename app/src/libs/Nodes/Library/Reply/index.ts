@@ -15,6 +15,7 @@ interface PropsNodeReply {
   flowStateId: number;
   contactsWAOnAccountId: number;
   accountId: number;
+  flowBusinessIds?: number[];
 }
 
 type ResultPromise = { action: "NEXT"; line?: string };
@@ -34,59 +35,36 @@ export const NodeReply = (props: PropsNodeReply): Promise<ResultPromise> =>
 
     const { message, data } = props;
 
-    console.log("1");
+    const variable = await prisma.variable.findFirst({
+      where: { id: data.variableId },
+      select: { type: true },
+    });
 
-    const businessIdsOnVariable = await prisma.variableOnBusiness.findMany({
+    if (!variable || variable.type !== "dynamics") {
+      return res({ action: "NEXT", line: "95" });
+    }
+
+    const x = await prisma.contactsWAOnAccountVariable.findFirst({
       where: {
         variableId: data.variableId,
-        Business: { accountId: props.accountId },
-        Variable: { type: "dynamics" },
+        contactsWAOnAccountId: props.contactsWAOnAccountId,
       },
-      select: {
-        id: true,
-        ContactsWAOnAccountVariableOnBusiness: { select: { id: true } },
-      },
+      select: { id: true },
     });
-    console.log("2");
-
-    for await (const propss of businessIdsOnVariable) {
-      if (!propss.ContactsWAOnAccountVariableOnBusiness.length) {
-        await prisma.contactsWAOnAccountVariableOnBusiness.create({
-          data: {
-            value: message,
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
-            variableOnBusinessId: propss.id,
-          },
-        });
-      } else {
-        for await (const {
-          id,
-        } of propss.ContactsWAOnAccountVariableOnBusiness) {
-          const alreadyExists =
-            await prisma.contactsWAOnAccountVariableOnBusiness.findFirst({
-              where: {
-                id: id,
-                contactsWAOnAccountId: props.contactsWAOnAccountId,
-              },
-            });
-          if (alreadyExists) {
-            await prisma.contactsWAOnAccountVariableOnBusiness.update({
-              where: { id: id },
-              data: { value: message },
-            });
-          } else {
-            await prisma.contactsWAOnAccountVariableOnBusiness.create({
-              data: {
-                value: message,
-                contactsWAOnAccountId: props.contactsWAOnAccountId,
-                variableOnBusinessId: propss.id,
-              },
-            });
-          }
-        }
-      }
+    if (x) {
+      await prisma.contactsWAOnAccountVariable.update({
+        where: { id: x.id },
+        data: { value: message },
+      });
+    } else {
+      await prisma.contactsWAOnAccountVariable.create({
+        data: {
+          value: message,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          variableId: data.variableId,
+        },
+      });
     }
-    console.log("3");
 
     const timeOnExecuteActionTimeOut = scheduleExecutionsReply.get(keyMap);
 

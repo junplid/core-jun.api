@@ -11,16 +11,16 @@ export class GetFieldsConnectionWAImplementation
 
   async fetch(connWAId: number): Promise<IConn | null> {
     try {
-      const data = await this.prisma.connectionOnBusiness.findUnique({
-        where: { id: connWAId },
-        select: {
-          name: true,
-          type: true,
-          businessId: true,
-        },
-      });
+      // const data = await this.prisma.connectionOnBusiness.findUnique({
+      //   where: { id: connWAId },
+      //   select: {
+      //     name: true,
+      //     type: true,
+      //     businessId: true,
+      //   },
+      // });
 
-      return data;
+      return null;
     } catch (error) {
       console.log(error);
       throw new Error("Erro `Create Connection`.");

@@ -19,25 +19,26 @@ export class GetConnectionsWAImplementation
     }[]
   > {
     try {
-      const data = await this.prisma.connectionOnBusiness.findMany({
-        where: {
-          Business: { accountId },
-        },
-        select: {
-          name: true,
-          type: true,
-          id: true,
-          Business: {
-            select: { name: true },
-          },
-          createAt: true,
-        },
-      });
+      // const data = await this.prisma.connectionOnBusiness.findMany({
+      //   where: {
+      //     Business: { accountId },
+      //   },
+      //   select: {
+      //     name: true,
+      //     type: true,
+      //     id: true,
+      //     Business: {
+      //       select: { name: true },
+      //     },
+      //     createAt: true,
+      //   },
+      // });
 
-      return data.map(({ Business, ...c }) => ({
-        ...c,
-        business: Business.name,
-      }));
+      // return data.map(({ Business, ...c }) => ({
+      //   ...c,
+      //   business: Business.name,
+      // }));
+      return [];
     } catch (error) {
       console.log(error);
       throw new Error("Erro `Create Connection`.");

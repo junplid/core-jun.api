@@ -3,8 +3,6 @@ import { LoginAccountRepository_I } from "./Repository";
 
 import { compare } from "bcrypt";
 import { createTokenAuth } from "../../helpers/authToken";
-import { getCustomerAssas } from "../../services/Assas/Customer";
-import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
 export class LoginAccountUseCase {
@@ -30,28 +28,27 @@ export class LoginAccountUseCase {
     }
 
     if (account.type === "adm") {
-      const isCustomer = account.customerId
-        ? !!(await getCustomerAssas(account.customerId))
-        : false;
-
-      if (account.customerId && !isCustomer) {
-        await prisma.account.update({
-          where: { id: account.id },
-          data: {
-            customerId: null,
-            CreditCardsAccount: {
-              deleteMany: { accountId: account.id },
-            },
-          },
-        });
-      }
+      // const isCustomer = account.customerId
+      //   ? !!(await getCustomerAssas(account.customerId))
+      //   : false;
+      // if (account.customerId && !isCustomer) {
+      //   await prisma.account.update({
+      //     where: { id: account.id },
+      //     data: {
+      //       customerId: null,
+      //       CreditCardsAccount: {
+      //         deleteMany: { accountId: account.id },
+      //       },
+      //     },
+      //   });
+      // }
     }
 
     const token = await createTokenAuth(
       {
-        ...(account.type === "adm"
-          ? { id: account.id, type: account.type, hash: account.hash }
-          : { uid: account.uid, type: account.type }),
+        id: account.id,
+        type: account.type,
+        hash: account.hash,
       },
       "secret123"
     );

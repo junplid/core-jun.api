@@ -56,7 +56,7 @@ export class UpdateChatbotUseCase {
 
       let pickConnection: null | PickConnection_I = null;
       if (dto.connectionOnBusinessId) {
-        pickConnection = await prisma.connectionOnBusiness.findFirst({
+        pickConnection = await prisma.connectionWA.findFirst({
           where: {
             id: dto.connectionOnBusinessId,
             Business: { accountId: dto.accountId, id: dto.businessId },
@@ -80,7 +80,6 @@ export class UpdateChatbotUseCase {
                 id: true,
                 name: true,
                 TimesWork: {
-                  where: { type: "chatbot" },
                   select: { startTime: true, endTime: true, dayOfWeek: true },
                 },
               },
@@ -239,63 +238,58 @@ export class UpdateChatbotUseCase {
         );
       }
 
-      const {
-        connectionOnBusinessId,
-        Business,
-        ConnectionOnBusiness,
-        inputActivation,
-      } = await prisma.chatbot.update({
-        where: { id, accountId },
-        data: {
-          ...rest,
-          ...(leadOriginList?.length && { leadOriginList }),
-          insertTagsLead: insertTagsLead
-            ? insertTagsLead?.join("-")
-            : undefined,
-          ...(timesWork?.length && {
-            TimesWork: {
-              deleteMany: { chatbotId: id },
-              createMany: {
-                data: timesWork.map((s) => ({ ...s, type: "chatbot" })),
+      const { ConnectionWA, Business, inputActivation } =
+        await prisma.chatbot.update({
+          where: { id, accountId },
+          data: {
+            ...rest,
+            ...(leadOriginList?.length && { leadOriginList }),
+            insertTagsLead: insertTagsLead
+              ? insertTagsLead?.join("-")
+              : undefined,
+            ...(timesWork?.length && {
+              TimesWork: {
+                deleteMany: { chatbotId: id },
+                createMany: {
+                  data: timesWork.map((s) => ({ ...s, type: "chatbot" })),
+                },
               },
-            },
-          }),
-          ...(ChatbotMessageActivationsFail && {
-            ChatbotMessageActivationsFail: {
-              upsert: {
-                where: { chatbotId: 1 },
-                create: ChatbotMessageActivationsFail,
-                update: ChatbotMessageActivationsFail,
+            }),
+            ...(ChatbotMessageActivationsFail && {
+              ChatbotMessageActivationsFail: {
+                upsert: {
+                  where: { chatbotId: 1 },
+                  create: ChatbotMessageActivationsFail,
+                  update: ChatbotMessageActivationsFail,
+                },
               },
-            },
-          }),
-          ...(ChatbotAlternativeFlows && {
-            ChatbotAlternativeFlows: {
-              upsert: {
-                create: ChatbotAlternativeFlows,
-                update: ChatbotAlternativeFlows,
+            }),
+            ...(ChatbotAlternativeFlows && {
+              ChatbotAlternativeFlows: {
+                upsert: {
+                  create: ChatbotAlternativeFlows,
+                  update: ChatbotAlternativeFlows,
+                },
               },
-            },
-          }),
-        },
-        select: {
-          inputActivation: true,
-          connectionOnBusinessId: true,
-          ConnectionOnBusiness: { select: { number: true } },
-          Business: { select: { name: true } },
-        },
-      });
+            }),
+          },
+          select: {
+            inputActivation: true,
+            ConnectionWA: { select: { id: true, number: true } },
+            Business: { select: { name: true } },
+          },
+        });
 
       let statusConn = false;
 
-      if (connectionOnBusinessId) {
+      if (ConnectionWA) {
         statusConn = !!sessionsBaileysWA
-          .get(connectionOnBusinessId)
+          .get(ConnectionWA.id)
           ?.ev.emit("connection.update", { connection: "open" });
       }
       let target: null | string = null;
-      if (inputActivation && ConnectionOnBusiness) {
-        target = `https://api.whatsapp.com/send?phone=${ConnectionOnBusiness.number}&text=${inputActivation}`;
+      if (inputActivation && ConnectionWA) {
+        target = `https://api.whatsapp.com/send?phone=${ConnectionWA.number}&text=${inputActivation}`;
       }
 
       return {

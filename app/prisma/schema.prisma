@@ -661,13 +661,13 @@ model ConnectionWA {
   id               Int                @id @default(autoincrement())
   interrupted      Boolean            @default(false)
   name             String             @db.VarChar(50)
-  type             TypeConnetion?
+  type             TypeConnetion
   countShots       Int                @default(0)
   number           String?
   createAt         DateTime           @default(now())
   updateAt         DateTime           @default(now()) @updatedAt
-  businessId       Int?
-  Business         Business?          @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  businessId       Int
+  Business         Business           @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Chatbot          Chatbot[]
   ConnectionConfig ConnectionConfig?
   RootConnectionWA RootConnectionWA[]

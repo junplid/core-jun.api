@@ -1,37 +1,50 @@
-import { GetChabotsRepository_I } from "./Repository";
 import { GetChabotsDTO_I } from "./DTO";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
+import { prisma } from "../../adapters/Prisma/client";
 
 export class GetChabotsUseCase {
-  constructor(private repository: GetChabotsRepository_I) {}
+  constructor() {}
 
   async run(dto: GetChabotsDTO_I) {
-    const data = await this.repository.fetch(dto);
+    const data = await prisma.chatbot.findMany({
+      where: {
+        accountId: dto.accountId,
+        ...(dto.type?.length && { typeActivation: { in: dto.type } }),
+      },
+      select: {
+        name: true,
+        id: true,
+        createAt: true,
+        status: true,
+        ConnectionWA: { select: { id: true, number: true } },
+        Business: { select: { name: true, id: true } },
+      },
+    });
 
-    const nextData = data.map(
-      ({ ConnectionOnBusiness, status, typeActivation, ...r }) => {
-        if (!ConnectionOnBusiness) {
-          return { ...r, statusChatbot: "OFF", statusConn: "OFF" };
-        }
-
-        const isConnected = sessionsBaileysWA
-          .get(ConnectionOnBusiness.id)
-          ?.ev.emit("connection.update", { connection: "open" });
-
-        let target: null | string = null;
-        if (r.inputActivation && ConnectionOnBusiness.number) {
-          target = `https://api.whatsapp.com/send?phone=${ConnectionOnBusiness.number}&text=${r.inputActivation}`;
-        }
-
+    const nextData = data.map(({ ConnectionWA, status, ...r }) => {
+      if (!ConnectionWA) {
         return {
           ...r,
-          type: typeActivation,
-          target,
-          statusChatbot: !!status ? "ON" : "OFF",
-          statusConn: !!isConnected ? "ON" : "OFF",
+          status: "OFF",
+          // source: null,
         };
       }
-    );
+
+      const isConnected = sessionsBaileysWA
+        .get(ConnectionWA.id)
+        ?.ev.emit("connection.update", { connection: "open" });
+
+      // let source: null | string = null;
+      // if (r.inputActivation && ConnectionWA.number) {
+      //   source = `https://api.whatsapp.com/send?phone=${ConnectionWA.number}&text=${r.inputActivation}`;
+      // }
+
+      return {
+        ...r,
+        // source,
+        status: isConnected && status ? "ON" : "OFF",
+      };
+    });
 
     return {
       message: "OK!",

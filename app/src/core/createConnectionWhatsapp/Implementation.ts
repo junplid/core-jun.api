@@ -15,7 +15,7 @@ export class CreateConnectionWhatsappImplementation
     type: TypeConnetion;
   }): Promise<number> {
     try {
-      const data = await this.prisma.connectionOnBusiness.count({
+      const data = await this.prisma.connectionWA.count({
         where: props,
       });
 
@@ -32,15 +32,14 @@ export class CreateConnectionWhatsappImplementation
     type: TypeConnetion;
   }): Promise<{ idConnection: number; createAt: Date; business: string }> {
     try {
-      const { Business, ...data } =
-        await this.prisma.connectionOnBusiness.create({
-          data: props,
-          select: {
-            id: true,
-            createAt: true,
-            Business: { select: { name: true } },
-          },
-        });
+      const { Business, ...data } = await this.prisma.connectionWA.create({
+        data: props,
+        select: {
+          id: true,
+          createAt: true,
+          Business: { select: { name: true } },
+        },
+      });
 
       return {
         idConnection: data.id,

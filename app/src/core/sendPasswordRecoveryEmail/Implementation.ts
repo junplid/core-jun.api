@@ -23,29 +23,27 @@ export class SendPasswordRecoveryEmailImplementation
     }
   }
 
-  async findHumanService(props: {
-    email: string;
-  }): Promise<{
+  async findHumanService(props: { email: string }): Promise<{
     id: number;
     type: "attendant" | "supervisor";
     hash: string;
   } | null> {
     try {
-      const attendant = await this.prisma.sectorsAttendants.findFirst({
-        where: { username: props.email },
-        select: { id: true, hash: true },
-      });
-      if (attendant) {
-        return { id: attendant.id, type: "attendant", hash: attendant.hash };
-      }
+      // const attendant = await this.prisma.sectorsAttendants.findFirst({
+      //   where: { username: props.email },
+      //   select: { id: true, hash: true },
+      // });
+      // if (attendant) {
+      //   return { id: attendant.id, type: "attendant", hash: attendant.hash };
+      // }
 
-      const supervisor = await this.prisma.supervisors.findFirst({
-        where: { username: props.email },
-        select: { id: true, hash: true },
-      });
-      if (supervisor) {
-        return { id: supervisor.id, type: "supervisor", hash: supervisor.hash };
-      }
+      // const supervisor = await this.prisma.supervisors.findFirst({
+      //   where: { username: props.email },
+      //   select: { id: true, hash: true },
+      // });
+      // if (supervisor) {
+      //   return { id: supervisor.id, type: "supervisor", hash: supervisor.hash };
+      // }
       return null;
     } catch (error) {
       console.log(error);

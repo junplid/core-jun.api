@@ -10,7 +10,7 @@ export class GetChatbotDetailsUseCase {
       where: { id: dto.id, accountId: dto.accountId },
       orderBy: { id: "desc" },
       include: {
-        ConnectionOnBusiness: {
+        ConnectionWA: {
           select: { name: true, id: true, number: true },
         },
         TimesWork: {
@@ -60,14 +60,13 @@ export class GetChatbotDetailsUseCase {
       ChatbotAlternativeFlows,
       ChatbotMessageActivationsFail,
       ChatbotMessageActivations,
-      connectionOnBusinessId,
-      ConnectionOnBusiness,
+      ConnectionWA,
       ...rest
     } = chatbot;
 
     let target: null | string = null;
-    if (chatbot.inputActivation && ConnectionOnBusiness) {
-      target = `https://api.whatsapp.com/send?phone=${ConnectionOnBusiness.number}&text=${chatbot.inputActivation}`;
+    if (chatbot.inputActivation && ConnectionWA) {
+      target = `https://api.whatsapp.com/send?phone=${ConnectionWA.number}&text=${chatbot.inputActivation}`;
     }
 
     return {
@@ -78,7 +77,7 @@ export class GetChatbotDetailsUseCase {
         type: chatbot.typeActivation,
         target,
         business: Business,
-        connection: ConnectionOnBusiness,
+        connection: ConnectionWA,
         timesWork: TimesWork,
         insertTagsLead: insertTagsLead ? insertTagsLead.split("-") : undefined,
         ChatbotInactivity,

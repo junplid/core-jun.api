@@ -50,7 +50,7 @@ export class SendPasswordRecoveryEmailUseCase {
     }
 
     const token = Buffer.from(
-      await createTokenAuth(user, "recover-password-whabot")
+      await createTokenAuth({ ...user, type: "adm" }, "recover-password-whabot")
     ).toString("base64");
 
     const path = resolve(__dirname, "../../config/root.json");

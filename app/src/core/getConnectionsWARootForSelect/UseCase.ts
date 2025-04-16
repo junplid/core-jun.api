@@ -6,7 +6,7 @@ export class GetConnectionsWARootForSelectUseCase {
   constructor() {}
 
   async run(dto: GetConnectionsWARootForSelectDTO_I) {
-    const connections = await prisma.connectionOnBusiness.findMany({
+    const connections = await prisma.connectionWA.findMany({
       where: {
         ...(dto.email && {
           Business: { Account: { email: { contains: dto.email } } },

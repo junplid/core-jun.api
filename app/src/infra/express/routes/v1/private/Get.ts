@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { getAccountUserController } from "../../../../../core/getAccountUserPublic";
-import { getAccountUserValidation } from "../../../../../core/getAccountUserPublic/Validation";
+import { getAccountController } from "../../../../../core/getAccount";
+import { getAccountValidation } from "../../../../../core/getAccount/Validation";
 // import { getAudienceOnAccountForSelectController } from "../../../../../core/getAudienceOnAccountForSelect";
 // import { getAudienceOnAccountForSelectValidation } from "../../../../../core/getAudienceOnAccountForSelect/Validation";
 // import { getAuthorizationAccountController } from "../../../../../core/getAuthorizationAccount";
@@ -272,11 +272,7 @@ RouterV1Private_Get.get(
   getStatusSessionWhatsappPublicController
 );
 
-RouterV1Private_Get.get(
-  "/account-user",
-  getAccountUserValidation,
-  getAccountUserController
-);
+RouterV1Private_Get.get("/account", getAccountValidation, getAccountController);
 
 RouterV1Private_Get.get("/tags", getTagsValidation, getTagsController);
 

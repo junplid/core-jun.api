@@ -6,7 +6,7 @@ import http from "http";
 import { resolve } from "path";
 import { Server } from "socket.io";
 import { prisma } from "../../adapters/Prisma/client";
-import { startChatbotQueue } from "../../bin/startChatbotQueue";
+// import { startChatbotQueue } from "../../bin/startChatbotQueue";
 import { WebSocketIo } from "../websocket";
 import { App as app } from "./app";
 import chalk from "chalk";
@@ -75,7 +75,7 @@ const startServer = async (): Promise<void> => {
 
           for await (const fileName of dirPathQueue) {
             const chatbotId = Number(fileName.split(".")[0]);
-            await startChatbotQueue(chatbotId);
+            // await startChatbotQueue(chatbotId);
           }
         } catch (error) {
           console.log("Error na iniciação", error);

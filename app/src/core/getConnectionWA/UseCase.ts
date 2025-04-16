@@ -2,8 +2,8 @@ import { TypeConnetion } from "@prisma/client";
 import { Contact } from "baileys";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
 import { GetConnectionWADTO_I } from "./DTO";
-import { GetConnectionWARepository_I } from "./Repository";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { prisma } from "../../adapters/Prisma/client";
 
 interface IConnection {
   id: number;
@@ -21,10 +21,23 @@ interface IConnection {
 }
 
 export class GetConnectionWAUseCase {
-  constructor(private repository: GetConnectionWARepository_I) {}
+  constructor() {}
 
   async run(dto: GetConnectionWADTO_I) {
-    const connection = await this.repository.fetch(dto.id);
+    const connection = await prisma.connectionWA.findUnique({
+      where: { id: dto.id },
+      select: {
+        name: true,
+        type: true,
+        id: true,
+        countShots: true,
+        updateAt: true,
+        number: true,
+        Chatbot: { select: { name: true } },
+        Business: { select: { name: true } },
+        createAt: true,
+      },
+    });
 
     if (!connection) {
       throw new ErrorResponse(400).toast({
@@ -52,22 +65,22 @@ export class GetConnectionWAUseCase {
       Object.assign(connection, { status: "close" });
     }
 
-    const { Chatbot, Business, ConnectionOnCampaign, _count, ...conn } =
-      connection;
+    // const { Chatbot, Business, ConnectionOnCampaign, _count, ...conn } =
+    //   connection;
 
-    Object.assign(conn, {
-      business: Business.name,
-      countTickets: _count.Tickets,
-      campaigns: ConnectionOnCampaign.map(({ CampaignOnBusiness }) => {
-        return CampaignOnBusiness.Campaign;
-      }),
-      chatbots: Chatbot.map(({ name }) => name),
-    });
+    // Object.assign(conn, {
+    //   business: Business.name,
+    //   countTickets: _count.Tickets,
+    //   campaigns: ConnectionOnCampaign.map(({ CampaignOnBusiness }) => {
+    //     return CampaignOnBusiness.Campaign;
+    //   }),
+    //   chatbots: Chatbot.map(({ name }) => name),
+    // });
 
     return {
       message: "OK!",
       status: 200,
-      connection: conn,
+      connection: {},
     };
   }
 }

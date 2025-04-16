@@ -7,24 +7,24 @@ export class GetConnectionsWARootUseCase {
 
   async run(dto: GetConnectionsWARootDTO_I) {
     const connections = await prisma.rootConnectionWA.findMany({
-      select: { id: true, Connection: { select: { name: true, id: true } } },
+      select: { id: true, ConnectionWA: { select: { name: true, id: true } } },
     });
 
     const nextConnections = await Promise.all(
-      connections.map(async ({ Connection, ...cnn }) => {
+      connections.map(async ({ ConnectionWA, ...cnn }) => {
         try {
-          if (!Connection) return null;
+          if (!ConnectionWA) return null;
           const isConnected = sessionsBaileysWA
-            .get(Connection.id)
+            .get(ConnectionWA.id)
             ?.ev.emit("connection.update", { connection: "open" });
           return {
             ...cnn,
-            name: Connection.name,
+            name: ConnectionWA.name,
             status: !!isConnected,
           };
         } catch (error) {
-          if (!Connection) return null;
-          return { ...cnn, name: Connection.name, status: false };
+          if (!ConnectionWA) return null;
+          return { ...cnn, name: ConnectionWA.name, status: false };
         }
       })
     );

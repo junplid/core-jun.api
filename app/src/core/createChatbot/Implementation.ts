@@ -44,7 +44,7 @@ export class CraeteSectorImplementation implements CreateChatbotRepository_I {
           id: true,
           createAt: true,
           Business: { select: { name: true } },
-          ConnectionOnBusiness: {
+          ConnectionWA: {
             select: { number: true },
           },
         },
@@ -58,7 +58,7 @@ export class CraeteSectorImplementation implements CreateChatbotRepository_I {
       return {
         ...Chatbot!,
         businessName: Chatbot!.Business.name,
-        numberConnection: Chatbot.ConnectionOnBusiness?.number ?? undefined,
+        numberConnection: Chatbot.ConnectionWA?.number ?? undefined,
       };
     } catch (error) {
       console.log(error);
@@ -117,7 +117,7 @@ export class CraeteSectorImplementation implements CreateChatbotRepository_I {
     connectionId: number;
   }): Promise<ResultFetchExistConnection | null> {
     try {
-      return await this.prisma.connectionOnBusiness.findFirst({
+      return await this.prisma.connectionWA.findFirst({
         where: {
           id: props.connectionId,
           Business: {
@@ -145,7 +145,6 @@ export class CraeteSectorImplementation implements CreateChatbotRepository_I {
               id: true,
               name: true,
               TimesWork: {
-                where: { type: "chatbot" },
                 select: { startTime: true, endTime: true, dayOfWeek: true },
               },
             },

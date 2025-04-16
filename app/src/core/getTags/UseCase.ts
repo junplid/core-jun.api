@@ -5,24 +5,16 @@ export class GetTagsUseCase {
   constructor() {}
 
   async run(dto: GetTagsDTO_I) {
-    const tags = await prisma.tagOnBusiness.findMany({
-      where: { Business: { accountId: dto.accountId } },
+    const tags = await prisma.tag.findMany({
+      where: { accountId: dto.accountId },
       orderBy: { id: "desc" },
       select: {
-        _count: {
-          select: {
-            TagOnBusinessOnContactsWAOnAccount: true,
-          },
-        },
-        Tag: {
-          select: {
-            name: true,
-            id: true,
-            type: true,
-            TagOnBusiness: {
-              select: { Business: { select: { name: true, id: true } } },
-            },
-          },
+        _count: { select: { TagOnContactsWAOnAccount: true } },
+        name: true,
+        id: true,
+        type: true,
+        TagOnBusiness: {
+          select: { Business: { select: { name: true, id: true } } },
         },
       },
     });
@@ -30,8 +22,8 @@ export class GetTagsUseCase {
     return {
       message: "OK!",
       status: 200,
-      tags: tags.map(({ _count, Tag: { TagOnBusiness, ...tag } }) => ({
-        records: _count.TagOnBusinessOnContactsWAOnAccount,
+      tags: tags.map(({ _count, TagOnBusiness, ...tag }) => ({
+        records: _count.TagOnContactsWAOnAccount,
         ...tag,
         businesses: TagOnBusiness.map((s) => s.Business),
       })),

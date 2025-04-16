@@ -38,18 +38,18 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
     const connectionFind = await prisma.chatbot.findFirst({
       where: { id: chatbotId, status: true },
       select: {
-        connectionOnBusinessId: true,
+        connectionWAId: true,
       },
     });
 
-    if (!connectionFind?.connectionOnBusinessId) {
+    if (!connectionFind?.connectionWAId) {
       console.log(
         "Chatbot não pode ser iniciado, porque a conexão não foi encontrada ou estava desativada!."
       );
       return res();
     }
 
-    const bot = sessionsBaileysWA.get(connectionFind.connectionOnBusinessId);
+    const bot = sessionsBaileysWA.get(connectionFind.connectionWAId);
 
     if (!bot) {
       console.log(
@@ -93,7 +93,7 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
             accountId: true,
             Business: { select: { name: true } },
             flowId: true,
-            ConnectionOnBusiness: { select: { number: true, id: true } },
+            ConnectionWA: { select: { number: true, id: true } },
             insertTagsLead: true,
             insertNewLeadsOnAudienceId: true,
             typeActivation: true,
@@ -120,7 +120,7 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
         });
         console.log("9");
 
-        if (infoChatbot && infoChatbot.ConnectionOnBusiness?.number) {
+        if (infoChatbot && infoChatbot.ConnectionWA?.number) {
           const {
             typeActivation,
             typeMessageWhatsApp,
@@ -288,33 +288,33 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
                 const { insertTagsLead, insertNewLeadsOnAudienceId } =
                   infoChatbot;
 
-                if (insertTagsLead) {
-                  const listTagsIdsLead: number[] = insertTagsLead
-                    .split("-")
-                    .map((s) => JSON.parse(s));
-                  const tagOnBusinessIds = await prisma.tagOnBusiness.findMany({
-                    where: { tagId: { in: listTagsIdsLead } },
-                    select: { id: true },
-                  });
-                  tagOnBusinessIds.forEach(({ id }) => {
-                    prisma.tagOnBusinessOnContactsWAOnAccount.create({
-                      data: {
-                        contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                        tagOnBusinessId: id,
-                      },
-                    });
-                  });
-                }
+                // if (insertTagsLead) {
+                //   const listTagsIdsLead: number[] = insertTagsLead
+                //     .split("-")
+                //     .map((s) => JSON.parse(s));
+                //   const tagOnBusinessIds = await prisma.tagOnBusiness.findMany({
+                //     where: { tagId: { in: listTagsIdsLead } },
+                //     select: { id: true },
+                //   });
+                //   tagOnBusinessIds.forEach(({ id }) => {
+                //     prisma.tagOnBusinessOnContactsWAOnAccount.create({
+                //       data: {
+                //         contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                //         tagOnBusinessId: id,
+                //       },
+                //     });
+                //   });
+                // }
                 console.log("15");
 
-                if (insertNewLeadsOnAudienceId) {
-                  prisma.contactsWAOnAccountOnAudience.create({
-                    data: {
-                      audienceId: insertNewLeadsOnAudienceId,
-                      contactWAOnAccountId: ContactsWAOnAccount[0].id,
-                    },
-                  });
-                }
+                // if (insertNewLeadsOnAudienceId) {
+                //   prisma.contactsWAOnAccountOnAudience.create({
+                //     data: {
+                //       audienceId: insertNewLeadsOnAudienceId,
+                //       contactWAOnAccountId: ContactsWAOnAccount[0].id,
+                //     },
+                //   });
+                // }
                 console.log("16");
 
                 const flowFetch = await ModelFlows.aggregate([
@@ -356,7 +356,7 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
                 const { edges, nodes } = flowFetch[0];
                 let currentIndexNodeLead = await prisma.flowState.findFirst({
                   where: {
-                    connectionOnBusinessId: infoChatbot.ConnectionOnBusiness.id,
+                    connectionWAId: infoChatbot.ConnectionWA.id,
                     contactsWAOnAccountId: ContactsWAOnAccount[0].id,
                   },
                   select: { indexNode: true, id: true },
@@ -366,8 +366,7 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
                 if (!currentIndexNodeLead) {
                   currentIndexNodeLead = await prisma.flowState.create({
                     data: {
-                      connectionOnBusinessId:
-                        infoChatbot.ConnectionOnBusiness.id,
+                      connectionWAId: infoChatbot.ConnectionWA.id,
                       contactsWAOnAccountId: ContactsWAOnAccount[0].id,
                       type: "chatbot",
                       indexNode: "0",
@@ -378,18 +377,22 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
                 }
                 console.log("19");
 
-                const businessInfo =
-                  await prisma.connectionOnBusiness.findFirst({
-                    where: { id: infoChatbot.ConnectionOnBusiness.id },
-                    select: { Business: { select: { name: true } } },
-                  });
+                const businessInfo = await prisma.connectionWA.findFirst({
+                  where: { id: infoChatbot.ConnectionWA.id },
+                  select: { Business: { select: { name: true } } },
+                });
+
+                if (!businessInfo) {
+                  console.log("Connection not found");
+                  return;
+                }
 
                 console.log("20");
                 await NodeControler({
-                  businessName: businessInfo?.Business.name!,
+                  businessName: businessInfo.Business.name,
                   flowId: flowIdSend,
                   type: "running",
-                  connectionWhatsId: infoChatbot.ConnectionOnBusiness.id,
+                  connectionWhatsId: infoChatbot.ConnectionWA.id,
                   clientWA: bot,
                   isSavePositionLead: true,
                   flowStateId: currentIndexNodeLead.id,
@@ -399,14 +402,14 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
                   edges: edges,
                   nodes: nodes,
                   numberConnection:
-                    infoChatbot.ConnectionOnBusiness.number + "@s.whatsapp.net",
+                    infoChatbot.ConnectionWA.number + "@s.whatsapp.net",
                   message: leadData.messageText ?? "",
                   accountId: infoChatbot.accountId,
                   onFinish: async (vl) => {
                     if (currentIndexNodeLead) {
                       const scheduleExecutionCache =
                         scheduleExecutionsReply.get(
-                          infoChatbot.ConnectionOnBusiness!.number +
+                          infoChatbot.ConnectionWA!.number +
                             "@s.whatsapp.net" +
                             leadData.number
                         );
@@ -424,8 +427,7 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
                     const indexCurrentAlreadyExist =
                       await prisma.flowState.findFirst({
                         where: {
-                          connectionOnBusinessId:
-                            infoChatbot.ConnectionOnBusiness!.id,
+                          connectionWAId: infoChatbot.ConnectionWA!.id,
                           contactsWAOnAccountId: ContactsWAOnAccount[0].id,
                         },
                         select: { id: true },
@@ -435,8 +437,7 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
                         data: {
                           type: "chatbot",
                           indexNode: node.id,
-                          connectionOnBusinessId:
-                            infoChatbot.ConnectionOnBusiness!.id,
+                          connectionWAId: infoChatbot.ConnectionWA!.id,
                           contactsWAOnAccountId: ContactsWAOnAccount[0].id,
                         },
                       });

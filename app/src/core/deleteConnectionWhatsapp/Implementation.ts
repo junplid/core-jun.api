@@ -14,15 +14,12 @@ export class DeleteConnectionWhatsappImplementation
     accountId: number;
   }): Promise<{ name: string; type: TypeConnetion } | null> {
     try {
-      const data = await this.prisma.connectionOnBusiness.findFirst({
+      const data = await this.prisma.connectionWA.findFirst({
         where: {
           id: props.id,
           Business: { accountId: props.accountId },
         },
-        select: {
-          name: true,
-          type: true,
-        },
+        select: { name: true, type: true },
       });
 
       return data;
@@ -34,7 +31,7 @@ export class DeleteConnectionWhatsappImplementation
 
   async delete(props: { id: number; accountId: number }): Promise<void> {
     try {
-      await this.prisma.connectionOnBusiness.delete({
+      await this.prisma.connectionWA.delete({
         where: {
           id: props.id,
           Business: { accountId: props.accountId },

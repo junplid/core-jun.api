@@ -35,23 +35,15 @@ const findVariablesOnContactWA = async (
     name: string;
   }[]
 > => {
-  const variables = await prisma.contactsWAOnAccountVariableOnBusiness.findMany(
-    {
-      where: { contactsWAOnAccountId },
-      select: {
-        value: true,
-        VariableOnBusiness: {
-          select: {
-            Variable: {
-              select: { name: true },
-            },
-          },
-        },
-      },
-    }
-  );
+  const variables = await prisma.contactsWAOnAccountVariable.findMany({
+    where: { contactsWAOnAccountId },
+    select: {
+      value: true,
+      Variable: { select: { name: true } },
+    },
+  });
   return variables.map((v) => ({
-    name: v.VariableOnBusiness.Variable.name,
+    name: v.Variable.name,
     value: v.value,
   }));
 };
@@ -60,6 +52,7 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
   return new Promise(async (res, rej) => {
     const thereVariable: boolean = !!props.data.message.match(/{{\w+}}/g);
     let variables: { name: string; value: string }[] = [];
+
     if (thereVariable && props.contactsWAOnAccountId) {
       variables = await findVariablesOnContactWA(props.contactsWAOnAccountId);
       const findVarConst = await prisma.variable.findMany({

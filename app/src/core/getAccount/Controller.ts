@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { GetAccountUserDTO_I } from "./DTO";
-import { GetAccountUserUseCase } from "./UseCase";
+import { GetAccountDTO_I } from "./DTO";
+import { GetAccountUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
-export const GetAccountUserController = (useCase: GetAccountUserUseCase) => {
+export const GetAccountController = (useCase: GetAccountUseCase) => {
   const execute = async (
-    req: Request<any, any, GetAccountUserDTO_I>,
+    req: Request<any, any, GetAccountDTO_I>,
     res: Response
   ): Promise<Response> => {
     try {

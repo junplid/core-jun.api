@@ -14,29 +14,29 @@ export class GetConnectionWAUserImplementation
     accountId: number;
   }): Promise<IResult | null> {
     try {
-      const data = await this.prisma.connectionConfig.findUnique({
-        where: {
-          connectionId: props.connectionId,
-          ConnectionOnBusiness: {
-            Business: {
-              accountId: props.accountId,
-            },
-          },
-        },
-        select: {
-          fileNameImgPerfil: true,
-          groupsAddPrivacy: true,
-          imgPerfilPrivacy: true,
-          lastSeenPrivacy: true,
-          onlinePrivacy: true,
-          profileName: true,
-          profileStatus: true,
-          readReceiptsPrivacy: true,
-          statusPrivacy: true,
-        },
-      });
+      // const data = await this.prisma.connectionConfig.findUnique({
+      //   where: {
+      //     connectionId: props.connectionId,
+      //     ConnectionOnBusiness: {
+      //       Business: {
+      //         accountId: props.accountId,
+      //       },
+      //     },
+      //   },
+      //   select: {
+      //     fileNameImgPerfil: true,
+      //     groupsAddPrivacy: true,
+      //     imgPerfilPrivacy: true,
+      //     lastSeenPrivacy: true,
+      //     onlinePrivacy: true,
+      //     profileName: true,
+      //     profileStatus: true,
+      //     readReceiptsPrivacy: true,
+      //     statusPrivacy: true,
+      //   },
+      // });
 
-      return data;
+      return null;
     } catch (error) {
       console.log(error);
       throw new Error("Erro `Create Connection`.");
@@ -45,10 +45,11 @@ export class GetConnectionWAUserImplementation
 
   async fetchConn(id: number): Promise<boolean> {
     try {
-      return !!(await this.prisma.connectionOnBusiness.findFirst({
-        where: { id },
-        select: { id: true },
-      }));
+      // return !!(await this.prisma.connectionOnBusiness.findFirst({
+      //   where: { id },
+      //   select: { id: true },
+      // }));
+      return false;
     } catch (error) {
       console.log(error);
       throw new Error("Erro `Create Connection`.");

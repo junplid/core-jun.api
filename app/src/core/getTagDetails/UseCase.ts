@@ -6,20 +6,16 @@ export class GetTagDetailsUseCase {
   constructor() {}
 
   async run(dto: GetTagDetailsDTO_I) {
-    const tagg = await prisma.tagOnBusiness.findFirst({
-      where: { Business: { accountId: dto.accountId }, tagId: dto.id },
+    const tagg = await prisma.tag.findFirst({
+      where: { accountId: dto.accountId, id: dto.id },
       orderBy: { id: "desc" },
       select: {
-        _count: { select: { TagOnBusinessOnContactsWAOnAccount: true } },
-        Tag: {
-          select: {
-            name: true,
-            id: true,
-            type: true,
-            TagOnBusiness: {
-              select: { Business: { select: { name: true, id: true } } },
-            },
-          },
+        _count: { select: { TagOnContactsWAOnAccount: true } },
+        name: true,
+        id: true,
+        type: true,
+        TagOnBusiness: {
+          select: { Business: { select: { name: true, id: true } } },
         },
       },
     });
@@ -31,17 +27,14 @@ export class GetTagDetailsUseCase {
       });
     }
 
-    const {
-      _count,
-      Tag: { TagOnBusiness, ...tag },
-    } = tagg;
+    const { _count, TagOnBusiness, ...tag } = tagg;
 
     return {
       message: "OK!",
       status: 200,
       tags: {
         ...tag,
-        records: _count.TagOnBusinessOnContactsWAOnAccount,
+        records: _count.TagOnContactsWAOnAccount,
         business: TagOnBusiness.map((s) => s.Business),
       },
     };

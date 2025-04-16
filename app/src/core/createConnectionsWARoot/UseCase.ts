@@ -7,11 +7,11 @@ export class CreateConnectionsWARootUseCase {
   async run({ rootId, ...dto }: CreateConnectionsWARootDTO_I) {
     dto.connections.forEach(async (con) => {
       const exist = await prisma.rootConnectionWA.count({
-        where: { connectionId: con },
+        where: { connectionWAId: con },
       });
       if (!exist) {
         await prisma.rootConnectionWA.create({
-          data: { connectionId: con },
+          data: { connectionWAId: con },
         });
       }
     });

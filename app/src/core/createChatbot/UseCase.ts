@@ -35,82 +35,82 @@ export class CreateChatbotUseCase {
   constructor(private repository: CreateChatbotRepository_I) {}
 
   async run({ status = true, ...dto }: CreateChatbotDTO_I) {
-    const countResource = await prisma.chatbot.count({
-      where: { accountId: dto.accountId },
-    });
-    const assets = await prisma.account.findFirst({
-      where: { id: dto.accountId },
-      select: {
-        Plan: {
-          select: { PlanAssets: { select: { business: true } } },
-        },
-        AccountSubscriptions: {
-          where: { dateOfCancellation: null },
-          select: {
-            type: true,
-            subscriptionsId: true,
-            PlanPeriods: {
-              select: {
-                Plan: {
-                  select: { PlanAssets: { select: { chatbots: true } } },
-                },
-              },
-            },
-            ExtraPackage: {
-              where: { type: "chatbotConversations" },
-              select: { amount: true },
-            },
-          },
-        },
-      },
-    });
-    if (assets?.AccountSubscriptions.length) {
-      const listExtraAmount = await Promise.all(
-        assets.AccountSubscriptions.map(async (sub) => {
-          if (sub.ExtraPackage) {
-            const isValidSub = await isSubscriptionInOrder(sub.subscriptionsId);
-            if (!isValidSub) return (sub.ExtraPackage?.amount || 0) * -1;
-          }
-          return sub.ExtraPackage?.amount || 0;
-        })
-      );
-      const totalAmountExtra = listExtraAmount.reduce(
-        (prv, cur) => prv + cur,
-        0
-      );
+    // const countResource = await prisma.chatbot.count({
+    //   where: { accountId: dto.accountId },
+    // });
+    // const assets = await prisma.account.findFirst({
+    //   where: { id: dto.accountId },
+    //   select: {
+    //     Plan: {
+    //       select: { PlanAssets: { select: { business: true } } },
+    //     },
+    //     AccountSubscriptions: {
+    //       where: { dateOfCancellation: null },
+    //       select: {
+    //         type: true,
+    //         subscriptionsId: true,
+    //         PlanPeriods: {
+    //           select: {
+    //             Plan: {
+    //               select: { PlanAssets: { select: { chatbots: true } } },
+    //             },
+    //           },
+    //         },
+    //         ExtraPackage: {
+    //           where: { type: "chatbotConversations" },
+    //           select: { amount: true },
+    //         },
+    //       },
+    //     },
+    //   },
+    // });
+    // if (assets?.AccountSubscriptions.length) {
+    //   const listExtraAmount = await Promise.all(
+    //     assets.AccountSubscriptions.map(async (sub) => {
+    //       if (sub.ExtraPackage) {
+    //         const isValidSub = await isSubscriptionInOrder(sub.subscriptionsId);
+    //         if (!isValidSub) return (sub.ExtraPackage?.amount || 0) * -1;
+    //       }
+    //       return sub.ExtraPackage?.amount || 0;
+    //     })
+    //   );
+    //   const totalAmountExtra = listExtraAmount.reduce(
+    //     (prv, cur) => prv + cur,
+    //     0
+    //   );
 
-      const listPlanAmount = await Promise.all(
-        assets.AccountSubscriptions.map(async (sub) => {
-          if (sub.PlanPeriods) {
-            const isValidSub = await isSubscriptionInOrder(sub.subscriptionsId);
-            if (!isValidSub)
-              return (sub.PlanPeriods.Plan.PlanAssets.chatbots || 0) * -1;
-          }
-          return sub.PlanPeriods?.Plan.PlanAssets.chatbots || 0;
-        })
-      );
-      const totalPlanExtra = listPlanAmount.reduce((prv, cur) => prv + cur, 0);
+    //   const listPlanAmount = await Promise.all(
+    //     assets.AccountSubscriptions.map(async (sub) => {
+    //       if (sub.PlanPeriods) {
+    //         const isValidSub = await isSubscriptionInOrder(sub.subscriptionsId);
+    //         if (!isValidSub)
+    //           return (sub.PlanPeriods.Plan.PlanAssets.chatbots || 0) * -1;
+    //       }
+    //       return sub.PlanPeriods?.Plan.PlanAssets.chatbots || 0;
+    //     })
+    //   );
+    //   const totalPlanExtra = listPlanAmount.reduce((prv, cur) => prv + cur, 0);
 
-      const total = totalPlanExtra + totalAmountExtra;
+    //   const total = totalPlanExtra + totalAmountExtra;
 
-      if (total - countResource <= 0) {
-        throw new ErrorResponse(400).toast({
-          title:
-            "Limite de Chatbots receptivos atingido. compre mais pacotes extra",
+    //   if (total - countResource <= 0) {
+    //     throw new ErrorResponse(400).toast({
+    //       title:
+    //         "Limite de Chatbots receptivos atingido. compre mais pacotes extra",
 
-          type: "error",
-        });
-      }
-    } else {
-      if (assets?.Plan && countResource >= assets.Plan.PlanAssets.business) {
-        throw new ErrorResponse(400).toast({
-          title:
-            "Limite de Chatbot receptivos atingido. compre mais pacotes extra",
+    //       type: "error",
+    //     });
+    //   }
+    // } else {
+    //   if (assets?.Plan && countResource >= assets.Plan.PlanAssets.business) {
+    //     throw new ErrorResponse(400).toast({
+    //       title:
+    //         "Limite de Chatbot receptivos atingido. compre mais pacotes extra",
 
-          type: "error",
-        });
-      }
-    }
+    //       type: "error",
+    //     });
+    //   }
+    // }
 
     const exist = await this.repository.fetchExist({
       accountId: dto.accountId,
@@ -138,7 +138,7 @@ export class CreateChatbotUseCase {
     } = dto;
 
     if (dto.connectionOnBusinessId) {
-      const pickConnection = await prisma.connectionOnBusiness.findFirst({
+      const pickConnection = await prisma.connectionWA.findFirst({
         where: {
           id: dto.connectionOnBusinessId,
           Business: { accountId: dto.accountId, id: dto.businessId },
@@ -163,7 +163,6 @@ export class CreateChatbotUseCase {
               id: true,
               name: true,
               TimesWork: {
-                where: { type: "chatbot" },
                 select: { startTime: true, endTime: true, dayOfWeek: true },
               },
             },

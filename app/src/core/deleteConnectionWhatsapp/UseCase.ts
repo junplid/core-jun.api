@@ -17,8 +17,7 @@ export class DeleteConnectionWhatsappUseCase {
     if (!connection) {
       throw new ErrorResponse(400).toast({
         title:
-          "Conexão não encontrada ou você não tem permissão para apaga-la.",
-
+          "Conexão não encontrada ou você não tem permissão para apaga-la.", 
         type: "error",
       });
     }

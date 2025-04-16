@@ -1,21 +1,35 @@
-import { GetChabotsForSelectRepository_I } from "./Repository";
 import { GetChabotsForSelectDTO_I } from "./DTO";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
+import { prisma } from "../../adapters/Prisma/client";
 
 export class GetChabotsForSelectUseCase {
-  constructor(private repository: GetChabotsForSelectRepository_I) {}
+  constructor() {}
 
   async run(dto: GetChabotsForSelectDTO_I) {
-    const data = await this.repository.fetch(dto);
+    const data = await prisma.chatbot.findMany({
+      where: {
+        accountId: dto.accountId,
+        status: dto.status,
+        ...(dto.businessIds?.length && {
+          businessId: { in: dto.businessIds },
+        }),
+      },
+      select: {
+        name: true,
+        id: true,
+        connectionWAId: true,
+        status: true,
+      },
+    });
 
-    const nextData = data.map(({ connectionOnBusinessId, status, ...r }) => {
-      if (!connectionOnBusinessId) {
-        return { ...r, statusChatbot: status, statusConn: false };
+    const nextData = data.map(({ connectionWAId, status, ...r }) => {
+      if (!connectionWAId) {
+        return { ...r, status: false };
       }
       const isConnected = sessionsBaileysWA
-        .get(connectionOnBusinessId)
+        .get(connectionWAId)
         ?.ev.emit("connection.update", { connection: "open" });
-      return { ...r, statusChatbot: status, statusConn: !!isConnected };
+      return { ...r, status: status || isConnected };
     });
 
     return {

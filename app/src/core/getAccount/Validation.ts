@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import { Joi } from "express-validation";
-import { GetAccountUserDTO_I } from "./DTO";
+import { GetAccountDTO_I } from "./DTO";
 
-export const getAccountUserValidation = (
-  req: Request<any, any, GetAccountUserDTO_I>,
+export const getAccountValidation = (
+  req: Request<any, any, GetAccountDTO_I>,
   res: Response,
   next: NextFunction
 ) => {

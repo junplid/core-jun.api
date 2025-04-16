@@ -9,22 +9,22 @@ export class CreateAccountUseCase {
   constructor() {}
 
   async run({ number, affiliate, ...dto }: CreateAccountDTO_I) {
-    const planFree = await prisma.plan.findFirst({
-      where: {
-        type: "free",
-        isDefault: true,
-        acceptsNewUsers: true,
-        activeFoSubscribers: true,
-      },
-      select: { id: true },
-    });
+    // const planFree = await prisma.plan.findFirst({
+    //   where: {
+    //     type: "free",
+    //     isDefault: true,
+    //     acceptsNewUsers: true,
+    //     activeFoSubscribers: true,
+    //   },
+    //   select: { id: true },
+    // });
 
-    if (!planFree) {
-      throw new ErrorResponse(400).toast({
-        title: "Plano free padrão não encontrado",
-        type: "error",
-      });
-    }
+    // if (!planFree) {
+    //   throw new ErrorResponse(400).toast({
+    //     title: "Plano free padrão não encontrado",
+    //     type: "error",
+    //   });
+    // }
 
     const salt = await genSalt(8);
     const nextPassword = await hashBcrypt(dto.password, salt);
@@ -55,7 +55,7 @@ export class CreateAccountUseCase {
     }
 
     const assetsUsedId = await prisma.accountAssetsUsed.create({
-      data: { marketingSends: 0 },
+      data: { chatbots: 0 },
     });
 
     const { id, hash: hashAccount } = await prisma.account.create({
@@ -68,23 +68,23 @@ export class CreateAccountUseCase {
       select: { id: true, hash: true },
     });
 
-    if (affiliate) {
-      const alreadyExistAffiliate = await prisma.affiliates.findFirst({
-        where: { reference: affiliate },
-        select: { id: true },
-      });
+    // if (affiliate) {
+    //   const alreadyExistAffiliate = await prisma.affiliates.findFirst({
+    //     where: { reference: affiliate },
+    //     select: { id: true },
+    //   });
 
-      if (!!alreadyExistAffiliate) {
-        await prisma.handleAccountAffiliates.create({
-          data: { accountId: id, affiliateId: alreadyExistAffiliate.id },
-        });
-      }
-    }
+    //   if (!!alreadyExistAffiliate) {
+    //     await prisma.handleAccountAffiliates.create({
+    //       data: { accountId: id, affiliateId: alreadyExistAffiliate.id },
+    //     });
+    //   }
+    // }
 
-    await prisma.account.update({
-      where: { id },
-      data: { planId: planFree.id },
-    });
+    // await prisma.account.update({
+    //   where: { id },
+    //   data: { planId: planFree.id },
+    // });
 
     const token = await createTokenAuth(
       { id, type: "adm", hash: hashAccount },

@@ -11,7 +11,7 @@ export class UpdateDisconnectConnectionWhatsappImplementation
 
   async fetchExist(props: { id: number; accountId: number }): Promise<number> {
     try {
-      return await this.prisma.connectionOnBusiness.count({
+      return await this.prisma.connectionWA.count({
         where: {
           id: props.id,
           Business: { accountId: props.accountId },
