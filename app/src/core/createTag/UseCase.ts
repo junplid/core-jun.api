@@ -6,24 +6,23 @@ export class CreateTagUseCase {
   constructor() {}
 
   async run({ businessIds = [], ...dto }: CreateTagDTO_I) {
-    try {
-      const exist = await prisma.tag.findFirst({
-        where: {
-          ...dto,
-          OR: [
-            { TagOnBusiness: { some: { businessId: { in: businessIds } } } },
-            { TagOnBusiness: { some: { businessId: null as any } } },
-          ],
-        },
+    const exist = await prisma.tag.findFirst({
+      where: {
+        ...dto,
+        OR: [
+          { TagOnBusiness: { some: { businessId: { in: businessIds } } } },
+          { TagOnBusiness: { none: {} } },
+        ],
+      },
+    });
+
+    if (exist) {
+      throw new ErrorResponse(400).input({
+        path: "name",
+        text: `Já existe uma etiqueta com esse nome.`,
       });
-
-      if (exist) {
-        throw new ErrorResponse(400).input({
-          path: "name",
-          text: `Já existe uma etiqueta com esse nome.`,
-        });
-      }
-
+    }
+    try {
       const { id, TagOnBusiness } = await prisma.tag.create({
         data: {
           ...dto,
@@ -57,8 +56,7 @@ export class CreateTagUseCase {
     } catch (error) {
       console.log(error);
       throw new ErrorResponse(400).toast({
-        title: "Erro ao criar etiqueta",
-        description: "Tente novamente mais tarde.",
+        title: "Não foi possivel criar etiqueta.",
         type: "error",
       });
     }

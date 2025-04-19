@@ -6,34 +6,27 @@ export class CreateVariableUseCase {
   constructor() {}
 
   async run({ targetId, businessIds = [], ...dto }: CreateVariableDTO_I) {
-    try {
-      const exist = await prisma.variable.findFirst({
-        where: {
-          accountId: dto.accountId,
-          type: dto.type,
-          name: dto.name,
-          OR: [
-            {
-              VariableOnBusiness: {
-                some: { businessId: { in: businessIds } },
-              },
-            },
-            {
-              VariableOnBusiness: {
-                some: { businessId: { equals: null as any } },
-              },
-            },
-          ],
-        },
+    const exist = await prisma.variable.findFirst({
+      where: {
+        accountId: dto.accountId,
+        type: dto.type,
+        name: dto.name,
+        OR: [
+          {
+            VariableOnBusiness: { some: { businessId: { in: businessIds } } },
+          },
+          { VariableOnBusiness: { none: {} } },
+        ],
+      },
+    });
+
+    if (exist) {
+      throw new ErrorResponse(400).input({
+        path: "name",
+        text: `Já existe uma variável com esse nome.`,
       });
-
-      if (exist) {
-        throw new ErrorResponse(400).input({
-          path: "name",
-          text: `Já existe uma variável com esse nome.`,
-        });
-      }
-
+    }
+    try {
       const { VariableOnBusiness, ...variable } = await prisma.variable.create({
         data: {
           accountId: dto.accountId,

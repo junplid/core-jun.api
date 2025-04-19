@@ -21,6 +21,7 @@ export class UpdateVariableUseCase {
         where: { id },
         data: {
           ...dto,
+          ...(dto.type === "dynamics" && { value: null }),
           ...(businessIds?.length && {
             VariableOnBusiness: {
               deleteMany: { variableId: id },
@@ -30,6 +31,9 @@ export class UpdateVariableUseCase {
                 })),
               },
             },
+          }),
+          ...(!businessIds?.length && {
+            VariableOnBusiness: { deleteMany: {} },
           }),
         },
       });

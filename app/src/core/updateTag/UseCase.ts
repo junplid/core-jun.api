@@ -30,6 +30,7 @@ export class UpdateTagUseCase {
               },
             },
           }),
+          ...(!businessIds?.length && { TagOnBusiness: { deleteMany: {} } }),
         },
         select: {
           TagOnBusiness: { select: { Business: { select: { name: true } } } },

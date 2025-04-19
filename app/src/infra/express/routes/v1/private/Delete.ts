@@ -32,8 +32,8 @@ import { deleteFlowValidation } from "../../../../../core/deleteFlow/Validation"
 // import { deleteSubAccountValidation } from "../../../../../core/deleteSubAccount/Validation";
 // import { deleteSupervisorController } from "../../../../../core/deleteSupervisors";
 // import { deleteSupervisorValidation } from "../../../../../core/deleteSupervisors/Validation";
-import { deleteTagOnBusinessController } from "../../../../../core/deleteTagOnBusiness";
-import { deleteTagOnBusinessValidation } from "../../../../../core/deleteTagOnBusiness/Validation";
+import { deleteTagController } from "../../../../../core/deleteTag";
+import { deleteTagValidation } from "../../../../../core/deleteTag/Validation";
 import { deleteVariableController } from "../../../../../core/deleteVariables";
 import { deleteVariableValidation } from "../../../../../core/deleteVariables/Validation";
 // import { VerifySubUserMiddleware } from "../../../../middlewares/verifySubUser";
@@ -57,9 +57,9 @@ import { deleteVariableValidation } from "../../../../../core/deleteVariables/Va
 const RouterV1Private_Delete = Router();
 
 RouterV1Private_Delete.delete(
-  "/tag/:tagOnBusinessId",
-  deleteTagOnBusinessValidation,
-  deleteTagOnBusinessController
+  "/tags/:id",
+  deleteTagValidation,
+  deleteTagController
 );
 
 RouterV1Private_Delete.delete(

@@ -1,20 +1,11 @@
 import { Request, Response } from "express";
-import {
-  DeleteTagOnBusinessBodyDTO_I,
-  DeleteTagOnBusinessParamsDTO_I,
-} from "./DTO";
-import { DeleteTagOnBusinessUseCase } from "./UseCase";
+import { DeleteTagBodyDTO_I, DeleteTagParamsDTO_I } from "./DTO";
+import { DeleteTagUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
-export const DeleteTagOnBusinessController = (
-  useCase: DeleteTagOnBusinessUseCase
-) => {
+export const DeleteTagController = (useCase: DeleteTagUseCase) => {
   const execute = async (
-    req: Request<
-      DeleteTagOnBusinessParamsDTO_I,
-      any,
-      DeleteTagOnBusinessBodyDTO_I
-    >,
+    req: Request<DeleteTagParamsDTO_I, any, DeleteTagBodyDTO_I>,
     res: Response
   ): Promise<Response> => {
     try {

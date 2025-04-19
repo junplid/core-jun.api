@@ -32,7 +32,7 @@ export class GetTagDetailsUseCase {
     return {
       message: "OK!",
       status: 200,
-      tags: {
+      tag: {
         ...tag,
         records: _count.TagOnContactsWAOnAccount,
         business: TagOnBusiness.map((s) => s.Business),

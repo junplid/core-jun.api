@@ -70,7 +70,7 @@ import { updateChatbotController } from "../../../../../core/updateChatbot";
 
 const RouterV1Private_Put = Router();
 
-RouterV1Private_Put.put("/tag/:id", updateTagValidation, updateTagController);
+RouterV1Private_Put.put("/tags/:id", updateTagValidation, updateTagController);
 
 RouterV1Private_Put.put(
   "/businesses/:id",
