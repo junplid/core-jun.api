@@ -35,12 +35,10 @@ import { getChabotsForSelectValidation } from "../../../../../core/getChatbotsFo
 // import { getCheckPointsValidation } from "../../../../../core/getCheckPoints/Validation";
 // import { getCheckPointsForSelectController } from "../../../../../core/getCheckPointsForSelect";
 // import { getCheckPointsForSelectValidation } from "../../../../../core/getCheckPointsForSelect/Validation";
-import { getConnectionWAController } from "../../../../../core/getConnectionWA";
-import { getConnectionWAValidation } from "../../../../../core/getConnectionWA/Validation";
-import { getConnectionWAUserController } from "../../../../../core/getConnectionWAUser";
-import { getConnectionWAUserValidation } from "../../../../../core/getConnectionWAUser/Validation";
-import { getConnectionsOnBusinessForSelectController } from "../../../../../core/getConnectionsOnBusinessForSelect";
-import { getConnectionsOnBusinessForSelectValidation } from "../../../../../core/getConnectionsOnBusinessForSelect/Validation";
+import { getConnectionWADetailsController } from "../../../../../core/getConnectionWADetails";
+import { getConnectionWADetailsValidation } from "../../../../../core/getConnectionWADetails/Validation";
+import { getConnectionsWAForSelectController } from "../../../../../core/getConnectionsWAForSelect";
+import { getConnectionsWAForSelectValidation } from "../../../../../core/getConnectionsWAForSelect/Validation";
 import { getConnectionsWAController } from "../../../../../core/getConnectionsWA";
 import { getConnectionsWAValidation } from "../../../../../core/getConnectionsWA/Validation";
 import { getContactWAOnAccountController } from "../../../../../core/getContactWAOnAccount";
@@ -57,8 +55,8 @@ import { getDataFlowIdValidation } from "../../../../../core/getDataFlowId/Valid
 // import { getExtraPackageValidation } from "../../../../../core/getExtraPackage/Validation";
 // import { getExtraPackagesController } from "../../../../../core/getExtraPackages";
 // import { getExtraPackagesValidation } from "../../../../../core/getExtraPackages/Validation";
-import { getFieldsConnectionWAController } from "../../../../../core/getFieldsConnectionWA";
-import { getFieldsConnectionWAValidation } from "../../../../../core/getFieldsConnectionWA/Validation";
+import { getConnectionWAController } from "../../../../../core/getConnectionWA";
+import { getConnectionWAValidation } from "../../../../../core/getConnectionWA/Validation";
 import { getFlowOnBusinessForSelectController } from "../../../../../core/getFlowOnBusinessForSelect";
 import { getFlowOnBusinessForSelectValidation } from "../../../../../core/getFlowOnBusinessForSelect/Validation";
 import { getFlowsController } from "../../../../../core/getFlows";
@@ -249,21 +247,21 @@ RouterV1Private_Get.get(
 );
 
 RouterV1Private_Get.get(
+  "/connections-wa/options",
+  getConnectionsWAForSelectValidation,
+  getConnectionsWAForSelectController
+);
+
+RouterV1Private_Get.get(
+  "/connections-wa/:id/details",
+  getConnectionWADetailsValidation,
+  getConnectionWADetailsController
+);
+
+RouterV1Private_Get.get(
   "/connection-wa/:id",
   getConnectionWAValidation,
   getConnectionWAController
-);
-
-RouterV1Private_Get.get(
-  "/connection-wa/fields/:id",
-  getFieldsConnectionWAValidation,
-  getFieldsConnectionWAController
-);
-
-RouterV1Private_Get.get(
-  "/connection-wa-user/:id",
-  getConnectionWAUserValidation,
-  getConnectionWAUserController
 );
 
 RouterV1Private_Get.get(
@@ -395,12 +393,6 @@ RouterV1Private_Get.get("/flows/:id", getFlowValidation, getFlowController);
 //   getParametersOnAccountForSelectValidation,
 //   getParametersOnAccountForSelectController
 // );
-
-RouterV1Private_Get.get(
-  "/connectionswa-options",
-  getConnectionsOnBusinessForSelectValidation,
-  getConnectionsOnBusinessForSelectController
-);
 
 // RouterV1Private_Get.get(
 //   "/campaigns",

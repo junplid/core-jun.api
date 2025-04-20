@@ -1,19 +1,19 @@
 import { Request, Response } from "express";
 import {
-  GetFieldsConnectionWABodyDTO_I,
-  GetFieldsConnectionWAParamsDTO_I,
+  GetConnectionWADetailsBodyDTO_I,
+  GetConnectionWADetailsParamsDTO_I,
 } from "./DTO";
-import { GetFieldsConnectionWAUseCase } from "./UseCase";
+import { GetConnectionWADetailsUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
-export const GetFieldsConnectionWAController = (
-  useCase: GetFieldsConnectionWAUseCase
+export const GetConnectionWADetailsController = (
+  useCase: GetConnectionWADetailsUseCase
 ) => {
   const execute = async (
     req: Request<
-      GetFieldsConnectionWAParamsDTO_I,
+      GetConnectionWADetailsParamsDTO_I,
       any,
-      GetFieldsConnectionWABodyDTO_I
+      GetConnectionWADetailsBodyDTO_I
     >,
     res: Response
   ): Promise<Response> => {

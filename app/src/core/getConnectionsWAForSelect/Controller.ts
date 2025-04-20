@@ -1,24 +1,25 @@
 import { Request, Response } from "express";
 import {
-  GetConnectionWAUserBodyDTO_I,
-  GetConnectionWAUserParamsDTO_I,
+  GetConnectionsWAForSelectBodyDTO_I,
+  GetConnectionsWAForSelectQueryDTO_I,
 } from "./DTO";
-import { GetConnectionWAUserUseCase } from "./UseCase";
+import { GetConnectionsWAForSelectUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
-export const GetConnectionWAUserController = (
-  useCase: GetConnectionWAUserUseCase
+export const GetConnectionsWAForSelectController = (
+  useCase: GetConnectionsWAForSelectUseCase
 ) => {
   const execute = async (
     req: Request<
-      GetConnectionWAUserParamsDTO_I,
       any,
-      GetConnectionWAUserBodyDTO_I
+      any,
+      GetConnectionsWAForSelectBodyDTO_I,
+      GetConnectionsWAForSelectQueryDTO_I
     >,
     res: Response
   ): Promise<Response> => {
     try {
-      const data = await useCase.run({ ...req.body, ...req.params });
+      const data = await useCase.run({ ...req.body, ...req.query });
       return res.status(200).json(data);
     } catch (error: any) {
       if (error instanceof ErrorResponse) {

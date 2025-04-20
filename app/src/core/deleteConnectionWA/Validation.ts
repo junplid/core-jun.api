@@ -1,22 +1,19 @@
 import { NextFunction, Request, Response } from "express";
 import { Joi } from "express-validation";
 import {
-  GetConnectionWAUserBodyDTO_I,
-  GetConnectionWAUserParamsDTO_I,
+  DeleteConnectionWABodyDTO_I,
+  DeleteConnectionWAParamsDTO_I,
 } from "./DTO";
 
-export const getConnectionWAUserValidation = (
-  req: Request<
-    GetConnectionWAUserParamsDTO_I,
-    any,
-    GetConnectionWAUserBodyDTO_I
-  >,
+export const deleteConnectionWAValidation = (
+  req: Request<DeleteConnectionWAParamsDTO_I, any, DeleteConnectionWABodyDTO_I>,
   res: Response,
   next: NextFunction
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     id: Joi.number().required(),
+    accountId: Joi.number().required(),
+    subUserUid: Joi.string().optional(),
   });
 
   const validation = schemaValidation.validate(

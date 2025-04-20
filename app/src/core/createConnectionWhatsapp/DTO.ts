@@ -1,13 +1,24 @@
 import { TypeConnetion } from "@prisma/client";
+import {
+  WAPrivacyOnlineValue,
+  WAPrivacyValue,
+  WAReadReceiptsValue,
+  WAPrivacyGroupAddValue,
+} from "baileys";
 
-export interface CreateConnectionWhatsappDTO_I {
+export interface CreateConnectionWADTO_I {
   name: string;
+  description?: string;
   accountId: number;
   businessId: number;
   type: TypeConnetion;
-  // time_to_start?: Date;
-  // time_to_end?: Date;
-  // amount_for_start?: number;
-  // increment?: number;
-  // during?: number;
+  profileName?: string;
+  profileStatus?: string;
+  lastSeenPrivacy?: WAPrivacyValue;
+  onlinePrivacy?: WAPrivacyOnlineValue;
+  imgPerfilPrivacy?: WAPrivacyValue;
+  statusPrivacy?: WAPrivacyValue;
+  groupsAddPrivacy?: WAPrivacyGroupAddValue;
+  readReceiptsPrivacy?: WAReadReceiptsValue;
+  fileNameImage?: string;
 }

@@ -4,28 +4,35 @@ import {
   generateNameSession,
   sessionsBaileysWA,
 } from "../../adapters/Baileys";
-import { DeleteConnectionWhatsappDTO_I } from "./DTO";
-import { DeleteConnectionWhatsappRepository_I } from "./Repository";
+import { DeleteConnectionWADTO_I } from "./DTO";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { prisma } from "../../adapters/Prisma/client";
 
-export class DeleteConnectionWhatsappUseCase {
-  constructor(private repository: DeleteConnectionWhatsappRepository_I) {}
+export class DeleteConnectionWAUseCase {
+  constructor() {}
 
-  async run(dto: DeleteConnectionWhatsappDTO_I) {
-    const connection = await this.repository.alreadyExists(dto);
+  async run(dto: DeleteConnectionWADTO_I) {
+    const connection = await prisma.connectionWA.findFirst({
+      where: {
+        id: dto.id,
+        Business: { accountId: dto.accountId },
+      },
+      select: { name: true, type: true },
+    });
 
     if (!connection) {
       throw new ErrorResponse(400).toast({
         title:
-          "Conexão não encontrada ou você não tem permissão para apaga-la.", 
+          "Conexão não encontrada ou você não tem permissão para apaga-la.",
         type: "error",
       });
     }
 
-    await this.repository.delete(dto);
+    await prisma.connectionWA.delete({
+      where: { id: dto.id, Business: { accountId: dto.accountId } },
+    });
 
     const client = sessionsBaileysWA.get(dto.id);
-
     if (client) {
       client?.end(
         // @ts-expect-error

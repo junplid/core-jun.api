@@ -21,8 +21,8 @@ import { createChatbotController } from "../../../../../core/createChatbot";
 import { createChatbotValidation } from "../../../../../core/createChatbot/Validation";
 // import { createCheckPointController } from "../../../../../core/createCheckPoint";
 // import { createCheckPointValidation } from "../../../../../core/createCheckPoint/Validation";
-import { createConnectionWhatsappController } from "../../../../../core/createConnectionWhatsapp";
-import { createConnetionWhatsappValidation } from "../../../../../core/createConnectionWhatsapp/Validation";
+import { createConnectionWAController } from "../../../../../core/createConnectionWhatsapp";
+import { createConnectionWAValidation } from "../../../../../core/createConnectionWhatsapp/Validation";
 // import { createContactWAOnAccountController } from "../../../../../core/createContactWAOnAccount";
 // import { createContactWAOnAccountValidation } from "../../../../../core/createContactWAOnAccount/Validation";
 // import { createEmailServiceConfigurationController } from "../../../../../core/createEmailServiceConfiguration";
@@ -55,6 +55,9 @@ import { createTagController } from "../../../../../core/createTag";
 import { createTagValidation } from "../../../../../core/createTag/Validation";
 import { createVariableController } from "../../../../../core/createVariable";
 import { createVariableValidation } from "../../../../../core/createVariable/Validation";
+import { resolve } from "path";
+import multer from "multer";
+import { storageMulter } from "../../../../../adapters/Multer/storage";
 // import { VerifySubUserMiddleware } from "../../../../middlewares/verifySubUser";
 // import { createCustomerAsaasController } from "../../../../../core/createCustomerAsaas";
 // import { createCustomerAsaasValidation } from "../../../../../core/createCustomerAsaas/Validation";
@@ -135,10 +138,16 @@ const RouterV1Private_Post = Router();
 //   createBuyExtraPackageController
 // );
 
+const pathOfDestiny = resolve(__dirname, `../../../../../../static`);
+
+const uploadFiles = storageMulter({ pathOfDestiny: pathOfDestiny + "/image" });
+
 RouterV1Private_Post.post(
-  "/connection-whatsapp",
-  createConnetionWhatsappValidation,
-  createConnectionWhatsappController
+  "/connections-wa",
+  // @ts-expect-error
+  multer({ storage: uploadFiles }).single("fileImage"),
+  createConnectionWAValidation,
+  createConnectionWAController
 );
 
 // RouterV1Private_Post.post(

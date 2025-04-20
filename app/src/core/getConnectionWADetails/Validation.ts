@@ -1,15 +1,15 @@
 import { NextFunction, Request, Response } from "express";
 import { Joi } from "express-validation";
 import {
-  GetFieldsConnectionWABodyDTO_I,
-  GetFieldsConnectionWAParamsDTO_I,
+  GetConnectionWADetailsBodyDTO_I,
+  GetConnectionWADetailsParamsDTO_I,
 } from "./DTO";
 
-export const getFieldsConnectionWAValidation = (
+export const getConnectionWADetailsValidation = (
   req: Request<
-    GetFieldsConnectionWAParamsDTO_I,
+    GetConnectionWADetailsParamsDTO_I,
     any,
-    GetFieldsConnectionWABodyDTO_I
+    GetConnectionWADetailsBodyDTO_I
   >,
   res: Response,
   next: NextFunction

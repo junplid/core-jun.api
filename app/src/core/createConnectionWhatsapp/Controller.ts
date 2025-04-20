@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
-import { CreateConnectionWhatsappDTO_I } from "./DTO";
-import { CreateConnectionWhatsappUseCase } from "./UseCase";
+import { CreateConnectionWADTO_I } from "./DTO";
+import { CreateConnectionWAUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
-export const CreateConnectionWhatsappController = (
-  useCase: CreateConnectionWhatsappUseCase
+export const CreateConnectionWAController = (
+  useCase: CreateConnectionWAUseCase
 ) => {
   const execute = async (
-    req: Request<any, any, CreateConnectionWhatsappDTO_I>,
+    req: Request<any, any, CreateConnectionWADTO_I>,
     res: Response
   ): Promise<Response> => {
     try {

@@ -3,32 +3,48 @@ import { Joi } from "express-validation";
 import {
   UpdateConnectionWABodyDTO_I,
   UpdateConnectionWAParamsDTO_I,
-  UpdateConnectionWAQueryDTO_I,
 } from "./DTO";
 
 export const updateConnectionWAValidation = (
-  req: Request<
-    UpdateConnectionWAParamsDTO_I,
-    any,
-    UpdateConnectionWABodyDTO_I,
-    UpdateConnectionWAQueryDTO_I
-  >,
+  req: Request<UpdateConnectionWAParamsDTO_I, any, UpdateConnectionWABodyDTO_I>,
   res: Response,
   next: NextFunction
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
     accountId: Joi.number().required(),
-    name: Joi.string().messages({
-      "string.empty": "Campo não pode estar vazio",
-    }),
-    businessId: Joi.number().messages({
-      "string.empty": "Campo não pode estar vazio",
-    }),
-    type: Joi.string()
-      .regex(/^(marketing|chatbot)$/)
-      .optional(),
-    subUserUid: Joi.string().optional(),
+    businessId: Joi.number().required(),
+    description: Joi.string().allow(""),
+    name: Joi.string().required(),
+    type: Joi.string().valid("chatbot", "marketing").required(),
+    profileName: Joi.string().allow(""),
+    profileStatus: Joi.string().allow(""),
+    lastSeenPrivacy: Joi.string().valid(
+      "all",
+      "contacts",
+      "contact_blacklist",
+      "none"
+    ),
+    onlinePrivacy: Joi.string().valid("all", "match_last_seen"),
+    imgPerfilPrivacy: Joi.string().valid(
+      "all",
+      "contacts",
+      "contact_blacklist",
+      "none"
+    ),
+    statusPrivacy: Joi.string().valid(
+      "all",
+      "contacts",
+      "contact_blacklist",
+      "none"
+    ),
+    groupsAddPrivacy: Joi.string().valid(
+      "all",
+      "contacts",
+      "contact_blacklist"
+    ),
+    readReceiptsPrivacy: Joi.string().valid("all", "none").allow(""),
+    fileNameImage: Joi.string().allow(""),
   });
 
   const validation = schemaValidation.validate(
@@ -46,7 +62,6 @@ export const updateConnectionWAValidation = (
   }
 
   req.params.id = Number(req.params.id);
-  if (req.query.businessId) req.query.businessId = Number(req.query.businessId);
 
   next();
 };

@@ -1,16 +1,16 @@
 import { NextFunction, Request, Response } from "express";
 import {
-  GetConnectionsOnBusinessForSelectBodyDTO_I,
-  GetConnectionsOnBusinessForSelectQueryDTO_I,
+  GetConnectionsWAForSelectBodyDTO_I,
+  GetConnectionsWAForSelectQueryDTO_I,
 } from "./DTO";
 import { Joi } from "express-validation";
 
-export const getConnectionsOnBusinessForSelectValidation = (
+export const getConnectionsWAForSelectValidation = (
   req: Request<
     any,
     any,
-    GetConnectionsOnBusinessForSelectBodyDTO_I,
-    GetConnectionsOnBusinessForSelectQueryDTO_I
+    GetConnectionsWAForSelectBodyDTO_I,
+    GetConnectionsWAForSelectQueryDTO_I
   >,
   res: Response,
   next: NextFunction

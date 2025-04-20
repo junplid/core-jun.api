@@ -1,19 +1,31 @@
 import { TypeConnetion } from "@prisma/client";
+import {
+  WAPrivacyOnlineValue,
+  WAPrivacyValue,
+  WAReadReceiptsValue,
+  WAPrivacyGroupAddValue,
+} from "baileys";
 
 export interface UpdateConnectionWABodyDTO_I {
+  name: string;
+  description?: string;
   accountId: number;
+  businessId: number;
+  type: TypeConnetion;
+  profileName?: string;
+  profileStatus?: string;
+  lastSeenPrivacy?: WAPrivacyValue;
+  onlinePrivacy?: WAPrivacyOnlineValue;
+  imgPerfilPrivacy?: WAPrivacyValue;
+  statusPrivacy?: WAPrivacyValue;
+  groupsAddPrivacy?: WAPrivacyGroupAddValue;
+  readReceiptsPrivacy?: WAReadReceiptsValue;
+  fileNameImage?: string;
 }
 
 export interface UpdateConnectionWAParamsDTO_I {
   id: number;
 }
 
-export interface UpdateConnectionWAQueryDTO_I {
-  name?: string;
-  type?: TypeConnetion;
-  businessId?: number;
-}
-
 export type UpdateConnectionWADTO_I = UpdateConnectionWAParamsDTO_I &
-  UpdateConnectionWABodyDTO_I &
-  UpdateConnectionWAQueryDTO_I;
+  UpdateConnectionWABodyDTO_I;

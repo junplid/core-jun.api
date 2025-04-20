@@ -661,6 +661,7 @@ model ConnectionWA {
   id               Int                @id @default(autoincrement())
   interrupted      Boolean            @default(false)
   name             String             @db.VarChar(50)
+  description      String?
   type             TypeConnetion
   countShots       Int                @default(0)
   number           String?

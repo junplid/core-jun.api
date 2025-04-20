@@ -1,13 +1,6 @@
-import { CreateConnectionWhatsappImplementation } from "./Implementation";
-import { CreateConnectionWhatsappController } from "./Controller";
-import { CreateConnectionWhatsappUseCase } from "./UseCase";
-import { prisma } from "../../adapters/Prisma/client";
+import { CreateConnectionWAController } from "./Controller";
+import { CreateConnectionWAUseCase } from "./UseCase";
 
-const createConnectionWhatsappImplementation =
-  new CreateConnectionWhatsappImplementation(prisma);
-const createConnectionWhatsappUseCase = new CreateConnectionWhatsappUseCase(
-  createConnectionWhatsappImplementation
-);
-
-export const createConnectionWhatsappController =
-  CreateConnectionWhatsappController(createConnectionWhatsappUseCase).execute;
+export const createConnectionWAController = CreateConnectionWAController(
+  new CreateConnectionWAUseCase()
+).execute;

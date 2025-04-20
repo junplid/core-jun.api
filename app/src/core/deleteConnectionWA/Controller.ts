@@ -1,19 +1,19 @@
 import { Request, Response } from "express";
 import {
-  DeleteConnectionWhatsappBodyDTO_I,
-  DeleteConnectionWhatsappParamsDTO_I,
+  DeleteConnectionWABodyDTO_I,
+  DeleteConnectionWAParamsDTO_I,
 } from "./DTO";
-import { DeleteConnectionWhatsappUseCase } from "./UseCase";
+import { DeleteConnectionWAUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
-export const DeleteConnectionWhatsappController = (
-  useCase: DeleteConnectionWhatsappUseCase
+export const DeleteConnectionWAController = (
+  useCase: DeleteConnectionWAUseCase
 ) => {
   const execute = async (
     req: Request<
-      DeleteConnectionWhatsappParamsDTO_I,
+      DeleteConnectionWAParamsDTO_I,
       any,
-      DeleteConnectionWhatsappBodyDTO_I
+      DeleteConnectionWABodyDTO_I
     >,
     res: Response
   ): Promise<Response> => {

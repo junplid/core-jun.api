@@ -1,23 +1,52 @@
 import { NextFunction, Request, Response } from "express";
 import { Joi } from "express-validation";
-import { CreateConnectionWhatsappDTO_I } from "./DTO";
+import { CreateConnectionWADTO_I } from "./DTO";
 
-export const createConnetionWhatsappValidation = (
-  req: Request<any, any, CreateConnectionWhatsappDTO_I>,
+export const createConnectionWAValidation = (
+  req: Request<any, any, CreateConnectionWADTO_I>,
   res: Response,
   next: NextFunction
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
     businessId: Joi.number().required(),
+    description: Joi.string().allow(""),
     name: Joi.string().required(),
-    type: Joi.string()
-      .regex(/^(chatbot|marketing)$/)
-      .required(),
-    subUserUid: Joi.string().optional(),
+    type: Joi.string().valid("chatbot", "marketing").required(),
+    profileName: Joi.string().allow(""),
+    profileStatus: Joi.string().allow(""),
+    lastSeenPrivacy: Joi.string().valid(
+      "all",
+      "contacts",
+      "contact_blacklist",
+      "none"
+    ),
+    onlinePrivacy: Joi.string().valid("all", "match_last_seen"),
+    imgPerfilPrivacy: Joi.string().valid(
+      "all",
+      "contacts",
+      "contact_blacklist",
+      "none"
+    ),
+    statusPrivacy: Joi.string().valid(
+      "all",
+      "contacts",
+      "contact_blacklist",
+      "none"
+    ),
+    groupsAddPrivacy: Joi.string().valid(
+      "all",
+      "contacts",
+      "contact_blacklist"
+    ),
+    readReceiptsPrivacy: Joi.string().valid("all", "none").allow(""),
+    fileNameImage: Joi.string().allow(""),
   }).required();
 
-  const validation = schemaValidation.validate(req.body, { abortEarly: false });
+  const validation = schemaValidation.validate(
+    { ...req.body, fileNameImage: req.file?.filename },
+    { abortEarly: false }
+  );
 
   if (validation.error) {
     const errors = validation.error.details.map((detail) => ({
@@ -28,5 +57,6 @@ export const createConnetionWhatsappValidation = (
     return res.status(400).json({ errors });
   }
 
+  req.body = validation.value;
   next();
 };

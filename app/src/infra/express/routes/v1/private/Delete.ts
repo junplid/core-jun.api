@@ -14,8 +14,8 @@ import { deleteBusinessOnAccountValidation } from "../../../../../core/deleteBus
 import { deleteChatbotController } from "../../../../../core/deleteChatbot";
 import { deleteChatbotValidation } from "../../../../../core/deleteChatbot/Validation";
 // import { deleteCheckpointController } from "../../../../../core/deleteCheckpoint";
-import { deleteConnectionWhatsappController } from "../../../../../core/deleteConnectionWhatsapp";
-import { deleteConnectionWhatsappValidation } from "../../../../../core/deleteConnectionWhatsapp/Validation";
+import { deleteConnectionWAController } from "../../../../../core/deleteConnectionWA";
+import { deleteConnectionWAValidation } from "../../../../../core/deleteConnectionWA/Validation";
 // import { deleteEmailServiceConfigurationController } from "../../../../../core/deleteEmailServiceConfiguration";
 // import { deleteEmailServiceConfigurationValidation } from "../../../../../core/deleteEmailServiceConfiguration/Validation";
 import { deleteFlowController } from "../../../../../core/deleteFlow";
@@ -128,9 +128,9 @@ RouterV1Private_Delete.delete(
 );
 
 RouterV1Private_Delete.delete(
-  "/connection-whatsapp/:id",
-  deleteConnectionWhatsappValidation,
-  deleteConnectionWhatsappController
+  "/connections-wa/:id",
+  deleteConnectionWAValidation,
+  deleteConnectionWAController
 );
 
 // RouterV1Private_Delete.delete(

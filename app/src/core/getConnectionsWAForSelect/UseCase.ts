@@ -1,14 +1,22 @@
 import { sessionsBaileysWA } from "../../adapters/Baileys";
-import { GetConnectionsOnBusinessForSelectDTO_I } from "./DTO";
-import { GetConnectionsOnBusinessForSelectRepository_I } from "./Repository";
+import { prisma } from "../../adapters/Prisma/client";
+import { GetConnectionsWAForSelectDTO_I } from "./DTO";
 
-export class GetConnectionsOnBusinessForSelectUseCase {
-  constructor(
-    private repository: GetConnectionsOnBusinessForSelectRepository_I
-  ) {}
+export class GetConnectionsWAForSelectUseCase {
+  constructor() {}
 
-  async run(dto: GetConnectionsOnBusinessForSelectDTO_I) {
-    const connections = await this.repository.fetch(dto);
+  async run(dto: GetConnectionsWAForSelectDTO_I) {
+    const connections = await prisma.connectionWA.findMany({
+      where: {
+        ...(dto.type && { type: dto.type }),
+        ...(dto.businessIds?.length && { businessId: { in: dto.businessIds } }),
+        Business: { accountId: dto.accountId },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
 
     const nextConnections = await Promise.all(
       connections.map(async (cnn) => {
@@ -30,7 +38,7 @@ export class GetConnectionsOnBusinessForSelectUseCase {
     return {
       message: "OK!",
       status: 200,
-      connections: nextConnections,
+      connectionsWA: nextConnections,
     };
   }
 }

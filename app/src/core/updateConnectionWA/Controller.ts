@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import {
   UpdateConnectionWABodyDTO_I,
   UpdateConnectionWAParamsDTO_I,
-  UpdateConnectionWAQueryDTO_I,
 } from "./DTO";
 import { UpdateConnectionWAUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
@@ -14,8 +13,7 @@ export const UpdateConnectionWAController = (
     req: Request<
       UpdateConnectionWAParamsDTO_I,
       any,
-      UpdateConnectionWABodyDTO_I,
-      UpdateConnectionWAQueryDTO_I
+      UpdateConnectionWABodyDTO_I
     >,
     res: Response
   ): Promise<Response> => {
@@ -23,7 +21,6 @@ export const UpdateConnectionWAController = (
       const data = await useCase.run({
         ...req.body,
         ...req.params,
-        ...req.query,
       });
       return res.status(200).json(data);
     } catch (error: any) {

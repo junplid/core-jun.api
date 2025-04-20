@@ -1,12 +1,21 @@
 import { sessionsBaileysWA } from "../../adapters/Baileys";
+import { prisma } from "../../adapters/Prisma/client";
 import { GetConnectionsWADTO_I } from "./DTO";
-import { GetConnectionsWARepository_I } from "./Repository";
 
 export class GetConnectionsWAUseCase {
-  constructor(private repository: GetConnectionsWARepository_I) {}
+  constructor() {}
 
   async run(dto: GetConnectionsWADTO_I) {
-    const connections = await this.repository.fetch(dto);
+    const connections = await prisma.connectionWA.findMany({
+      where: { Business: dto },
+      select: {
+        name: true,
+        type: true,
+        id: true,
+        Business: { select: { name: true, id: true } },
+        createAt: true,
+      },
+    });
 
     const nextConnections = await Promise.all(
       connections.map(async (cnn) => {
@@ -25,7 +34,7 @@ export class GetConnectionsWAUseCase {
     return {
       message: "OK!",
       status: 200,
-      connections: nextConnections,
+      connectionsWA: nextConnections,
     };
   }
 }

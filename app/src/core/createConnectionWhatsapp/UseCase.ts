@@ -1,13 +1,13 @@
-import { CreateConnectionWhatsappRepository_I } from "./Repository";
-import { CreateConnectionWhatsappDTO_I } from "./DTO";
+import { CreateConnectionWADTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
-import { isSubscriptionInOrder } from "../../libs/Asaas/isSubscriptionInOrder";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { resolve } from "path";
+import { remove } from "fs-extra";
 
-export class CreateConnectionWhatsappUseCase {
-  constructor(private repository: CreateConnectionWhatsappRepository_I) {}
+export class CreateConnectionWAUseCase {
+  constructor() {}
 
-  async run({ accountId, ...dto }: CreateConnectionWhatsappDTO_I) {
+  async run({ accountId, ...dto }: CreateConnectionWADTO_I) {
     // const countResource = await prisma.connectionWA.count({
     //   where: { Business: { accountId } },
     // });
@@ -103,21 +103,76 @@ export class CreateConnectionWhatsappUseCase {
     //   }
     // }
 
-    const exist = await this.repository.fetchExistWithThisName(dto);
+    try {
+      const exist = await prisma.connectionWA.findFirst({
+        where: {
+          name: dto.name,
+          type: dto.type,
+          Business: { id: dto.businessId, accountId },
+        },
+        select: { id: true },
+      });
 
-    if (exist) {
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Já existe uma conexão com este nome.",
+      if (exist) {
+        throw new ErrorResponse(400).input({
+          path: "name",
+          text: "Já existe uma conexão com este nome.",
+        });
+      }
+
+      const data = await prisma.connectionWA.create({
+        data: {
+          name: dto.name,
+          description: dto.description,
+          type: dto.type,
+          businessId: dto.businessId,
+        },
+        select: {
+          id: true,
+          createAt: true,
+          Business: { select: { name: true, id: true } },
+        },
+      });
+
+      const { businessId, name, type, description, fileNameImage, ...config } =
+        dto;
+
+      const hasConfig = !!(Object.keys(config).length || fileNameImage);
+
+      if (hasConfig) {
+        await prisma.connectionConfig.upsert({
+          where: {
+            connectionWAId: data.id,
+            ConnectionWA: { Business: { accountId } },
+          },
+          create: {
+            connectionWAId: data.id,
+            ...config,
+            fileNameImgPerfil: fileNameImage,
+          },
+          update: config,
+        });
+      }
+
+      return { message: "OK!", status: 201, connectionWA: data };
+    } catch (error) {
+      if (dto.fileNameImage) {
+        const path = resolve(
+          __dirname,
+          "../../../",
+          "static",
+          "image",
+          dto.fileNameImage
+        );
+        await remove(path).catch((error) => {
+          console.log("Não foi possivel deletar a imagem antiga", error);
+        });
+      }
+      console.log(error);
+      throw new ErrorResponse(400).toast({
+        title: "Erro ao criar conexão.",
+        type: "error",
       });
     }
-
-    const data = await this.repository.create(dto);
-
-    return {
-      message: "Conexão criada com sucesso!",
-      status: 201,
-      ...data,
-    };
   }
 }
