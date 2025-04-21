@@ -38,6 +38,15 @@ export class GetConnectionWAUseCase {
 
     const { ConnectionConfig, ...rest } = connection;
 
+    if (ConnectionConfig) {
+      // @ts-expect-error
+      ConnectionConfig.fileImage = structuredClone(
+        ConnectionConfig.fileNameImgPerfil
+      );
+      // @ts-expect-error
+      ConnectionConfig.fileNameImgPerfil = undefined;
+    }
+
     return {
       message: "OK!",
       status: 200,

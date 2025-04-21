@@ -1,6 +1,6 @@
-import { Request, Response, Router } from "express";
+import { Request, Response, Router, static as static_ } from "express";
 import { Joi } from "express-validation";
-// import { resolve } from "path";
+import { resolve } from "path";
 import { prisma } from "../../../../../adapters/Prisma/client";
 import {
   createTokenAuth,
@@ -17,10 +17,12 @@ import {
 
 const RouterV1Public_Get = Router();
 
-// RouterV1Public_Get.use(
-//   "/images",
-//   static_(resolve(__dirname, "../../../../../../static/image"))
-// );
+// verificar se o tenent-dominio é valido;
+
+RouterV1Public_Get.use(
+  "/images",
+  static_(resolve(__dirname, "../../../../../../static/image"))
+);
 
 // RouterV1Public_Get.use(
 //   "/config",

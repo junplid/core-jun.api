@@ -63,5 +63,8 @@ export const updateConnectionWAValidation = (
 
   req.params.id = Number(req.params.id);
 
+  req.body.businessId = Number(req.body.businessId);
+  req.body.fileNameImage = req.file?.filename;
+
   next();
 };

@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { NextFunction, Request, Router } from "express";
 import { updateBusinessOnAccountController } from "../../../../../core/updateBusinessOnAccount";
 import { updateBusinessOnAccountValidation } from "../../../../../core/updateBusinessOnAccount/Validation";
 import { updateTagController } from "../../../../../core/updateTag";
@@ -51,6 +51,11 @@ import { updateVariableController } from "../../../../../core/updateVariable";
 // import { updateCampaignController } from "../../../../../core/updateCampaign";
 import { updateChatbotValidation } from "../../../../../core/updateChatbot/Validation";
 import { updateChatbotController } from "../../../../../core/updateChatbot";
+import { updateConnectionWAController } from "../../../../../core/updateConnectionWA";
+import { updateConnectionWAValidation } from "../../../../../core/updateConnectionWA/Validation";
+import { resolve } from "path";
+import { storageMulter } from "../../../../../adapters/Multer/storage";
+import multer from "multer";
 // import { updateGeolocationValidation } from "../../../../../core/updateGeolocation/Validation";
 // import { updateGeolocationController } from "../../../../../core/updateGeolocation";
 // import { updateEmailServiceConfigurationValidation } from "../../../../../core/updateEmailServiceConfiguration/Validation";
@@ -120,11 +125,21 @@ RouterV1Private_Put.put(
 //   updateStatusCampaignController
 // );
 
-// RouterV1Private_Put.put(
-//   "/connection-whatsapp/:id",
-//   updateConnectionWAValidation,
-//   updateConnectionWAController
-// );
+const pathOfDestiny = resolve(__dirname, `../../../../../../static`);
+
+const uploadFiles = storageMulter({ pathOfDestiny: pathOfDestiny + "/image" });
+
+RouterV1Private_Put.put(
+  "/connections-wa/:id",
+  // @ts-expect-error
+  multer({ storage: uploadFiles }).single("fileImage"),
+  (req: Request, _, next: NextFunction) => {
+    req.body.accountId = Number(req.headers.authorization);
+    next();
+  },
+  updateConnectionWAValidation,
+  updateConnectionWAController
+);
 
 // const pathOfDestiny = resolve(__dirname, `../../../../../../static/image`);
 

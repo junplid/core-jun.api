@@ -1,5 +1,5 @@
 // import { TypeStaticPath } from "@prisma/client";
-import { Router } from "express";
+import { NextFunction, Request, Router } from "express";
 // import multer from "multer";
 // import { resolve } from "path";
 // import { storageMulter } from "../../../../../adapters/Multer/storage";
@@ -146,6 +146,10 @@ RouterV1Private_Post.post(
   "/connections-wa",
   // @ts-expect-error
   multer({ storage: uploadFiles }).single("fileImage"),
+  (req: Request, _, next: NextFunction) => {
+    req.body.accountId = Number(req.headers.authorization);
+    next();
+  },
   createConnectionWAValidation,
   createConnectionWAController
 );

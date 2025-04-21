@@ -12,7 +12,6 @@ export const storageMulter = (props: PropsStorageMulter) =>
       cb(null, props.pathOfDestiny);
     },
     filename: function (req, file, cb) {
-      req.body.accountId = Number(req.headers.authorization);
       const nextName = removeAccents(
         Buffer.from(file.originalname, "latin1").toString("utf8").toLowerCase()
       ).replace(/\s+/g, "-");
