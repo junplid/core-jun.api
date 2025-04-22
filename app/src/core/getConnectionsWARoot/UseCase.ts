@@ -1,6 +1,7 @@
 import { GetConnectionsWARootDTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
+import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 
 export class GetConnectionsWARootUseCase {
   constructor() {}
@@ -14,9 +15,7 @@ export class GetConnectionsWARootUseCase {
       connections.map(async ({ ConnectionWA, ...cnn }) => {
         try {
           if (!ConnectionWA) return null;
-          const isConnected = sessionsBaileysWA
-            .get(ConnectionWA.id)
-            ?.ev.emit("connection.update", { connection: "open" });
+          const isConnected = !!cacheConnectionsWAOnline.get(cnn.id);
           return {
             ...cnn,
             name: ConnectionWA.name,

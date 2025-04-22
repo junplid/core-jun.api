@@ -48,6 +48,7 @@ export class GetAccountUseCase {
       status: 200,
       account: {
         ...account,
+        id: dto.accountId,
         name: account.name ?? account.email,
       },
     };

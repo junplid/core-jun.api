@@ -10,6 +10,7 @@ import { prisma } from "../../adapters/Prisma/client";
 import { WebSocketIo } from "../websocket";
 import { App as app } from "./app";
 import chalk from "chalk";
+import { startConnections } from "../../bin/startConnections";
 
 config();
 
@@ -68,7 +69,7 @@ const startServer = async (): Promise<void> => {
               chalk.bgGrey("Servidor rodando na porta:", chalk.cyan("4000"))
             );
           });
-          // await startConnections();
+          await startConnections();
 
           const pathQueue = resolve(__dirname, "../../bin/chatbot-queue");
           const dirPathQueue = readdirSync(pathQueue);

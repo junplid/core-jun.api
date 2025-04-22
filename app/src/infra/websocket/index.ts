@@ -6,13 +6,17 @@ import { lookup } from "mime-types";
 import moment from "moment-timezone";
 import { resolve } from "path";
 import { Server } from "socket.io";
-import { Baileys, CacheSessionsBaileysWA } from "../../adapters/Baileys";
-import { clientRedis } from "../../adapters/RedisDB";
+import {
+  Baileys,
+  CacheSessionsBaileysWA,
+  killConnectionWA,
+} from "../../adapters/Baileys";
+// import { clientRedis } from "../../adapters/RedisDB";
 import {
   generateNameConnection,
   generateNameSession,
 } from "./../../adapters/Baileys/index";
-import { CacheStateUserSocket } from "./cache";
+import { cacheAccountSocket } from "./cache";
 import { SendLocation } from "../../adapters/Baileys/modules/sendLocation";
 import { replaceVariablePlaceholders } from "../../helpers/replaceVariablePlaceholders";
 import ffmpeg from "fluent-ffmpeg";
@@ -22,10 +26,11 @@ import { SendMessageText } from "../../adapters/Baileys/modules/sendMessage";
 import { SendAudio } from "../../adapters/Baileys/modules/sendAudio";
 import { SendImage } from "../../adapters/Baileys/modules/sendImage";
 import { SendFile } from "../../adapters/Baileys/modules/sendFile";
+import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 
 interface PropsCreateSessionWA_I {
-  accountId: number;
   connectionWhatsId: number;
+  number?: string;
 }
 
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -148,15 +153,27 @@ const isMobile = (userAgent: string) => {
 
 export const WebSocketIo = (io: Server) => {
   io.on("connection", async (socket) => {
-    socket.on("register-my-id", async (data: { accountId: number }) => {
-      const redis = await clientRedis();
-      await redis.set(`socketid-${data.accountId}`, socket.id);
-    });
+    const { headers, auth, query } = socket.handshake;
+    console.log({ auth });
+
+    const stateUser = cacheAccountSocket.get(auth.accountId);
+
+    if (!stateUser) {
+      cacheAccountSocket.set(auth.accountId, {
+        //  isMobile: isMobile(headers["user-agent"]),
+        listSocket: [socket.id],
+      });
+    } else {
+      stateUser.listSocket.push(socket.id);
+    }
+
+    // funcionalidade de cancelar a conexão whatsapp em andamento
+
     socket.on("create-session", async (data: PropsCreateSessionWA_I) => {
       const connectionDB = await prisma.connectionWA.findFirst({
         where: {
           id: data.connectionWhatsId,
-          Business: { accountId: data.accountId },
+          Business: { accountId: auth.accountId },
           interrupted: false,
         },
         select: { type: true, name: true },
@@ -168,25 +185,34 @@ export const WebSocketIo = (io: Server) => {
         });
         return;
       }
-      const nameConnection = generateNameConnection(connectionDB.name);
       const nameSession = generateNameSession({
-        accountId: data.accountId,
+        accountId: auth.accountId,
         connectionWhatsId: data.connectionWhatsId,
         type: connectionDB.type,
-        nextNameConnection: nameConnection,
+        nextNameConnection: generateNameConnection(connectionDB.name),
       });
       await Baileys({
-        accountId: data.accountId,
+        accountId: auth.accountId,
         connectionWhatsId: data.connectionWhatsId,
         socket: socket,
         nameSession,
         type: connectionDB.type,
+        number: data.number,
         onConnection: async (connection) => {
-          console.log("RENDER");
-          socket.emit("status-connect", {
-            connection: connection ?? "close",
+          socket.emit(
+            `status-session-${data.connectionWhatsId}`,
+            connection ?? "close"
+          );
+          socket.emit(`status-connection`, {
             connectionId: data.connectionWhatsId,
+            connection: "sync",
           });
+          setTimeout(() => {
+            socket.emit(`status-connection`, {
+              connectionId: data.connectionWhatsId,
+              connection: connection ?? "close",
+            });
+          }, 4500);
 
           const fileBin = resolve(__dirname, "../../bin");
           const pathFileConnection = `${fileBin}/connections.json`;
@@ -206,7 +232,7 @@ export const WebSocketIo = (io: Server) => {
 
             if (!alreadyExists) {
               listConnections.push({
-                accountId: data.accountId,
+                accountId: auth.accountId,
                 connectionWhatsId: data.connectionWhatsId,
                 nameSession,
                 type: connectionDB.type,
@@ -219,6 +245,36 @@ export const WebSocketIo = (io: Server) => {
           });
         },
       });
+    });
+
+    socket.on("revoke-session", async (data: PropsCreateSessionWA_I) => {
+      const isconnected = cacheConnectionsWAOnline.get(data.connectionWhatsId);
+      if (isconnected) return;
+      const connectionDB = await prisma.connectionWA.findFirst({
+        where: {
+          id: data.connectionWhatsId,
+          Business: { accountId: auth.accountId },
+          interrupted: false,
+        },
+        select: { type: true, name: true },
+      });
+      if (!connectionDB) {
+        socket.emit("error-connection-wa", {
+          message: "Conexão não encontrada ou você não está autorizado!",
+          ...data,
+        });
+        return;
+      }
+      await killConnectionWA(
+        data.connectionWhatsId,
+        auth.accountId,
+        generateNameSession({
+          accountId: auth.accountId,
+          connectionWhatsId: data.connectionWhatsId,
+          type: connectionDB.type,
+          nextNameConnection: generateNameConnection(connectionDB.name),
+        })
+      );
     });
   });
 

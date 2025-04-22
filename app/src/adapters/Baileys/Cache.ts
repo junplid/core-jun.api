@@ -43,3 +43,5 @@ export const indexesCurrentLeadChatbot: Map<string, string> = new Map();
 	```
  */
 export const cacheBaileys_SocketInReset: Map<number, boolean> = new Map();
+
+export const cacheConnectionsWAOnline: Map<number, boolean> = new Map();

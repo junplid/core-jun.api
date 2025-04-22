@@ -4,6 +4,7 @@ import { sessionsBaileysWA } from "../../adapters/Baileys";
 import { GetConnectionWADetailsDTO_I } from "./DTO";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { prisma } from "../../adapters/Prisma/client";
+import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 
 export class GetConnectionWADetailsUseCase {
   constructor() {}
@@ -34,9 +35,7 @@ export class GetConnectionWADetailsUseCase {
     const bot = sessionsBaileysWA.get(dto.id);
 
     if (bot) {
-      const isConnected = bot.ev.emit("connection.update", {
-        connection: "open",
-      });
+      const isConnected = !!cacheConnectionsWAOnline.get(dto.id);
       Object.assign(connection, {
         status: !!isConnected ? "open" : "close",
       });

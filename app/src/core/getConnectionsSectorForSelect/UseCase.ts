@@ -1,4 +1,5 @@
 import { sessionsBaileysWA } from "../../adapters/Baileys";
+import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 import { GetConnectionsSectorForSelectDTO_I } from "./DTO";
 import { GetConnectionsSectorForSelectRepository_I } from "./Repository";
 
@@ -11,10 +12,7 @@ export class GetConnectionsSectorForSelectUseCase {
     const nextConnections = await Promise.all(
       connections.map(async (cnn) => {
         try {
-          const client = sessionsBaileysWA.get(cnn.id);
-          const isConnected = client?.ev.emit("connection.update", {
-            connection: "open",
-          });
+          const isConnected = !!cacheConnectionsWAOnline.get(cnn.id);
           return {
             ...cnn,
             name: isConnected ? cnn.name + " - ON" : cnn.name + " - OFF",

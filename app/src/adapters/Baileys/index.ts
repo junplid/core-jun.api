@@ -18,18 +18,18 @@ import moment, { Moment } from "moment-timezone";
 import { resolve } from "path";
 import removeAccents from "remove-accents";
 import { Socket } from "socket.io";
-// import { startChatbotQueue } from "../../bin/startChatbotQueue";
 import { socketIo } from "../../infra/express";
 import {
-  CacheStateUserSocket,
+  cacheAccountSocket,
   cacheSocketAccount,
 } from "../../infra/websocket/cache";
 import { NodeControler } from "../../libs/Nodes/Control";
 import { prisma } from "../Prisma/client";
-import { clientRedis } from "../RedisDB";
+// import { clientRedis } from "../RedisDB";
 import { ModelFlows } from "../mongo/models/flows";
 import {
   cacheBaileys_SocketInReset,
+  cacheConnectionsWAOnline,
   cacheJobsChatbotQueue,
   flowsMap,
   leadAwaiting,
@@ -85,6 +85,7 @@ interface PropsBaileys {
     bot?: WASocket
   ): void;
   maxConnectionAttempts?: number;
+  number?: string;
 }
 
 export type CacheSessionsBaileysWA = Omit<
@@ -121,7 +122,7 @@ export const generateNameSession = (props: PropsGenerateNameSession) => {
   ) as GenerateNameSession;
 };
 
-const killConnection = async (
+export const killConnectionWA = async (
   connectionId: number,
   accountId: number,
   nameSession: string
@@ -151,6 +152,12 @@ const killConnection = async (
       data: { number: null },
     });
   }
+  const bot = sessionsBaileysWA.get(connectionId);
+  bot?.ev.emit("connection.update", { connection: "close" });
+  bot?.end({
+    message: "Desconectando para reconectar...",
+    name: "desconect-reconect",
+  });
   sessionsBaileysWA.delete(connectionId);
   if (existsSync(pathAuthBot)) {
     try {
@@ -185,8 +192,8 @@ export const Baileys = async ({
     let isOnlineLocal = false;
 
     const run = async () => {
-      const redis = await clientRedis();
-      const socketId = await redis.get(`socketid-${props.accountId}`);
+      // const redis = await clientRedis();
+      const socketIds = cacheAccountSocket.get(props.accountId)?.listSocket;
 
       const pathAuthBot = `./database-whatsapp/${props.accountId}/${nameSession}`;
       const { state, saveCreds } = await useMultiFileAuthState(pathAuthBot);
@@ -201,8 +208,9 @@ export const Baileys = async ({
         // printQRInTerminal: true,
         version: baileysVersion.version,
         defaultQueryTimeoutMs: undefined,
-        qrTimeout: 7000,
+        qrTimeout: 20000,
       });
+      sessionsBaileysWA.set(props.connectionWhatsId, bot);
 
       // version: [2, 2413, 1],
       // printQRInTerminal: true,
@@ -238,8 +246,33 @@ export const Baileys = async ({
 
       bot.ev.on(
         "connection.update",
-        async ({ connection, lastDisconnect, qr, isOnline }) => {
-          if (qr && socketId) socketIo.to(socketId).emit("qr-code", qr);
+        async ({ connection, lastDisconnect, qr }) => { 
+          cacheConnectionsWAOnline.set(
+            props.connectionWhatsId,
+            connection === "open"
+          );
+          if (!!qr && socketIds?.length) {
+            if (!!props.number) {
+              const code = (await bot.requestPairingCode(props.number)).split(
+                ""
+              );
+              code.splice(4, 0, "-");
+              socketIds.forEach((socketId) => {
+                socketIo
+                  .to(socketId)
+                  .emit(
+                    `pairing-code-${props.connectionWhatsId}`,
+                    code.join("").split("-")
+                  );
+              });
+            } else {
+              socketIds.forEach((socketId) => {
+                socketIo
+                  .to(socketId)
+                  .emit(`qr-code-${props.connectionWhatsId}`, qr);
+              });
+            }
+          }
 
           const reason = new Boom(lastDisconnect?.error).output.statusCode;
 
@@ -255,7 +288,7 @@ export const Baileys = async ({
               console.log("Entrando aqui... 2");
               // console.log({ reconect });
               if (!reconect) {
-                await killConnection(
+                await killConnectionWA(
                   props.connectionWhatsId,
                   props.accountId,
                   nameSession
@@ -282,7 +315,7 @@ export const Baileys = async ({
                 connectionId: props.connectionWhatsId,
                 reason: DisconnectReason[reason],
               });
-              await killConnection(
+              await killConnectionWA(
                 props.connectionWhatsId,
                 props.accountId,
                 nameSession
@@ -366,7 +399,6 @@ export const Baileys = async ({
               }, 5000);
               props.onConnection && props.onConnection(connection);
               isOnlineLocal = true;
-              console.log({ isOnlineLocal });
             } catch (error) {
               console.log(error);
             }
@@ -1314,10 +1346,10 @@ export const Baileys = async ({
                 );
 
                 if (!cacheThisChatbot) {
-                  await redis.set(
-                    `chatbot-queuej-job-${chatBotReceptive.id}`,
-                    JSON.stringify("ON")
-                  );
+                  // await redis.set(
+                  //   `chatbot-queuej-job-${chatBotReceptive.id}`,
+                  //   JSON.stringify("ON")
+                  // );
                   // await startChatbotQueue(chatBotReceptive.id);
                 } else {
                   console.log("NÃO EXECUTOU A FILA");

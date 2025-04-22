@@ -1,4 +1,5 @@
 import { sessionsBaileysWA } from "../../adapters/Baileys";
+import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 import { prisma } from "../../adapters/Prisma/client";
 import { GetConnectionsWADTO_I } from "./DTO";
 
@@ -20,12 +21,9 @@ export class GetConnectionsWAUseCase {
     const nextConnections = await Promise.all(
       connections.map(async (cnn) => {
         try {
-          const isConnected = sessionsBaileysWA
-            .get(cnn.id)
-            ?.ev.emit("connection.update", { connection: "open" });
+          const isConnected = !!cacheConnectionsWAOnline.get(cnn.id);
           return { ...cnn, status: !!isConnected ? "open" : "close" };
         } catch (error) {
-          console.log("Error", error);
           return { ...cnn, status: "close" };
         }
       })

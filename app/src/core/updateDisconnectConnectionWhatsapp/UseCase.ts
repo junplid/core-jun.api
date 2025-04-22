@@ -50,7 +50,7 @@ export class UpdateDisconnectConnectionWhatsappUseCase {
       return {
         message: "OK!",
         status: 200,
-        connection: { status: "close" },
+        connectionWA: { status: "close" },
       };
     } catch (error) {
       throw new ErrorResponse(400).toast({
