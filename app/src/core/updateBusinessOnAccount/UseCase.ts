@@ -13,7 +13,7 @@ export class UpdateBusinessOnAccountUseCase {
 
     if (!exist) {
       throw new ErrorResponse(400).toast({
-        title: `Empresa não foi encontrada`,
+        title: `Projeto não foi encontrada`,
         type: "error",
       });
     }

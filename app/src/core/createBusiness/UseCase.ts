@@ -86,7 +86,7 @@ export class CreateBusinessUseCase {
 
     if (exist) {
       throw new ErrorResponse(400).input({
-        text: "Já existe uma empresa com esse nome.",
+        text: "Já existe um projeto com esse nome.",
         path: "name",
       });
     }

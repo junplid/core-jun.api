@@ -1,5 +1,3 @@
-import { TypeConnetion } from "@prisma/client";
-import { Contact } from "baileys";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
 import { GetConnectionWADetailsDTO_I } from "./DTO";
 import { ErrorResponse } from "../../utils/ErrorResponse";
@@ -16,7 +14,8 @@ export class GetConnectionWADetailsUseCase {
         name: true,
         type: true,
         id: true,
-        countShots: true,
+        // quantidade de envio de mensagem que inicia a conversa no periodo de 24hrs sem receber mensagem do lead
+        // countShots: true,
         updateAt: true,
         number: true,
         Chatbot: { select: { name: true, id: true } },
@@ -49,8 +48,7 @@ export class GetConnectionWADetailsUseCase {
       Object.assign(connection, { status: "close" });
     }
 
-    // const { Chatbot, Business, ConnectionOnCampaign, _count, ...conn } =
-    //   connection;
+    const { Chatbot, Business, ...conn } = connection;
 
     // Object.assign(conn, {
     //   business: Business.name,
@@ -64,7 +62,7 @@ export class GetConnectionWADetailsUseCase {
     return {
       message: "OK!",
       status: 200,
-      connection: {},
+      connectionWA: { ...conn, business: Business.name, chatbot: Chatbot },
     };
   }
 }

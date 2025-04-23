@@ -17,7 +17,7 @@ const systemVariables = [
   },
   {
     name: "JUN_ENTERPRISE_NAME",
-    value: "Nome da empresa",
+    value: "Nome do projeto",
   },
   {
     name: "JUN_SAUDACAO",

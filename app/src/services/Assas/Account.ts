@@ -16,7 +16,7 @@ interface SubAccount {
   cpfCnpj: string; // CPF ou CNPJ do proprietário da subconta
   birthDate?: Date; // Data de nascimento (somente quando Pessoa Física)
   personType: "JURIDICA" | "FISICA"; // Tipo de Pessoa
-  companyType?: "MEI" | "LIMITED" | "INDIVIDUAL" | "ASSOCIATION"; // Tipo da empresa (Pessoa Jurídica)
+  companyType?: "MEI" | "LIMITED" | "INDIVIDUAL" | "ASSOCIATION"; // Tipo do projeto (Pessoa Jurídica)
   city: number; // Identificador único da cidade no Asaas
   state: string; // Sigla do Estado
   country: string; // País (Fixo Brasil)
