@@ -1,11 +1,27 @@
-import { GetTagForSelectRepository_I } from "./Repository";
 import { GetTagForSelectDTO_I } from "./DTO";
+import { prisma } from "../../adapters/Prisma/client";
 
 export class GetTagForSelectUseCase {
-  constructor(private repository: GetTagForSelectRepository_I) {}
+  constructor() {}
 
   async run(dto: GetTagForSelectDTO_I) {
-    const tags = await this.repository.get(dto);
+    const tags = await prisma.tag.findMany({
+      where: {
+        accountId: dto.accountId,
+        type: dto.type,
+        ...(dto.businessIds?.length && {
+          TagOnBusiness: {
+            some: {
+              businessId: { in: dto.businessIds },
+              Business: { accountId: dto.accountId },
+            },
+          },
+        }),
+        ...(dto.name && { name: { contains: dto.name } }),
+      },
+      orderBy: { id: "desc" },
+      select: { name: true, id: true },
+    });
 
     return {
       message: "OK!",

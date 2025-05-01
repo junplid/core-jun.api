@@ -1,31 +1,21 @@
 import { NextFunction, Request, Response } from "express";
-import {
-  GetTagForSelectBodyDTO_I,
-  GetTagForSelectParamsDTO_I,
-  GetTagForSelectQueryDTO_I,
-} from "./DTO";
+import { GetTagForSelectBodyDTO_I, GetTagForSelectQueryDTO_I } from "./DTO";
 import { Joi } from "express-validation";
 
 export const getTagForSelectValidation = (
-  req: Request<
-    GetTagForSelectParamsDTO_I,
-    any,
-    GetTagForSelectBodyDTO_I,
-    GetTagForSelectQueryDTO_I
-  >,
+  req: Request<any, any, GetTagForSelectBodyDTO_I, GetTagForSelectQueryDTO_I>,
   res: Response,
   next: NextFunction
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
-    type: Joi.string()
-      .regex(/(contactwa|audience)/)
-      .required(),
-    businessIds: Joi.string().required(),
+    type: Joi.string().valid("contactwa", "audience"),
+    businessIds: Joi.string(),
+    name: Joi.string(),
   });
 
   const validation = schemaValidation.validate(
-    { ...req.body, ...req.query, ...req.params },
+    { ...req.body, ...req.query },
     { abortEarly: false }
   );
 
@@ -38,9 +28,11 @@ export const getTagForSelectValidation = (
     return res.status(400).json({ errors });
   }
 
-  req.params.businessIds = (req.params.businessIds as unknown as string)
-    .split("-")
-    .map((b) => Number(b));
+  if (req.query.businessIds?.length) {
+    req.query.businessIds = (req.query.businessIds as unknown as string)
+      .split("-")
+      .map((b) => Number(b));
+  }
 
   next();
 };

@@ -736,23 +736,29 @@ model ConnectionConfig {
 //   accountId                           Int
 //   Account                             Account                           @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 //   Campaign                            Campaign[]
-//   TimesWork                           TimesWork[]
+//   OperatingDays                           OperatingDays[]
 
 //   @@index([id, accountId, name])
 // }
 
-model TimesWork {
-  id          Int      @id @default(autoincrement())
-  interrupted Boolean  @default(false)
-  startTime   String?
-  endTime     String?
-  dayOfWeek   Int
-  // campaignParameterId Int?
-  // CampaignParameter   CampaignParameter? @relation(fields: [campaignParameterId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  chatbotId   Int?
-  Chatbot     Chatbot? @relation(fields: [chatbotId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+model OperatingDays {
+  id           Int            @id @default(autoincrement())
+  dayOfWeek    Int
+  chatbotId    Int?
+  Chatbot      Chatbot?       @relation(fields: [chatbotId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  WorkingTimes WorkingTimes[]
 
   @@index([id, chatbotId])
+}
+
+model WorkingTimes {
+  id             Int           @id @default(autoincrement())
+  start          String
+  end            String
+  operatingDayId Int
+  OperatingDays  OperatingDays @relation(fields: [operatingDayId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([id, operatingDayId])
 }
 
 // enum TypeAudience {
@@ -895,32 +901,24 @@ enum TypeMessageWhatsApp {
 }
 
 model Chatbot {
-  id                            Int                            @id @default(autoincrement())
-  interrupted                   Boolean                        @default(false)
-  name                          String                         @db.VarChar(60)
-  status                        Boolean?                       @default(false)
-  description                   String?
-  connectionWAId                Int?
-  leadOriginList                String?
-  flowId                        Int
-  insertNewLeadsOnAudienceId    Int?
-  insertTagsLead                String?
-  typeActivation                TypeActivation?
-  inputActivation               String?
-  ConnectionWA                  ConnectionWA?                  @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  businessId                    Int
-  Business                      Business                       @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  accountId                     Int
-  typeMessageWhatsApp           TypeMessageWhatsApp?
-  Account                       Account                        @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  chatbotInactivityId           Int?                           @unique
-  ChatbotInactivity             ChatbotInactivity?             @relation(fields: [chatbotInactivityId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  ChatbotMessageActivations     ChatbotMessageActivations[]
-  ChatbotMessageActivationsFail ChatbotMessageActivationsFail?
-  ChatbotAlternativeFlows       ChatbotAlternativeFlows?
-  createAt                      DateTime                       @default(now())
-  updateAt                      DateTime                       @default(now()) @updatedAt
-  TimesWork                     TimesWork[]
+  id                    Int             @id @default(autoincrement())
+  interrupted           Boolean         @default(false)
+  name                  String          @db.VarChar(60)
+  status                Boolean?        @default(false)
+  description           String?
+  connectionWAId        Int?
+  leadOriginList        String?
+  flowId                Int
+  addLeadToAudiencesIds Int?
+  addToLeadTagsIds      String?
+  ConnectionWA          ConnectionWA?   @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  businessId            Int
+  Business              Business        @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  accountId             Int
+  Account               Account         @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createAt              DateTime        @default(now())
+  updateAt              DateTime        @default(now()) @updatedAt
+  OperatingDays         OperatingDays[]
 
   @@index([name, accountId, businessId, status])
 }
@@ -930,64 +928,6 @@ enum TypeChatbotInactivity {
   minutes
   hours
   days
-}
-
-model ChatbotInactivity {
-  id      Int                   @id @default(autoincrement())
-  type    TypeChatbotInactivity @default(seconds)
-  flowId  Int
-  value   Int
-  Chatbot Chatbot?
-
-  @@index([id])
-}
-
-model ChatbotAlternativeFlows {
-  id                           Int     @id @default(autoincrement())
-  receivingNonStandardMessages Int?
-  receivingAudioMessages       Int?
-  receivingImageMessages       Int?
-  receivingVideoMessages       Int?
-  chatbotId                    Int     @unique
-  Chatbot                      Chatbot @relation(fields: [chatbotId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id])
-}
-
-enum TypeChatbotActivations {
-  contains
-  startWith
-  equal
-  different
-}
-
-model ChatbotMessageActivations {
-  id                             Int                              @id @default(autoincrement())
-  type                           TypeChatbotActivations?          @default(contains)
-  caseSensitive                  Boolean?                         @default(false)
-  chatbotId                      Int
-  Chatbot                        Chatbot                          @relation(fields: [chatbotId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  ChatbotMessageActivationValues ChatbotMessageActivationValues[]
-
-  @@index([id, type])
-}
-
-model ChatbotMessageActivationValues {
-  id                          Int                       @id @default(autoincrement())
-  value                       String
-  chatbotMessageActivationsId Int
-  ChatbotMessageActivations   ChatbotMessageActivations @relation(fields: [chatbotMessageActivationsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-}
-
-model ChatbotMessageActivationsFail {
-  id        Int      @id @default(autoincrement())
-  text      Boolean? @default(true)
-  image     Boolean? @default(false)
-  audio     Boolean? @default(false)
-  chatbotId Int      @unique
-  Chatbot   Chatbot  @relation(fields: [chatbotId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([id])
 }
 
 // model CampaignOnBusiness {

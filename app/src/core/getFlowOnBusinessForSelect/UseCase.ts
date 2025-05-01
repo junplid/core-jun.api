@@ -8,9 +8,11 @@ export class GetFlowOnBusinessForSelectUseCase {
     const data = await ModelFlows.aggregate([
       {
         $match: {
-          name: { $regex: dto.name || "", $options: "i" },
+          ...(dto.name && { name: { $regex: dto.name, $options: "i" } }),
           accountId: dto.accountId,
-          businessIds: { $in: dto.businessIds || [] },
+          ...(dto.businessIds?.length && {
+            businessIds: { $in: dto.businessIds },
+          }),
           ...(dto.type?.length && { type: { $in: dto.type } }),
         },
       },

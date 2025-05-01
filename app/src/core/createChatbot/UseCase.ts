@@ -5,6 +5,7 @@ import { CreateChatbotRepository_I } from "./Repository";
 import { prisma } from "../../adapters/Prisma/client";
 import { isSubscriptionInOrder } from "../../libs/Asaas/isSubscriptionInOrder";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 
 function arraysAreEqual(
   arrayA: boolean[],
@@ -34,7 +35,7 @@ function getTimeBR(time: string) {
 export class CreateChatbotUseCase {
   constructor(private repository: CreateChatbotRepository_I) {}
 
-  async run({ status = true, ...dto }: CreateChatbotDTO_I) {
+  async run({ ...dto }: CreateChatbotDTO_I) {
     // const countResource = await prisma.chatbot.count({
     //   where: { accountId: dto.accountId },
     // });
@@ -121,49 +122,28 @@ export class CreateChatbotUseCase {
     if (exist) {
       throw new ErrorResponse(400).input({
         path: "name",
-        text: "Já existe `Chatbot` com esse nome",
+        text: "Já existe um `Chatbot` com esse nome",
       });
     }
 
-    const {
-      ChatbotInactivity,
-      ChatbotAlternativeFlows,
-      ChatbotMessageActivations,
-      ChatbotMessageActivationsFail,
-      leadOriginList,
-      insertTagsLead,
-      inputActivation,
-      timesWork,
-      ...rest
-    } = dto;
+    const { ...rest } = dto;
 
-    if (dto.connectionOnBusinessId) {
+    if (dto.connectionWAId) {
       const pickConnection = await prisma.connectionWA.findFirst({
         where: {
-          id: dto.connectionOnBusinessId,
+          id: dto.connectionWAId,
           Business: { accountId: dto.accountId, id: dto.businessId },
         },
         select: {
           Chatbot: {
             select: {
-              inputActivation: true,
-              typeActivation: true,
-              typeMessageWhatsApp: true,
-              ChatbotMessageActivations: {
-                select: {
-                  caseSensitive: true,
-                  type: true,
-                  ChatbotMessageActivationValues: {
-                    select: {
-                      value: true,
-                    },
-                  },
-                },
-              },
               id: true,
               name: true,
-              TimesWork: {
-                select: { startTime: true, endTime: true, dayOfWeek: true },
+              OperatingDays: {
+                select: {
+                  dayOfWeek: true,
+                  WorkingTimes: { select: { start: true, end: true } },
+                },
               },
             },
           },
@@ -179,97 +159,61 @@ export class CreateChatbotUseCase {
 
       // regras aqui
       // se a conexão escolhida já estiver sendo usada por outro chatbot
-      //      - verificar se já existe mesmo dia            ok
+      //      - verificar se já existe mesmo dia
       //        - verificar se existe mesmo horario
-      //          - verificar se existe a mesma ativação
       if (pickConnection.Chatbot.length) {
-        for (const chatbot of pickConnection.Chatbot) {
-          let isConflitActivation: boolean | undefined = false;
-          let isConflitTypeMessage: boolean | undefined = false;
-          if (
-            chatbot.typeActivation === "message" &&
-            dto.typeActivation === "message"
-          ) {
-            if (chatbot.typeMessageWhatsApp === "anyMessage") {
-              isConflitTypeMessage = true;
-            }
-
-            if (
-              chatbot.typeMessageWhatsApp === "textDetermined" &&
-              dto.typeMessageWhatsApp === "textDetermined"
-            ) {
-              isConflitActivation = dto.ChatbotMessageActivations?.some(
-                (activation, index) => {
-                  const actvChEx = chatbot.ChatbotMessageActivations?.[index];
-                  const texts = actvChEx?.ChatbotMessageActivationValues.map(
-                    (s) => s.value
-                  );
-                  if (actvChEx?.type === activation.type) {
-                    return activation.text.some((t, i) => t === texts[i]);
-                  }
-                }
-              );
-            }
+        for (const oldChatbot of pickConnection.Chatbot) {
+          if (!dto.operatingDays?.length || !oldChatbot.OperatingDays.length) {
+            throw new ErrorResponse(400).input({
+              path: "connectionWAId",
+              text: `O bot "${oldChatbot.name}", que opera 24 horas por dia, 7 dias por semana, já está utilizando esta conexão WA`,
+            });
           }
 
-          if (
-            (chatbot.typeActivation === "link" ||
-              chatbot.typeActivation === "qrcode") &&
-            (dto.typeActivation === "link" || dto.typeActivation === "qrcode")
-          ) {
-            isConflitActivation =
-              chatbot.inputActivation === dto.inputActivation;
-          }
+          for (const oldOperatingDay of oldChatbot.OperatingDays) {
+            for (const newOperatingDay of dto.operatingDays) {
+              // significa que não tem horario e funcionara 24 horas nesse dia
+              if (oldOperatingDay.dayOfWeek === newOperatingDay.dayOfWeek) {
+                const workTimeIsFull =
+                  !newOperatingDay.workingTimes?.length ||
+                  !newOperatingDay.workingTimes?.length;
 
-          if (dto.timesWork) {
-            for (const timesWork of chatbot.TimesWork) {
-              const { startTime, endTime, dayOfWeek } = timesWork;
-
-              for (const newChatbotTimesWork of dto.timesWork) {
-                if (!newChatbotTimesWork.startTime || !startTime) {
-                  if (newChatbotTimesWork.dayOfWeek === dayOfWeek) {
-                    throw new ErrorResponse(400).input({
-                      path: "timesWork",
-                      text: "Conflito com intervalo de `horário permitido` com outro(s) receptivo(s) já existe(ntes).",
-                    });
-                  }
+                if (workTimeIsFull) {
+                  throw new ErrorResponse(400).input({
+                    path: "timesWork",
+                    text: "Conflito de `horário de funcionamento`1",
+                  });
                 }
 
                 let isBettwenTime = false;
-                if (
-                  newChatbotTimesWork.startTime &&
-                  newChatbotTimesWork.endTime &&
-                  startTime &&
-                  endTime &&
-                  newChatbotTimesWork.dayOfWeek === dayOfWeek
-                ) {
-                  const timeStartChat = getTimeBR(
-                    newChatbotTimesWork.startTime
-                  );
-                  const timeEndChat = getTimeBR(newChatbotTimesWork.endTime);
 
-                  const isBettwenTimeStart = timeStartChat.isBetween(
-                    getTimeBR(startTime),
-                    getTimeBR(endTime)
-                  );
-                  const isBettwenTimeEnd = timeEndChat.isBetween(
-                    getTimeBR(startTime),
-                    getTimeBR(endTime)
-                  );
-                  isBettwenTime = isBettwenTimeEnd || isBettwenTimeStart;
-                }
-                if (isBettwenTime && isConflitActivation) {
-                  throw new ErrorResponse(400).input({
-                    path: "timesWork",
-                    text: "Conflito de ativação com outro(s) receptivo(s) já existe(ntes) no horário e dia selecionado com o texto determinado",
-                  });
-                }
-                if (isBettwenTime && isConflitTypeMessage) {
-                  throw new ErrorResponse(400).input({
-                    path: "timesWork",
-                    text: "Conflito de ativação com outro(s) receptivo(s) já existe(ntes) no horário e dia selecionado",
-                  });
-                }
+                const timeStartChat = getTimeBR(newOperatingDay.startTime);
+                const timeEndChat = getTimeBR(newOperatingDay.endTime);
+
+                const isBettwenTimeStart = timeStartChat.isBetween(
+                  getTimeBR(startTime),
+                  getTimeBR(endTime)
+                );
+                const isBettwenTimeEnd = timeEndChat.isBetween(
+                  getTimeBR(startTime),
+                  getTimeBR(endTime)
+                );
+                isBettwenTime = isBettwenTimeEnd || isBettwenTimeStart;
+              }
+
+              if (
+                newOperatingDay.startTime &&
+                newOperatingDay.endTime &&
+                startTime &&
+                endTime &&
+                newOperatingDay.dayOfWeek === dayOfWeek
+              ) {
+              }
+              if (isBettwenTime) {
+                throw new ErrorResponse(400).input({
+                  path: "timesWork",
+                  text: "Conflito de ativação com outro(s) receptivo(s) já existe(ntes) no horário e dia selecionado com o texto determinado",
+                });
               }
             }
           }
@@ -277,21 +221,6 @@ export class CreateChatbotUseCase {
           // para não dar error, por enquanto vou bloquear a criação de qualquer
           // tipo de robo que funciona 24hrs, por causa do conflito pela diferenças
           // de funcionamente de cada robo
-
-          if (
-            chatbot.typeActivation !== dto.typeActivation &&
-            !dto.timesWork?.length
-          ) {
-            throw new ErrorResponse(400)
-              .input({
-                path: "typeActivation",
-                text: "Conflito de ativação com outras conexões",
-              })
-              .input({
-                path: "connectionOnBusinessId",
-                text: "Conflito de ativação com outras conexões",
-              });
-          }
 
           // if (
           //   chatbot.typeActivation &&
@@ -307,6 +236,7 @@ export class CreateChatbotUseCase {
         }
       }
     }
+
     const { businessName, numberConnection, ...rests } =
       await this.repository.create({
         ...rest,
@@ -320,27 +250,9 @@ export class CreateChatbotUseCase {
         ChatbotMessageActivationsFail,
       });
 
-    if (dto.ChatbotMessageActivations?.length) {
-      await Promise.all(
-        dto.ChatbotMessageActivations.map(async (data) => {
-          await this.repository.createActivations({
-            chatbotId: rests.id,
-            data,
-          });
-        })
-      );
-    }
-
-    let statusConn = false;
-    if (dto.connectionOnBusinessId) {
-      statusConn = !!sessionsBaileysWA
-        .get(dto.connectionOnBusinessId)
-        ?.ev.emit("connection.update", { connection: "open" });
-    }
-
-    let target: null | string = null;
-    if (inputActivation && numberConnection) {
-      target = `https://api.whatsapp.com/send?phone=${numberConnection}&text=${inputActivation}`;
+    let status = false;
+    if (dto.connectionWAId) {
+      status = !!cacheConnectionsWAOnline.get(dto.connectionWAId);
     }
 
     return {
@@ -349,9 +261,7 @@ export class CreateChatbotUseCase {
       chatbot: {
         ...rests,
         business: businessName,
-        type: rest.typeActivation,
-        target,
-        statusConn: statusConn ? "ON" : "OFF",
+        status,
       },
     };
   }
