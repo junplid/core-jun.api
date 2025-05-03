@@ -13,7 +13,17 @@ function getTimeBR(time: string) {
 const newOperating = [
   {
     dayOfWeek: 0,
-    workingTimes: [{ start: "09:00", end: "12:00" }],
+    workingTimes: [
+      { start: "11:00", end: "10:00" },
+      { start: "09:00", end: "12:00" },
+    ],
+  },
+  {
+    dayOfWeek: 1,
+    workingTimes: [
+      { start: "10:00", end: "14:00" },
+      { start: "09:00", end: "12:00" },
+    ],
   },
 ];
 
@@ -24,6 +34,16 @@ const oldOperating = [
   },
 ];
 
+interface Conflict {
+  dayOfWeek: number;
+  indexTime: number;
+}
+
+// nome para a função que verifica se tem conflito nos dias de opreções
+
+const conflict: Conflict[] = [];
+
+// isso aqui ja funciona, só precisamos melhorar com função reutilizavel
 for (const oldOperatingDay of oldOperating) {
   for (const newOperatingDay of newOperating) {
     if (newOperatingDay.dayOfWeek === oldOperatingDay.dayOfWeek) {
@@ -31,8 +51,6 @@ for (const oldOperatingDay of oldOperating) {
         !newOperatingDay.workingTimes?.length ||
         !oldOperatingDay.workingTimes?.length;
       if (workTimeIsFull) throw { message: "Conflito de `horário`" };
-
-      let isBettwen = false;
 
       for (
         let oldIndex = 0;
@@ -46,11 +64,21 @@ for (const oldOperatingDay of oldOperating) {
           newIndex++
         ) {
           const newTime = newOperatingDay.workingTimes![oldIndex];
-
           const oldStart = getTimeBR(oldTime.start);
           const oldEnd = getTimeBR(oldTime.end);
           const newStart = getTimeBR(newTime.start);
           const newEnd = getTimeBR(newTime.end);
+
+          if (moment(newEnd).isBefore(newStart)) {
+            throw {
+              message:
+                "Horario invalido" +
+                " " +
+                newStart.format("HH:mm") +
+                " " +
+                newEnd.format("HH:mm"),
+            };
+          }
 
           const isNewStartBettwen = newStart.isBetween(
             oldStart,
@@ -76,17 +104,21 @@ for (const oldOperatingDay of oldOperating) {
             undefined,
             "[]"
           );
-
-          isBettwen =
+          if (
             isNewStartBettwen ||
             isNewEndBettwen ||
             isOldStartBettwen ||
-            isOldEndBettwen;
+            isOldEndBettwen
+          ) {
+            conflict.push({
+              dayOfWeek: newOperatingDay.dayOfWeek,
+              indexTime: newIndex,
+            });
+          }
         }
       }
-
-      // isso aqui ja funciona, só precisamos melhorar com função reutilizavel e verificar se o intervalo de horario esta incorreto, tipo: start 12:00 end 09:00
-      console.log(isBettwen);
     }
   }
 }
+
+console.log(conflict);
