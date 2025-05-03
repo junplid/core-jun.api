@@ -900,25 +900,42 @@ enum TypeMessageWhatsApp {
   anyMessage
 }
 
+enum TypeTime {
+  seconds
+  minutes
+  hours
+  days
+}
+
+model TimeToRestartChatbot {
+  chatbotId Int      @id
+  value     Int
+  type      TypeTime
+  Chatbot   Chatbot  @relation(fields: [chatbotId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([chatbotId])
+}
+
 model Chatbot {
-  id                    Int             @id @default(autoincrement())
-  interrupted           Boolean         @default(false)
-  name                  String          @db.VarChar(60)
-  status                Boolean?        @default(false)
+  id                    Int                   @id @default(autoincrement())
+  interrupted           Boolean               @default(false)
+  name                  String                @db.VarChar(60)
+  status                Boolean?              @default(false)
   description           String?
   connectionWAId        Int?
   leadOriginList        String?
   flowId                Int
-  addLeadToAudiencesIds Int?
-  addToLeadTagsIds      String?
-  ConnectionWA          ConnectionWA?   @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  addLeadToAudiencesIds Int[]                 @default([])
+  addToLeadTagsIds      Int[]                 @default([])
+  ConnectionWA          ConnectionWA?         @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   businessId            Int
-  Business              Business        @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Business              Business              @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   accountId             Int
-  Account               Account         @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  createAt              DateTime        @default(now())
-  updateAt              DateTime        @default(now()) @updatedAt
+  Account               Account               @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createAt              DateTime              @default(now())
+  updateAt              DateTime              @default(now()) @updatedAt
   OperatingDays         OperatingDays[]
+  TimeToRestart         TimeToRestartChatbot?
 
   @@index([name, accountId, businessId, status])
 }

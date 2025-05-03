@@ -9,8 +9,8 @@ export interface CreateChatbotDTO_I {
   addLeadToAudiencesIds?: number[];
   addToLeadTagsIds?: number[];
   timeToRestart?: {
-    value?: string;
-    type?: "seconds" | "minutes" | "hours" | "days";
+    value: number;
+    type: "seconds" | "minutes" | "hours" | "days";
   };
   operatingDays?: {
     dayOfWeek: number;

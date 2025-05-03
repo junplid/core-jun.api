@@ -10,47 +10,21 @@ function getTimeBR(time: string) {
     });
 }
 
-const newOperating = [
-  {
-    dayOfWeek: 0,
-    workingTimes: [
-      { start: "11:00", end: "10:00" },
-      { start: "09:00", end: "12:00" },
-    ],
-  },
-  {
-    dayOfWeek: 1,
-    workingTimes: [
-      { start: "10:00", end: "14:00" },
-      { start: "09:00", end: "12:00" },
-    ],
-  },
-];
-
-const oldOperating = [
-  {
-    dayOfWeek: 0,
-    workingTimes: [{ start: "12:00", end: "20:00" }],
-  },
-];
-
 interface Conflict {
   dayOfWeek: number;
   indexTime?: number;
   text: string;
 }
 
-// nome para a função que verifica se tem conflito nos dias de operações
-
 interface OperatingDay {
   dayOfWeek: number;
-  workingTimes: {
+  workingTimes?: {
     start: string;
     end: string;
   }[];
 }
 
-function checkConflictOfOperatingDays(
+export default function checkConflictOfOperatingDays(
   newOp: OperatingDay[],
   oldOp: OperatingDay[]
 ) {
@@ -77,7 +51,7 @@ function checkConflictOfOperatingDays(
             newIndex < newDay.workingTimes!.length;
             newIndex++
           ) {
-            const newTime = newDay.workingTimes[newIndex];
+            const newTime = newDay.workingTimes![newIndex];
             const oldStart = getTimeBR(oldTime.start);
             const oldEnd = getTimeBR(oldTime.end);
             const newStart = getTimeBR(newTime.start);
@@ -134,6 +108,3 @@ function checkConflictOfOperatingDays(
   }
   return conflict;
 }
-
-const check = checkConflictOfOperatingDays(newOperating, oldOperating);
-console.log("check", check);
