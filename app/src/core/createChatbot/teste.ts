@@ -36,89 +36,104 @@ const oldOperating = [
 
 interface Conflict {
   dayOfWeek: number;
-  indexTime: number;
+  indexTime?: number;
+  text: string;
 }
 
-// nome para a função que verifica se tem conflito nos dias de opreções
+// nome para a função que verifica se tem conflito nos dias de operações
 
-const conflict: Conflict[] = [];
+interface OperatingDay {
+  dayOfWeek: number;
+  workingTimes: {
+    start: string;
+    end: string;
+  }[];
+}
 
-// isso aqui ja funciona, só precisamos melhorar com função reutilizavel
-for (const oldOperatingDay of oldOperating) {
-  for (const newOperatingDay of newOperating) {
-    if (newOperatingDay.dayOfWeek === oldOperatingDay.dayOfWeek) {
-      const workTimeIsFull =
-        !newOperatingDay.workingTimes?.length ||
-        !oldOperatingDay.workingTimes?.length;
-      if (workTimeIsFull) throw { message: "Conflito de `horário`" };
+function checkConflictOfOperatingDays(
+  newOp: OperatingDay[],
+  oldOp: OperatingDay[]
+) {
+  const conflict: Conflict[] = [];
+  for (const oldDay of oldOp) {
+    for (const newDay of newOp) {
+      if (newDay.dayOfWeek === oldDay.dayOfWeek) {
+        if (!newDay.workingTimes?.length || !oldDay.workingTimes?.length) {
+          conflict.push({
+            dayOfWeek: newDay.dayOfWeek,
+            text: "Conflito de dia da semana",
+          });
+        }
 
-      for (
-        let oldIndex = 0;
-        oldIndex < oldOperatingDay.workingTimes!.length;
-        oldIndex++
-      ) {
-        const oldTime = oldOperatingDay.workingTimes![oldIndex];
         for (
-          let newIndex = 0;
-          newIndex < newOperatingDay.workingTimes!.length;
-          newIndex++
+          let oldIndex = 0;
+          oldIndex < oldDay.workingTimes!.length;
+          oldIndex++
         ) {
-          const newTime = newOperatingDay.workingTimes![oldIndex];
-          const oldStart = getTimeBR(oldTime.start);
-          const oldEnd = getTimeBR(oldTime.end);
-          const newStart = getTimeBR(newTime.start);
-          const newEnd = getTimeBR(newTime.end);
+          const oldTime = oldDay.workingTimes![oldIndex];
 
-          if (moment(newEnd).isBefore(newStart)) {
-            throw {
-              message:
-                "Horario invalido" +
-                " " +
-                newStart.format("HH:mm") +
-                " " +
-                newEnd.format("HH:mm"),
-            };
-          }
-
-          const isNewStartBettwen = newStart.isBetween(
-            oldStart,
-            oldEnd,
-            undefined,
-            "[]"
-          );
-          const isNewEndBettwen = newEnd.isBetween(
-            oldStart,
-            oldEnd,
-            undefined,
-            "[]"
-          );
-          const isOldStartBettwen = oldStart.isBetween(
-            newStart,
-            newEnd,
-            undefined,
-            "[]"
-          );
-          const isOldEndBettwen = oldEnd.isBetween(
-            newStart,
-            newEnd,
-            undefined,
-            "[]"
-          );
-          if (
-            isNewStartBettwen ||
-            isNewEndBettwen ||
-            isOldStartBettwen ||
-            isOldEndBettwen
+          for (
+            let newIndex = 0;
+            newIndex < newDay.workingTimes!.length;
+            newIndex++
           ) {
-            conflict.push({
-              dayOfWeek: newOperatingDay.dayOfWeek,
-              indexTime: newIndex,
-            });
+            const newTime = newDay.workingTimes[newIndex];
+            const oldStart = getTimeBR(oldTime.start);
+            const oldEnd = getTimeBR(oldTime.end);
+            const newStart = getTimeBR(newTime.start);
+            const newEnd = getTimeBR(newTime.end);
+
+            if (moment(newEnd).isBefore(newStart)) {
+              conflict.push({
+                dayOfWeek: newDay.dayOfWeek,
+                indexTime: newIndex,
+                text: "Hora inválida",
+              });
+            }
+
+            const isNewStartBettwen = newStart.isBetween(
+              oldStart,
+              oldEnd,
+              undefined,
+              "[]"
+            );
+            const isNewEndBettwen = newEnd.isBetween(
+              oldStart,
+              oldEnd,
+              undefined,
+              "[]"
+            );
+            const isOldStartBettwen = oldStart.isBetween(
+              newStart,
+              newEnd,
+              undefined,
+              "[]"
+            );
+            const isOldEndBettwen = oldEnd.isBetween(
+              newStart,
+              newEnd,
+              undefined,
+              "[]"
+            );
+            if (
+              isNewStartBettwen ||
+              isNewEndBettwen ||
+              isOldStartBettwen ||
+              isOldEndBettwen
+            ) {
+              conflict.push({
+                dayOfWeek: newDay.dayOfWeek,
+                indexTime: newIndex,
+                text: "Conflito de horário",
+              });
+            }
           }
         }
       }
     }
   }
+  return conflict;
 }
 
-console.log(conflict);
+const check = checkConflictOfOperatingDays(newOperating, oldOperating);
+console.log("check", check);
