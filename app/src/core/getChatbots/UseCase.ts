@@ -1,6 +1,6 @@
 import { GetChabotsDTO_I } from "./DTO";
-import { sessionsBaileysWA } from "../../adapters/Baileys";
 import { prisma } from "../../adapters/Prisma/client";
+import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 
 export class GetChabotsUseCase {
   constructor() {}
@@ -9,7 +9,6 @@ export class GetChabotsUseCase {
     const data = await prisma.chatbot.findMany({
       where: {
         accountId: dto.accountId,
-        ...(dto.type?.length && { typeActivation: { in: dto.type } }),
       },
       select: {
         name: true,
@@ -30,9 +29,7 @@ export class GetChabotsUseCase {
         };
       }
 
-      const isConnected = sessionsBaileysWA
-        .get(ConnectionWA.id)
-        ?.ev.emit("connection.update", { connection: "open" });
+      const isConnected = !!cacheConnectionsWAOnline.get(ConnectionWA.id);
 
       // let source: null | string = null;
       // if (r.inputActivation && ConnectionWA.number) {

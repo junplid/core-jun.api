@@ -1,6 +1,7 @@
 import { GetChatbotDetailsDTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 
 export class GetChatbotDetailsUseCase {
   constructor() {}
@@ -9,35 +10,17 @@ export class GetChatbotDetailsUseCase {
     const chatbot = await prisma.chatbot.findFirst({
       where: { id: dto.id, accountId: dto.accountId },
       orderBy: { id: "desc" },
-      include: {
+      select: {
         ConnectionWA: {
           select: { name: true, id: true, number: true },
         },
-        TimesWork: {
-          select: { startTime: true, dayOfWeek: true, endTime: true },
-        },
-        ChatbotInactivity: {
-          select: { type: true, value: true, flowId: true },
-        },
-        ChatbotAlternativeFlows: {
-          select: {
-            receivingAudioMessages: true,
-            receivingImageMessages: true,
-            receivingNonStandardMessages: true,
-            receivingVideoMessages: true,
-          },
-        },
-        ChatbotMessageActivationsFail: {
-          select: { image: true, text: true, audio: true },
-        },
-        ChatbotMessageActivations: {
-          select: {
-            caseSensitive: true,
-            type: true,
-            ChatbotMessageActivationValues: { select: { value: true } },
-          },
-        },
         Business: { select: { id: true, name: true } },
+        name: true,
+        createAt: true,
+        id: true,
+        description: true,
+        status: true,
+        updateAt: true,
       },
     });
 
@@ -48,25 +31,12 @@ export class GetChatbotDetailsUseCase {
       });
     }
 
-    const {
-      businessId,
-      insertTagsLead,
-      chatbotInactivityId,
-      interrupted,
-      accountId,
-      TimesWork,
-      Business,
-      ChatbotInactivity,
-      ChatbotAlternativeFlows,
-      ChatbotMessageActivationsFail,
-      ChatbotMessageActivations,
-      ConnectionWA,
-      ...rest
-    } = chatbot;
+    const { Business, ConnectionWA, status, ...rest } = chatbot;
 
-    let target: null | string = null;
-    if (chatbot.inputActivation && ConnectionWA) {
-      target = `https://api.whatsapp.com/send?phone=${ConnectionWA.number}&text=${chatbot.inputActivation}`;
+    let statusConnection = status;
+
+    if (status) {
+      statusConnection = !!cacheConnectionsWAOnline.get(dto.id);
     }
 
     return {
@@ -74,21 +44,9 @@ export class GetChatbotDetailsUseCase {
       status: 200,
       chatbot: {
         ...rest,
-        type: chatbot.typeActivation,
-        target,
+        status: statusConnection,
         business: Business,
         connection: ConnectionWA,
-        timesWork: TimesWork,
-        insertTagsLead: insertTagsLead ? insertTagsLead.split("-") : undefined,
-        ChatbotInactivity,
-        ChatbotAlternativeFlows,
-        ChatbotMessageActivationsFail,
-        ChatbotMessageActivations: ChatbotMessageActivations.map(
-          ({ ChatbotMessageActivationValues, ...rest }) => ({
-            ...rest,
-            text: ChatbotMessageActivationValues.map((d) => d.value),
-          })
-        ),
       },
     };
   }

@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { GetChabotsBodyDTO_I, GetChabotsQueryDTO_I } from "./DTO";
 import { Joi } from "express-validation";
-import { TypeActivation } from "@prisma/client";
 
 export const getChabotsValidation = (
   req: Request<any, any, GetChabotsBodyDTO_I, GetChabotsQueryDTO_I>,
@@ -27,10 +26,6 @@ export const getChabotsValidation = (
       type: detail.type,
     }));
     return res.status(400).json({ errors });
-  }
-
-  if (req.query.type) {
-    req.query.type = String(req.query.type).split("-") as TypeActivation[];
   }
 
   next();

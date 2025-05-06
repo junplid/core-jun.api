@@ -1,8 +1,4 @@
-import { TypeActivation } from "@prisma/client";
-
-export interface GetChabotsQueryDTO_I {
-  type?: TypeActivation[];
-}
+export interface GetChabotsQueryDTO_I {}
 
 export interface GetChabotsBodyDTO_I {
   accountId: number;

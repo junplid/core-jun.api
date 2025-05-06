@@ -1,6 +1,7 @@
 import { GetChatbotDTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 
 export class GetChatbotUseCase {
   constructor() {}
@@ -9,70 +10,48 @@ export class GetChatbotUseCase {
     const chatbot = await prisma.chatbot.findFirst({
       where: { id: dto.id, accountId: dto.accountId },
       orderBy: { id: "desc" },
-      include: {
-        TimesWork: {
-          select: { startTime: true, dayOfWeek: true, endTime: true },
-        },
-        ChatbotInactivity: {
-          select: { type: true, value: true, flowId: true },
-        },
-        ChatbotAlternativeFlows: {
+      select: {
+        OperatingDays: {
           select: {
-            receivingAudioMessages: true,
-            receivingImageMessages: true,
-            receivingNonStandardMessages: true,
-            receivingVideoMessages: true,
+            dayOfWeek: true,
+            WorkingTimes: { select: { start: true, end: true } },
           },
         },
-        ChatbotMessageActivationsFail: {
-          select: { image: true, text: true, audio: true },
-        },
-        ChatbotMessageActivations: {
-          select: {
-            caseSensitive: true,
-            type: true,
-            ChatbotMessageActivationValues: { select: { value: true } },
-          },
-        },
+        TimeToRestart: { select: { type: true, value: true } },
+        name: true,
+        id: true,
+        flowId: true,
+        description: true,
+        status: true,
+        addLeadToAudiencesIds: true,
+        addToLeadTagsIds: true,
+        businessId: true,
+        connectionWAId: true,
       },
     });
 
     if (!chatbot) {
       throw new ErrorResponse(400).toast({
-        title: `Robô de recebimento não foi encontrado!`,
+        title: `Bot receptivo não encontrado.`,
         type: "error",
       });
     }
-    const {
-      updateAt,
-      createAt,
-      insertTagsLead,
-      chatbotInactivityId,
-      interrupted,
-      accountId,
-      TimesWork,
-      ChatbotInactivity,
-      ChatbotAlternativeFlows,
-      ChatbotMessageActivationsFail,
-      ChatbotMessageActivations,
-      ...rest
-    } = chatbot;
+    const { OperatingDays, TimeToRestart, status, ...rest } = chatbot;
+
+    let statusConnection = status;
+
+    if (status) {
+      statusConnection = !!cacheConnectionsWAOnline.get(dto.id);
+    }
+
     return {
       message: "OK!",
       status: 200,
       chatbot: {
         ...rest,
-        timesWork: TimesWork,
-        insertTagsLead: insertTagsLead ? insertTagsLead.split("-") : undefined,
-        ChatbotInactivity,
-        ChatbotAlternativeFlows,
-        ChatbotMessageActivationsFail,
-        ChatbotMessageActivations: ChatbotMessageActivations.map(
-          ({ ChatbotMessageActivationValues, ...rest }) => ({
-            ...rest,
-            text: ChatbotMessageActivationValues.map((d) => d.value),
-          })
-        ),
+        status: statusConnection,
+        operatingDays: OperatingDays,
+        timeToRestart: TimeToRestart,
       },
     };
   }
