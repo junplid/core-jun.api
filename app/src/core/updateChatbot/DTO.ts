@@ -2,8 +2,7 @@ export interface UpdateChatbotParamsDTO_I {
   id: number;
 }
 
-export interface UpdateChatbotBodyDTO_I {
-  accountId: number;
+export interface UpdateChatbotBodyQueryDTO_I {
   name?: string;
   businessId?: number;
   flowId?: number;
@@ -22,5 +21,10 @@ export interface UpdateChatbotBodyDTO_I {
   }[];
 }
 
+export interface UpdateChatbotBodyDTO_I {
+  accountId: number;
+}
+
 export type UpdateChatbotDTO_I = UpdateChatbotBodyDTO_I &
-  UpdateChatbotParamsDTO_I;
+  UpdateChatbotParamsDTO_I &
+  UpdateChatbotBodyQueryDTO_I;

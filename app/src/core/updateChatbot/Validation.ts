@@ -2,12 +2,18 @@ import { NextFunction, Request, Response } from "express";
 import { Joi } from "express-validation";
 import {
   UpdateChatbotBodyDTO_I,
+  UpdateChatbotBodyQueryDTO_I,
   UpdateChatbotDTO_I,
   UpdateChatbotParamsDTO_I,
 } from "./DTO";
 
 export const updateChatbotValidation = (
-  req: Request<UpdateChatbotParamsDTO_I, any, UpdateChatbotBodyDTO_I>,
+  req: Request<
+    UpdateChatbotParamsDTO_I,
+    any,
+    UpdateChatbotBodyDTO_I,
+    UpdateChatbotBodyQueryDTO_I
+  >,
   res: Response,
   next: NextFunction
 ) => {
@@ -19,7 +25,7 @@ export const updateChatbotValidation = (
     flowId: Joi.number(),
     connectionWAId: Joi.number(),
     status: Joi.boolean().optional(),
-    description: Joi.string().optional(),
+    description: Joi.string().optional().allow(""),
     addLeadToAudiencesIds: Joi.array().items(Joi.number()).optional(),
     addToLeadTagsIds: Joi.array().items(Joi.number()).optional(),
     timeToRestart: Joi.object({
@@ -31,8 +37,14 @@ export const updateChatbotValidation = (
         dayOfWeek: Joi.number().required(),
         workingTimes: Joi.array().items(
           Joi.object({
-            start: Joi.string().optional(),
-            end: Joi.string().optional(),
+            start: Joi.string().messages({
+              "string.empty": `Campo obrigatório.`,
+              "string.required": `Campo obrigatório.`,
+            }),
+            end: Joi.string().messages({
+              "string.empty": `Campo obrigatório.`,
+              "string.required": `Campo obrigatório.`,
+            }),
           }).optional()
         ),
       })
@@ -40,20 +52,23 @@ export const updateChatbotValidation = (
   });
 
   const validation = schemaValidation.validate(
-    { ...req.body, ...req.params },
+    { ...req.body, ...req.params, ...req.query },
     { abortEarly: false }
   );
 
   if (validation.error) {
     const errors = validation.error.details.map((detail) => ({
-      message: detail.message,
-      path: detail.path,
-      type: detail.type,
+      text: detail.message,
+      path: detail.path.join("."),
     }));
-    return res.status(400).json({ errors });
+    return res.status(400).json({ input: errors });
   }
 
-  req.params.id = Number(req.params.id);
+  const { accountId, id, ...rest } = validation.value as UpdateChatbotDTO_I;
+
+  req.params.id = id;
+  req.query = rest;
+  req.body.accountId = accountId;
 
   next();
 };

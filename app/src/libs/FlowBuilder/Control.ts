@@ -11,9 +11,9 @@ import {
 import { prisma } from "../../adapters/Prisma/client";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { baileysWATypingDelay } from "../../helpers/typingDelayVenom";
-import { LibraryNodes } from "./Library";
-import { NodeInterruption } from "./Library/Interruption";
-import { createJobNodeReply } from "./Library/Reply/CreateJob";
+import { LibraryNodes } from "./nodes";
+import { NodeInterruption } from "./nodes/Interruption";
+import { createJobNodeReply } from "./nodes/Reply/CreateJob";
 import { NodeInterruptionData, NodePayload } from "./Payload";
 import { currentNodeFlow } from "./cache";
 

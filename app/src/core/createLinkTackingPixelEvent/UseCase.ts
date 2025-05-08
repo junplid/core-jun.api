@@ -1,10 +1,10 @@
 import { sessionsBaileysWA } from "../../adapters/Baileys";
 import { prisma } from "../../adapters/Prisma/client";
-import { NodeControler } from "../../libs/Nodes/Control";
+import { NodeControler } from "../../libs/FlowBuilder/Control";
 import {
   NodeInterruptionLinkTackingPixelData,
   NodePayload,
-} from "../../libs/Nodes/Payload";
+} from "../../libs/FlowBuilder/Payload";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { CreateLinkTackingPixelEventDTO_I } from "./DTO";
 import { CreateLinkTackingPixelEventRepository_I } from "./Repository";

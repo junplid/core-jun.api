@@ -1,11 +1,11 @@
-import { DeleteChatbotRepository_I } from "./Repository";
 import { DeleteChatbotDTO_I } from "./DTO";
+import { prisma } from "../../adapters/Prisma/client";
 
 export class DeleteChatbotUseCase {
-  constructor(private repository: DeleteChatbotRepository_I) {}
+  constructor() {}
 
   async run(dto: DeleteChatbotDTO_I) {
-    await this.repository.delete(dto);
+    await prisma.chatbot.delete({ where: dto });
 
     return {
       message: "OK!",

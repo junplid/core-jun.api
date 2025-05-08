@@ -517,19 +517,19 @@ RouterV1Private_Get.get(
 );
 
 RouterV1Private_Get.get(
-  "/chatbot/options",
+  "/chatbots/options",
   getChabotsForSelectValidation,
   getChabotsForSelectController
 );
 
 RouterV1Private_Get.get(
-  "/chatbot/:id",
+  "/chatbots/:id",
   getChatbotValidation,
   getChatbotController
 );
 
 RouterV1Private_Get.get(
-  "/chatbot/:id/details",
+  "/chatbots/:id/details",
   getChatbotDetailsValidation,
   getChatbotDetailsController
 );

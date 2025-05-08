@@ -16,9 +16,14 @@ const systemVariables = [
     value: "https://wa.me/<Número_Do_Lead>",
   },
   {
-    name: "JUN_ENTERPRISE_NAME",
-    value: "Nome do projeto",
+    name: "JUN_LINK_START_CHAT_WHATSAPP",
+    value:
+      'Exemplo de uso: {{LINK_START_CHAT_WHATSAPP}}5599999999999 > Resultado é: "https://wa.me/5599999999999"',
   },
+  // {
+  //   name: "JUNPROJECT_NAME",
+  //   value: "Nome do projeto",
+  // },
   {
     name: "JUN_SAUDACAO",
     value: "Bom dia/Boa tarde/Boa noite",

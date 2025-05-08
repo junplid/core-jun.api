@@ -109,8 +109,11 @@ export interface NodeValidationData {
 }
 
 export type NodeMessageData = {
-  message: string;
-  interval: number;
+  messages?: {
+    text: string;
+    interval?: number;
+    key: string;
+  }[];
 };
 
 interface IPaternEvent<T = string> {

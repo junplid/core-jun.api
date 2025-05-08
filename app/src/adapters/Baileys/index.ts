@@ -23,7 +23,7 @@ import {
   cacheAccountSocket,
   cacheSocketAccount,
 } from "../../infra/websocket/cache";
-import { NodeControler } from "../../libs/Nodes/Control";
+import { NodeControler } from "../../libs/FlowBuilder/Control";
 import { prisma } from "../Prisma/client";
 // import { clientRedis } from "../RedisDB";
 import { ModelFlows } from "../mongo/models/flows";
@@ -278,6 +278,7 @@ export const Baileys = async ({
 
           if (connection === "close") {
             console.log("ENTROU AQUI!!! 1");
+            // buscar a reconexão novamente!
             clearInterval(reconnectInterval);
           }
 

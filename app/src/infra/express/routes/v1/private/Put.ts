@@ -242,7 +242,7 @@ RouterV1Private_Put.put(
 // );
 
 RouterV1Private_Put.put(
-  "/chatbot/:id",
+  "/chatbots/:id",
   updateChatbotValidation,
   updateChatbotController
 );

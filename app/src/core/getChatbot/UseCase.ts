@@ -32,16 +32,15 @@ export class GetChatbotUseCase {
 
     if (!chatbot) {
       throw new ErrorResponse(400).toast({
-        title: `Bot receptivo não encontrado.`,
+        title: `Bot de recepção não encontrado.`,
         type: "error",
       });
     }
     const { OperatingDays, TimeToRestart, status, ...rest } = chatbot;
-
     let statusConnection = status;
 
-    if (status) {
-      statusConnection = !!cacheConnectionsWAOnline.get(dto.id);
+    if (status && rest.connectionWAId) {
+      statusConnection = !!cacheConnectionsWAOnline.get(rest.connectionWAId);
     }
 
     return {

@@ -9,7 +9,7 @@ export interface CreateCloneBusinessBodyDTO_I {
   sector?: boolean; //
   connection?: boolean;
   audience?: boolean; //
-  receptiveService?: boolean; // aqui quer dizer que é o atendimento receptivo
+  receptiveService?: boolean; // aqui quer dizer que é o atendimento de recepção
 }
 
 export type CreateCloneBusinessDTO_I = CreateCloneBusinessBodyDTO_I &

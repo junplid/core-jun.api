@@ -1,5 +1,4 @@
 import moment from "moment-timezone";
-import { sessionsBaileysWA } from "../../adapters/Baileys";
 import { UpdateChatbotDTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
@@ -29,96 +28,95 @@ export class UpdateChatbotUseCase {
   constructor() {}
 
   async run({ accountId, id, ...dto }: UpdateChatbotDTO_I) {
-    try {
-      const exist = await prisma.chatbot.findFirst({
-        where: { accountId, id },
+    const exist = await prisma.chatbot.findFirst({
+      where: { accountId, id },
+    });
+
+    if (!exist) {
+      throw new ErrorResponse(400).toast({
+        title: `Bot de recepção não foi encontrado.`,
+        type: "error",
       });
-
-      if (!exist) {
-        throw new ErrorResponse(400).toast({
-          title: `Bot receptivo não foi encontrado`,
-          type: "error",
+    }
+    if (exist && dto.name) {
+      const existName = await prisma.chatbot.findFirst({
+        where: {
+          accountId: accountId,
+          id: { not: id },
+          name: dto.name,
+        },
+        select: { id: true },
+      });
+      if (existName) {
+        throw new ErrorResponse(400).input({
+          path: "name",
+          text: "Já existe um Bot de recepção com esse nome.",
         });
       }
-      if (exist && dto.name && exist.name === dto.name) {
-        const existName = await prisma.chatbot.findFirst({
-          where: {
-            accountId: accountId,
-            id: { not: id },
-            name: dto.name,
-          },
-          select: { id: true },
-        });
-        if (existName) {
-          throw new ErrorResponse(400).input({
-            path: "name",
-            text: "Já existe um Bot receptivo com esse nome",
-          });
-        }
-      }
+    }
 
-      if (dto.connectionWAId) {
-        const oldChatbots = await prisma.connectionWA.findFirst({
-          where: {
-            id: dto.connectionWAId,
-            Business: { accountId: accountId, id: dto.businessId },
-          },
-          select: {
-            Chatbot: {
-              where: { id: { not: id } },
-              select: {
-                id: true,
-                name: true,
-                OperatingDays: {
-                  select: {
-                    dayOfWeek: true,
-                    WorkingTimes: { select: { start: true, end: true } },
-                  },
+    if (dto.connectionWAId) {
+      const oldChatbots = await prisma.connectionWA.findFirst({
+        where: {
+          id: dto.connectionWAId,
+          Business: { accountId: accountId, id: dto.businessId },
+        },
+        select: {
+          Chatbot: {
+            where: { id: { not: id } },
+            select: {
+              id: true,
+              name: true,
+              OperatingDays: {
+                select: {
+                  dayOfWeek: true,
+                  WorkingTimes: { select: { start: true, end: true } },
                 },
               },
             },
           },
+        },
+      });
+
+      if (!oldChatbots) {
+        throw new ErrorResponse(400).input({
+          path: "connectionWAId",
+          text: "Conexão WA não encontrada.",
         });
+      }
 
-        if (!oldChatbots) {
-          throw new ErrorResponse(400).input({
-            path: "connectionWAId",
-            text: "Conexão WA não encontrada",
-          });
-        }
+      if (oldChatbots.Chatbot.length) {
+        for (const oldChatbot of oldChatbots.Chatbot) {
+          if (
+            // !dto.operatingDays !== undefined ||
+            !dto.operatingDays?.length ||
+            !oldChatbot.OperatingDays.length
+          ) {
+            throw new ErrorResponse(400).input({
+              path: "connectionWAId",
+              text: `O bot "${oldChatbot.name}", que opera 24/7, já utiliza a conexão WA.`,
+            });
+          }
 
-        if (oldChatbots.Chatbot.length) {
-          for (const oldChatbot of oldChatbots.Chatbot) {
-            if (
-              // !dto.operatingDays !== undefined ||
-              !dto.operatingDays?.length ||
-              !oldChatbot.OperatingDays.length
-            ) {
-              throw new ErrorResponse(400).input({
-                path: "connectionWAId",
-                text: `O bot "${oldChatbot.name}", que opera 24 horas por dia, 7 dias por semana, já utiliza a conexão WA`,
-              });
-            }
+          const conflicts = checkConflictOfOperatingDays(
+            dto.operatingDays,
+            oldChatbot.OperatingDays
+          );
 
-            const conflicts = checkConflictOfOperatingDays(
-              dto.operatingDays,
-              oldChatbot.OperatingDays
-            );
-
-            if (conflicts.length) {
-            }
+          if (conflicts.length) {
           }
         }
       }
+    }
 
-      const { operatingDays, timeToRestart, ...rest } = dto;
-
+    const { operatingDays, timeToRestart, ...rest } = dto;
+    try {
       const { ConnectionWA, Business, status } = await prisma.chatbot.update({
         where: { id, accountId },
         data: rest,
         select: {
           ConnectionWA: { select: { id: true } },
-          Business: { select: { name: true } },
+          Business: { select: { name: true, id: true } },
           status: true,
         },
       });
@@ -132,13 +130,14 @@ export class UpdateChatbotUseCase {
         message: "OK!",
         status: 201,
         chatbot: {
-          business: Business.name,
+          business: Business,
           status: statusConn,
         },
       };
     } catch (error) {
+      console.log(error);
       throw new ErrorResponse(400).toast({
-        title: `Error ao tentar atualizar Bot receptivo`,
+        title: `Error ao tentar atualizar Bot de recepção`,
         type: "error",
       });
     }

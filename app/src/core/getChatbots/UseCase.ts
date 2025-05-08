@@ -21,15 +21,13 @@ export class GetChabotsUseCase {
     });
 
     const nextData = data.map(({ ConnectionWA, status, ...r }) => {
-      if (!ConnectionWA) {
+      if (!ConnectionWA || !status) {
         return {
           ...r,
-          status: "OFF",
+          status: false,
           // source: null,
         };
       }
-
-      const isConnected = !!cacheConnectionsWAOnline.get(ConnectionWA.id);
 
       // let source: null | string = null;
       // if (r.inputActivation && ConnectionWA.number) {
@@ -39,7 +37,7 @@ export class GetChabotsUseCase {
       return {
         ...r,
         // source,
-        status: isConnected && status ? "ON" : "OFF",
+        status: !!cacheConnectionsWAOnline.get(ConnectionWA.id) && status,
       };
     });
 

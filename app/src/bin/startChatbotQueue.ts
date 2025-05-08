@@ -9,7 +9,7 @@ import {
 } from "../adapters/Baileys/Cache";
 import { prisma } from "../adapters/Prisma/client";
 import { ModelFlows } from "../adapters/mongo/models/flows";
-import { NodeControler } from "../libs/Nodes/Control";
+import { NodeControler } from "../libs/FlowBuilder/Control";
 import { clientRedis } from "../adapters/RedisDB";
 
 export interface ChatbotQueue_I {

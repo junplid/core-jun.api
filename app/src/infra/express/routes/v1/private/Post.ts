@@ -300,7 +300,7 @@ RouterV1Private_Post.post(
 // );
 
 RouterV1Private_Post.post(
-  "/chatbot",
+  "/chatbots",
   createChatbotValidation,
   createChatbotController
 );

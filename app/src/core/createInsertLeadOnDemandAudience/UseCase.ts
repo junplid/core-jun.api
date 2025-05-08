@@ -1,7 +1,7 @@
 import { WASocket } from "baileys";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
 import { prisma } from "../../adapters/Prisma/client";
-import { NodeControler } from "../../libs/Nodes/Control";
+import { NodeControler } from "../../libs/FlowBuilder/Control";
 import { CreateInsertLeadOnDemandAudienceDTO_I } from "./DTO";
 import { CreateInsertLeadOnDemandAudienceRepository_I } from "./Repository";
 import { ErrorResponse } from "../../utils/ErrorResponse";

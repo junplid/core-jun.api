@@ -8,7 +8,7 @@ import { clientRedis } from "../adapters/RedisDB";
 import { ModelFlows } from "../adapters/mongo/models/flows";
 import { getContactWAOfCampaign } from "../globalImplementation/Campaign.globalImplementation";
 import { socketIo } from "../infra/express";
-import { NodeControler } from "../libs/Nodes/Control";
+import { NodeControler } from "../libs/FlowBuilder/Control";
 
 let holidaysList: HolidaysTypes.Holiday[] = [];
 

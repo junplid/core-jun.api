@@ -146,7 +146,7 @@ RouterV1Private_Delete.delete(
 // );
 
 RouterV1Private_Delete.delete(
-  "/chatbot/:id",
+  "/chatbots/:id",
   deleteChatbotValidation,
   deleteChatbotController
 );
