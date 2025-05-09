@@ -5,7 +5,7 @@ import { CreateTagDTO_I } from "./DTO";
 export class CreateTagUseCase {
   constructor() {}
 
-  async run({ businessIds = [], ...dto }: CreateTagDTO_I) {
+  async run({ businessIds = [], targetId, ...dto }: CreateTagDTO_I) {
     const exist = await prisma.tag.findFirst({
       where: {
         ...dto,
@@ -49,7 +49,7 @@ export class CreateTagUseCase {
         status: 201,
         tag: {
           id,
-          targetId: dto.targetId,
+          targetId,
           businesses: TagOnBusiness.map((b) => b.Business),
         },
       };

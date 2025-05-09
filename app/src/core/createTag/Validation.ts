@@ -12,6 +12,7 @@ export const createTagValidation = (
     accountId: Joi.number().required(),
     businessIds: Joi.array().items(Joi.number()).optional(),
     type: Joi.string().valid("audience", "contactwa").required(),
+    targetId: Joi.number().optional(),
   });
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });
