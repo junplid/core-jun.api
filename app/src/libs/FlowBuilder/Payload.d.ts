@@ -60,24 +60,14 @@ export type NodeSwitchData =
 
 export type NodeReplyData = (
   | {
-      isSaveReply?: boolean;
-      variableId: number;
+      isSave?: boolean;
+      list?: number[];
     }
-  | { isSaveReply?: false }
+  | { isSave?: false }
 ) & {
-  timeOut?: {
-    type?: "MINUTES" | "HOURS" | "DAYS";
-    value?: number;
-    action?: {
-      interval: number;
-      value: string;
-    } & (
-      | {
-          run: "SUBMIT_FLOW";
-          submitFlowId: number;
-        }
-      | { run: "FORK" | "CONTINUE" | "END_FLOW" }
-    );
+  timeout?: {
+    type: "sec" | "min" | "hor";
+    value: number;
   };
 };
 
@@ -348,6 +338,45 @@ export type NodeActionData =
   | { type: "add-to-audience" | "remove-to-audience"; audienceId: number }
   | { type: "variable"; variableId: number; value: string };
 
+export interface NodeAddTagsData {
+  list: number[];
+}
+
+export interface NodeRemoveTagsData {
+  list: number[];
+}
+
+export interface NodeAddVariablesData {
+  list: { id: number; value: string }[];
+}
+
+export interface NodeRemoveVariablesData {
+  list: number[];
+}
+
+export interface NodeSendFlowData {
+  id: number;
+}
+
+export interface NodeIfData {
+  list?: {
+    key: string;
+    type: "entity";
+    name: "has-tags" | "no-tags" | "var";
+    operatorComparison:
+      | "==="
+      | "!=="
+      | ">="
+      | "<="
+      | ">"
+      | "<"
+      | "regex"
+      | "[...]";
+    operatorLogic: "&&" | "||";
+    id: number;
+  }[];
+}
+
 export type NodeNotifyNumberData = {
   numbers: {
     key: string;
@@ -508,6 +537,12 @@ export type TypeNodesPayload =
   | "nodeWebhook"
   | "nodeWebform"
   | "nodeAttendantAI"
+  | "nodeAddTags"
+  | "nodeRemoveTags"
+  | "nodeAddVariables"
+  | "nodeRemoveVariables"
+  | "nodeSendFlow"
+  | "nodeIF"
   | "nodeFacebookConversions"
   | "nodeNewCardTrello";
 
@@ -515,6 +550,12 @@ export type NodePayload = { id: string } & (
   | { type: "nodeInitial" }
   | { type: "nodeMessage"; data: NodeMessageData }
   | { type: "nodeReply"; data: NodeReplyData }
+  | { type: "nodeAddTags"; data: NodeAddTagsData }
+  | { type: "nodeRemoveTags"; data: NodeRemoveTagsData }
+  | { type: "nodeAddVariables"; data: NodeAddVariablesData }
+  | { type: "nodeRemoveVariables"; data: NodeRemoveVariablesData }
+  | { type: "nodeSendFlow"; data: NodeSendFlowData }
+  | { type: "nodeIF"; data: NodeIfData }
 );
 // | { type: "nodeFacebookConversions"; data: NodeFacebookConversionsData }
 // | { type: "nodeAttendantAI"; data: NodeAttendantAIData }

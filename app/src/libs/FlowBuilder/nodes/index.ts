@@ -8,10 +8,16 @@
 // import { NodeLogicalCondition } from "./LogicalCondition";
 // import { NodeMathematicalOperators } from "./MathematicalOperators";
 // import { NodeMenu } from "./Menu";
+import { NodeAddTags } from "./AddTags";
+import { NodeAddVariables } from "./AddVariables";
+import { NodeIf } from "./If";
 import { NodeMessage } from "./Message";
+import { NodeRemoveTags } from "./RemoveTags";
+import { NodeRemoveVariables } from "./RemoveVariables";
 // import { NodeNewCardTrello } from "./NewCardTrello";
 // import { NodeNotifyNumber } from "./NotifyNumber";
 import { NodeReply } from "./Reply";
+import { NodeSendFlow } from "./SendFlow";
 // import { NodeSendAudio } from "./SendAudio";
 // import { NodeSendContact } from "./SendContact";
 // import { NodeSendFile } from "./SendFile";
@@ -43,6 +49,12 @@ import { NodeReply } from "./Reply";
 export const LibraryNodes = {
   NodeReply,
   NodeMessage,
+  NodeAddTags,
+  NodeRemoveTags,
+  NodeRemoveVariables,
+  NodeAddVariables,
+  NodeSendFlow,
+  NodeIf,
   // NodeMenu, // Não está na lista de nodes
   // NodeSwitch, // Não está na lista de nodes
   // NodeSendContact, // Não está na lista de nodes

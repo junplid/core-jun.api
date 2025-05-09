@@ -72,7 +72,15 @@ export type TypesNode =
   // | "nodeAttendantAI"
   // | "nodeFacebookConversions"
   // | "nodeMenu"
-  "nodeInitial" | "nodeMessage" | "nodeReply";
+  | "nodeInitial"
+  | "nodeMessage"
+  | "nodeReply"
+  | "nodeAddTags"
+  | "nodeRemoveTags"
+  | "nodeRemoveVariables"
+  | "nodeAddVariables"
+  | "nodeSendFlow"
+  | "nodeIF";
 
 interface Edges {
   source: string;
@@ -419,143 +427,141 @@ export const NodeControler = ({
             if (nextNodeFind?.type === "nodeReply") {
               // aqui vai criar o tempo de timeout do bloco de resposta;
               // o ideal é que essa função de timeout fosse adicionada em todas as respostas dos blocos
-              if (nextNodeFind.data.timeOut) {
-                const timeOut = nextNodeFind.data.timeOut;
-                if (timeOut.type && timeOut.value) {
-                  const keyMap = props.numberConnection + props.lead.number;
-                  createJobNodeReply({
-                    connectionId: props.connectionWhatsId,
-                    keyMap,
-                    leadNumber: props.lead.number,
-                    timeOut,
-                    nextEdgesIds,
-                    onExecutedNode: async () =>
-                      props.onExecutedNode && props.onExecutedNode(currentNode),
-                    reExecute: (currentNodeId) => {
-                      return execute({ ...props, currentNodeId });
-                    },
-                    onFinish: async () =>
-                      props.onFinish && (await props.onFinish("272")),
-                    res: res,
-                    onFinishFlow: () => {
-                      if (props.isSavePositionLead) {
-                        if (props.onExecutedNode) {
-                          props.onExecutedNode(currentNode);
-                        }
-                      }
-                      if (props.onFinish) props.onFinish();
-                      return res();
-                    },
-                    onForkFlow: async () => {
-                      const nextNodeId = nextEdgesIds?.find(
-                        (nd) => nd.sourceHandle === "timeOut"
-                      );
-                      if (!nextNodeId) {
-                        props.onFinish && (await props.onFinish("307"));
-                        return res();
-                      }
-                      if (props.isSavePositionLead) {
-                        if (props.onExecutedNode) {
-                          props.onExecutedNode(currentNode);
-                        }
-                      }
-                      isSendMessageOfFailedAttempts.set(keyMap, false);
-                      countAttemptsReply.set(keyMap, 0);
-                      const isDepend = nextNodeId.nodeNextType === "nodeReply";
-                      if (isDepend) return res();
-                      return execute({
-                        ...props,
-                        currentNodeId: nextNodeId.id,
-                      });
-                    },
-                    onSubmitFlow: async () => {
-                      if (timeOut.action?.run === "SUBMIT_FLOW") {
-                        let flowAlreadyExists = flowsMap.get(
-                          timeOut.action!.submitFlowId.toString()
-                        );
-                        if (!flowAlreadyExists) {
-                          const newFlow = await ModelFlows.aggregate([
-                            {
-                              $match: {
-                                _id: timeOut.action!.submitFlowId,
-                              },
-                            },
-                            {
-                              $project: {
-                                nodes: {
-                                  $map: {
-                                    input: "$data.nodes",
-                                    in: {
-                                      id: "$$this.id",
-                                      type: "$$this.type",
-                                      data: "$$this.data",
-                                    },
-                                  },
-                                },
-                                edges: {
-                                  $map: {
-                                    input: "$data.edges",
-                                    in: {
-                                      id: "$$this.id",
-                                      source: "$$this.source",
-                                      target: "$$this.target",
-                                      sourceHandle: "$$this.sourceHandle",
-                                    },
-                                  },
-                                },
-                              },
-                            },
-                          ]);
-
-                          if (!newFlow?.length) {
-                            return "SE CASO O FLUXO QUE ELE ESCOLHEU NÃO EXISTIR?";
-                          }
-
-                          const { nodes, edges } = newFlow[0];
-                          flowsMap.set(
-                            timeOut.action!.submitFlowId.toString(),
-                            {
-                              nodes,
-                              edges,
-                            }
-                          );
-                          flowAlreadyExists = { nodes, edges };
-                        }
-                        await prisma.flowState.update({
-                          where: { id: props.flowStateId },
-                          data: { flowId: timeOut.action!.submitFlowId },
-                        });
-                        isSendMessageOfFailedAttempts.set(keyMap, false);
-                        countAttemptsReply.set(keyMap, 0);
-                        const currentNode2 = flowAlreadyExists.nodes.find(
-                          (f: any) => f.id === "0"
-                        );
-                        const nextEdgesIds2 = flowAlreadyExists.edges
-                          .filter((f: any) => currentNode2?.id === f.source)
-                          ?.map((nn: any) => {
-                            const node = flowAlreadyExists.nodes.find(
-                              (f: any) => f.id === nn.target
-                            );
-                            return {
-                              id: nn.target,
-                              sourceHandle: nn.sourceHandle,
-                              nodeNextType: node?.type,
-                            };
-                          });
-                        const isDepend =
-                          nextEdgesIds2[0].nodeNextType === "nodeReply";
-                        if (isDepend) return res();
-                        return execute({
-                          ...props,
-                          nodes: flowAlreadyExists.nodes,
-                          edges: flowAlreadyExists.edges,
-                          currentNodeId: "0",
-                        });
-                      }
-                    },
-                  });
-                }
-              }
+              // if (nextNodeFind.data.timeout) {
+              //   const timeOut = nextNodeFind.data.timeout;
+              //   if (timeOut.type && timeOut.value) {
+              //     const keyMap = props.numberConnection + props.lead.number;
+              //     createJobNodeReply({
+              //       connectionId: props.connectionWhatsId,
+              //       keyMap,
+              //       leadNumber: props.lead.number,
+              //       timeOut: ,
+              //       nextEdgesIds,
+              //       onExecutedNode: async () =>
+              //         props.onExecutedNode && props.onExecutedNode(currentNode),
+              //       reExecute: (currentNodeId) => {
+              //         return execute({ ...props, currentNodeId });
+              //       },
+              //       onFinish: async () =>
+              //         props.onFinish && (await props.onFinish("272")),
+              //       res: res,
+              //       onFinishFlow: () => {
+              //         if (props.isSavePositionLead) {
+              //           if (props.onExecutedNode) {
+              //             props.onExecutedNode(currentNode);
+              //           }
+              //         }
+              //         if (props.onFinish) props.onFinish();
+              //         return res();
+              //       },
+              //       onForkFlow: async () => {
+              //         const nextNodeId = nextEdgesIds?.find(
+              //           (nd) => nd.sourceHandle === "timeOut"
+              //         );
+              //         if (!nextNodeId) {
+              //           props.onFinish && (await props.onFinish("307"));
+              //           return res();
+              //         }
+              //         if (props.isSavePositionLead) {
+              //           if (props.onExecutedNode) {
+              //             props.onExecutedNode(currentNode);
+              //           }
+              //         }
+              //         isSendMessageOfFailedAttempts.set(keyMap, false);
+              //         countAttemptsReply.set(keyMap, 0);
+              //         const isDepend = nextNodeId.nodeNextType === "nodeReply";
+              //         if (isDepend) return res();
+              //         return execute({
+              //           ...props,
+              //           currentNodeId: nextNodeId.id,
+              //         });
+              //       },
+              //       onSubmitFlow: async () => {
+              //         if (timeOut.action?.run === "SUBMIT_FLOW") {
+              //           let flowAlreadyExists = flowsMap.get(
+              //             timeOut.action!.submitFlowId.toString()
+              //           );
+              //           if (!flowAlreadyExists) {
+              //             const newFlow = await ModelFlows.aggregate([
+              //               {
+              //                 $match: {
+              //                   _id: timeOut.action!.submitFlowId,
+              //                 },
+              //               },
+              //               {
+              //                 $project: {
+              //                   nodes: {
+              //                     $map: {
+              //                       input: "$data.nodes",
+              //                       in: {
+              //                         id: "$$this.id",
+              //                         type: "$$this.type",
+              //                         data: "$$this.data",
+              //                       },
+              //                     },
+              //                   },
+              //                   edges: {
+              //                     $map: {
+              //                       input: "$data.edges",
+              //                       in: {
+              //                         id: "$$this.id",
+              //                         source: "$$this.source",
+              //                         target: "$$this.target",
+              //                         sourceHandle: "$$this.sourceHandle",
+              //                       },
+              //                     },
+              //                   },
+              //                 },
+              //               },
+              //             ]);
+              //             if (!newFlow?.length) {
+              //               return "SE CASO O FLUXO QUE ELE ESCOLHEU NÃO EXISTIR?";
+              //             }
+              //             const { nodes, edges } = newFlow[0];
+              //             flowsMap.set(
+              //               timeOut.action!.submitFlowId.toString(),
+              //               {
+              //                 nodes,
+              //                 edges,
+              //               }
+              //             );
+              //             flowAlreadyExists = { nodes, edges };
+              //           }
+              //           await prisma.flowState.update({
+              //             where: { id: props.flowStateId },
+              //             data: { flowId: timeOut.action!.submitFlowId },
+              //           });
+              //           isSendMessageOfFailedAttempts.set(keyMap, false);
+              //           countAttemptsReply.set(keyMap, 0);
+              //           const currentNode2 = flowAlreadyExists.nodes.find(
+              //             (f: any) => f.id === "0"
+              //           );
+              //           const nextEdgesIds2 = flowAlreadyExists.edges
+              //             .filter((f: any) => currentNode2?.id === f.source)
+              //             ?.map((nn: any) => {
+              //               const node = flowAlreadyExists.nodes.find(
+              //                 (f: any) => f.id === nn.target
+              //               );
+              //               return {
+              //                 id: nn.target,
+              //                 sourceHandle: nn.sourceHandle,
+              //                 nodeNextType: node?.type,
+              //               };
+              //             });
+              //           const isDepend =
+              //             nextEdgesIds2[0].nodeNextType === "nodeReply";
+              //           if (isDepend) return res();
+              //           return execute({
+              //             ...props,
+              //             nodes: flowAlreadyExists.nodes,
+              //             edges: flowAlreadyExists.edges,
+              //             currentNodeId: "0",
+              //           });
+              //         }
+              //       },
+              //     });
+              //   }
+              // }
             }
             console.log({ isDepend });
             if (isDepend) {
@@ -1652,6 +1658,164 @@ export const NodeControler = ({
       //     });
       //   return res();
       // }
+      if (currentNode.type === "nodeAddTags") {
+        await LibraryNodes.NodeAddTags({
+          data: currentNode.data,
+          flowStateId: props.flowStateId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          nodeId: currentNodeId,
+        })
+          .then(async (d) => {
+            if (props.onExecutedNode) props.onExecutedNode(currentNode);
+            props.onEnterNode && (await props.onEnterNode(currentNode.id));
+            if (!nextEdgesIds.length) {
+              props.onFinish && props.onFinish("1280");
+              return res();
+            }
+            const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+            if (isDepend) return res();
+
+            return execute({ ...props, currentNodeId: nextEdgesIds[0].id });
+          })
+          .catch((error) => {
+            console.log("error ao executar nodeAddTags", error);
+            props.onErrorNumber && props.onErrorNumber();
+            return res();
+          });
+        return res();
+      }
+      if (currentNode.type === "nodeRemoveTags") {
+        await LibraryNodes.NodeRemoveTags({
+          data: currentNode.data,
+          flowStateId: props.flowStateId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          nodeId: currentNodeId,
+        })
+          .then(async (d) => {
+            if (props.onExecutedNode) props.onExecutedNode(currentNode);
+            props.onEnterNode && (await props.onEnterNode(currentNode.id));
+            if (!nextEdgesIds.length) {
+              props.onFinish && props.onFinish("1280");
+              return res();
+            }
+            const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+            if (isDepend) return res();
+
+            return execute({ ...props, currentNodeId: nextEdgesIds[0].id });
+          })
+          .catch((error) => {
+            console.log("error ao executar nodeAddTags", error);
+            props.onErrorNumber && props.onErrorNumber();
+            return res();
+          });
+        return res();
+      }
+      if (currentNode.type === "nodeAddVariables") {
+        await LibraryNodes.NodeAddVariables({
+          data: currentNode.data,
+          flowStateId: props.flowStateId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          nodeId: currentNodeId,
+        })
+          .then(async (d) => {
+            if (props.onExecutedNode) props.onExecutedNode(currentNode);
+            props.onEnterNode && (await props.onEnterNode(currentNode.id));
+            if (!nextEdgesIds.length) {
+              props.onFinish && props.onFinish("1280");
+              return res();
+            }
+            const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+            if (isDepend) return res();
+
+            return execute({ ...props, currentNodeId: nextEdgesIds[0].id });
+          })
+          .catch((error) => {
+            console.log("error ao executar nodeAddTags", error);
+            props.onErrorNumber && props.onErrorNumber();
+            return res();
+          });
+        return res();
+      }
+      if (currentNode.type === "nodeRemoveVariables") {
+        await LibraryNodes.NodeRemoveVariables({
+          data: currentNode.data,
+          flowStateId: props.flowStateId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          nodeId: currentNodeId,
+        })
+          .then(async (d) => {
+            if (props.onExecutedNode) props.onExecutedNode(currentNode);
+            props.onEnterNode && (await props.onEnterNode(currentNode.id));
+            if (!nextEdgesIds.length) {
+              props.onFinish && props.onFinish("1280");
+              return res();
+            }
+            const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+            if (isDepend) return res();
+
+            return execute({ ...props, currentNodeId: nextEdgesIds[0].id });
+          })
+          .catch((error) => {
+            console.log("error ao executar nodeAddTags", error);
+            props.onErrorNumber && props.onErrorNumber();
+            return res();
+          });
+        return res();
+      }
+      if (currentNode.type === "nodeSendFlow") {
+        await LibraryNodes.NodeSendFlow({
+          data: currentNode.data,
+          flowStateId: props.flowStateId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          nodeId: currentNodeId,
+        })
+          .then(async (d) => {
+            if (props.onExecutedNode) props.onExecutedNode(currentNode);
+            props.onEnterNode && (await props.onEnterNode(currentNode.id));
+            if (!nextEdgesIds.length) {
+              props.onFinish && props.onFinish("1280");
+              return res();
+            }
+            const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+            if (isDepend) return res();
+
+            return execute({ ...props, currentNodeId: nextEdgesIds[0].id });
+          })
+          .catch((error) => {
+            console.log("error ao executar nodeAddTags", error);
+            props.onErrorNumber && props.onErrorNumber();
+            return res();
+          });
+        return res();
+      }
+      if (currentNode.type === "nodeIF") {
+        await LibraryNodes.NodeIf({
+          data: currentNode.data, 
+          accountId: props.accountId,
+          flowStateId: props.flowStateId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          nodeId: currentNodeId,
+        })
+          .then(async (d) => {
+            if (props.onExecutedNode) props.onExecutedNode(currentNode);
+            props.onEnterNode && (await props.onEnterNode(currentNode.id));
+            if (!nextEdgesIds.length) {
+              props.onFinish && props.onFinish("1280");
+              return res();
+            }
+            const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+            if (isDepend) return res();
+
+            return execute({ ...props, currentNodeId: nextEdgesIds[0].id });
+          })
+          .catch((error) => {
+            console.log("error ao executar nodeAddTags", error);
+            props.onErrorNumber && props.onErrorNumber();
+            return res();
+          });
+        return res();
+      }
+      
       // if (currentNode.type === "nodeAction") {
       //   await LibraryNodes.NodeAction({
       //     data: currentNode.data,

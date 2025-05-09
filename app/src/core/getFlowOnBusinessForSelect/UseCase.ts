@@ -16,13 +16,13 @@ export class GetFlowOnBusinessForSelectUseCase {
           ...(dto.type?.length && { type: { $in: dto.type } }),
         },
       },
-      { $project: { id: "$_id", name: "$name" } },
+      { $project: { id: "$_id", name: "$name", type: "$type" } },
     ]);
 
     return {
       message: "OK!",
       status: 200,
-      flows: data.map((f) => ({ id: f.id, name: f.name })),
+      flows: data.map((f) => ({ id: f.id, name: f.name, type: f.type })),
     };
   }
 }
