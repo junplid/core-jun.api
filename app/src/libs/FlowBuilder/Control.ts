@@ -1790,11 +1790,12 @@ export const NodeControler = ({
       }
       if (currentNode.type === "nodeIF") {
         await LibraryNodes.NodeIf({
-          data: currentNode.data, 
+          data: currentNode.data,
           accountId: props.accountId,
           flowStateId: props.flowStateId,
           contactsWAOnAccountId: props.contactsWAOnAccountId,
           nodeId: currentNodeId,
+          numberLead: props.lead.number,
         })
           .then(async (d) => {
             if (props.onExecutedNode) props.onExecutedNode(currentNode);
@@ -1815,7 +1816,7 @@ export const NodeControler = ({
           });
         return res();
       }
-      
+
       // if (currentNode.type === "nodeAction") {
       //   await LibraryNodes.NodeAction({
       //     data: currentNode.data,

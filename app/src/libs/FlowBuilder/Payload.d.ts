@@ -361,7 +361,6 @@ export interface NodeSendFlowData {
 export interface NodeIfData {
   list?: {
     key: string;
-    type: "entity";
     name: "has-tags" | "no-tags" | "var";
     operatorComparison:
       | "==="
@@ -373,7 +372,10 @@ export interface NodeIfData {
       | "regex"
       | "[...]";
     operatorLogic: "&&" | "||";
-    id: number;
+    tagIds: number[];
+    value1: string;
+    value2: string;
+    flags?: string[];
   }[];
 }
 

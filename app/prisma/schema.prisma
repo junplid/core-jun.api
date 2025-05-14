@@ -161,6 +161,7 @@ model Account {
   // ArtificialIntelligence    ArtificialIntelligence[]
   // AttendantOnAI             AttendantOnAI[]
   // FacebookIntegration       FacebookIntegration[]
+  AccountLogDate      AccountLogDate[]
 
   @@index([id, email, hash, status, available, isUsedFreeTrialTime])
 }
@@ -1700,3 +1701,31 @@ enum TypeTag {
 //   free
 //   paid
 // }
+
+enum AccountLogDateType {
+  CONVERSATIONS_STARTED_BOT
+  NEW_CONTACT
+}
+
+model AccountLogDate {
+  id        Int                @id @default(autoincrement())
+  type      AccountLogDateType
+  accountId Int
+  Account   Account            @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createAt  DateTime           @default(now())
+
+  @@index([accountId, createAt, type])
+}
+
+enum GeralLogDateType {
+  NEW_ACCOUNT
+  NEW_CONTACT
+}
+
+model GeralLogDate {
+  id       Int              @id @default(autoincrement())
+  type     GeralLogDateType
+  createAt DateTime         @default(now())
+
+  @@index([createAt, type])
+}
