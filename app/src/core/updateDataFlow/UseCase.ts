@@ -8,7 +8,7 @@ export class UpdateDataFlowUseCase {
 
   async run(dto: UpdateDataFlowDTO_I) {
     try {
-      cacheFlowsMap.delete(String(dto.id));
+      cacheFlowsMap.delete(dto.id);
 
       if (dto.nodes) {
         for await (const change of dto.nodes) {
