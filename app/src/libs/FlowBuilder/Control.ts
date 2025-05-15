@@ -72,15 +72,15 @@ export type TypesNode =
   // | "nodeAttendantAI"
   // | "nodeFacebookConversions"
   // | "nodeMenu"
-  | "nodeInitial"
-  | "nodeMessage"
-  | "nodeReply"
-  | "nodeAddTags"
-  | "nodeRemoveTags"
-  | "nodeRemoveVariables"
-  | "nodeAddVariables"
-  | "nodeSendFlow"
-  | "nodeIF";
+  | "NodeInitial"
+  | "NodeMessage"
+  | "NodeReply"
+  | "NodeAddTags"
+  | "NodeRemoveTags"
+  | "NodeRemoveVariables"
+  | "NodeAddVariables"
+  | "NodeSendFlow"
+  | "NodeIF";
 
 interface Edges {
   source: string;
@@ -89,14 +89,17 @@ interface Edges {
   id: string;
 }
 
-export type PropsNodeControler = {
-  onEnterNode?(nodeId: string): Promise<void>;
-  onExecutedNode?(
-    props: { id: string; type: TypesNode },
-    isShots?: boolean
-  ): void;
-  onFinish?(vl?: string): Promise<void>;
-  onErrorNumber?(): void;
+export type IPropsControler = {
+  actions?: {
+    onEnterNode?(nodeId: string): Promise<void>;
+    onExecutedNode?(
+      props: { id: string; type: TypesNode },
+      isShots?: boolean
+    ): void;
+    onFinish?(vl?: string): Promise<void>;
+    onErrorNumber?(): void;
+  };
+  signature?: string;
   nodes: NodePayload[];
   ticketProtocol?: string;
   edges: Edges[];
@@ -126,10 +129,10 @@ export type PropsNodeControler = {
 export const NodeControler = ({
   currentNodeId = "0",
   ...propsC
-}: PropsNodeControler): Promise<void> => {
+}: IPropsControler): Promise<void> => {
   return new Promise((res, rej) => {
     const execute = async (
-      props: PropsNodeControler & { currentNodeId: string }
+      props: IPropsControler & { currentNodeId: string }
     ): Promise<void> => {
       const keyMap = props.numberConnection + props.lead.number;
 
@@ -260,7 +263,7 @@ export const NodeControler = ({
         });
 
       if (!currentNode) {
-        props.onFinish && (await props.onFinish("110"));
+        props.actions?.onFinish && (await props.actions?.onFinish("110"));
         return res();
       }
 
@@ -305,7 +308,7 @@ export const NodeControler = ({
       //         const key = `${props.contactsWAOnAccountId}-${props.connectionWhatsId}`;
       //         currentNodeFlow.set(key, targetNode.id);
 
-      //         const isDepend = targetNode.type === "nodeReply";
+      //         const isDepend = targetNode.type === "NodeReply";
       //         if (isDepend) return res();
 
       //         console.log("Vai executar o node", { targetNode });
@@ -329,13 +332,15 @@ export const NodeControler = ({
       //       return res();
       //     });
       // }
-      if (currentNode.type === "nodeInitial") {
-        if (props.onExecutedNode) props.onExecutedNode(currentNode);
+      if (currentNode.type === "NodeInitial") {
+        if (props.actions?.onExecutedNode) {
+          props.actions?.onExecutedNode(currentNode);
+        }
         if (!nextEdgesIds.length) {
-          props.onFinish && (await props.onFinish("110"));
+          props.actions?.onFinish && (await props.actions?.onFinish("110"));
           return res();
         }
-        const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+        const isDepend = nextEdgesIds[0].nodeNextType === "NodeReply";
         if (isDepend) return res();
 
         execute({
@@ -349,61 +354,12 @@ export const NodeControler = ({
         });
         return;
       }
-
-      // if (currentNode.type === "nodeFacebookConversions") {
-      //   await LibraryNodes.NodeFacebookConversions({
-      //     botWA: props.clientWA,
-      //     numberLead: props.lead.number,
-      //     contactsWAOnAccountId: props.contactsWAOnAccountId,
-      //     data: { ...currentNode.data },
-      //     accountId: props.accountId,
-      //     businessName: props.businessName,
-      //     ticketProtocol: props.ticketProtocol,
-      //     connectionWhatsId: props.connectionWhatsId,
-      //     nodeId: currentNode.id,
-      //   })
-      //     .then(async () => {
-      //       if (!nextEdgesIds.length) {
-      //         props.onFinish && (await props.onFinish("128"));
-      //         return;
-      //       }
-      //       if (nextEdgesIds.length > 1) {
-      //         props.onFinish && (await props.onFinish("140"));
-      //         return;
-      //       }
-
-      //       if (nextEdgesIds[0].nodeNextType === "nodeReply") {
-      //         if (props.onExecutedNode) {
-      //           props.onExecutedNode({
-      //             id: nextEdgesIds[0].id,
-      //             type: nextEdgesIds[0].nodeNextType!,
-      //           });
-      //         }
-      //         return res();
-      //       } else {
-      //         if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //       }
-
-      //       execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextEdgesIds[0].id,
-      //       });
-      //       return;
-      //     })
-      //     .catch((error) => {
-      //       console.log("ERROR NO MENSAGEM", error);
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      //   return;
-      // }
-      if (currentNode.type === "nodeMessage") {
+      if (currentNode.type === "NodeMessage") {
         await LibraryNodes.NodeMessage({
           botWA: props.clientWA,
           numberLead: props.lead.number,
           contactsWAOnAccountId: props.contactsWAOnAccountId,
-          data: { ...currentNode.data },
+          data: currentNode.data,
           accountId: props.accountId,
           businessName: props.businessName,
           ticketProtocol: props.ticketProtocol,
@@ -412,168 +368,20 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (!nextEdgesIds.length) {
-              props.onFinish && (await props.onFinish("128"));
+              props.actions?.onFinish && (await props.actions?.onFinish("128"));
               return;
             }
             if (nextEdgesIds.length > 1) {
-              props.onFinish && (await props.onFinish("140"));
+              props.actions?.onFinish && (await props.actions?.onFinish("140"));
               return;
             }
-            const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
-            const nextNodeFind = props.nodes.find(
-              (f) => f.id === nextEdgesIds[0].id
-            );
 
-            if (nextNodeFind?.type === "nodeReply") {
-              // aqui vai criar o tempo de timeout do bloco de resposta;
-              // o ideal é que essa função de timeout fosse adicionada em todas as respostas dos blocos
-              // if (nextNodeFind.data.timeout) {
-              //   const timeOut = nextNodeFind.data.timeout;
-              //   if (timeOut.type && timeOut.value) {
-              //     const keyMap = props.numberConnection + props.lead.number;
-              //     createJobNodeReply({
-              //       connectionId: props.connectionWhatsId,
-              //       keyMap,
-              //       leadNumber: props.lead.number,
-              //       timeOut: ,
-              //       nextEdgesIds,
-              //       onExecutedNode: async () =>
-              //         props.onExecutedNode && props.onExecutedNode(currentNode),
-              //       reExecute: (currentNodeId) => {
-              //         return execute({ ...props, currentNodeId });
-              //       },
-              //       onFinish: async () =>
-              //         props.onFinish && (await props.onFinish("272")),
-              //       res: res,
-              //       onFinishFlow: () => {
-              //         if (props.isSavePositionLead) {
-              //           if (props.onExecutedNode) {
-              //             props.onExecutedNode(currentNode);
-              //           }
-              //         }
-              //         if (props.onFinish) props.onFinish();
-              //         return res();
-              //       },
-              //       onForkFlow: async () => {
-              //         const nextNodeId = nextEdgesIds?.find(
-              //           (nd) => nd.sourceHandle === "timeOut"
-              //         );
-              //         if (!nextNodeId) {
-              //           props.onFinish && (await props.onFinish("307"));
-              //           return res();
-              //         }
-              //         if (props.isSavePositionLead) {
-              //           if (props.onExecutedNode) {
-              //             props.onExecutedNode(currentNode);
-              //           }
-              //         }
-              //         isSendMessageOfFailedAttempts.set(keyMap, false);
-              //         countAttemptsReply.set(keyMap, 0);
-              //         const isDepend = nextNodeId.nodeNextType === "nodeReply";
-              //         if (isDepend) return res();
-              //         return execute({
-              //           ...props,
-              //           currentNodeId: nextNodeId.id,
-              //         });
-              //       },
-              //       onSubmitFlow: async () => {
-              //         if (timeOut.action?.run === "SUBMIT_FLOW") {
-              //           let flowAlreadyExists = flowsMap.get(
-              //             timeOut.action!.submitFlowId.toString()
-              //           );
-              //           if (!flowAlreadyExists) {
-              //             const newFlow = await ModelFlows.aggregate([
-              //               {
-              //                 $match: {
-              //                   _id: timeOut.action!.submitFlowId,
-              //                 },
-              //               },
-              //               {
-              //                 $project: {
-              //                   nodes: {
-              //                     $map: {
-              //                       input: "$data.nodes",
-              //                       in: {
-              //                         id: "$$this.id",
-              //                         type: "$$this.type",
-              //                         data: "$$this.data",
-              //                       },
-              //                     },
-              //                   },
-              //                   edges: {
-              //                     $map: {
-              //                       input: "$data.edges",
-              //                       in: {
-              //                         id: "$$this.id",
-              //                         source: "$$this.source",
-              //                         target: "$$this.target",
-              //                         sourceHandle: "$$this.sourceHandle",
-              //                       },
-              //                     },
-              //                   },
-              //                 },
-              //               },
-              //             ]);
-              //             if (!newFlow?.length) {
-              //               return "SE CASO O FLUXO QUE ELE ESCOLHEU NÃO EXISTIR?";
-              //             }
-              //             const { nodes, edges } = newFlow[0];
-              //             flowsMap.set(
-              //               timeOut.action!.submitFlowId.toString(),
-              //               {
-              //                 nodes,
-              //                 edges,
-              //               }
-              //             );
-              //             flowAlreadyExists = { nodes, edges };
-              //           }
-              //           await prisma.flowState.update({
-              //             where: { id: props.flowStateId },
-              //             data: { flowId: timeOut.action!.submitFlowId },
-              //           });
-              //           isSendMessageOfFailedAttempts.set(keyMap, false);
-              //           countAttemptsReply.set(keyMap, 0);
-              //           const currentNode2 = flowAlreadyExists.nodes.find(
-              //             (f: any) => f.id === "0"
-              //           );
-              //           const nextEdgesIds2 = flowAlreadyExists.edges
-              //             .filter((f: any) => currentNode2?.id === f.source)
-              //             ?.map((nn: any) => {
-              //               const node = flowAlreadyExists.nodes.find(
-              //                 (f: any) => f.id === nn.target
-              //               );
-              //               return {
-              //                 id: nn.target,
-              //                 sourceHandle: nn.sourceHandle,
-              //                 nodeNextType: node?.type,
-              //               };
-              //             });
-              //           const isDepend =
-              //             nextEdgesIds2[0].nodeNextType === "nodeReply";
-              //           if (isDepend) return res();
-              //           return execute({
-              //             ...props,
-              //             nodes: flowAlreadyExists.nodes,
-              //             edges: flowAlreadyExists.edges,
-              //             currentNodeId: "0",
-              //           });
-              //         }
-              //       },
-              //     });
-              //   }
-              // }
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
             }
-            console.log({ isDepend });
-            if (isDepend) {
-              if (props.onExecutedNode) {
-                props.onExecutedNode({
-                  id: nextEdgesIds[0].id,
-                  type: nextEdgesIds[0].nodeNextType!,
-                });
-              }
-              return res();
-            } else {
-              if (props.onExecutedNode) props.onExecutedNode(currentNode);
+
+            if (props.actions?.onEnterNode) {
+              await props.actions?.onEnterNode(currentNode.id);
             }
 
             execute({
@@ -585,1080 +393,65 @@ export const NodeControler = ({
           })
           .catch((error) => {
             console.log("ERROR NO MENSAGEM", error);
-            props.onErrorNumber && props.onErrorNumber();
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
         return;
       }
-      // if (currentNode.type === "nodeAttendantAI") {
-      //   await LibraryNodes.NodeAttendantAI({
-      //     numberLead: props.lead.number,
-      //     contactsWAOnAccountId: props.contactsWAOnAccountId,
-      //     data: { ...currentNode.data },
-      //     accountId: props.accountId,
-      //     businessName: props.businessName,
-      //     ticketProtocol: props.ticketProtocol,
-      //     connectionWhatsId: props.connectionWhatsId,
-      //     nodeId: currentNode.id,
-      //     message: props.type === "running" ? props.message : undefined,
-      //   })
-      //     .then(async (status) => {
-      //       console.log({ status });
-      //       if (
-      //         status === "goal-achieved" ||
-      //         status === "role-limit-interactions"
-      //       ) {
-      //         const nextNodeId = nextEdgesIds?.find((nd) =>
-      //           nd.sourceHandle?.includes(status)
-      //         );
-      //         if (!nextNodeId) {
-      //           props.onFinish && (await props.onFinish("711"));
-      //           return res();
-      //         }
-      //         if (props.isSavePositionLead) {
-      //           if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //           //   await updateContactWAOnCampaign(
-      //           //     props.contactsWAOnAccountOnAudienceOnCampaignId,
-      //           //     { indexNode: nextNodeId.id }
-      //           //   );
-      //         }
-      //         const isDepend = nextNodeId.nodeNextType === "nodeReply";
-      //         if (isDepend) return res();
-      //         return execute({ ...props, currentNodeId: nextNodeId.id });
-      //       }
-
-      //       if (status === "paused") {
-      //         if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //         return res();
-      //       }
-      //       if (status === "repeat") {
-      //         return execute({
-      //           ...props,
-      //           type: "initial",
-      //           currentNodeId: currentNode.id,
-      //         });
-      //       }
-      //       if (!nextEdgesIds.length) {
-      //         props.onFinish && (await props.onFinish("128"));
-      //         return;
-      //       }
-      //       if (nextEdgesIds.length > 1) {
-      //         props.onFinish && (await props.onFinish("140"));
-      //         return;
-      //       }
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
-      //       if (isDepend) {
-      //         if (props.onExecutedNode) {
-      //           props.onExecutedNode({
-      //             id: nextEdgesIds[0].id,
-      //             type: nextEdgesIds[0].nodeNextType!,
-      //           });
-      //         }
-      //         return res();
-      //       } else {
-      //         if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //       }
-
-      //       execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextEdgesIds[0].id,
-      //       });
-      //       return;
-      //     })
-      //     .catch((error) => {
-      //       console.log("ERROR NO MENSAGEM", error);
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      // }
-      if (currentNode.type === "nodeReply") {
-        if (props.type === "running") {
-          console.log("ENTROU NO BLOCO DE RESPOSTA");
-          console.log(props.message);
-          await LibraryNodes.NodeReply({
-            numberLead: props.lead.number,
-            numberConnection: props.numberConnection,
-            data: currentNode.data,
-            message: props.message,
-            flowBusinessIds: props.flowBusinessIds,
-            flowStateId: props.flowStateId,
-            accountId: props.accountId,
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
-          })
-            .then(async (d: any) => {
-              props.onEnterNode && (await props.onEnterNode(currentNode.id));
-              const keyMap = props.numberConnection + props.lead.number;
-              if (d.action === "CONTINUE" || d.action === "NEXT") {
-                const isNextNodeMain = nextEdgesIds.find(
-                  (nh) => !nh.sourceHandle || nh.sourceHandle === "main"
-                );
-                if (!isNextNodeMain) {
-                  props.onFinish && props.onFinish("332");
-                  return res();
-                }
-                isSendMessageOfFailedAttempts.set(keyMap, false);
-                countAttemptsReply.set(keyMap, 0);
-                const isDepend = isNextNodeMain.nodeNextType === "nodeReply";
-                if (isDepend) return res();
-                return execute({ ...props, currentNodeId: isNextNodeMain.id });
-              }
-            })
-            .catch((error: any) => {
-              props.onErrorNumber && props.onErrorNumber();
+      if (currentNode.type === "NodeReply") {
+        await LibraryNodes.NodeReply({
+          numberLead: props.lead.number,
+          numberConnection: props.numberConnection,
+          data: currentNode.data,
+          message: props.type === "initial" ? undefined : props.message,
+          flowBusinessIds: props.flowBusinessIds,
+          flowStateId: props.flowStateId,
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          async onExecuteSchedule() {
+            const nextNodeId = nextEdgesIds?.find(
+              (nd) => nd.sourceHandle === "timeOut"
+            );
+            if (!nextNodeId) {
+              props.actions?.onFinish && (await props.actions.onFinish("307"));
               return res();
+            }
+            if (props.isSavePositionLead && props.actions?.onExecutedNode) {
+              props.actions.onExecutedNode(currentNode);
+            }
+            return execute({
+              ...props,
+              type: "initial",
+              currentNodeId: nextNodeId.id,
             });
-        }
-        return res();
+          },
+        })
+          .then(async (d) => {
+            if (props.actions?.onEnterNode) {
+              await props.actions?.onEnterNode(currentNode.id);
+            }
+            if (d.action === "NEXT") {
+              const isNextNodeMain = nextEdgesIds.find(
+                (nh) => !nh.sourceHandle || nh.sourceHandle === "main"
+              );
+              if (!isNextNodeMain) {
+                props.actions?.onFinish && props.actions?.onFinish("332");
+                return res();
+              }
+              return execute({
+                ...props,
+                type: "initial",
+                currentNodeId: isNextNodeMain.id,
+              });
+            }
+            if (d.action === "RETURN") return res();
+          })
+          .catch((error: any) => {
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
       }
-      // if (currentNode.type === "nodeMenu") {
-      //   if (props.type === "initial") {
-      //     const { interval, items, header, footer } = currentNode.data;
-
-      //     let text = `*${header}*\n\n`;
-      //     for (const item of items) {
-      //       text += `[${item.activators[0].value}] - ${item.value}\n`;
-      //     }
-      //     if (footer) {
-      //       text += `\n_${footer}_`;
-      //     }
-
-      //     const delay = interval ? interval : 2;
-      //     await props.clientWA
-      //       .sendPresenceUpdate("composing", props.lead.number)
-      //       .then(() => {})
-      //       .catch((ERR) => console.log(ERR));
-      //     setTimeout(async () => {
-      //       await props.clientWA.sendMessage(props.lead.number, {
-      //         text,
-      //       });
-      //       if (!nextEdgesIds.length) {
-      //         props.onFinish && (await props.onFinish("128"));
-      //         return;
-      //       }
-      //       if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //       return res();
-      //     }, delay * 1000);
-      //   }
-      //   const scheduleExecutionMenu = scheduleExecutionsMenu.get(keyMap);
-
-      //   if (!scheduleExecutionMenu) {
-      //     if (currentNode.data.validateReply?.timeOut) {
-      //       let { type, value, action } =
-      //         currentNode.data.validateReply.timeOut;
-
-      //       const nextTimeStart = getNextTimeOut(type, value > 0 ? value : 1);
-
-      //       const timeOnExecuteActionTimeOut = scheduleJob(
-      //         nextTimeStart,
-      //         async () => {
-      //           await baileysWATypingDelay({
-      //             delay: action.interval,
-      //             toNumber: props.lead.number,
-      //             botWA: props.clientWA,
-      //           });
-      //           props.clientWA.sendMessage(props.lead.number, {
-      //             text: action.value,
-      //           });
-
-      //           if (action.run === "CONTINUE") {
-      //             const isNextNodeMain = nextEdgesIds.find(
-      //               (nh) => !nh.sourceHandle
-      //             )?.id;
-
-      //             if (!isNextNodeMain) {
-      //               props.onFinish && (await props.onFinish("192"));
-      //               return res();
-      //             }
-      //             return execute({ ...props, currentNodeId: isNextNodeMain });
-      //           }
-      //           if (action.run === "END_FLOW") {
-      //             props.onFinish && (await props.onFinish("549"));
-      //             return res();
-      //           }
-      //           if (action.run === "SUBMIT_FLOW") {
-      //             let flowAlreadyExists = flowsMap.get(
-      //               action.submitFlowId.toString()
-      //             );
-
-      //             if (!flowAlreadyExists) {
-      //               const newFlow = await ModelFlows.aggregate([
-      //                 {
-      //                   $match: {
-      //                     _id: action.submitFlowId,
-      //                   },
-      //                 },
-      //                 {
-      //                   $project: {
-      //                     nodes: {
-      //                       $map: {
-      //                         input: "$data.nodes",
-      //                         in: {
-      //                           id: "$$this.id",
-      //                           type: "$$this.type",
-      //                           data: "$$this.data",
-      //                         },
-      //                       },
-      //                     },
-      //                     edges: {
-      //                       $map: {
-      //                         input: "$data.edges",
-      //                         in: {
-      //                           id: "$$this.id",
-      //                           source: "$$this.source",
-      //                           target: "$$this.target",
-      //                           sourceHandle: "$$this.sourceHandle",
-      //                         },
-      //                       },
-      //                     },
-      //                   },
-      //                 },
-      //               ]);
-
-      //               if (!newFlow?.length) {
-      //                 return "SE CASO O FLUXO QUE ELE ESCOLHEU NÃO EXISTIR?";
-      //               }
-
-      //               const { nodes, edges } = newFlow[0];
-      //               flowsMap.set(action.submitFlowId.toString(), {
-      //                 nodes,
-      //                 edges,
-      //               });
-      //               flowAlreadyExists = { nodes, edges };
-      //             }
-      //             if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //             // await prisma.contactsWAOnAccountOnAudienceOnCampaign.update({
-      //             //   where: {
-      //             //     id: props.contactsWAOnAccountOnAudienceOnCampaignId,
-      //             //   },
-      //             //   data: { flowId: action.submitFlowId },
-      //             // });
-      //             isSendMessageOfFailedAttempts.set(keyMap, false);
-      //             countAttemptsReply.set(keyMap, 0);
-      //             const currentNode2 = flowAlreadyExists.nodes.find(
-      //               (f: any) => f.id === "0"
-      //             );
-      //             const nextEdgesIds2 = flowAlreadyExists.edges
-      //               .filter((f: any) => currentNode2?.id === f.source)
-      //               ?.map((nn: any) => {
-      //                 const node = flowAlreadyExists.nodes.find(
-      //                   (f: any) => f.id === nn.target
-      //                 );
-      //                 return {
-      //                   id: nn.target,
-      //                   sourceHandle: nn.sourceHandle,
-      //                   nodeNextType: node?.type,
-      //                 };
-      //               });
-      //             const isDepend =
-      //               nextEdgesIds2[0].nodeNextType === "nodeReply";
-      //             if (isDepend) return res();
-      //             return execute({
-      //               ...props,
-      //               nodes: flowAlreadyExists.nodes,
-      //               edges: flowAlreadyExists.edges,
-      //               currentNodeId: "0",
-      //             });
-      //           }
-      //           if (action.run === "FORK") {
-      //             const nextNodeId = nextEdgesIds?.find(
-      //               (nd) => nd.sourceHandle === "timeOut"
-      //             );
-      //             if (!nextNodeId) {
-      //               props.onFinish && (await props.onFinish("640"));
-      //               return res();
-      //             }
-      //             if (props.isSavePositionLead) {
-      //               if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //               //   await updateContactWAOnCampaign(
-      //               //     props.contactsWAOnAccountOnAudienceOnCampaignId,
-      //               //     { indexNode: nextNodeId.id }
-      //               //   );
-      //             }
-      //             isSendMessageOfFailedAttempts.set(keyMap, false);
-      //             countAttemptsReply.set(keyMap, 0);
-      //             const isDepend = nextNodeId.nodeNextType === "nodeReply";
-      //             if (isDepend) return res();
-      //             return execute({ ...props, currentNodeId: nextNodeId.id });
-      //           }
-      //         }
-      //       );
-      //       console.log(timeOnExecuteActionTimeOut);
-      //       scheduleExecutionsMenu.set(keyMap, timeOnExecuteActionTimeOut);
-      //     }
-      //   }
-
-      //   // Caso dê error em produção foi por comentar as 3 linhas abaixo
-      //   // await new Promise((s) => setTimeout(s, 100));
-      //   // const scheduleExecutionMenu2 = scheduleExecutionsMenu.get(keyMap);
-      //   // console.log({ agendamento2: !!scheduleExecutionMenu2 });
-
-      //   if (props.type === "running") {
-      //     await LibraryNodes.NodeMenu({
-      //       numberLead: props.lead.number,
-      //       numberConnection: props.numberConnection,
-      //       data: currentNode.data,
-      //       message: props.message,
-      //       flowStateId: props.flowStateId,
-      //       accountId: props.accountId,
-      //       contactsWAOnAccountId: props.contactsWAOnAccountId,
-      //       nodeId: currentNodeId,
-      //       connectionWhatsId: props.connectionWhatsId,
-      //     })
-      //       .then(async (d) => {
-      //         console.log({ d });
-      //         props.onEnterNode && (await props.onEnterNode(currentNode.id));
-      //         if (d.action !== "SUBMIT_FLOW" && !nextEdgesIds.length) {
-      //           scheduleExecutionsMenu.get(keyMap)?.cancel();
-      //           scheduleExecutionsMenu.delete(keyMap);
-      //           props.onFinish && props.onFinish("672");
-      //           return res();
-      //         }
-      //         if (d.action === "END_FLOW") {
-      //           scheduleExecutionsMenu.get(keyMap)?.cancel();
-      //           scheduleExecutionsMenu.delete(keyMap);
-      //           await prisma.flowState.update({
-      //             where: { id: props.flowStateId },
-      //             data: { isFinish: true },
-      //           });
-      //           isSendMessageOfFailedAttempts.set(keyMap, false);
-      //           countAttemptsReply.set(keyMap, 0);
-      //           return res();
-      //         }
-      //         if (d.action === "FORK") {
-      //           scheduleExecutionsMenu.get(keyMap)?.cancel();
-      //           scheduleExecutionsMenu.delete(keyMap);
-      //           const nextNodeId = nextEdgesIds?.find((nd) =>
-      //             nd.sourceHandle?.includes(d.type)
-      //           );
-      //           if (!nextNodeId) {
-      //             props.onFinish && (await props.onFinish("711"));
-      //             return res();
-      //           }
-      //           if (props.isSavePositionLead) {
-      //             if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //             //   await updateContactWAOnCampaign(
-      //             //     props.contactsWAOnAccountOnAudienceOnCampaignId,
-      //             //     { indexNode: nextNodeId.id }
-      //             //   );
-      //           }
-      //           isSendMessageOfFailedAttempts.set(keyMap, false);
-      //           countAttemptsReply.set(keyMap, 0);
-      //           const isDepend = nextNodeId.nodeNextType === "nodeReply";
-      //           if (isDepend) return res();
-      //           return execute({ ...props, currentNodeId: nextNodeId.id });
-      //         }
-      //         if (d.action === "SUBMIT_FLOW") {
-      //           scheduleExecutionsMenu.get(keyMap)?.cancel();
-      //           scheduleExecutionsMenu.delete(keyMap);
-      //           let flowAlreadyExists = flowsMap.get(d.flowId);
-
-      //           if (!flowAlreadyExists) {
-      //             const newFlow = await ModelFlows.aggregate([
-      //               { $match: { accountId: 1, _id: d.flowId } },
-      //               {
-      //                 $project: {
-      //                   nodes: {
-      //                     $map: {
-      //                       input: "$data.nodes",
-      //                       in: {
-      //                         id: "$$this.id",
-      //                         type: "$$this.type",
-      //                         data: "$$this.data",
-      //                       },
-      //                     },
-      //                   },
-      //                   edges: {
-      //                     $map: {
-      //                       input: "$data.edges",
-      //                       in: {
-      //                         id: "$$this.id",
-      //                         source: "$$this.source",
-      //                         target: "$$this.target",
-      //                         sourceHandle: "$$this.sourceHandle",
-      //                       },
-      //                     },
-      //                   },
-      //                 },
-      //               },
-      //             ]);
-
-      //             if (!newFlow?.length) {
-      //               return "SE CASO O FLUXO QUE ELE ESCOLHEU NÃO EXISTIR?";
-      //             }
-
-      //             const { nodes, edges } = newFlow[0];
-      //             flowsMap.set(d.flowId, { nodes, edges });
-      //             flowAlreadyExists = { nodes, edges };
-      //           }
-      //           isSendMessageOfFailedAttempts.set(keyMap, false);
-      //           countAttemptsReply.set(keyMap, 0);
-      //           const currentNode2 = flowAlreadyExists.nodes.find(
-      //             (f: any) => f.id === "0"
-      //           );
-      //           const nextEdgesIds2 = flowAlreadyExists.edges.filter(
-      //             (f: any) => currentNode2?.id === f.source
-      //           );
-      //           const isDepend = nextEdgesIds2[0].nodeNextType === "nodeReply";
-      //           if (isDepend) return res();
-      //           return execute({
-      //             ...props,
-      //             nodes: flowAlreadyExists.nodes,
-      //             edges: flowAlreadyExists.edges,
-      //             currentNodeId: "0",
-      //           });
-      //         }
-      //         if (d.action === "SUCESS") {
-      //           scheduleExecutionsMenu.get(keyMap)?.cancel();
-      //           scheduleExecutionsMenu.delete(keyMap);
-      //           const nextNode = nextEdgesIds.find(
-      //             (ed) => ed.sourceHandle === d.handleId
-      //           );
-      //           if (!nextNode) {
-      //             props.onFinish && props.onFinish("785");
-      //             return res();
-      //           }
-      //           if (props.isSavePositionLead) {
-      //             if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //             //   await updateContactWAOnCampaign(
-      //             //     props.contactsWAOnAccountOnAudienceOnCampaignId,
-      //             //     { indexNode: nextNode.id }
-      //             //   );
-      //           }
-      //           const isDepend = nextNode.nodeNextType === "nodeReply";
-      //           if (isDepend) return res();
-      //           if (nextNode.nodeNextType === "nodeMenu") {
-      //             return execute({
-      //               ...props,
-      //               type: "initial",
-      //               currentNodeId: nextNode.id,
-      //             });
-      //           }
-      //           return execute({ ...props, currentNodeId: nextNode.id });
-      //         }
-      //         if (
-      //           d.action === "REPLY_FAIL" &&
-      //           currentNode.data.validateReply?.timeOut
-      //         ) {
-      //           scheduleExecutionsMenu.get(keyMap)?.cancel();
-      //           scheduleExecutionsMenu.delete(keyMap);
-      //           let { type, value, action } =
-      //             currentNode.data.validateReply.timeOut;
-
-      //           const nextTimeStart = getNextTimeOut(type, value);
-
-      //           const timeOnExecuteActionTimeOut = scheduleJob(
-      //             nextTimeStart,
-      //             async () => {
-      //               await baileysWATypingDelay({
-      //                 delay: action.interval,
-      //                 toNumber: props.lead.number,
-      //                 botWA: props.clientWA,
-      //               });
-      //               props.clientWA.sendMessage(props.lead.number, {
-      //                 text: action.value,
-      //               });
-
-      //               if (action.run === "CONTINUE") {
-      //                 const isNextNodeMain = nextEdgesIds.find(
-      //                   (nh) => !nh.sourceHandle
-      //                 )?.id;
-
-      //                 if (!isNextNodeMain) {
-      //                   props.onFinish && (await props.onFinish("192"));
-      //                   return res();
-      //                 }
-      //                 return execute({
-      //                   ...props,
-      //                   currentNodeId: isNextNodeMain,
-      //                 });
-      //               }
-      //               if (action.run === "END_FLOW") {
-      //                 props.onFinish && (await props.onFinish("549"));
-      //                 return res();
-      //               }
-      //               if (action.run === "SUBMIT_FLOW") {
-      //                 let flowAlreadyExists = flowsMap.get(
-      //                   action.submitFlowId.toString()
-      //                 );
-
-      //                 if (!flowAlreadyExists) {
-      //                   const newFlow = await ModelFlows.aggregate([
-      //                     {
-      //                       $match: {
-      //                         _id: action.submitFlowId,
-      //                       },
-      //                     },
-      //                     {
-      //                       $project: {
-      //                         nodes: {
-      //                           $map: {
-      //                             input: "$data.nodes",
-      //                             in: {
-      //                               id: "$$this.id",
-      //                               type: "$$this.type",
-      //                               data: "$$this.data",
-      //                             },
-      //                           },
-      //                         },
-      //                         edges: {
-      //                           $map: {
-      //                             input: "$data.edges",
-      //                             in: {
-      //                               id: "$$this.id",
-      //                               source: "$$this.source",
-      //                               target: "$$this.target",
-      //                               sourceHandle: "$$this.sourceHandle",
-      //                             },
-      //                           },
-      //                         },
-      //                       },
-      //                     },
-      //                   ]);
-
-      //                   if (!newFlow?.length) {
-      //                     return "SE CASO O FLUXO QUE ELE ESCOLHEU NÃO EXISTIR?";
-      //                   }
-
-      //                   const { nodes, edges } = newFlow[0];
-      //                   flowsMap.set(action.submitFlowId.toString(), {
-      //                     nodes,
-      //                     edges,
-      //                   });
-      //                   flowAlreadyExists = { nodes, edges };
-      //                 }
-      //                 if (props.onExecutedNode)
-      //                   props.onExecutedNode(currentNode);
-      //                 // await prisma.contactsWAOnAccountOnAudienceOnCampaign.update({
-      //                 //   where: {
-      //                 //     id: props.contactsWAOnAccountOnAudienceOnCampaignId,
-      //                 //   },
-      //                 //   data: { flowId: action.submitFlowId },
-      //                 // });
-      //                 isSendMessageOfFailedAttempts.set(keyMap, false);
-      //                 countAttemptsReply.set(keyMap, 0);
-      //                 const currentNode2 = flowAlreadyExists.nodes.find(
-      //                   (f: any) => f.id === "0"
-      //                 );
-      //                 const nextEdgesIds2 = flowAlreadyExists.edges
-      //                   .filter((f: any) => currentNode2?.id === f.source)
-      //                   ?.map((nn: any) => {
-      //                     const node = flowAlreadyExists.nodes.find(
-      //                       (f: any) => f.id === nn.target
-      //                     );
-      //                     return {
-      //                       id: nn.target,
-      //                       sourceHandle: nn.sourceHandle,
-      //                       nodeNextType: node?.type,
-      //                     };
-      //                   });
-      //                 const isDepend =
-      //                   nextEdgesIds2[0].nodeNextType === "nodeReply";
-      //                 if (isDepend) return res();
-      //                 return execute({
-      //                   ...props,
-      //                   nodes: flowAlreadyExists.nodes,
-      //                   edges: flowAlreadyExists.edges,
-      //                   currentNodeId: "0",
-      //                 });
-      //               }
-      //               if (action.run === "FORK") {
-      //                 const nextNodeId = nextEdgesIds?.find(
-      //                   (nd) => nd.sourceHandle === "timeOut"
-      //                 );
-      //                 if (!nextNodeId) {
-      //                   props.onFinish && (await props.onFinish("640"));
-      //                   return res();
-      //                 }
-      //                 if (props.isSavePositionLead) {
-      //                   if (props.onExecutedNode)
-      //                     props.onExecutedNode(currentNode);
-      //                   //   await updateContactWAOnCampaign(
-      //                   //     props.contactsWAOnAccountOnAudienceOnCampaignId,
-      //                   //     { indexNode: nextNodeId.id }
-      //                   //   );
-      //                 }
-      //                 isSendMessageOfFailedAttempts.set(keyMap, false);
-      //                 countAttemptsReply.set(keyMap, 0);
-      //                 const isDepend = nextNodeId.nodeNextType === "nodeReply";
-      //                 if (isDepend) return res();
-      //                 return execute({
-      //                   ...props,
-      //                   currentNodeId: nextNodeId.id,
-      //                 });
-      //               }
-      //             }
-      //           );
-      //           scheduleExecutionsMenu.set(keyMap, timeOnExecuteActionTimeOut);
-      //           return res();
-      //         }
-      //       })
-      //       .catch((error) => {
-      //         props.onErrorNumber && props.onErrorNumber();
-      //         return res();
-      //       });
-      //   }
-      //   return res();
-      // }
-      // if (currentNode.type === "nodeValidation") {
-      //   await LibraryNodes.NodeValidation({
-      //     contactsWAOnAccountId: props.contactsWAOnAccountId,
-      //     data: currentNode.data,
-      //     nodeId: currentNodeId,
-      //     accountId: props.accountId,
-      //   })
-      //     .then(async (state) => {
-      //       const nextNodeCaseNone = nextEdgesIds.find((nei) =>
-      //         nei.sourceHandle?.includes(state)
-      //       );
-      //       if (!nextNodeCaseNone) {
-      //         props.onFinish && (await props.onFinish("839"));
-      //         return;
-      //       }
-      //       const isDepend = nextNodeCaseNone?.nodeNextType === "nodeReply";
-      //       if (isDepend) return res();
-      //       return execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextNodeCaseNone?.id,
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      //   return res();
-      // }
-      // if (currentNode.type === "nodeSwitch") {
-      //   await LibraryNodes.NodeSwitch({
-      //     contactsWAOnAccountId: props.contactsWAOnAccountId,
-      //     data: currentNode.data,
-      //     nodeId: currentNodeId,
-      //   })
-      //     .then(async ({ handleId }) => {
-      //       if (handleId) {
-      //         const nextEdge = nextEdgesIds.find(
-      //           (n) => n.sourceHandle === handleId
-      //         );
-      //         if (!nextEdge) {
-      //           props.onFinish && (await props.onFinish("834"));
-      //           return;
-      //         }
-      //         const isDepend = nextEdge.nodeNextType === "nodeReply";
-      //         if (isDepend) return res();
-
-      //         return execute({
-      //           ...props,
-      //           type: "initial",
-      //           currentNodeId: nextEdge.id,
-      //         });
-      //       }
-      //       const nextNodeCaseNone = nextEdgesIds.find((nei) =>
-      //         nei.sourceHandle?.includes("case_none")
-      //       );
-      //       if (!nextNodeCaseNone) {
-      //         props.onFinish && (await props.onFinish("839"));
-      //         return;
-      //       }
-      //       const isDepend = nextNodeCaseNone?.nodeNextType === "nodeReply";
-      //       if (isDepend) return res();
-
-      //       return execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextNodeCaseNone?.id,
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      //   return res();
-      // }
-      // if (currentNode.type === "nodeSendContact") {
-      //   await LibraryNodes.NodeSendContact({
-      //     data: currentNode.data,
-      //     numberLead: props.lead.number,
-      //     nodeId: currentNodeId,
-      //     connectionId: props.connectionWhatsId,
-      //   })
-      //     .then(async () => {
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
-      //       if (isDepend) return res();
-
-      //       execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextEdgesIds[0].id,
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      //   return res();
-      // }
-      // if (currentNode.type === "nodeSendVideo") {
-      //   await LibraryNodes.NodeSendVideo({
-      //     data: currentNode.data,
-      //     connectionId: props.connectionWhatsId,
-      //     numberLead: props.lead.number,
-      //     contactsWAOnAccountId: props.contactsWAOnAccountId,
-      //     accountId: props.accountId,
-      //     businessName: props.businessName,
-      //     ticketProtocol: props.ticketProtocol,
-      //     nodeId: currentNodeId,
-      //   })
-      //     .then(async () => {
-      //       if (!nextEdgesIds.length) {
-      //         props.onFinish && (await props.onFinish("101"));
-      //         return res();
-      //       }
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
-      //       if (isDepend) return res();
-
-      //       execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextEdgesIds[0].id,
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       console.log("Error node video", error);
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      //   return res();
-      // }
-      // if (currentNode.type === "nodeSendPdf") {
-      //   await LibraryNodes.NodeSendPdf({
-      //     data: currentNode.data,
-      //     connectionId: props.connectionWhatsId,
-      //     numberLead: props.lead.number,
-      //     contactsWAOnAccountId: props.contactsWAOnAccountId,
-      //     accountId: props.accountId,
-      //     businessName: props.businessName,
-      //     ticketProtocol: props.ticketProtocol,
-      //     nodeId: currentNodeId,
-      //   })
-      //     .then(async () => {
-      //       if (!nextEdgesIds.length) {
-      //         props.onFinish && (await props.onFinish("101"));
-      //         return res();
-      //       }
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
-      //       if (isDepend) return res();
-
-      //       execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextEdgesIds[0].id,
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       console.log("Error node video", error);
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      //   return res();
-      // }
-      // if (currentNode.type === "nodeSendFile") {
-      //   await LibraryNodes.NodeSendFile({
-      //     data: currentNode.data,
-      //     connectionId: props.connectionWhatsId,
-      //     numberLead: props.lead.number,
-      //     contactsWAOnAccountId: props.contactsWAOnAccountId,
-      //     accountId: props.accountId,
-      //     businessName: props.businessName,
-      //     ticketProtocol: props.ticketProtocol,
-      //     nodeId: currentNodeId,
-      //   })
-      //     .then(async () => {
-      //       if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //       if (!nextEdgesIds.length) {
-      //         props.onFinish && (await props.onFinish("101"));
-      //         return res();
-      //       }
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
-      //       if (isDepend) return res();
-
-      //       execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextEdgesIds[0].id,
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       console.log("Error node video", error);
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      //   return res();
-      // }
-      // if (currentNode.type === "nodeSendImage") {
-      //   await LibraryNodes.NodeSendImage({
-      //     data: currentNode.data,
-      //     connectionId: props.connectionWhatsId,
-      //     numberLead: props.lead.number,
-      //     contactsWAOnAccountId: props.contactsWAOnAccountId,
-      //     accountId: props.accountId,
-      //     businessName: props.businessName,
-      //     ticketProtocol: props.ticketProtocol,
-      //     nodeId: currentNodeId,
-      //   })
-      //     .then(async () => {
-      //       if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //       if (!nextEdgesIds.length) {
-      //         props.onFinish && (await props.onFinish("101"));
-      //         return res();
-      //       }
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
-      //       if (isDepend) return res();
-
-      //       execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextEdgesIds[0].id,
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       console.log("Error node video", error);
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      //   return res();
-      // }
-      // if (currentNode.type === "nodeSendAudio") {
-      //   await LibraryNodes.NodeSendAudio({
-      //     data: currentNode.data,
-      //     numberLead: props.lead.number,
-      //     contactsWAOnAccountId: props.contactsWAOnAccountId,
-      //     accountId: props.accountId,
-      //     businessName: props.businessName,
-      //     ticketProtocol: props.ticketProtocol,
-      //     nodeId: currentNodeId,
-      //     connectionWhatsId: props.connectionWhatsId,
-      //   })
-      //     .then(async () => {
-      //       if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //       if (!nextEdgesIds.length) {
-      //         props.onFinish && (await props.onFinish("101"));
-      //         return res();
-      //       }
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
-      //       if (isDepend) return res();
-
-      //       execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextEdgesIds[0].id,
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       console.log("Error node video", error);
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      //   return res();
-      // }
-      // if (currentNode.type === "nodeSendLink") {
-      //   await LibraryNodes.NodeSendLink({
-      //     data: currentNode.data,
-      //     connectionId: props.connectionWhatsId,
-      //     numberLead: props.lead.number,
-      //     contactsWAOnAccountId: props.contactsWAOnAccountId,
-      //     nodeId: currentNodeId,
-      //   })
-      //     .then(async () => {
-      //       if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //       if (!nextEdgesIds.length) {
-      //         props.onFinish && (await props.onFinish("101"));
-      //         return res();
-      //       }
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
-      //       if (isDepend) return res();
-
-      //       execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextEdgesIds[0].id,
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       console.log("Error node video", error);
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      //   return res();
-      // }
-      // if (currentNode.type === "nodeSendLocationGPS") {
-      //   await LibraryNodes.NodeSendLocationGPS({
-      //     data: currentNode.data,
-      //     connectionId: props.connectionWhatsId,
-      //     numberLead: props.lead.number,
-      //     contactsWAOnAccountId: props.contactsWAOnAccountId,
-      //     nodeId: currentNodeId,
-      //   })
-      //     .then(async () => {
-      //       if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //       if (!nextEdgesIds.length) {
-      //         props.onFinish && (await props.onFinish("1080"));
-      //         return res();
-      //       }
-
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
-      //       if (isDepend) return res();
-
-      //       execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextEdgesIds[0].id,
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       console.log("Error node video", error);
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      //   return res();
-      // }
-      // if (currentNode.type === "nodeMathematicalOperators") {
-      //   await LibraryNodes.NodeMathematicalOperators({
-      //     data: currentNode.data,
-      //     contactsWAOnAccountId: props.contactsWAOnAccountId,
-      //     accountId: props.accountId,
-      //     nodeId: currentNodeId,
-      //   })
-      //     .then(async () => {
-      //       if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //       if (!nextEdgesIds.length) {
-      //         props.onFinish && (await props.onFinish("1108"));
-      //         return res();
-      //       }
-
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
-      //       if (isDepend) return res();
-
-      //       execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextEdgesIds[0].id,
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       console.log("Error node video", error);
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      //   return res();
-      // }
-      // if (currentNode.type === "nodeDistributeFlow") {
-      //   await LibraryNodes.NodeDistributeFlow({
-      //     data: currentNode.data,
-      //     connectionNumber: props.numberConnection,
-      //     accountId: props.accountId,
-      //     nodeId: currentNodeId,
-      //   })
-      //     .then(async (key) => {
-      //       if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //       if (!key || !nextEdgesIds.length) {
-      //         props.onFinish && (await props.onFinish("1108"));
-      //         return res();
-      //       }
-
-      //       const nextEdge = nextEdgesIds.find((n) => n.sourceHandle === key);
-
-      //       if (!nextEdge) {
-      //         props.onFinish && (await props.onFinish("1163"));
-      //         return res();
-      //       }
-
-      //       const isDepend = nextEdge.nodeNextType === "nodeReply";
-      //       if (isDepend) return res();
-
-      //       execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextEdge.id,
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       console.log("Error node video", error);
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      //   return res();
-      // }
-      // if (currentNode.type === "nodeLogicalCondition") {
-      //   await LibraryNodes.NodeLogicalCondition({
-      //     data: currentNode.data,
-      //     flowStateId: props.flowStateId,
-      //     nodeId: currentNodeId,
-      //     contactsWAOnAccountId: props.contactsWAOnAccountId,
-      //     accountId: props.accountId,
-      //   })
-      //     .then(async (exit) => {
-      //       if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //       if (!exit || !nextEdgesIds.length) {
-      //         props.onFinish && (await props.onFinish("1163"));
-      //         return res();
-      //       }
-
-      //       const nextEdge = nextEdgesIds.find((n) =>
-      //         n.sourceHandle?.includes(exit)
-      //       );
-
-      //       if (!nextEdge) {
-      //         props.onFinish && (await props.onFinish("1163"));
-      //         return res();
-      //       }
-
-      //       const isDepend = nextEdge.nodeNextType === "nodeReply";
-      //       if (isDepend) return res();
-
-      //       execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextEdge.id,
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       console.log("Error node condicao", error);
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      //   return res();
-      // }
-      // if (currentNode.type === "nodeCheckPoint") {
-      //   await LibraryNodes.NodeCheckPoint({
-      //     data: currentNode.data,
-      //     contactsWAOnAccountId: props.contactsWAOnAccountId,
-      //     nodeId: currentNodeId,
-      //   })
-      //     .then(async () => {
-      //       if (props.onExecutedNode) props.onExecutedNode(currentNode);
-      //       if (!nextEdgesIds.length) {
-      //         props.onFinish && (await props.onFinish("1163"));
-      //         return res();
-      //       }
-
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
-      //       if (isDepend) return res();
-
-      //       execute({
-      //         ...props,
-      //         type: "initial",
-      //         currentNodeId: nextEdgesIds[0].id,
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       console.log("Error node video", error);
-      //       props.onErrorNumber && props.onErrorNumber();
-      //       return res();
-      //     });
-      //   return res();
-      // }
-      if (currentNode.type === "nodeAddTags") {
+      if (currentNode.type === "NodeAddTags") {
         await LibraryNodes.NodeAddTags({
           data: currentNode.data,
           flowStateId: props.flowStateId,
@@ -1666,25 +459,27 @@ export const NodeControler = ({
           nodeId: currentNodeId,
         })
           .then(async (d) => {
-            if (props.onExecutedNode) props.onExecutedNode(currentNode);
-            props.onEnterNode && (await props.onEnterNode(currentNode.id));
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+            if (props.actions?.onEnterNode) {
+              await props.actions?.onEnterNode(currentNode.id);
+            }
             if (!nextEdgesIds.length) {
-              props.onFinish && props.onFinish("1280");
+              props.actions?.onFinish && props.actions?.onFinish("1280");
               return res();
             }
-            const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
-            if (isDepend) return res();
 
             return execute({ ...props, currentNodeId: nextEdgesIds[0].id });
           })
           .catch((error) => {
             console.log("error ao executar nodeAddTags", error);
-            props.onErrorNumber && props.onErrorNumber();
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
         return res();
       }
-      if (currentNode.type === "nodeRemoveTags") {
+      if (currentNode.type === "NodeRemoveTags") {
         await LibraryNodes.NodeRemoveTags({
           data: currentNode.data,
           flowStateId: props.flowStateId,
@@ -1692,25 +487,26 @@ export const NodeControler = ({
           nodeId: currentNodeId,
         })
           .then(async (d) => {
-            if (props.onExecutedNode) props.onExecutedNode(currentNode);
-            props.onEnterNode && (await props.onEnterNode(currentNode.id));
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+            if (props.actions?.onEnterNode) {
+              await props.actions?.onEnterNode(currentNode.id);
+            }
             if (!nextEdgesIds.length) {
-              props.onFinish && props.onFinish("1280");
+              props.actions?.onFinish && props.actions?.onFinish("1280");
               return res();
             }
-            const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
-            if (isDepend) return res();
-
             return execute({ ...props, currentNodeId: nextEdgesIds[0].id });
           })
           .catch((error) => {
             console.log("error ao executar nodeAddTags", error);
-            props.onErrorNumber && props.onErrorNumber();
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
         return res();
       }
-      if (currentNode.type === "nodeAddVariables") {
+      if (currentNode.type === "NodeAddVariables") {
         await LibraryNodes.NodeAddVariables({
           data: currentNode.data,
           flowStateId: props.flowStateId,
@@ -1718,25 +514,27 @@ export const NodeControler = ({
           nodeId: currentNodeId,
         })
           .then(async (d) => {
-            if (props.onExecutedNode) props.onExecutedNode(currentNode);
-            props.onEnterNode && (await props.onEnterNode(currentNode.id));
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+            if (props.actions?.onEnterNode) {
+              await props.actions?.onEnterNode(currentNode.id);
+            }
             if (!nextEdgesIds.length) {
-              props.onFinish && props.onFinish("1280");
+              props.actions?.onFinish && props.actions?.onFinish("1280");
               return res();
             }
-            const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
-            if (isDepend) return res();
 
             return execute({ ...props, currentNodeId: nextEdgesIds[0].id });
           })
           .catch((error) => {
             console.log("error ao executar nodeAddTags", error);
-            props.onErrorNumber && props.onErrorNumber();
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
         return res();
       }
-      if (currentNode.type === "nodeRemoveVariables") {
+      if (currentNode.type === "NodeRemoveVariables") {
         await LibraryNodes.NodeRemoveVariables({
           data: currentNode.data,
           flowStateId: props.flowStateId,
@@ -1744,25 +542,27 @@ export const NodeControler = ({
           nodeId: currentNodeId,
         })
           .then(async (d) => {
-            if (props.onExecutedNode) props.onExecutedNode(currentNode);
-            props.onEnterNode && (await props.onEnterNode(currentNode.id));
+            if (props.actions?.onExecutedNode)
+              props.actions?.onExecutedNode(currentNode);
+            props.actions?.onEnterNode &&
+              (await props.actions?.onEnterNode(currentNode.id));
             if (!nextEdgesIds.length) {
-              props.onFinish && props.onFinish("1280");
+              props.actions?.onFinish && props.actions?.onFinish("1280");
               return res();
             }
-            const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+            const isDepend = nextEdgesIds[0].nodeNextType === "NodeReply";
             if (isDepend) return res();
 
             return execute({ ...props, currentNodeId: nextEdgesIds[0].id });
           })
           .catch((error) => {
             console.log("error ao executar nodeAddTags", error);
-            props.onErrorNumber && props.onErrorNumber();
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
         return res();
       }
-      if (currentNode.type === "nodeSendFlow") {
+      if (currentNode.type === "NodeSendFlow") {
         await LibraryNodes.NodeSendFlow({
           data: currentNode.data,
           flowStateId: props.flowStateId,
@@ -1770,25 +570,27 @@ export const NodeControler = ({
           nodeId: currentNodeId,
         })
           .then(async (d) => {
-            if (props.onExecutedNode) props.onExecutedNode(currentNode);
-            props.onEnterNode && (await props.onEnterNode(currentNode.id));
+            if (props.actions?.onExecutedNode)
+              props.actions?.onExecutedNode(currentNode);
+            props.actions?.onEnterNode &&
+              (await props.actions?.onEnterNode(currentNode.id));
             if (!nextEdgesIds.length) {
-              props.onFinish && props.onFinish("1280");
+              props.actions?.onFinish && props.actions?.onFinish("1280");
               return res();
             }
-            const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+            const isDepend = nextEdgesIds[0].nodeNextType === "NodeReply";
             if (isDepend) return res();
 
             return execute({ ...props, currentNodeId: nextEdgesIds[0].id });
           })
           .catch((error) => {
             console.log("error ao executar nodeAddTags", error);
-            props.onErrorNumber && props.onErrorNumber();
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
         return res();
       }
-      if (currentNode.type === "nodeIF") {
+      if (currentNode.type === "NodeIF") {
         await LibraryNodes.NodeIf({
           data: currentNode.data,
           accountId: props.accountId,
@@ -1798,20 +600,22 @@ export const NodeControler = ({
           numberLead: props.lead.number,
         })
           .then(async (d) => {
-            if (props.onExecutedNode) props.onExecutedNode(currentNode);
-            props.onEnterNode && (await props.onEnterNode(currentNode.id));
+            if (props.actions?.onExecutedNode)
+              props.actions?.onExecutedNode(currentNode);
+            props.actions?.onEnterNode &&
+              (await props.actions?.onEnterNode(currentNode.id));
             if (!nextEdgesIds.length) {
-              props.onFinish && props.onFinish("1280");
+              props.actions?.onFinish && props.actions?.onFinish("1280");
               return res();
             }
-            const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+            const isDepend = nextEdgesIds[0].nodeNextType === "NodeReply";
             if (isDepend) return res();
 
             return execute({ ...props, currentNodeId: nextEdgesIds[0].id });
           })
           .catch((error) => {
             console.log("error ao executar nodeAddTags", error);
-            props.onErrorNumber && props.onErrorNumber();
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
         return res();
@@ -1832,7 +636,7 @@ export const NodeControler = ({
       //           props.onFinish && props.onFinish("1280");
       //           return res();
       //         }
-      //         const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+      //         const isDepend = nextEdgesIds[0].nodeNextType === "NodeReply";
       //         if (isDepend) return res();
 
       //         return execute({ ...props, currentNodeId: nextEdgesIds[0].id });
@@ -1888,7 +692,7 @@ export const NodeControler = ({
       //         props.onFinish && (await props.onFinish("1268"));
       //         return;
       //       }
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+      //       const isDepend = nextEdgesIds[0].nodeNextType === "NodeReply";
       //       if (isDepend) return res();
 
       //       execute({
@@ -1952,7 +756,7 @@ export const NodeControler = ({
       //         props.onFinish && (await props.onFinish("1268"));
       //         return;
       //       }
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+      //       const isDepend = nextEdgesIds[0].nodeNextType === "NodeReply";
       //       if (isDepend) return res();
 
       //       execute({
@@ -1997,7 +801,7 @@ export const NodeControler = ({
       //         props.onFinish && (await props.onFinish("1268"));
       //         return;
       //       }
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+      //       const isDepend = nextEdgesIds[0].nodeNextType === "NodeReply";
       //       if (isDepend) return res();
 
       //       execute({
@@ -2046,7 +850,7 @@ export const NodeControler = ({
       //         props.onFinish && (await props.onFinish("1268"));
       //         return;
       //       }
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+      //       const isDepend = nextEdgesIds[0].nodeNextType === "NodeReply";
       //       if (isDepend || !state) {
       //         if (!state && props.onExecutedNode) {
       //           props.onExecutedNode(currentNode);
@@ -2088,7 +892,7 @@ export const NodeControler = ({
       //         props.onFinish && (await props.onFinish("1268"));
       //         return;
       //       }
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+      //       const isDepend = nextEdgesIds[0].nodeNextType === "NodeReply";
       //       if (isDepend) return res();
 
       //       execute({
@@ -2128,7 +932,7 @@ export const NodeControler = ({
       //         props.onFinish && (await props.onFinish("1268"));
       //         return;
       //       }
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+      //       const isDepend = nextEdgesIds[0].nodeNextType === "NodeReply";
       //       if (isDepend) return res();
 
       //       execute({
@@ -2168,7 +972,7 @@ export const NodeControler = ({
       //         props.onFinish && (await props.onFinish("1268"));
       //         return;
       //       }
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+      //       const isDepend = nextEdgesIds[0].nodeNextType === "NodeReply";
       //       if (isDepend) return res();
 
       //       execute({
@@ -2207,7 +1011,7 @@ export const NodeControler = ({
       //         props.onFinish && (await props.onFinish("1268"));
       //         return;
       //       }
-      //       const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+      //       const isDepend = nextEdgesIds[0].nodeNextType === "NodeReply";
       //       if (isDepend) return res();
 
       //       execute({
@@ -2228,7 +1032,7 @@ export const NodeControler = ({
       //     return;
       //   }
 
-      //   const isDepend = nextEdgesIds[0].nodeNextType === "nodeReply";
+      //   const isDepend = nextEdgesIds[0].nodeNextType === "NodeReply";
       //   if (isDepend) return res();
 
       //   execute({

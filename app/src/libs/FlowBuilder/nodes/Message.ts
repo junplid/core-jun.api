@@ -53,6 +53,6 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
         rej("Error ao enviar mensagem");
       }
     }
-    return;
+    return res();
   });
 };

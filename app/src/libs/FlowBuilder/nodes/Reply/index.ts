@@ -1,40 +1,54 @@
-import { WASocket } from "baileys";
-import {
-  countAttemptsReply,
-  isSendMessageOfFailedAttempts,
-  scheduleExecutionsReply,
-} from "../../../../adapters/Baileys/Cache";
+import { scheduleJob } from "node-schedule";
+import { scheduleExecutionsReply } from "../../../../adapters/Baileys/Cache";
 import { prisma } from "../../../../adapters/Prisma/client";
 import { NodeReplyData } from "../../Payload";
+import moment from "moment-timezone";
+
+const getNextTimeOut = (
+  type: "MINUTES" | "HOURS" | "DAYS" | "SECONDS",
+  value: number
+) => {
+  if (type === "SECONDS" && value > 1440) value = 1440;
+  if (type === "MINUTES" && value > 10080) value = 10080;
+  if (type === "HOURS" && value > 168) value = 168;
+  if (type === "DAYS" && value > 7) value = 7;
+  const nowDate = moment().tz("America/Sao_Paulo");
+  const typeTimeOut = type.toLocaleLowerCase() as
+    | "minutes"
+    | "hours"
+    | "days"
+    | "seconds";
+  return new Date(nowDate.add(value, typeTimeOut).toString());
+};
 
 interface PropsNodeReply {
   numberLead: string;
   numberConnection: string;
   data?: NodeReplyData;
-  message: string;
+  message?: string;
   flowStateId: number;
   contactsWAOnAccountId: number;
   accountId: number;
   flowBusinessIds?: number[];
+  onExecuteSchedule?: () => Promise<void>;
 }
 
-type ResultPromise = { action: "NEXT"; line?: string };
+type ResultPromise = { action: "NEXT" | "RETURN"; line?: string };
 
-export const NodeReply = (props: PropsNodeReply): Promise<ResultPromise> =>
-  new Promise(async (res, rej) => {
-    console.log("================================");
-    console.log("Entrou no bloco ded resposta");
-    console.log("================================");
+export const NodeReply = async (
+  props: PropsNodeReply
+): Promise<ResultPromise> => {
+  const { message, data } = props;
+  const keyMap = props.numberConnection + props.numberLead;
 
-    const keyMap = props.numberConnection + props.numberLead;
-    const isScheduleExecution = scheduleExecutionsReply.get(keyMap);
+  const scheduleExecution = scheduleExecutionsReply.get(keyMap);
+  if (message) {
+    scheduleExecution?.cancel();
 
-    if (!props.data?.isSave) {
-      isScheduleExecution?.cancel();
-      return res({ action: "NEXT", line: "33" });
+    if (!data?.isSave) {
+      scheduleExecution?.cancel();
+      return { action: "NEXT", line: "35" };
     }
-
-    const { message, data } = props;
 
     for await (const id of data.list || []) {
       const findTypeVar = await prisma.variable.findFirst({
@@ -42,9 +56,7 @@ export const NodeReply = (props: PropsNodeReply): Promise<ResultPromise> =>
         select: { type: true },
       });
 
-      if (!findTypeVar || findTypeVar.type !== "dynamics") {
-        return res({ action: "NEXT", line: "46" });
-      }
+      if (!findTypeVar || findTypeVar.type !== "dynamics") continue;
 
       const x = await prisma.contactsWAOnAccountVariable.findFirst({
         where: {
@@ -68,12 +80,29 @@ export const NodeReply = (props: PropsNodeReply): Promise<ResultPromise> =>
         });
       }
     }
+    return { action: "NEXT", line: "68" };
+  }
 
-    const timeOnExecuteActionTimeOut = scheduleExecutionsReply.get(keyMap);
+  if (data?.timeout && !props.message) {
+    const { type, value } = data.timeout;
+    if (type && value) {
+      const nextNumber = value < 1 ? 1 : value;
 
-    timeOnExecuteActionTimeOut?.cancel();
-    countAttemptsReply.delete(keyMap);
-    isSendMessageOfFailedAttempts.delete(keyMap);
-
-    return res({ action: "NEXT", line: "95" });
-  });
+      if (scheduleExecution) {
+        scheduleExecution.cancel();
+        scheduleExecutionsReply.delete(keyMap);
+      }
+      if (props.onExecuteSchedule) {
+        const nextTimeStart = getNextTimeOut(type, nextNumber);
+        const timeOnExecuteActionTimeOut = scheduleJob(
+          nextTimeStart,
+          props.onExecuteSchedule
+        );
+        scheduleExecutionsReply.set(keyMap, timeOnExecuteActionTimeOut);
+        return { action: "RETURN", line: "102" };
+      }
+    }
+    return { action: "NEXT", line: "105" };
+  }
+  return { action: "NEXT", line: "107" };
+};

@@ -13,10 +13,7 @@ const getNextTimeOut = (type: "MINUTES" | "HOURS" | "DAYS", value: number) => {
   if (type === "DAYS" && value > 7) value = 7;
   const nowDate = moment().tz("America/Sao_Paulo");
   const typeTimeOut = type.toLocaleLowerCase() as "minutes" | "hours" | "days";
-
-  return new Date(
-    moment().tz("America/Sao_Paulo").add(value, typeTimeOut).toString()
-  );
+  return new Date(nowDate.add(value, typeTimeOut).toString());
 };
 
 interface IProps {

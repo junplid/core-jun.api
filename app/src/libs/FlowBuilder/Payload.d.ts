@@ -66,7 +66,7 @@ export type NodeReplyData = (
   | { isSave?: false }
 ) & {
   timeout?: {
-    type: "sec" | "min" | "hor";
+    type: "MINUTES" | "MINUTES" | "HOURS" | "DAYS";
     value: number;
   };
 };
@@ -509,55 +509,56 @@ export type NodeNewCardTrelloData = {
 };
 
 export type TypeNodesPayload =
-  | "nodeInitial"
-  | "nodeMessage"
-  | "nodeReply"
-  | "nodeValidation"
-  | "nodeMenu"
-  | "nodeSwitch"
-  | "nodeSendContact"
-  | "nodeSendVideo"
-  | "nodeSendPdf"
-  | "nodeSendFile"
-  | "nodeSendImage"
-  | "nodeSendAudio"
-  | "nodeSendLink"
-  | "nodeSendLocationGPS"
-  | "nodeMathematicalOperators"
-  | "nodeLogicalCondition"
-  | "nodeDistributeFlow"
-  | "nodeCheckPoint"
-  | "nodeInterruption"
-  | "nodeAction"
-  | "nodeNotifyNumber"
-  | "nodeSendHumanService"
-  | "nodeEmailSending"
-  | "nodeLinkTranckingPixel"
-  | "nodeInterruptionLinkTrackingPixel"
-  | "nodeTime"
-  | "nodeInsertLeaderInAudience"
-  | "nodeWebhook"
-  | "nodeWebform"
-  | "nodeAttendantAI"
-  | "nodeAddTags"
-  | "nodeRemoveTags"
-  | "nodeAddVariables"
-  | "nodeRemoveVariables"
-  | "nodeSendFlow"
-  | "nodeIF"
-  | "nodeFacebookConversions"
-  | "nodeNewCardTrello";
+  | "NodeInitial"
+  | "NodeMessage"
+  | "NodeReply"
+  | "NodeValidation"
+  | "NodeMenu"
+  | "NodeSwitch"
+  | "NodeSendContact"
+  | "NodeSendVideo"
+  | "NodeSendPdf"
+  | "NodeSendFile"
+  | "NodeSendImage"
+  | "NodeSendAudio"
+  | "NodeSendLink"
+  | "NodeSendLocationGPS"
+  | "NodeMathematicalOperators"
+  | "NodeLogicalCondition"
+  | "NodeDistributeFlow"
+  | "NodeCheckPoint"
+  | "NodeInterruption"
+  | "NodeAction"
+  | "NodeNotifyNumber"
+  | "NodeSendHumanService"
+  | "NodeEmailSending"
+  | "NodeLinkTranckingPixel"
+  | "NodeInterruptionLinkTrackingPixel"
+  | "NodeTime"
+  | "NodeInsertLeaderInAudience"
+  | "NodeWebhook"
+  | "NodeWebform"
+  | "NodeAttendantAI"
+  | "NodeAddTags"
+  | "NodeRemoveTags"
+  | "NodeAddVariables"
+  | "NodeRemoveVariables"
+  | "NodeSendFlow"
+  | "NodeIF"
+  | "NodeFacebookConversions"
+  | "NodeNewCardTrello";
 
 export type NodePayload = { id: string } & (
-  | { type: "nodeInitial" }
-  | { type: "nodeMessage"; data: NodeMessageData }
-  | { type: "nodeReply"; data: NodeReplyData }
-  | { type: "nodeAddTags"; data: NodeAddTagsData }
-  | { type: "nodeRemoveTags"; data: NodeRemoveTagsData }
-  | { type: "nodeAddVariables"; data: NodeAddVariablesData }
-  | { type: "nodeRemoveVariables"; data: NodeRemoveVariablesData }
-  | { type: "nodeSendFlow"; data: NodeSendFlowData }
-  | { type: "nodeIF"; data: NodeIfData }
+  | { type: "NodeInitial" }
+  | { type: "NodeMessage"; data: NodeMessageData }
+  | { type: "NodeReply"; data: NodeReplyData }
+  | { type: "NodeAddTags"; data: NodeAddTagsData }
+  | { type: "NodeRemoveTags"; data: NodeRemoveTagsData }
+  | { type: "NodeAddVariables"; data: NodeAddVariablesData }
+  | { type: "NodeRemoveVariables"; data: NodeRemoveVariablesData }
+  | { type: "NodeSendFlow"; data: NodeSendFlowData }
+  | { type: "NodeIF"; data: NodeIfData }
+  | { type: "NodeInitial" }
 );
 // | { type: "nodeFacebookConversions"; data: NodeFacebookConversionsData }
 // | { type: "nodeAttendantAI"; data: NodeAttendantAIData }

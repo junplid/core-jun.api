@@ -677,6 +677,7 @@ model ConnectionWA {
   // Tickets                 Tickets[]
   // SectorsOnConnections    SectorsOnConnections[]
   // LinkTrackingPixelEvents LinkTrackingPixelEvents[]
+  FlowState        FlowState[]
 
   @@index([id, name, type, number])
 }
@@ -833,9 +834,7 @@ model FlowState {
   firedOnDate           DateTime?
   isFinish              Boolean?             @default(false)
   indexNode             String?
-  connectionWAId        Int?
   flowId                Int?
-  type                  TypeFlowState?
   createAt              DateTime             @default(now())
   updateAt              DateTime             @default(now()) @updatedAt
   // campaignId                      Int?
@@ -844,6 +843,8 @@ model FlowState {
   // ContactsWAOnAccountOnAudience   ContactsWAOnAccountOnAudience? @relation(fields: [contactsWAOnAccountOnAudienceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   contactsWAOnAccountId Int?
   ContactsWAOnAccount   ContactsWAOnAccount? @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  connectionWAId        Int?
+  ConnectionWA          ConnectionWA?        @relation(fields: [connectionWAId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 }
 
 // model ConnectionOnCampaign {

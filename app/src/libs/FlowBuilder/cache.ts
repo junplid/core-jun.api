@@ -11,3 +11,5 @@ export const currentNodeFlow = new Map<string, string | false>();
  * Lista de chats com data de retorno
  */
 export const cacheWaitForCompletionChatAI = new Map<string, boolean>();
+
+export const cacheControllers = new Map<number, string>();
