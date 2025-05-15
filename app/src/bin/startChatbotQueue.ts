@@ -209,7 +209,6 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
                 data: {
                   connectionWAId: infoChatbot.ConnectionWA.id,
                   contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                  type: "chatbot",
                   indexNode: "0",
                   flowId: infoChatbot.flowId,
                 },
@@ -246,47 +245,48 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
                 infoChatbot.ConnectionWA.number + "@s.whatsapp.net",
               message: leadData.messageText ?? "",
               accountId: infoChatbot.accountId,
-              onFinish: async (vl) => {
-                if (currentIndexNodeLead) {
-                  const scheduleExecutionCache = scheduleExecutionsReply.get(
-                    infoChatbot.ConnectionWA!.number +
-                      "@s.whatsapp.net" +
-                      leadData.number
-                  );
-                  if (scheduleExecutionCache) {
-                    scheduleExecutionCache.cancel();
+              actions: {
+                onFinish: async (vl) => {
+                  if (currentIndexNodeLead) {
+                    const scheduleExecutionCache = scheduleExecutionsReply.get(
+                      infoChatbot.ConnectionWA!.number +
+                        "@s.whatsapp.net" +
+                        leadData.number
+                    );
+                    if (scheduleExecutionCache) {
+                      scheduleExecutionCache.cancel();
+                    }
+                    console.log("TA CAINDO AQUI");
+                    await prisma.flowState.update({
+                      where: { id: currentIndexNodeLead.id },
+                      data: { isFinish: true },
+                    });
                   }
-                  console.log("TA CAINDO AQUI");
-                  await prisma.flowState.update({
-                    where: { id: currentIndexNodeLead.id },
-                    data: { isFinish: true },
-                  });
-                }
-              },
-              onExecutedNode: async (node) => {
-                const indexCurrentAlreadyExist =
-                  await prisma.flowState.findFirst({
-                    where: {
-                      connectionWAId: infoChatbot.ConnectionWA!.id,
-                      contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                    },
-                    select: { id: true },
-                  });
-                if (!indexCurrentAlreadyExist) {
-                  await prisma.flowState.create({
-                    data: {
-                      type: "chatbot",
-                      indexNode: node.id,
-                      connectionWAId: infoChatbot.ConnectionWA!.id,
-                      contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                    },
-                  });
-                } else {
-                  await prisma.flowState.update({
-                    where: { id: indexCurrentAlreadyExist.id },
-                    data: { indexNode: node.id },
-                  });
-                }
+                },
+                onExecutedNode: async (node) => {
+                  const indexCurrentAlreadyExist =
+                    await prisma.flowState.findFirst({
+                      where: {
+                        connectionWAId: infoChatbot.ConnectionWA!.id,
+                        contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                      },
+                      select: { id: true },
+                    });
+                  if (!indexCurrentAlreadyExist) {
+                    await prisma.flowState.create({
+                      data: {
+                        indexNode: node.id,
+                        connectionWAId: infoChatbot.ConnectionWA!.id,
+                        contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                      },
+                    });
+                  } else {
+                    await prisma.flowState.update({
+                      where: { id: indexCurrentAlreadyExist.id },
+                      data: { indexNode: node.id },
+                    });
+                  }
+                },
               },
             });
           }

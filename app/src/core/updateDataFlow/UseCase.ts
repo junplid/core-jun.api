@@ -1,5 +1,5 @@
 import { UpdateDataFlowDTO_I } from "./DTO";
-import { flowsMap } from "../../adapters/Baileys/Cache";
+import { cacheFlowsMap } from "../../adapters/Baileys/Cache";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 
@@ -8,7 +8,7 @@ export class UpdateDataFlowUseCase {
 
   async run(dto: UpdateDataFlowDTO_I) {
     try {
-      flowsMap.delete(String(dto.id));
+      cacheFlowsMap.delete(String(dto.id));
 
       if (dto.nodes) {
         for await (const change of dto.nodes) {

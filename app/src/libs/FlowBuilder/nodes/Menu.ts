@@ -1,6 +1,6 @@
 import {
   countAttemptsMenu,
-  flowsMap,
+  cacheFlowsMap,
   isSendMessageOfFailedAttempts,
 } from "../../../adapters/Baileys/Cache";
 import { prisma } from "../../../adapters/Prisma/client";
@@ -104,7 +104,7 @@ export const NodeMenu = (props: PropsNodeReply): Promise<ResultPromise> =>
         return res({ action: failedAttempts.action });
       }
       if (failedAttempts && failedAttempts.action === "SUBMIT_FLOW") {
-        let flowAlreadyExists = flowsMap.get(
+        let flowAlreadyExists = cacheFlowsMap.get(
           failedAttempts.submitFlowId.toString()
         );
 
@@ -147,7 +147,7 @@ export const NodeMenu = (props: PropsNodeReply): Promise<ResultPromise> =>
           }
 
           const { nodes, edges } = newFlow[0];
-          flowsMap.set(failedAttempts.submitFlowId.toString(), {
+          cacheFlowsMap.set(failedAttempts.submitFlowId.toString(), {
             nodes,
             edges,
           });

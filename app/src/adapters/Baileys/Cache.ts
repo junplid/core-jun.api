@@ -1,6 +1,9 @@
 import { Job } from "node-schedule";
 
-export const flowsMap = new Map();
+export const cacheFlowsMap = new Map<
+  number,
+  { nodes: any[]; edges: any[]; businessIds: number[] }
+>();
 export const isSendMessageOfFailedAttempts: Map<string, boolean> = new Map();
 export const leadAwaiting: Map<string, boolean> = new Map();
 export const scheduleExecutionsReply: Map<string, Job | null> = new Map();

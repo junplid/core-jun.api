@@ -1,4 +1,4 @@
-import { flowsMap } from "../../../adapters/Baileys/Cache";
+import { cacheFlowsMap } from "../../../adapters/Baileys/Cache";
 import { prisma } from "../../../adapters/Prisma/client";
 import { ModelFlows } from "../../../adapters/mongo/models/flows";
 import { NodeActionData } from "../Payload";
@@ -87,7 +87,7 @@ export const NodeAction = (props: PropsNodeAction): Promise<ResultPromise> =>
     }
 
     if (data.type === "send-flow") {
-      let flowAlreadyExists = flowsMap.get(String(data.flowId));
+      let flowAlreadyExists = cacheFlowsMap.get(String(data.flowId));
       console.log({ flowAlreadyExists });
       if (!flowAlreadyExists) {
         const newFlow = await ModelFlows.aggregate([
@@ -127,7 +127,7 @@ export const NodeAction = (props: PropsNodeAction): Promise<ResultPromise> =>
         }
 
         const { nodes, edges } = newFlow[0];
-        flowsMap.set(data.flowId.toString(), {
+        cacheFlowsMap.set(data.flowId.toString(), {
           nodes,
           edges,
         });
