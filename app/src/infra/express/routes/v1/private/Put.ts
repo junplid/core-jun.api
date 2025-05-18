@@ -56,6 +56,8 @@ import { updateConnectionWAValidation } from "../../../../../core/updateConnecti
 import { resolve } from "path";
 import { storageMulter } from "../../../../../adapters/Multer/storage";
 import multer from "multer";
+import { updateAccountValidation } from "../../../../../core/updateAccount/Validation";
+import { updateAccountController } from "../../../../../core/updateAccount";
 // import { updateGeolocationValidation } from "../../../../../core/updateGeolocation/Validation";
 // import { updateGeolocationController } from "../../../../../core/updateGeolocation";
 // import { updateEmailServiceConfigurationValidation } from "../../../../../core/updateEmailServiceConfiguration/Validation";
@@ -318,5 +320,11 @@ RouterV1Private_Put.put(
 //   updateCustomerValidation,
 //   updateCustomerController
 // );
+
+RouterV1Private_Put.put(
+  "/account",
+  updateAccountValidation,
+  updateAccountController
+);
 
 export default RouterV1Private_Put;

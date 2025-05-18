@@ -154,7 +154,6 @@ const isMobile = (userAgent: string) => {
 export const WebSocketIo = (io: Server) => {
   io.on("connection", async (socket) => {
     const { headers, auth, query } = socket.handshake;
-    console.log({ auth });
 
     const stateUser = cacheAccountSocket.get(auth.accountId);
 
@@ -275,6 +274,18 @@ export const WebSocketIo = (io: Server) => {
           nextNameConnection: generateNameConnection(connectionDB.name),
         })
       );
+    });
+
+    socket.on("disconnect", async (reason) => {
+      const stateUser = cacheAccountSocket.get(auth.accountId);
+      if (stateUser) {
+        stateUser.listSocket = stateUser.listSocket.filter(
+          (ids) => ids !== socket.id
+        );
+        if (stateUser.listSocket.length === 0) {
+          cacheAccountSocket.delete(auth.accountId);
+        }
+      }
     });
   });
 

@@ -12,6 +12,7 @@ export class GetAccountUseCase {
         name: true,
         email: true,
         emailVerified: true,
+        onboarded: true,
       },
     });
 

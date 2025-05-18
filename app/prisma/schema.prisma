@@ -123,6 +123,7 @@ model Account {
   updateAt            DateTime              @default(now()) @updatedAt
   status              Boolean               @default(false)
   available           Boolean               @default(false)
+  onboarded           Boolean               @default(false)
   assetsUsedId        Int
   AccountAssetsUsed   AccountAssetsUsed     @relation(fields: [assetsUsedId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   // planId                    Int?

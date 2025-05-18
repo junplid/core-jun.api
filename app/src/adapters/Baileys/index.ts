@@ -147,10 +147,7 @@ export const killConnectionWA = async (
   }));
   if (alreadyExist) {
     await prisma.connectionWA.update({
-      where: {
-        id: connectionId,
-        Business: { accountId },
-      },
+      where: { id: connectionId, Business: { accountId } },
       data: { number: null },
     });
   }
@@ -207,18 +204,11 @@ export const Baileys = async ({
       const baileysVersion = await fetchLatestBaileysVersion();
       const bot = makeWASocket({
         auth: state,
-        // printQRInTerminal: true,
         version: baileysVersion.version,
         defaultQueryTimeoutMs: undefined,
         qrTimeout: 20000,
       });
       sessionsBaileysWA.set(props.connectionWhatsId, bot);
-
-      // version: [2, 2413, 1],
-      // printQRInTerminal: true,
-      // defaultQueryTimeoutMs: undefined,
-      // qrTimeout: 20000,
-      // connectTimeoutMs: 1000 * 20,
 
       let lastStatus: WAConnectionState | undefined = undefined;
 
