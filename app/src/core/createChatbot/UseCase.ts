@@ -8,6 +8,17 @@ export class CreateChatbotUseCase {
   constructor() {}
 
   async run({ ...dto }: CreateChatbotDTO_I) {
+    const countResource = await prisma.chatbot.count({
+      where: { accountId: dto.accountId },
+    });
+
+    if (countResource > 1) {
+      throw new ErrorResponse(400).input({
+        path: "name",
+        text: "Limite de bot receptivo atingido.",
+      });
+    }
+
     const exist = await prisma.chatbot.findFirst({
       where: {
         name: dto.name,

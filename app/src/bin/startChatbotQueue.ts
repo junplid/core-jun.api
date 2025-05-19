@@ -10,7 +10,7 @@ import {
 import { prisma } from "../adapters/Prisma/client";
 import { ModelFlows } from "../adapters/mongo/models/flows";
 import { NodeControler } from "../libs/FlowBuilder/Control";
-import { clientRedis } from "../adapters/RedisDB";
+// import { clientRedis } from "../adapters/RedisDB";
 
 export interface ChatbotQueue_I {
   "next-execution": Date;
@@ -27,7 +27,7 @@ export interface ChatbotQueue_I {
 
 export const startChatbotQueue = (chatbotId: number): Promise<void> => {
   return new Promise(async (res, rej) => {
-    const redis = await clientRedis();
+    // const redis = await clientRedis();
     console.log("INICIOU A FILA DE ESPERA DO ROBO");
     const pathQueue = resolve(__dirname, `./chatbot-queue/${chatbotId}.json`);
     const content: ChatbotQueue_I = JSON.parse(String(readFileSync(pathQueue)));

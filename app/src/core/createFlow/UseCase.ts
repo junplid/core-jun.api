@@ -7,6 +7,17 @@ export class CreateFlowUseCase {
   constructor() {}
 
   async run({ businessIds, ...dto }: CreateFlowDTO_I) {
+    const countResource = await ModelFlows.count({
+      accountId: dto.accountId,
+    });
+
+    if (countResource > 1) {
+      throw new ErrorResponse(400).input({
+        path: "name",
+        text: "Limite de construtores de fluxo atingido.",
+      });
+    }
+
     const existName = await ModelFlows.count({
       name: dto.name,
       accountId: dto.accountId,

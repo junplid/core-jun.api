@@ -79,6 +79,17 @@ export class CreateBusinessUseCase {
     //   }
     // }
 
+    const countResource = await prisma.business.count({
+      where: { accountId: dto.accountId },
+    });
+
+    if (countResource > 1) {
+      throw new ErrorResponse(400).input({
+        path: "name",
+        text: "Limite de projetos atingido.",
+      });
+    }
+
     const exist = await prisma.business.findFirst({
       where: { accountId: dto.accountId, name: dto.name },
       select: { id: true },

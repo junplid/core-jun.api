@@ -35,12 +35,12 @@ import {
   leadAwaiting,
   scheduleExecutionsReply,
 } from "./Cache";
-import mime from "mime-types";
-import { Joi } from "express-validation";
-import { ChatCompletionMessageParam } from "openai/resources";
-import { v4 } from "uuid";
+// import mime from "mime-types";
+// import { Joi } from "express-validation";
+// import { ChatCompletionMessageParam } from "openai/resources";
+// import { v4 } from "uuid";
 import { startChatbotQueue } from "../../bin/startChatbotQueue";
-import { clientRedis } from "../RedisDB";
+// import { clientRedis } from "../RedisDB";
 
 function getTimeBR(time: string) {
   return moment()
@@ -191,7 +191,7 @@ export const Baileys = async ({
     let isOnlineLocal = false;
 
     const run = async () => {
-      const redis = await clientRedis();
+      // const redis = await clientRedis();
       const socketIds = cacheAccountSocket.get(props.accountId)?.listSocket;
 
       const pathAuthBot = `./database-whatsapp/${props.accountId}/${nameSession}`;

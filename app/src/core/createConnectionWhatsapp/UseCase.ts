@@ -103,6 +103,17 @@ export class CreateConnectionWAUseCase {
     //   }
     // }
 
+    const countResource = await prisma.connectionWA.count({
+      where: { Business: { accountId } },
+    });
+
+    if (countResource > 1) {
+      throw new ErrorResponse(400).input({
+        path: "name",
+        text: "Limite de conexões atingido.",
+      });
+    }
+
     try {
       const exist = await prisma.connectionWA.findFirst({
         where: {
