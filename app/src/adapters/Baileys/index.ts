@@ -266,60 +266,46 @@ export const Baileys = async ({
             }
           }
 
-          const reason = new Boom(lastDisconnect?.error).output.statusCode;
-
-          if (connection === "close") {
-            console.log("ENTROU AQUI!!! 1");
-            // buscar a reconexão novamente!
-            clearInterval(reconnectInterval);
-          }
+          const reason = new Boom(lastDisconnect?.error).output.statusCode; 
 
           if (connection === "close" && lastStatus !== "close") {
             lastStatus = connection;
             if (reason === DisconnectReason.badSession) {
               isOnlineLocal = false;
-              console.log("Entrando aqui... 2");
-              // console.log({ reconect });
               if (!reconect) {
+                clearInterval(reconnectInterval);
                 await killConnectionWA(
                   props.connectionWhatsId,
                   props.accountId,
                   nameSession
                 );
               }
-            } else if (reason === DisconnectReason.connectionClosed) {
-              console.log(`BAILEYS - Connection Closed`);
+            } else if (reason === DisconnectReason.connectionClosed) { 
               await run();
             } else if (reason === DisconnectReason.connectionLost) {
               isOnlineLocal = false;
+              clearInterval(reconnectInterval);
               if (props.onConnection) props.onConnection("connectionLost");
               bot.end(
                 // @ts-expect-error
                 `Conexão perdida: ${reason} ${DisconnectReason.connectionLost[reason]}`
               );
-            } else if (reason === DisconnectReason.connectionReplaced) {
-              console.log(`BAILEYS - Connection ConnectionReplaced`);
-              console.log(`BAILEYS - RE conectando...`);
+            } else if (reason === DisconnectReason.connectionReplaced) { 
               await run();
             } else if (reason === DisconnectReason.loggedOut) {
               isOnlineLocal = false;
-              console.log({
-                message: `BAILEYS - Conexão foi encerrada, não foi possivel re-conectar`,
-                connectionId: props.connectionWhatsId,
-                reason: DisconnectReason[reason],
-              });
+              clearInterval(reconnectInterval); 
               await killConnectionWA(
                 props.connectionWhatsId,
                 props.accountId,
                 nameSession
               );
               return;
-            } else if (reason === DisconnectReason.restartRequired) {
-              console.log(`BAILEYS - Connection RestartRequired`);
-              console.log(`BAILEYS - RE conectando...`);
+            } else if (reason === DisconnectReason.restartRequired) { 
               await run();
             } else {
               isOnlineLocal = false;
+              clearInterval(reconnectInterval);
               bot.end(
                 // @ts-expect-error
                 `Unknown DisconnectReason: ${reason}|${lastDisconnect.error}`
