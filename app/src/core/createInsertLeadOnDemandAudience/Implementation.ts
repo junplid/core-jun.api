@@ -328,7 +328,7 @@ export class CreateInsertLeadOnDemandAudienceImplementation
   async findFlowId(props: {
     campaignId: number;
     accountId: number;
-  }): Promise<{ flowId: number } | null> {
+  }): Promise<{ flowId: string } | null> {
     try {
       return await this.prisma.campaign.findUnique({
         where: { id: props.campaignId, accountId: props.accountId },

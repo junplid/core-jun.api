@@ -19,6 +19,7 @@ import { NodeRemoveVariables } from "./RemoveVariables";
 // import { NodeNotifyNumber } from "./NotifyNumber";
 import { NodeReply } from "./Reply";
 import { NodeSendFlow } from "./SendFlow";
+import { NodeTimer } from "./Timer";
 // import { NodeSendAudio } from "./SendAudio";
 // import { NodeSendContact } from "./SendContact";
 // import { NodeSendFile } from "./SendFile";
@@ -57,6 +58,7 @@ export const LibraryNodes = {
   NodeSendFlow,
   NodeIf,
   NodeInitial,
+  NodeTimer,
   // NodeMenu, // Não está na lista de nodes
   // NodeSwitch, // Não está na lista de nodes
   // NodeSendContact, // Não está na lista de nodes

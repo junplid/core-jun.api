@@ -1,5 +1,5 @@
 export interface GetFlowParamsDTO_I {
-  id: number;
+  id: string;
 }
 
 export interface GetFlowBodyDTO_I {

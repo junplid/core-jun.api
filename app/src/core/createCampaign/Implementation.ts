@@ -94,7 +94,7 @@ export class CraeteCampaignImplementation
   }
 
   async fetchExistFlow(data: {
-    flowId: number;
+    flowId: string;
     accountId: number;
   }): Promise<number> {
     try {

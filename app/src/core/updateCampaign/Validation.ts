@@ -14,7 +14,7 @@ export const updateCampaignValidation = (
     businessIds: Joi.array().items(Joi.number()).optional(),
     audienceIds: Joi.array().items(Joi.number()).optional(),
     connectionOnBusinessIds: Joi.array().items(Joi.number()).optional(),
-    flowId: Joi.number(),
+    flowId: Joi.string(),
     status: Joi.boolean(),
     campaignParameterId: Joi.number(),
     timeToStart: Joi.string().optional(),

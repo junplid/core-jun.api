@@ -5,7 +5,7 @@ export interface UpdateChatbotParamsDTO_I {
 export interface UpdateChatbotBodyQueryDTO_I {
   name?: string;
   businessId?: number;
-  flowId?: number;
+  flowId?: string;
   connectionWAId?: number;
   status?: boolean;
   description?: string;

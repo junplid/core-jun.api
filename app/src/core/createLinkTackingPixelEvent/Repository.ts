@@ -10,7 +10,7 @@ export interface Props {
 
 export interface CreateLinkTackingPixelEventRepository_I {
   create(props: Props): Promise<void>;
-  findFlow(props: { flowId: number; accountId: number }): Promise<{
+  findFlow(props: { flowId: string; accountId: number }): Promise<{
     edges: any;
     nodes: any;
   } | null>;

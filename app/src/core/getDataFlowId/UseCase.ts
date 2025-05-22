@@ -1,15 +1,30 @@
-import { GetDataFlowIdRepository_I } from "./Repository";
 import { GetDataFlowIdDTO_I } from "./DTO";
+import { ModelFlows } from "../../adapters/mongo/models/flows";
 
 export class GetDataFlowIdUseCase {
-  constructor(private repository: GetDataFlowIdRepository_I) {}
+  constructor() {}
 
   async run(dto: GetDataFlowIdDTO_I) {
-    const data = await this.repository.fetch({
-      _id: dto.id,
-      accountId: dto.accountId,
-    });
+    const data = await ModelFlows.aggregate([
+      { $match: { _id: dto.id, accountId: dto.accountId } },
+      {
+        $project: {
+          edges: "$data.edges",
+          nodes: "$data.nodes",
+          name: "$name",
+          type: "$type",
+          businessIds: "$businessIds",
+        },
+      },
+    ]);
+    if (!data) {
+      throw {
+        message: "Fluxo não encontrado",
+        status: 404,
+      };
+    }
 
-    return { message: "OK!", status: 200, flow: data };
+    const { _id, ...nextData } = data[0];
+    return { message: "OK!", status: 200, flow: nextData };
   }
 }

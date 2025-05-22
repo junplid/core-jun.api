@@ -11,7 +11,7 @@ interface PropsNodeLinkTackingPixel {
   numberLead: string;
   campaignId?: number;
   contactsWAOnAccountId: number;
-  flowId: number;
+  flowId: string;
   flowStateId: number;
   accountId: number;
   connectionWhatsId: number;

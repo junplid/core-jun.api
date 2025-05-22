@@ -9,7 +9,7 @@ export const updateDataFlowValidation = (
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
-    id: Joi.number().required(),
+    id: Joi.string().required(),
     nodes: Joi.array()
       .items(
         Joi.object({
@@ -41,8 +41,6 @@ export const updateDataFlowValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
-  req.params.id = Number(req.params.id);
 
   next();
 };

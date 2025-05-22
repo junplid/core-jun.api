@@ -89,5 +89,5 @@ export interface CreateInsertLeadOnDemandAudienceRepository_I {
   findFlowId(props: {
     campaignId: number;
     accountId: number;
-  }): Promise<{ flowId: number } | null>;
+  }): Promise<{ flowId: string } | null>;
 }

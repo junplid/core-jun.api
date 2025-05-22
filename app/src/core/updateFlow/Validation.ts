@@ -17,7 +17,7 @@ export const updateFlowValidation = (
   next: NextFunction
 ) => {
   const schemaValidation = Joi.object({
-    id: Joi.number().required(),
+    id: Joi.string().required(),
     accountId: Joi.number().required(),
     businessIds: Joi.array().items(Joi.number()).optional(),
     name: Joi.string(),
@@ -37,8 +37,6 @@ export const updateFlowValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
-  req.params.id = Number(req.params.id);
 
   if (req.query.businessIds?.length) {
     req.query.businessIds = req.query.businessIds.map((id) => Number(id));

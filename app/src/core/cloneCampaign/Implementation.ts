@@ -61,7 +61,7 @@ export class CraeteCampaignImplementation implements CloneCampaignRepository_I {
   }
 
   async fetchExistFlow(data: {
-    flowId: number;
+    flowId: string;
     accountId: number;
   }): Promise<number> {
     try {

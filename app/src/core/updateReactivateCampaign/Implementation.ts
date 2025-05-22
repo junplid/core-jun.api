@@ -23,7 +23,7 @@ export class UpdateReactivateCampaignImplementation
 
   async fetchCampaign(props: { id: number; accountId: number }): Promise<{
     name: string;
-    flowId: number;
+    flowId: string;
     business: { businessId: number; connections: number[] }[];
   } | null> {
     try {

@@ -266,7 +266,7 @@ export const Baileys = async ({
             }
           }
 
-          const reason = new Boom(lastDisconnect?.error).output.statusCode; 
+          const reason = new Boom(lastDisconnect?.error).output.statusCode;
 
           if (connection === "close" && lastStatus !== "close") {
             lastStatus = connection;
@@ -280,7 +280,7 @@ export const Baileys = async ({
                   nameSession
                 );
               }
-            } else if (reason === DisconnectReason.connectionClosed) { 
+            } else if (reason === DisconnectReason.connectionClosed) {
               await run();
             } else if (reason === DisconnectReason.connectionLost) {
               isOnlineLocal = false;
@@ -290,18 +290,18 @@ export const Baileys = async ({
                 // @ts-expect-error
                 `Conexão perdida: ${reason} ${DisconnectReason.connectionLost[reason]}`
               );
-            } else if (reason === DisconnectReason.connectionReplaced) { 
+            } else if (reason === DisconnectReason.connectionReplaced) {
               await run();
             } else if (reason === DisconnectReason.loggedOut) {
               isOnlineLocal = false;
-              clearInterval(reconnectInterval); 
+              clearInterval(reconnectInterval);
               await killConnectionWA(
                 props.connectionWhatsId,
                 props.accountId,
                 nameSession
               );
               return;
-            } else if (reason === DisconnectReason.restartRequired) { 
+            } else if (reason === DisconnectReason.restartRequired) {
               await run();
             } else {
               isOnlineLocal = false;
@@ -832,7 +832,6 @@ export const Baileys = async ({
           //   return;
           // }
 
-          console.log("VEIO AQUI!");
           const chatbot = await prisma.chatbot.findFirst({
             where: {
               connectionWAId: props.connectionWhatsId,
@@ -1317,7 +1316,7 @@ export const Baileys = async ({
                       }
                     },
                     onExecutedNode: async (node) => {
-                      console.log({ currentIndexNodeLead });
+                      console.log({ nodeExecuted: node });
                       if (currentIndexNodeLead?.id) {
                         try {
                           await prisma.flowState
@@ -1331,7 +1330,9 @@ export const Baileys = async ({
                         }
                       }
                     },
-                    onEnterNode: async (nodeId) => {
+                    onEnterNode: async (node) => {
+                      console.log({ nodeEnter: node });
+
                       const indexCurrentAlreadyExist =
                         await prisma.flowState.findFirst({
                           where: {
@@ -1343,7 +1344,7 @@ export const Baileys = async ({
                       if (!indexCurrentAlreadyExist) {
                         await prisma.flowState.create({
                           data: {
-                            indexNode: nodeId,
+                            indexNode: node.id,
                             connectionWAId: props.connectionWhatsId,
                             contactsWAOnAccountId: ContactsWAOnAccount[0].id,
                           },
@@ -1351,7 +1352,7 @@ export const Baileys = async ({
                       } else {
                         await prisma.flowState.update({
                           where: { id: indexCurrentAlreadyExist.id },
-                          data: { indexNode: nodeId },
+                          data: { indexNode: node.id },
                         });
                       }
                     },

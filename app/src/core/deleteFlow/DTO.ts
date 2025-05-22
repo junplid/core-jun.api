@@ -1,5 +1,5 @@
 export interface DeleteFlowParamsDTO_I {
-  flowId: number;
+  flowId: string;
 }
 
 export interface DeleteFlowBodyDTO_I {

@@ -13,7 +13,7 @@ interface PropsNodeSendFlow {
 export const NodeSendFlow = async (
   props: PropsNodeSendFlow
 ): Promise<{
-  flowId: number;
+  flowId: string;
   nodes: any[];
   edges: any[];
   businessIds: number[];

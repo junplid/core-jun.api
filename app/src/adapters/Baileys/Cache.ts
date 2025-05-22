@@ -1,7 +1,7 @@
 import { Job } from "node-schedule";
 
 export const cacheFlowsMap = new Map<
-  number,
+  string,
   { nodes: any[]; edges: any[]; businessIds: number[] }
 >();
 export const isSendMessageOfFailedAttempts: Map<string, boolean> = new Map();

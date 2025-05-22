@@ -1,15 +1,12 @@
 import mongoose from "mongoose";
-import chalk from "chalk";
 
 const connectToDatabase = async () => {
   try {
     await mongoose.connect(
       "mongodb://userdefault:passworddefault@mongo_junplid:27017/Chatbot?authSource=admin"
     );
-    console.log(chalk.blue("DATABASE#1 -", chalk.cyan("Conectando...")));
-    console.log(
-      chalk.blue("DATABASE#1 -", chalk.green("Conectado com sucesso!"))
-    );
+    console.log("DATABASE#1 -", "Conectando...");
+    console.log("DATABASE#1 -", "Conectado com sucesso!");
   } catch (error) {
     console.error("Erro ao conectar com MongoDB:", error);
   }

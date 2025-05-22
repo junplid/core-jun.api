@@ -3,7 +3,7 @@ export interface PropsCreateCampaignOndemand {
   description?: string;
   accountId: number;
   businessIds: number[];
-  flowId: number;
+  flowId: string;
   status?: boolean;
   audienceId: number;
 }
@@ -13,7 +13,7 @@ export interface CreateCampaignOndemandRepository_I {
     connectionOnBusinessId: number;
     accountId: number;
   }): Promise<number>;
-  fetchExistFlow(data: { flowId: number; accountId: number }): Promise<number>;
+  fetchExistFlow(data: { flowId: string; accountId: number }): Promise<number>;
   createCampaignOndemand(data: PropsCreateCampaignOndemand): Promise<{
     readonly id: number;
     readonly createAt: Date;

@@ -19,7 +19,7 @@ export type NodeMenuData = {
     } & (
       | {
           action: "SUBMIT_FLOW";
-          submitFlowId: number;
+          submitFlowId: string;
         }
       | { action: "FORK" | "END_FLOW" }
     );
@@ -32,7 +32,7 @@ export type NodeMenuData = {
       } & (
         | {
             run: "SUBMIT_FLOW";
-            submitFlowId: number;
+            submitFlowId: string;
           }
         | { run: "FORK" | "CONTINUE" | "END_FLOW" }
       );
@@ -66,7 +66,7 @@ export type NodeReplyData = (
   | { isSave?: false }
 ) & {
   timeout?: {
-    type: "MINUTES" | "MINUTES" | "HOURS" | "DAYS";
+    type: ("MINUTES" | "MINUTES" | "HOURS" | "DAYS")[];
     value: number;
   };
 };
@@ -333,7 +333,7 @@ export type NodeInterruptionData = {
 
 export type NodeActionData =
   | { type: "add-tag" | "remove-tag"; tagId: number }
-  | { type: "send-flow"; flowId: number }
+  | { type: "send-flow"; flowId: string }
   | { type: "finish-flow" }
   | { type: "add-to-audience" | "remove-to-audience"; audienceId: number }
   | { type: "variable"; variableId: number; value: string };
@@ -355,7 +355,7 @@ export interface NodeRemoveVariablesData {
 }
 
 export interface NodeSendFlowData {
-  id: number;
+  id: string;
 }
 
 export interface NodeIfData {
@@ -475,6 +475,11 @@ export type NodeTimeData =
         | { expected: "midia" | "link" };
     };
 
+export type NodeTimerData = {
+  value: number;
+  type: ["seconds" | "minutes" | "hours" | "days"];
+};
+
 export type NodeInsertLeaderInAudienceData = {
   audienceId: number;
 };
@@ -546,6 +551,7 @@ export type TypeNodesPayload =
   | "NodeSendFlow"
   | "NodeIF"
   | "NodeFacebookConversions"
+  | "NodeTimer"
   | "NodeNewCardTrello";
 
 export type NodePayload = { id: string } & (
@@ -558,6 +564,7 @@ export type NodePayload = { id: string } & (
   | { type: "NodeRemoveVariables"; data: NodeRemoveVariablesData }
   | { type: "NodeSendFlow"; data: NodeSendFlowData }
   | { type: "NodeIF"; data: NodeIfData }
+  | { type: "NodeTimer"; data: NodeTimer }
   | { type: "NodeInitial" }
 );
 // | { type: "nodeFacebookConversions"; data: NodeFacebookConversionsData }

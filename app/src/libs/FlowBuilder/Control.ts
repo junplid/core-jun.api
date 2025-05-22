@@ -12,6 +12,7 @@ export type TypesNode =
   | "NodeRemoveVariables"
   | "NodeAddVariables"
   | "NodeSendFlow"
+  | "NodeTimer"
   | "NodeIF";
 
 interface Edges {
@@ -23,7 +24,7 @@ interface Edges {
 
 export type IPropsControler = {
   actions?: {
-    onEnterNode?(nodeId: string): Promise<void>;
+    onEnterNode?(props: { id: string; type: TypesNode }): Promise<void>;
     onExecutedNode?(
       props: { id: string; type: TypesNode },
       isShots?: boolean
@@ -36,7 +37,7 @@ export type IPropsControler = {
   edges: Edges[];
   clientWA: WASocket;
   lead: { number: string };
-  flowId: number;
+  flowId: string;
   flowStateId: number;
   currentNodeId?: string;
   campaignId?: number;
@@ -283,6 +284,12 @@ export const NodeControler = ({
         return;
       }
       if (currentNode.type === "NodeMessage") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
         await LibraryNodes.NodeMessage({
           botWA: props.clientWA,
           numberLead: props.lead.number,
@@ -308,10 +315,6 @@ export const NodeControler = ({
               props.actions?.onExecutedNode(currentNode);
             }
 
-            if (props.actions?.onEnterNode) {
-              await props.actions?.onEnterNode(currentNode.id);
-            }
-
             execute({
               ...props,
               type: "initial",
@@ -327,6 +330,12 @@ export const NodeControler = ({
         return;
       }
       if (currentNode.type === "NodeReply") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
         await LibraryNodes.NodeReply({
           numberLead: props.lead.number,
           numberConnection: props.numberConnection,
@@ -355,8 +364,8 @@ export const NodeControler = ({
           },
         })
           .then(async (d) => {
-            if (props.actions?.onEnterNode) {
-              await props.actions?.onEnterNode(currentNode.id);
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
             }
             if (d.action === "NEXT") {
               const isNextNodeMain = nextEdgesIds.find(
@@ -380,6 +389,12 @@ export const NodeControler = ({
           });
       }
       if (currentNode.type === "NodeAddTags") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
         await LibraryNodes.NodeAddTags({
           data: currentNode.data,
           flowStateId: props.flowStateId,
@@ -389,9 +404,6 @@ export const NodeControler = ({
           .then(async () => {
             if (props.actions?.onExecutedNode) {
               props.actions?.onExecutedNode(currentNode);
-            }
-            if (props.actions?.onEnterNode) {
-              await props.actions?.onEnterNode(currentNode.id);
             }
             if (!nextEdgesIds.length) {
               props.actions?.onFinish && props.actions?.onFinish("1280");
@@ -412,6 +424,12 @@ export const NodeControler = ({
         return res();
       }
       if (currentNode.type === "NodeRemoveTags") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
         await LibraryNodes.NodeRemoveTags({
           data: currentNode.data,
           flowStateId: props.flowStateId,
@@ -421,9 +439,6 @@ export const NodeControler = ({
           .then(async () => {
             if (props.actions?.onExecutedNode) {
               props.actions?.onExecutedNode(currentNode);
-            }
-            if (props.actions?.onEnterNode) {
-              await props.actions?.onEnterNode(currentNode.id);
             }
             if (!nextEdgesIds.length) {
               props.actions?.onFinish && props.actions?.onFinish("1280");
@@ -443,6 +458,12 @@ export const NodeControler = ({
         return res();
       }
       if (currentNode.type === "NodeAddVariables") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
         await LibraryNodes.NodeAddVariables({
           data: currentNode.data,
           flowStateId: props.flowStateId,
@@ -452,9 +473,6 @@ export const NodeControler = ({
           .then(async () => {
             if (props.actions?.onExecutedNode) {
               props.actions?.onExecutedNode(currentNode);
-            }
-            if (props.actions?.onEnterNode) {
-              await props.actions?.onEnterNode(currentNode.id);
             }
             if (!nextEdgesIds.length) {
               props.actions?.onFinish && props.actions?.onFinish("1280");
@@ -475,6 +493,12 @@ export const NodeControler = ({
         return res();
       }
       if (currentNode.type === "NodeRemoveVariables") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
         await LibraryNodes.NodeRemoveVariables({
           data: currentNode.data,
           flowStateId: props.flowStateId,
@@ -484,9 +508,6 @@ export const NodeControler = ({
           .then(async () => {
             if (props.actions?.onExecutedNode) {
               props.actions?.onExecutedNode(currentNode);
-            }
-            if (props.actions?.onEnterNode) {
-              await props.actions?.onEnterNode(currentNode.id);
             }
             if (!nextEdgesIds.length) {
               props.actions?.onFinish && props.actions?.onFinish("1280");
@@ -507,6 +528,12 @@ export const NodeControler = ({
         return res();
       }
       if (currentNode.type === "NodeSendFlow") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
         await LibraryNodes.NodeSendFlow({
           data: currentNode.data,
           flowStateId: props.flowStateId,
@@ -517,10 +544,6 @@ export const NodeControler = ({
             if (props.actions?.onExecutedNode) {
               props.actions?.onExecutedNode(currentNode);
             }
-            if (props.actions?.onEnterNode) {
-              await props.actions?.onEnterNode(currentNode.id);
-            }
-
             return execute({
               ...props,
               type: "initial",
@@ -539,6 +562,12 @@ export const NodeControler = ({
         return res();
       }
       if (currentNode.type === "NodeIF") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
         await LibraryNodes.NodeIf({
           data: currentNode.data,
           accountId: props.accountId,
@@ -550,9 +579,6 @@ export const NodeControler = ({
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
               props.actions?.onExecutedNode(currentNode);
-            }
-            if (props.actions?.onEnterNode) {
-              await props.actions?.onEnterNode(currentNode.id);
             }
             if (!nextEdgesIds.length) {
               props.actions?.onFinish && props.actions?.onFinish("1280");
@@ -579,7 +605,36 @@ export const NodeControler = ({
           });
         return res();
       }
+      if (currentNode.type === "NodeTimer") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode(currentNode);
+        }
+        await LibraryNodes.NodeTimer({
+          data: currentNode.data,
+          nodeId: currentNodeId,
+        })
+          .then(async () => {
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+            if (!nextEdgesIds.length) {
+              props.actions?.onFinish && props.actions?.onFinish("1280");
+              return res();
+            }
 
+            return execute({
+              ...props,
+              type: "initial",
+              currentNodeId: nextEdgesIds[0].id,
+            });
+          })
+          .catch((error) => {
+            console.log("error ao executar nodeAddTags", error);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return res();
+      }
       return res();
     };
 

@@ -9,7 +9,7 @@ export const getFlowValidation = (
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
-    id: Joi.number().required(),
+    id: Joi.string().required(),
   });
 
   const validation = schemaValidation.validate(
@@ -25,8 +25,6 @@ export const getFlowValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
-  req.params.id = Number(req.params.id);
 
   next();
 };

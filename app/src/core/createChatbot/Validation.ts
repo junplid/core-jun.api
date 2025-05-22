@@ -11,7 +11,7 @@ export const createChatbotValidation = (
     accountId: Joi.number().required(),
     name: Joi.string().required(),
     businessId: Joi.number().required(),
-    flowId: Joi.number().required(),
+    flowId: Joi.string().required(),
     connectionWAId: Joi.number(),
     status: Joi.boolean().optional(),
     description: Joi.string().optional(),

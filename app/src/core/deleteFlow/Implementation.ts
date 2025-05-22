@@ -4,7 +4,7 @@ import { ModelFlows } from "../../adapters/mongo/models/flows";
 export class DeleteFlowImplementation implements DeleteFlowRepository_I {
   constructor(private modelFlows = ModelFlows) {}
 
-  async delete(props: { flowId: number }): Promise<void> {
+  async delete(props: { flowId: string }): Promise<void> {
     try {
       await this.modelFlows.deleteOne({ _id: props.flowId });
     } catch (error) {
@@ -14,7 +14,7 @@ export class DeleteFlowImplementation implements DeleteFlowRepository_I {
   }
 
   async fetchExist(props: {
-    flowId: number;
+    flowId: string;
     accountId: number;
   }): Promise<number> {
     try {

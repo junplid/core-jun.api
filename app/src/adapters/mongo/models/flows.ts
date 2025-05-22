@@ -14,7 +14,7 @@ export const ModelFlows: Model<ModelFlowsDoc> = mongoose.model<ModelFlowsDoc>(
   "Flows",
   new mongoose.Schema(
     {
-      _id: Number,
+      _id: String,
       type: {
         type: String,
         required: true,

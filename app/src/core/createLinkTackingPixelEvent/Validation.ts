@@ -15,7 +15,7 @@ export const createLinkTackingPixelEventValidation = (
     connectionWhatsId: Joi.number().required(),
     event: Joi.string().required(),
     value: Joi.string().required(),
-    flowId: Joi.number().required(),
+    flowId: Joi.string().required(),
     flowStateId: Joi.number().required(),
   });
 

@@ -27,7 +27,7 @@ export const updateCampaignOndemandValidation = (
     connectionOnBusinessIds: Joi.string()
       .regex(/^[0-9]+(-[0-9]+)*$/)
       .optional(),
-    flowId: Joi.number(),
+    flowId: Joi.string(),
     status: Joi.boolean(),
   });
 

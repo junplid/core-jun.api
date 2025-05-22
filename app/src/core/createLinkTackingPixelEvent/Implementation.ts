@@ -29,7 +29,7 @@ export class CreateLinkTackingPixelEventImplementation
   }
 
   async findFlow(props: {
-    flowId: number;
+    flowId: string;
     accountId: number;
   }): Promise<{ edges: any; nodes: any } | null> {
     try {

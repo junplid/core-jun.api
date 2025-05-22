@@ -835,7 +835,7 @@ model FlowState {
   firedOnDate           DateTime?
   isFinish              Boolean?             @default(false)
   indexNode             String?
-  flowId                Int?
+  flowId                String?
   createAt              DateTime             @default(now())
   updateAt              DateTime             @default(now()) @updatedAt
   // campaignId                      Int?
@@ -927,7 +927,7 @@ model Chatbot {
   description           String?
   connectionWAId        Int?
   leadOriginList        String?
-  flowId                Int
+  flowId                String
   addLeadToAudiencesIds Int[]                 @default([])
   addToLeadTagsIds      Int[]                 @default([])
   ConnectionWA          ConnectionWA?         @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)

@@ -2,6 +2,7 @@ import { CreateFlowDTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { ulid } from "ulid";
 
 export class CreateFlowUseCase {
   constructor() {}
@@ -31,21 +32,14 @@ export class CreateFlowUseCase {
       });
     }
 
-    let nextId: null | number = null;
-    const maxIdDocument = await ModelFlows.findOne(
-      {},
-      {},
-      { sort: { _id: -1 } }
-    );
-    if (maxIdDocument) nextId = maxIdDocument._id + 1;
     const flow = await ModelFlows.create({
-      ...{ ...dto, _id: nextId ?? 1 },
+      ...{ ...dto, _id: ulid() },
       data: {
         metrics: {},
         nodes: [
           {
             id: "0",
-            type: "nodeInitial",
+            type: "NodeInitial",
             data: { selects: {} },
             position: { x: 100, y: 200 },
             deletable: false,

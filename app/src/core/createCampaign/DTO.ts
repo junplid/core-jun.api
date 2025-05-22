@@ -7,7 +7,7 @@ export interface CreateCampaignDTO_I {
   audienceIds: number[];
   connectionOnBusinessIds?: number[];
   description?: string;
-  flowId: number;
+  flowId: string;
   denial?: {
     whoHasTag?: string;
     whoAnsweredConnection?: string;

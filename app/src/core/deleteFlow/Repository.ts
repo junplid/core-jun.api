@@ -1,4 +1,4 @@
 export interface DeleteFlowRepository_I {
-  delete(props: { flowId: number }): Promise<void>;
-  fetchExist(props: { flowId: number; accountId: number }): Promise<number>;
+  delete(props: { flowId: string }): Promise<void>;
+  fetchExist(props: { flowId: string; accountId: number }): Promise<number>;
 }

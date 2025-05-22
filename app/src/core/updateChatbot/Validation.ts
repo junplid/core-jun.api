@@ -22,7 +22,7 @@ export const updateChatbotValidation = (
     accountId: Joi.number().required(),
     name: Joi.string().optional(),
     businessId: Joi.number().optional(),
-    flowId: Joi.number(),
+    flowId: Joi.string(),
     connectionWAId: Joi.number(),
     status: Joi.boolean().optional(),
     description: Joi.string().optional().allow(""),

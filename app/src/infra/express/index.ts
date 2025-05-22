@@ -9,7 +9,6 @@ import { prisma } from "../../adapters/Prisma/client";
 // import { startChatbotQueue } from "../../bin/startChatbotQueue";
 import { WebSocketIo } from "../websocket";
 import { App as app } from "./app";
-import chalk from "chalk";
 import { startConnections } from "../../bin/startConnections";
 import { startChatbotQueue } from "../../bin/startChatbotQueue";
 
@@ -55,20 +54,16 @@ const startServer = async (): Promise<void> => {
     // );
     await ensureDir(resolve(__dirname, "../../bin/chatbot-queue"));
 
-    console.log(chalk.blue("DATABASE#2 -", chalk.cyan("Conectando...")));
+    console.log("DATABASE#2 -", "Conectando...");
 
     await prisma
       .$connect()
       .then(async () => {
-        console.log(
-          chalk.blue("DATABASE#2 -", chalk.green("Conectado com sucesso!"))
-        );
+        console.log("DATABASE#2 -", "Conectado com sucesso!");
         try {
           WebSocketIo(io);
           server.listen(process.env.PORT, () => {
-            console.log(
-              chalk.bgGrey("Servidor rodando na porta:", chalk.cyan("4000"))
-            );
+            console.log("Servidor rodando na porta:");
           });
           await startConnections();
 

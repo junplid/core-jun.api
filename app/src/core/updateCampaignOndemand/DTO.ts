@@ -10,7 +10,7 @@ export interface UpdateCampaignOndemandQueryDTO_I {
   name?: string;
   businessIds?: number[];
   connectionOnBusinessIds?: number[];
-  flowId?: number;
+  flowId?: string;
   description?: string;
   status?: boolean;
 }

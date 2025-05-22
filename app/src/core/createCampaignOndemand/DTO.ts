@@ -3,7 +3,7 @@ export interface CreateCampaignOndemandDTO_I {
   accountId: number;
   businessIds: number[];
   connectionOnBusinessIds: number[];
-  flowId: number;
+  flowId: string;
   description?: string;
   status?: boolean;
   audienceId: number;

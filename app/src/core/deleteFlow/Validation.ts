@@ -9,7 +9,7 @@ export const deleteFlowValidation = (
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
-    flowId: Joi.number().required(),
+    flowId: Joi.string().required(),
     subUserUid: Joi.string().optional(),
   });
 
@@ -26,8 +26,6 @@ export const deleteFlowValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
-  req.params.flowId = Number(req.params.flowId);
 
   next();
 };

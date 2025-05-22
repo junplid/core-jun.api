@@ -17,7 +17,7 @@ export const createCampaignValidation = (
     campaignParameterId: Joi.number().required(),
     audienceIds: Joi.array().items(Joi.number()).required(),
     connectionOnBusinessIds: Joi.array().items(Joi.number()),
-    flowId: Joi.number().required(),
+    flowId: Joi.string().required(),
     denial: Joi.object({
       receivedMessages: Joi.number().optional(),
       whoHasTag: Joi.string().optional(),

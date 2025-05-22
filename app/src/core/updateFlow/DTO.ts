@@ -1,5 +1,5 @@
 export interface UpdateFlowParamsDTO_I {
-  id: number;
+  id: string;
 }
 
 export interface UpdateFlowQueryDTO_I {

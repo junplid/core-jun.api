@@ -3,7 +3,7 @@ export interface PropsCloneCampaign {
   description?: string;
   accountId: number;
   businessIds: number[];
-  flowId: number;
+  flowId: string;
   audienceIds: number[];
   DenialCampaign: {
     whoHasTag: string | null;
@@ -23,7 +23,7 @@ export interface CloneCampaignRepository_I {
   fetchAllContactsOfAudience(
     audienceIds: number[]
   ): Promise<{ id: number; completeNumber: string }[][]>;
-  fetchExistFlow(data: { flowId: number; accountId: number }): Promise<number>;
+  fetchExistFlow(data: { flowId: string; accountId: number }): Promise<number>;
   createAudienceOnCampaign(datas: {
     campaignId: number;
     contactsWAOnAccountOnAudienceIds: number[];

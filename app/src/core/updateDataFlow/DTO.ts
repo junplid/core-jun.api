@@ -1,5 +1,5 @@
 export interface UpdateDataFlowParamsDTO_I {
-  id: number;
+  id: string;
 }
 
 export interface UpdateDataFlowBodyDTO_I {

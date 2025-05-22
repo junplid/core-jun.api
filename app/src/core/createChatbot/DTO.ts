@@ -2,7 +2,7 @@ export interface CreateChatbotDTO_I {
   accountId: number;
   name: string;
   businessId: number;
-  flowId: number;
+  flowId: string;
   connectionWAId?: number;
   status?: boolean;
   description?: string;

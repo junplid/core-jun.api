@@ -8,17 +8,22 @@ const getNextTimeOut = (
   type: "MINUTES" | "HOURS" | "DAYS" | "SECONDS",
   value: number
 ) => {
-  if (type === "SECONDS" && value > 1440) value = 1440;
-  if (type === "MINUTES" && value > 10080) value = 10080;
-  if (type === "HOURS" && value > 168) value = 168;
-  if (type === "DAYS" && value > 7) value = 7;
-  const nowDate = moment().tz("America/Sao_Paulo");
-  const typeTimeOut = type.toLocaleLowerCase() as
-    | "minutes"
-    | "hours"
-    | "days"
-    | "seconds";
-  return new Date(nowDate.add(value, typeTimeOut).toString());
+  try {
+    if (type === "SECONDS" && value > 1440) value = 1440;
+    if (type === "MINUTES" && value > 10080) value = 10080;
+    if (type === "HOURS" && value > 168) value = 168;
+    if (type === "DAYS" && value > 7) value = 7;
+    const nowDate = moment().tz("America/Sao_Paulo");
+    const typeTimeOut = type.toLowerCase() as
+      | "minutes"
+      | "hours"
+      | "days"
+      | "seconds";
+    return new Date(nowDate.add(value, typeTimeOut).toString());
+  } catch (error) {
+    console.error("Error in getNextTimeOut:", error);
+    throw new Error("Failed to calculate next timeout");
+  }
 };
 
 interface PropsNodeReply {
@@ -49,7 +54,6 @@ export const NodeReply = async (
       scheduleExecution?.cancel();
       return { action: "NEXT", line: "35" };
     }
-
     for await (const id of data.list || []) {
       const findTypeVar = await prisma.variable.findFirst({
         where: { id },
@@ -80,20 +84,20 @@ export const NodeReply = async (
         });
       }
     }
+
     return { action: "NEXT", line: "68" };
   }
 
   if (data?.timeout && !props.message) {
     const { type, value } = data.timeout;
-    if (type && value) {
+    if (type.length && value) {
       const nextNumber = value < 1 ? 1 : value;
-
       if (scheduleExecution) {
         scheduleExecution.cancel();
         scheduleExecutionsReply.delete(keyMap);
       }
       if (props.onExecuteSchedule) {
-        const nextTimeStart = getNextTimeOut(type, nextNumber);
+        const nextTimeStart = getNextTimeOut(type[0], nextNumber);
         const timeOnExecuteActionTimeOut = scheduleJob(
           nextTimeStart,
           props.onExecuteSchedule

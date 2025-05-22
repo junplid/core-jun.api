@@ -7,7 +7,7 @@ export type PropsCreateCampaign =
       businessIds: number[];
       isOndemand?: false;
       denialCampaignId?: number;
-      flowId: number;
+      flowId: string;
       description?: string;
       audienceIds: number[];
     }
@@ -17,7 +17,7 @@ export type PropsCreateCampaign =
       accountId: number;
       businessIds: number[];
       isOndemand?: true;
-      flowId: number;
+      flowId: string;
       audienceIds: number[];
     };
 
@@ -34,7 +34,7 @@ export interface CreateCampaignRepository_I {
     campaignParameterId: number;
     accountId: number;
   }): Promise<number>;
-  fetchExistFlow(data: { flowId: number; accountId: number }): Promise<number>;
+  fetchExistFlow(data: { flowId: string; accountId: number }): Promise<number>;
   createDenial(data: {
     whoHasTag?: string;
     whoAnsweredConnection?: string;

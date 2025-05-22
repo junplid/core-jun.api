@@ -14,7 +14,7 @@ export const createCampaignOndemandValidation = (
     accountId: Joi.number().required(),
     businessIds: Joi.array().items(Joi.number()).required(),
     connectionOnBusinessIds: Joi.array().items(Joi.number()).required(),
-    flowId: Joi.number().required(),
+    flowId: Joi.string().required(),
     status: Joi.boolean(),
     audienceId: Joi.number().required(),
   });
