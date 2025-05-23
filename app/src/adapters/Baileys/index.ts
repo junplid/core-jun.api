@@ -211,30 +211,29 @@ export const Baileys = async ({
       sessionsBaileysWA.set(props.connectionWhatsId, bot);
 
       let lastStatus: WAConnectionState | undefined = undefined;
+      // let reconect = false;
 
-      let reconect = false;
-
-      const reconnectInterval = setInterval(async () => {
-        if (isOnlineLocal) {
-          reconect = true;
-          cacheBaileys_SocketInReset.set(props.connectionWhatsId, true);
-          console.log(
-            "BAILEYS - Desconectando para reconectar...",
-            props.connectionWhatsId,
-            cacheBaileys_SocketInReset
-          );
-          bot.ev.emit("connection.update", { connection: "close" });
-          bot.end({
-            message: "Desconectando para reconectar...",
-            name: "desconect-reconect",
-          });
-          isOnlineLocal = false;
-          await new Promise((resolve) => setTimeout(resolve, 1000 * 3));
-          await run();
-        } else {
-          console.log("Não esta conectado!");
-        }
-      }, 1000 * 60 * 50);
+      // const reconnectInterval = setInterval(async () => {
+      //   if (isOnlineLocal) {
+      //     reconect = true;
+      //     cacheBaileys_SocketInReset.set(props.connectionWhatsId, true);
+      //     console.log(
+      //       "BAILEYS - Desconectando para reconectar...",
+      //       props.connectionWhatsId,
+      //       cacheBaileys_SocketInReset
+      //     );
+      //     bot.ev.emit("connection.update", { connection: "close" });
+      //     bot.end({
+      //       message: "Desconectando para reconectar...",
+      //       name: "desconect-reconect",
+      //     });
+      //     isOnlineLocal = false;
+      //     await new Promise((resolve) => setTimeout(resolve, 1000 * 3));
+      //     await run();
+      //   } else {
+      //     console.log("Não esta conectado!");
+      //   }
+      // }, 1000 * 60 * 50);
 
       bot.ev.on(
         "connection.update",
@@ -272,29 +271,44 @@ export const Baileys = async ({
             lastStatus = connection;
             if (reason === DisconnectReason.badSession) {
               isOnlineLocal = false;
-              if (!reconect) {
-                clearInterval(reconnectInterval);
-                await killConnectionWA(
-                  props.connectionWhatsId,
-                  props.accountId,
-                  nameSession
-                );
-              }
+              console.log("=================================================");
+              console.log(DisconnectReason[reason]);
+              console.log("=================================================");
+              // if (!reconect) {
+              // clearInterval(reconnectInterval);
+              await killConnectionWA(
+                props.connectionWhatsId,
+                props.accountId,
+                nameSession
+              );
+              // }
             } else if (reason === DisconnectReason.connectionClosed) {
+              console.log("=================================================");
+              console.log(DisconnectReason[reason]);
+              console.log("=================================================");
               await run();
             } else if (reason === DisconnectReason.connectionLost) {
+              console.log("=================================================");
+              console.log(DisconnectReason[reason]);
+              console.log("=================================================");
               isOnlineLocal = false;
-              clearInterval(reconnectInterval);
+              // clearInterval(reconnectInterval);
               if (props.onConnection) props.onConnection("connectionLost");
-              bot.end(
-                // @ts-expect-error
-                `Conexão perdida: ${reason} ${DisconnectReason.connectionLost[reason]}`
-              );
+              // bot.end(
+              //   // @ts-expect-error
+              //   `Conexão perdida: ${reason} ${DisconnectReason.connectionLost[reason]}`
+              // );
             } else if (reason === DisconnectReason.connectionReplaced) {
+              console.log("=================================================");
+              console.log(DisconnectReason[reason]);
+              console.log("=================================================");
               await run();
             } else if (reason === DisconnectReason.loggedOut) {
+              console.log("=================================================");
+              console.log(DisconnectReason[reason]);
+              console.log("=================================================");
               isOnlineLocal = false;
-              clearInterval(reconnectInterval);
+              // clearInterval(reconnectInterval);
               await killConnectionWA(
                 props.connectionWhatsId,
                 props.accountId,
@@ -302,10 +316,43 @@ export const Baileys = async ({
               );
               return;
             } else if (reason === DisconnectReason.restartRequired) {
+              console.log("=================================================");
+              console.log(DisconnectReason[reason]);
+              console.log("=================================================");
               await run();
+            } else if (reason === DisconnectReason.timedOut) {
+              console.log("=================================================");
+              console.log(DisconnectReason[reason]);
+              console.log("=================================================");
+              isOnlineLocal = false;
+              // clearInterval(reconnectInterval);
+              await run();
+            } else if (reason === DisconnectReason.forbidden) {
+              console.log("=================================================");
+              console.log(DisconnectReason[reason]);
+              console.log("=================================================");
+              isOnlineLocal = false;
+              // clearInterval(reconnectInterval);
+              bot.end(
+                // @ts-expect-error
+                `Unknown DisconnectReason: ${reason}|${lastDisconnect.error}`
+              );
+            } else if (reason === DisconnectReason.unavailableService) {
+              console.log("=================================================");
+              console.log(DisconnectReason[reason]);
+              console.log("=================================================");
+              isOnlineLocal = false;
+              // clearInterval(reconnectInterval);
+              // bot.end(
+              //   // @ts-expect-error
+              //   `Unknown DisconnectReason: ${reason}|${lastDisconnect.error}`
+              // );
+              setTimeout(async () => {
+                await run();
+              }, 1000 * 10);
             } else {
               isOnlineLocal = false;
-              clearInterval(reconnectInterval);
+              // clearInterval(reconnectInterval);
               bot.end(
                 // @ts-expect-error
                 `Unknown DisconnectReason: ${reason}|${lastDisconnect.error}`
