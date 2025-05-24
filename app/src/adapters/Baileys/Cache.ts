@@ -4,7 +4,6 @@ export const cacheFlowsMap = new Map<
   string,
   { nodes: any[]; edges: any[]; businessIds: number[] }
 >();
-export const isSendMessageOfFailedAttempts: Map<string, boolean> = new Map();
 export const leadAwaiting: Map<string, boolean> = new Map();
 export const scheduleExecutionsReply: Map<string, Job | null> = new Map();
 export const countAttemptsReply: Map<string, number> = new Map();
@@ -45,6 +44,5 @@ export const indexesCurrentLeadChatbot: Map<string, string> = new Map();
     const botIsReset = cacheBaileys_SocketInReset.get(connectionId);
 	```
  */
-export const cacheBaileys_SocketInReset: Map<number, boolean> = new Map();
 
 export const cacheConnectionsWAOnline: Map<number, boolean> = new Map();

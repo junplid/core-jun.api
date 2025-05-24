@@ -1,5 +1,5 @@
 import { sessionsBaileysWA } from "..";
-import { cacheBaileys_SocketInReset } from "../Cache";
+import { cacheConnectionsWAOnline } from "../Cache";
 
 interface Props {
   connectionId: number;
@@ -9,37 +9,29 @@ interface Props {
 
 export const TypingDelay = async ({
   connectionId,
+  delay = 2,
   ...props
 }: Props): Promise<void> => {
-  return new Promise<void>(async (res, rej) => {
-    const run = async (): Promise<void> => {
-      try {
-        const botIsReset = cacheBaileys_SocketInReset.get(connectionId);
-        const bot = sessionsBaileysWA.get(connectionId);
-        if (!!botIsReset) {
-          await new Promise((r) => setTimeout(r, 4000));
-          return run();
-        } else {
-          let delayDefault = 2;
-          if (!props.delay) {
-          } else if (props.delay > 2) {
-            delayDefault = props.delay;
-          }
-          await bot?.sendPresenceUpdate("composing", props.toNumber);
-          await new Promise((r) => setTimeout(r, delayDefault * 1000));
-          await bot?.sendPresenceUpdate("available", props.toNumber);
-          res();
-        }
-      } catch (error) {
-        const botIsReset = cacheBaileys_SocketInReset.get(connectionId);
-        if (!!botIsReset) {
-          await new Promise((r) => setTimeout(r, 4000));
-          return run();
-        }
-        rej("BAILEYS - Error ao digitar");
-      }
-    };
+  const MAX_ATTEMPTS = 5;
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-    run();
-  });
+  const tryAtt = async (): Promise<void> => {
+    const bot = sessionsBaileysWA.get(connectionId);
+    if (!bot || !cacheConnectionsWAOnline.get(connectionId))
+      throw new Error("CONEXÃO OFFLINE");
+    await bot.sendPresenceUpdate("composing", props.toNumber);
+    await wait(Math.max(delay, 2) * 1_000);
+    await bot.sendPresenceUpdate("paused", props.toNumber);
+    await wait(1_000);
+    await bot.sendPresenceUpdate("available", props.toNumber);
+  };
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      return await tryAtt();
+    } catch (err) {
+      if (attempt === MAX_ATTEMPTS) throw err;
+      await new Promise((r) => setTimeout(r, attempt * 1000));
+    }
+  }
 };

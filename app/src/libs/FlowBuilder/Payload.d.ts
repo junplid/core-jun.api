@@ -1,42 +1,15 @@
 export type NodeMenuData = {
-  interval: number;
-  header: string;
-  items: {
-    value: string;
-    activators: { value: string; key: string }[];
-    key: string;
-  }[];
+  interval?: number;
+  header?: string;
+  items: { value: string; key: string }[];
   footer?: string;
   validateReply?: {
     attempts: number;
-    messageErrorAttempts?: {
-      interval: number;
-      value: string;
-    };
-    failedAttempts?: {
-      interval: number;
-      value: string;
-    } & (
-      | {
-          action: "SUBMIT_FLOW";
-          submitFlowId: string;
-        }
-      | { action: "FORK" | "END_FLOW" }
-    );
-    timeOut?: {
-      type: "MINUTES" | "HOURS" | "DAYS";
-      value: number;
-      action: {
-        interval: number;
-        value: string;
-      } & (
-        | {
-            run: "SUBMIT_FLOW";
-            submitFlowId: string;
-          }
-        | { run: "FORK" | "CONTINUE" | "END_FLOW" }
-      );
-    };
+    messageErrorAttempts?: { interval?: number; value?: string };
+  };
+  timeout?: {
+    type: ("seconds" | "minutes" | "hours" | "days")[];
+    value: number;
   };
 };
 
@@ -566,6 +539,7 @@ export type NodePayload = { id: string } & (
   | { type: "NodeIF"; data: NodeIfData }
   | { type: "NodeTimer"; data: NodeTimer }
   | { type: "NodeInitial" }
+  | { type: "NodeMenu"; data: NodeMenuData }
 );
 // | { type: "nodeFacebookConversions"; data: NodeFacebookConversionsData }
 // | { type: "nodeAttendantAI"; data: NodeAttendantAIData }

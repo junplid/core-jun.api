@@ -12,6 +12,7 @@ import { NodeAddTags } from "./AddTags";
 import { NodeAddVariables } from "./AddVariables";
 import { NodeIf } from "./If";
 import { NodeInitial } from "./Init";
+import { NodeMenu } from "./Menu";
 import { NodeMessage } from "./Message";
 import { NodeRemoveTags } from "./RemoveTags";
 import { NodeRemoveVariables } from "./RemoveVariables";
@@ -59,6 +60,7 @@ export const LibraryNodes = {
   NodeIf,
   NodeInitial,
   NodeTimer,
+  NodeMenu,
   // NodeMenu, // Não está na lista de nodes
   // NodeSwitch, // Não está na lista de nodes
   // NodeSendContact, // Não está na lista de nodes

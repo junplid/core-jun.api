@@ -3,8 +3,7 @@ import { ErrorResponse } from "../../utils/ErrorResponse";
 import { prisma } from "../../adapters/Prisma/client";
 import { resolve } from "path";
 import { remove } from "fs-extra";
-import { proto } from "baileys";
-import { cacheBaileys_SocketInReset } from "../../adapters/Baileys/Cache";
+import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
 
 export class UpdateConnectionWAUseCase {
@@ -81,7 +80,7 @@ export class UpdateConnectionWAUseCase {
           await new Promise<void>(async (res, rej) => {
             const run = async (): Promise<void> => {
               try {
-                const botIsReset = cacheBaileys_SocketInReset.get(id);
+                const botIsReset = cacheConnectionsWAOnline.get(id);
                 const bot = sessionsBaileysWA.get(id);
 
                 if (!!botIsReset) {
@@ -111,7 +110,7 @@ export class UpdateConnectionWAUseCase {
                   res();
                 }
               } catch (error) {
-                const botIsReset = cacheBaileys_SocketInReset.get(id);
+                const botIsReset = cacheConnectionsWAOnline.get(id);
                 if (!!botIsReset) {
                   await new Promise((r) => setTimeout(r, 4000));
                   return run();

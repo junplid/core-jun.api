@@ -13,6 +13,7 @@ export type TypesNode =
   | "NodeAddVariables"
   | "NodeSendFlow"
   | "NodeTimer"
+  | "NodeMenu"
   | "NodeIF";
 
 interface Edges {
@@ -382,6 +383,77 @@ export const NodeControler = ({
               });
             }
             if (d.action === "RETURN") return res();
+          })
+          .catch((error: any) => {
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+      }
+      if (currentNode.type === "NodeMenu") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
+        await LibraryNodes.NodeMenu({
+          numberLead: props.lead.number,
+          numberConnection: props.numberConnection,
+          data: currentNode.data,
+          message: props.type === "initial" ? undefined : props.message,
+          connectionWhatsId: props.connectionWhatsId,
+          async onExecuteSchedule() {
+            const nextNodeId = nextEdgesIds?.find((nd) =>
+              nd.sourceHandle?.includes("timeout")
+            );
+            if (!nextNodeId) {
+              props.actions?.onFinish && (await props.actions.onFinish("307"));
+              return res();
+            }
+            if (props.isSavePositionLead && props.actions?.onExecutedNode) {
+              props.actions.onExecutedNode(currentNode);
+            }
+            return execute({
+              ...props,
+              type: "initial",
+              currentNodeId: nextNodeId.id,
+            });
+          },
+        })
+          .then(async (d) => {
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+            if (d.action === "sucess") {
+              const isNextNodeMain = nextEdgesIds.find(
+                (nh) => nh.sourceHandle === d.sourceHandle
+              );
+              if (!isNextNodeMain) {
+                props.actions?.onFinish && props.actions?.onFinish("332");
+                return res();
+              }
+              return execute({
+                ...props,
+                type: "initial",
+                currentNodeId: isNextNodeMain.id,
+              });
+            }
+            if (d.action === "return") return res();
+            if (d.action === "failAttempt") return res();
+            if (d.action === "failed") {
+              const isNextNodeMain = nextEdgesIds.find((nh) =>
+                nh.sourceHandle?.includes("failed")
+              );
+              if (!isNextNodeMain) {
+                props.actions?.onFinish && props.actions?.onFinish("332");
+                return res();
+              }
+              return execute({
+                ...props,
+                type: "initial",
+                currentNodeId: isNextNodeMain.id,
+              });
+            }
           })
           .catch((error: any) => {
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();

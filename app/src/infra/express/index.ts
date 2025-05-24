@@ -6,7 +6,6 @@ import http from "http";
 import { resolve } from "path";
 import { Server } from "socket.io";
 import { prisma } from "../../adapters/Prisma/client";
-// import { startChatbotQueue } from "../../bin/startChatbotQueue";
 import { WebSocketIo } from "../websocket";
 import { App as app } from "./app";
 import { startConnections } from "../../bin/startConnections";

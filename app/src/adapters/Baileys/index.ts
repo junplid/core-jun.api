@@ -4,43 +4,29 @@ import makeWASocket, {
   DisconnectReason,
   WAConnectionState,
   WASocket,
-  downloadMediaMessage,
   fetchLatestBaileysVersion,
-  generateProfilePicture,
-  proto,
   useMultiFileAuthState,
 } from "baileys";
 import { writeFileSync } from "fs";
 import { existsSync, readFileSync, removeSync, writeFile } from "fs-extra";
-import gm from "gm";
 import phone from "libphonenumber-js";
 import moment, { Moment } from "moment-timezone";
 import { resolve } from "path";
 import removeAccents from "remove-accents";
 import { Socket } from "socket.io";
 import { socketIo } from "../../infra/express";
-import {
-  cacheAccountSocket,
-  cacheSocketAccount,
-} from "../../infra/websocket/cache";
+import { cacheAccountSocket } from "../../infra/websocket/cache";
 import { NodeControler } from "../../libs/FlowBuilder/Control";
 import { prisma } from "../Prisma/client";
-// import { clientRedis } from "../RedisDB";
 import { ModelFlows } from "../mongo/models/flows";
 import {
-  cacheBaileys_SocketInReset,
   cacheConnectionsWAOnline,
   cacheJobsChatbotQueue,
   cacheFlowsMap,
   leadAwaiting,
   scheduleExecutionsReply,
 } from "./Cache";
-// import mime from "mime-types";
-// import { Joi } from "express-validation";
-// import { ChatCompletionMessageParam } from "openai/resources";
-// import { v4 } from "uuid";
 import { startChatbotQueue } from "../../bin/startChatbotQueue";
-// import { clientRedis } from "../RedisDB";
 
 function getTimeBR(time: string) {
   return moment()
@@ -181,6 +167,8 @@ interface PropsSynchronizeTicketMessageHumanService {
   };
 }
 
+type BaileysStatus = "connecting" | "open" | "close";
+
 export const Baileys = async ({
   socket,
   nameSession,
@@ -191,7 +179,25 @@ export const Baileys = async ({
     let isOnlineLocal = false;
 
     const run = async () => {
-      // const redis = await clientRedis();
+      function emitStatus(id: number, status: BaileysStatus) {
+        cacheAccountSocket.get(props.accountId)?.listSocket?.forEach((sockId) =>
+          socketIo.to(sockId).emit(`status-connection`, {
+            connectionId: props.connectionWhatsId,
+            connection: status,
+          })
+        );
+      }
+
+      async function softReconnect() {
+        emitStatus(props.connectionWhatsId, "connecting");
+        await new Promise((s) => setTimeout(s, 2_000));
+        await run();
+      }
+
+      async function killAndClean(id: number, msg: string) {
+        await killConnectionWA(id, props.accountId, nameSession);
+        emitStatus(id, "close");
+      }
       const socketIds = cacheAccountSocket.get(props.accountId)?.listSocket;
 
       const pathAuthBot = `./database-whatsapp/${props.accountId}/${nameSession}`;
@@ -209,9 +215,6 @@ export const Baileys = async ({
         qrTimeout: 20000,
       });
       sessionsBaileysWA.set(props.connectionWhatsId, bot);
-
-      let lastStatus: WAConnectionState | undefined = undefined;
-      // let reconect = false;
 
       // const reconnectInterval = setInterval(async () => {
       //   if (isOnlineLocal) {
@@ -238,10 +241,12 @@ export const Baileys = async ({
       bot.ev.on(
         "connection.update",
         async ({ connection, lastDisconnect, qr }) => {
-          cacheConnectionsWAOnline.set(
-            props.connectionWhatsId,
-            connection === "open"
-          );
+          if (connection) {
+            cacheConnectionsWAOnline.set(
+              props.connectionWhatsId,
+              connection === "open"
+            );
+          }
           if (!!qr && socketIds?.length) {
             if (!!props.number) {
               const code = (await bot.requestPairingCode(props.number)).split(
@@ -265,113 +270,68 @@ export const Baileys = async ({
             }
           }
 
+          if (connection) emitStatus(props.connectionWhatsId, connection);
+
           const reason = new Boom(lastDisconnect?.error).output.statusCode;
 
-          if (connection === "close" && lastStatus !== "close") {
-            lastStatus = connection;
-            if (reason === DisconnectReason.badSession) {
-              isOnlineLocal = false;
-              console.log("=================================================");
-              console.log(DisconnectReason[reason]);
-              console.log("=================================================");
-              // if (!reconect) {
-              // clearInterval(reconnectInterval);
-              await killConnectionWA(
-                props.connectionWhatsId,
-                props.accountId,
-                nameSession
-              );
-              // }
-            } else if (reason === DisconnectReason.connectionClosed) {
-              console.log("=================================================");
-              console.log(DisconnectReason[reason]);
-              console.log("=================================================");
-              await run();
-            } else if (reason === DisconnectReason.connectionLost) {
-              console.log("=================================================");
-              console.log(DisconnectReason[reason]);
-              console.log("=================================================");
-              isOnlineLocal = false;
-              // clearInterval(reconnectInterval);
-              if (props.onConnection) props.onConnection("connectionLost");
-              // bot.end(
-              //   // @ts-expect-error
-              //   `Conexão perdida: ${reason} ${DisconnectReason.connectionLost[reason]}`
-              // );
-            } else if (reason === DisconnectReason.connectionReplaced) {
-              console.log("=================================================");
-              console.log(DisconnectReason[reason]);
-              console.log("=================================================");
-              await run();
-            } else if (reason === DisconnectReason.loggedOut) {
-              console.log("=================================================");
-              console.log(DisconnectReason[reason]);
-              console.log("=================================================");
-              isOnlineLocal = false;
-              // clearInterval(reconnectInterval);
-              await killConnectionWA(
-                props.connectionWhatsId,
-                props.accountId,
-                nameSession
-              );
-              return;
-            } else if (reason === DisconnectReason.restartRequired) {
-              console.log("=================================================");
-              console.log(DisconnectReason[reason]);
-              console.log("=================================================");
-              await run();
-            } else if (reason === DisconnectReason.timedOut) {
-              console.log("=================================================");
-              console.log(DisconnectReason[reason]);
-              console.log("=================================================");
-              isOnlineLocal = false;
-              // clearInterval(reconnectInterval);
-              await run();
-            } else if (reason === DisconnectReason.forbidden) {
-              console.log("=================================================");
-              console.log(DisconnectReason[reason]);
-              console.log("=================================================");
-              isOnlineLocal = false;
-              // clearInterval(reconnectInterval);
-              bot.end(
-                // @ts-expect-error
-                `Unknown DisconnectReason: ${reason}|${lastDisconnect.error}`
-              );
-            } else if (reason === DisconnectReason.unavailableService) {
-              console.log("=================================================");
-              console.log(DisconnectReason[reason]);
-              console.log("=================================================");
-              isOnlineLocal = false;
-              // clearInterval(reconnectInterval);
-              // bot.end(
-              //   // @ts-expect-error
-              //   `Unknown DisconnectReason: ${reason}|${lastDisconnect.error}`
-              // );
-              setTimeout(async () => {
-                await run();
-              }, 1000 * 10);
-            } else {
-              isOnlineLocal = false;
-              // clearInterval(reconnectInterval);
-              bot.end(
-                // @ts-expect-error
-                `Unknown DisconnectReason: ${reason}|${lastDisconnect.error}`
-              );
+          if (connection === "close") {
+            switch (reason as DisconnectReason) {
+              case DisconnectReason.badSession:
+                cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
+                await killAndClean(
+                  props.connectionWhatsId,
+                  "Sessão corrompida - limpando credenciais."
+                );
+                break;
+
+              case DisconnectReason.connectionClosed:
+              case DisconnectReason.connectionLost:
+              case DisconnectReason.timedOut:
+              case DisconnectReason.unavailableService:
+                console.log("Conexão perdida - tentando reconectar…");
+                cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
+                await softReconnect();
+                break;
+
+              case DisconnectReason.connectionReplaced:
+                cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
+                await killAndClean(
+                  props.connectionWhatsId,
+                  "Sessão substituída em outro dispositivo."
+                );
+                break;
+
+              case DisconnectReason.loggedOut:
+                cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
+                await killAndClean(
+                  props.connectionWhatsId,
+                  "Conta foi deslogada do WhatsApp."
+                );
+                break;
+
+              case DisconnectReason.restartRequired:
+                console.log("WhatsApp pediu restart - reiniciando sessão…");
+                cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
+                await softReconnect();
+                break;
+
+              case DisconnectReason.forbidden:
+                console.error("Número bloqueado / banido.");
+                cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
+                emitStatus(props.connectionWhatsId, "close");
+                break;
+
+              default:
+                cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
+                console.error("Motivo de desconexão não mapeado:", reason);
+                emitStatus(props.connectionWhatsId, "close");
             }
+            return;
           }
-          if (connection === "open" && lastStatus !== "open") {
-            // bot.ev.emit("connection.update", { connection: "open" });
+          if (connection === "open") {
             try {
-              sessionsBaileysWA.delete(props.connectionWhatsId);
-              await new Promise((s) => setTimeout(s, 3000));
               sessionsBaileysWA.set(props.connectionWhatsId, bot);
-              cacheBaileys_SocketInReset.set(props.connectionWhatsId, false);
-              console.log(
-                "BAILEYS - CONECTADO...",
-                props.connectionWhatsId,
-                cacheBaileys_SocketInReset
-              );
-              lastStatus = connection;
+              emitStatus(props.connectionWhatsId, "open");
               const number = bot.user?.id.split(":")[0];
               const { ConnectionConfig } = await prisma.connectionWA.update({
                 where: {
@@ -381,52 +341,49 @@ export const Baileys = async ({
                 data: { number },
                 select: { ConnectionConfig: true },
               });
-              setTimeout(async () => {
-                if (ConnectionConfig?.profileName) {
-                  await bot.updateProfileName(ConnectionConfig.profileName);
+              const cfg = ConnectionConfig;
+              if (cfg) {
+                const tasks: Promise<unknown>[] = [];
+                if (cfg.profileName) {
+                  tasks.push(bot.updateProfileName(cfg.profileName));
                 }
-                if (ConnectionConfig?.fileNameImgPerfil) {
-                  const path = resolve(
-                    __dirname,
-                    `../../../static/image/${ConnectionConfig.fileNameImgPerfil}`
+                if (cfg.fileNameImgPerfil) {
+                  tasks.push(
+                    bot.updateProfilePicture(`${number}@s.whatsapp.net`, {
+                      url: resolve(
+                        __dirname,
+                        `../../../static/image/${cfg.fileNameImgPerfil}`
+                      ),
+                    })
                   );
-                  await bot.updateProfilePicture(`${number}@s.whatsapp.net`, {
-                    url: path,
-                  });
                 }
-                if (ConnectionConfig?.profileStatus)
-                  await bot.updateProfileStatus(
-                    ConnectionConfig?.profileStatus
+                if (cfg.profileStatus) {
+                  tasks.push(bot.updateProfileStatus(cfg.profileStatus));
+                }
+                if (cfg.lastSeenPrivacy) {
+                  tasks.push(bot.updateLastSeenPrivacy(cfg.lastSeenPrivacy));
+                }
+                if (cfg.onlinePrivacy) {
+                  tasks.push(bot.updateOnlinePrivacy(cfg.onlinePrivacy));
+                }
+                if (cfg.readReceiptsPrivacy) {
+                  tasks.push(
+                    bot.updateReadReceiptsPrivacy(cfg.readReceiptsPrivacy)
                   );
-                if (ConnectionConfig?.lastSeenPrivacy)
-                  await bot.updateLastSeenPrivacy(
-                    ConnectionConfig?.lastSeenPrivacy
+                }
+                if (cfg.statusPrivacy) {
+                  tasks.push(bot.updateStatusPrivacy(cfg.statusPrivacy));
+                }
+                if (cfg.imgPerfilPrivacy) {
+                  tasks.push(
+                    bot.updateProfilePicturePrivacy(cfg.imgPerfilPrivacy)
                   );
-                if (ConnectionConfig?.onlinePrivacy)
-                  await bot.updateOnlinePrivacy(
-                    ConnectionConfig?.onlinePrivacy
-                  );
-                if (ConnectionConfig?.readReceiptsPrivacy)
-                  await bot.updateReadReceiptsPrivacy(
-                    ConnectionConfig?.readReceiptsPrivacy
-                  );
-                // if (ConnectionConfig?.groupsAddPrivacy)
-                //   await bot.updateGroupsAddPrivacy(
-                //     ConnectionConfig?.groupsAddPrivacy
-                //   );
-                if (ConnectionConfig?.statusPrivacy)
-                  await bot.updateStatusPrivacy(
-                    ConnectionConfig?.statusPrivacy
-                  );
-                if (ConnectionConfig?.imgPerfilPrivacy)
-                  await bot.updateProfilePicturePrivacy(
-                    ConnectionConfig?.imgPerfilPrivacy
-                  );
-              }, 5000);
+                }
+                await Promise.allSettled(tasks);
+              }
               props.onConnection && props.onConnection(connection);
-              isOnlineLocal = true;
             } catch (error) {
-              console.log(error);
+              console.error("OPEN-handler error:", error);
             }
             res();
           }

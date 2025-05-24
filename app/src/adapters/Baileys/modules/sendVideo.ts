@@ -1,5 +1,6 @@
-import { cacheBaileys_SocketInReset } from "../Cache";
+import { cacheConnectionsWAOnline } from "../Cache";
 import { sessionsBaileysWA } from "..";
+import { proto } from "baileys";
 
 interface Props {
   connectionId: number;
@@ -12,35 +13,26 @@ interface Props {
 export const SendVideo = async ({
   connectionId,
   ...props
-}: Props): Promise<void> => {
-  return new Promise<void>(async (res, rej) => {
-    const run = async (): Promise<void> => {
-      try {
-        const botIsReset = cacheBaileys_SocketInReset.get(connectionId);
-        const bot = sessionsBaileysWA.get(connectionId);
+}: Props): Promise<proto.WebMessageInfo | undefined> => {
+  const MAX_ATTEMPTS = 5;
 
-        if (!!botIsReset) {
-          await new Promise((r) => setTimeout(r, 4000));
-          return run();
-        } else {
-          await bot?.sendMessage(props.toNumber, {
-            video: props.video,
-            mimetype: props.mimetype,
-            caption: props.caption,
-          });
+  const tryAtt = async (): Promise<proto.WebMessageInfo | undefined> => {
+    const bot = sessionsBaileysWA.get(connectionId);
+    if (!bot || !cacheConnectionsWAOnline.get(connectionId))
+      throw new Error("CONEXÃO OFFLINE");
+    return await bot?.sendMessage(props.toNumber, {
+      video: props.video,
+      mimetype: props.mimetype,
+      caption: props.caption,
+    });
+  };
 
-          res();
-        }
-      } catch (error) {
-        const botIsReset = cacheBaileys_SocketInReset.get(connectionId);
-        if (!!botIsReset) {
-          await new Promise((r) => setTimeout(r, 4000));
-          return run();
-        }
-        rej("BAILEYS - Error ao enviar mensagem");
-      }
-    };
-
-    await run();
-  });
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      return await tryAtt();
+    } catch (err) {
+      if (attempt === MAX_ATTEMPTS) throw err;
+      await new Promise((r) => setTimeout(r, attempt * 1000));
+    }
+  }
 };

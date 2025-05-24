@@ -1,56 +1,92 @@
 import {
   countAttemptsMenu,
-  cacheFlowsMap,
-  isSendMessageOfFailedAttempts,
+  scheduleExecutionsMenu,
 } from "../../../adapters/Baileys/Cache";
-import { prisma } from "../../../adapters/Prisma/client";
-import { ModelFlows } from "../../../adapters/mongo/models/flows";
-import { baileysWATypingDelay } from "../../../helpers/typingDelayVenom";
 import { NodeMenuData } from "../Payload";
 import { TypingDelay } from "../../../adapters/Baileys/modules/typing";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
+import { remove } from "remove-accents";
+import moment from "moment-timezone";
+import { scheduleJob } from "node-schedule";
+
+const getNextTimeOut = (
+  type: "minutes" | "hours" | "days" | "seconds",
+  value: number
+) => {
+  try {
+    if (type === "seconds" && value > 1440) value = 1440;
+    if (type === "minutes" && value > 10080) value = 10080;
+    if (type === "hours" && value > 168) value = 168;
+    if (type === "days" && value > 7) value = 7;
+    const nowDate = moment().tz("America/Sao_Paulo");
+    return new Date(nowDate.add(value, type).toString());
+  } catch (error) {
+    console.error("Error in getNextTimeOut:", error);
+    throw new Error("Failed to calculate next timeout");
+  }
+};
 
 interface PropsNodeReply {
   numberLead: string;
   numberConnection: string;
   data: NodeMenuData;
-  message: string;
+  message?: string;
   connectionWhatsId: number;
-  flowStateId: number;
-  contactsWAOnAccountId: number;
-  accountId: number;
-  nodeId: string;
+  onExecuteSchedule?: () => Promise<void>;
 }
 
 type ResultPromise =
-  | { action: "END_FLOW" | "REPLY_FAIL"; line?: string }
-  | { action: "SUBMIT_FLOW"; flowId: string }
-  | { action: "FORK"; type: "timeOut" | "failedAttempts" }
-  | { action: "SUCESS"; handleId: string };
+  | { action: "return" }
+  | { action: "failed" }
+  | { action: "failAttempt" }
+  | { action: "sucess"; sourceHandle: string };
 
-export const NodeMenu = (props: PropsNodeReply): Promise<ResultPromise> =>
-  new Promise(async (res, rej) => {
-    const keyMap = props.numberConnection + props.numberLead;
+export const NodeMenu = async (
+  props: PropsNodeReply
+): Promise<ResultPromise> => {
+  const keyMap = props.numberConnection + props.numberLead;
+  const scheduleExecution = scheduleExecutionsMenu.get(keyMap);
+  let countAttempts = countAttemptsMenu.get(keyMap) || 0;
 
-    const { message, data } = props;
+  if (!props.message) {
+    if (scheduleExecution) {
+      scheduleExecution.cancel();
+      scheduleExecutionsMenu.delete(keyMap);
+    }
+    if (props.onExecuteSchedule) {
+      const { type, value } = props.data.timeout || {};
+      const nextTimeStart = getNextTimeOut(
+        type?.length ? type[0] : "minutes",
+        Math.max(value || 1, 0)
+      );
+      const timeOnExecuteActionTimeOut = scheduleJob(
+        nextTimeStart,
+        props.onExecuteSchedule
+      );
+      scheduleExecutionsMenu.set(keyMap, timeOnExecuteActionTimeOut);
+    }
+    return { action: "return" };
+  }
 
-    const messageErrorAttempts = data.validateReply?.messageErrorAttempts;
+  const message = remove(props.message).toLowerCase();
+  const messageErrorAttempts = props.data.validateReply?.messageErrorAttempts;
 
-    let sucessReply: boolean = true;
+  const isActivatedItem = props.data.items.some((item) => {
+    return remove(item.value).toLowerCase() === message;
+  });
 
-    const activatedItem = data.items.find((item) => {
-      return item.activators.some((ac) => {
-        const isAc = ac.value.toLowerCase() === message.toLowerCase();
-        const isItem = item.value.toLowerCase() === message.toLowerCase();
-        return isAc || isItem;
-      });
-    });
+  if (!isActivatedItem) {
+    if (!countAttempts) {
+      countAttemptsMenu.set(keyMap, 1);
+    } else {
+      countAttempts += 1;
+      countAttemptsMenu.set(keyMap, countAttempts);
+    }
 
-    if (!activatedItem && messageErrorAttempts) {
+    if (messageErrorAttempts?.value) {
       try {
-        sucessReply = false;
         await TypingDelay({
-          delay: Number(props.data.interval),
+          delay: props.data.interval ? Number(props.data.interval) : undefined,
           toNumber: props.numberLead,
           connectionId: props.connectionWhatsId,
         });
@@ -61,114 +97,23 @@ export const NodeMenu = (props: PropsNodeReply): Promise<ResultPromise> =>
         });
       } catch (error) {
         console.log(error);
-      }
-      let countAttempts = countAttemptsMenu.get(keyMap);
-      if (!countAttempts) {
-        countAttemptsMenu.set(keyMap, 1);
-      } else {
-        countAttempts += 1;
-        countAttemptsMenu.set(keyMap, countAttempts);
+        throw new Error("Failed to send message");
       }
     }
 
-    const countAttempts = countAttemptsMenu.get(keyMap) ?? 0;
-    const doSendMessageFailAttempts = isSendMessageOfFailedAttempts.get(keyMap);
-    const attempts = data.validateReply?.attempts || 0;
-
-    if (attempts && countAttempts >= attempts && !doSendMessageFailAttempts) {
-      try {
-        if (data.validateReply?.failedAttempts) {
-          await TypingDelay({
-            delay: Number(data.validateReply.failedAttempts.interval),
-            toNumber: props.numberLead,
-            connectionId: props.connectionWhatsId,
-          });
-          await SendMessageText({
-            connectionId: props.connectionWhatsId,
-            text: data.validateReply.failedAttempts.value,
-            toNumber: props.numberLead,
-          });
-        }
-      } catch (error) {
-        console.log(error);
-      }
-      isSendMessageOfFailedAttempts.set(keyMap, true);
-      countAttemptsMenu.set(keyMap, 0);
-      const failedAttempts = data.validateReply?.failedAttempts;
-
-      if (failedAttempts && failedAttempts.action === "END_FLOW") {
-        await prisma.flowState.update({
-          where: { id: props.flowStateId },
-          data: { isFinish: true },
-        });
-        return res({ action: failedAttempts.action });
-      }
-      if (failedAttempts && failedAttempts.action === "SUBMIT_FLOW") {
-        let flowAlreadyExists = cacheFlowsMap.get(
-          failedAttempts.submitFlowId.toString()
-        );
-
-        if (!flowAlreadyExists) {
-          const newFlow = await ModelFlows.aggregate([
-            {
-              $match: {
-                accountId: 1,
-                _id: failedAttempts.submitFlowId,
-              },
-            },
-            {
-              $project: {
-                nodes: {
-                  $map: {
-                    input: "$data.nodes",
-                    in: {
-                      id: "$$this.id",
-                      type: "$$this.type",
-                      data: "$$this.data",
-                    },
-                  },
-                },
-                edges: {
-                  $map: {
-                    input: "$data.edges",
-                    in: {
-                      id: "$$this.id",
-                      source: "$$this.source",
-                      target: "$$this.target",
-                    },
-                  },
-                },
-              },
-            },
-          ]);
-
-          if (!newFlow?.length) {
-            return "SE CASO O FLUXO QUE ELE ESCOLHEU NÃO EXISTIR?";
-          }
-
-          const { nodes, edges } = newFlow[0];
-          cacheFlowsMap.set(failedAttempts.submitFlowId.toString(), {
-            nodes,
-            edges,
-          });
-        }
-
-        await prisma.flowState.update({
-          where: { id: props.flowStateId },
-          data: { flowId: failedAttempts.submitFlowId },
-        });
-        return res({
-          action: "SUBMIT_FLOW",
-          flowId: failedAttempts.submitFlowId.toString(),
-        });
-      }
-
-      return res({ action: "FORK", type: "failedAttempts" });
+    const attempts = props.data.validateReply?.attempts || 0;
+    if (attempts && countAttempts >= attempts) {
+      countAttemptsMenu.delete(keyMap);
+      return { action: "failed" };
     }
-    if (!sucessReply) return res({ action: "REPLY_FAIL" });
-    countAttemptsMenu.delete(keyMap);
-    isSendMessageOfFailedAttempts.delete(keyMap);
+    return { action: "failAttempt" };
+  }
 
-    const handleId = activatedItem?.key as string;
-    return res({ action: "SUCESS", handleId });
-  });
+  scheduleExecution?.cancel();
+  countAttemptsMenu.delete(keyMap);
+  const activatedItem = props.data.items.find((item) => {
+    return remove(item.value).toLowerCase() === message;
+  })!;
+
+  return { action: "sucess", sourceHandle: activatedItem.key };
+};
