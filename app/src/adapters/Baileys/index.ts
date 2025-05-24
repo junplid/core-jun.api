@@ -175,9 +175,6 @@ export const Baileys = async ({
   ...props
 }: PropsBaileys): Promise<void> => {
   return new Promise((res, rej) => {
-    let numberOfConnectionAttempts: number = 0;
-    let isOnlineLocal = false;
-
     const run = async () => {
       function emitStatus(id: number, status: BaileysStatus) {
         cacheAccountSocket.get(props.accountId)?.listSocket?.forEach((sockId) =>
