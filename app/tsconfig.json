@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "moduleResolution": "node", 
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "target": "es2019",
     "lib": ["esnext", "dom"],
@@ -19,7 +19,7 @@
     "node_modules",
     "prisma",
     "assets",
-    "./src/bin/connections.json",
-    "./src/bin/chatbot-queue"
+    "./bin/connections.json",
+    "./bin/chatbot-queue"
   ]
 }
