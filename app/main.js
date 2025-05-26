@@ -5,8 +5,8 @@ const { exit } = require("process");
 
 (async () => {
   try {
+    await ensureDir(resolve(__dirname, "./bin/connections.json"));
     if (!pathExistsSync(resolve(__dirname, "./bin/connections.json"))) {
-      await ensureDir(resolve(__dirname, "./bin/connections.json"));
       await writeFile(resolve(__dirname, "./bin/connections.json"), `[]`);
     }
 

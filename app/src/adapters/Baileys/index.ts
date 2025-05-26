@@ -116,7 +116,7 @@ export const killConnectionWA = async (
   nameSession: string
 ) => {
   const pathAuthBot = `./database-whatsapp/${accountId}/${nameSession}`;
-  const pathConnections = resolve(__dirname, "../../bin/connections.json");
+  const pathConnections = resolve(__dirname, "../../../bin/connections.json");
   const connectionsList: CacheSessionsBaileysWA[] = JSON.parse(
     readFileSync(pathConnections).toString()
   );

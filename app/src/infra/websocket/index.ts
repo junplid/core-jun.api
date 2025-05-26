@@ -78,7 +78,7 @@ export const WebSocketIo = (io: Server) => {
             });
           }, 4500);
 
-          const fileBin = resolve(__dirname, "../../bin");
+          const fileBin = resolve(__dirname, "../../../bin");
           const pathFileConnection = `${fileBin}/connections.json`;
 
           readFile(pathFileConnection, (err, file) => {

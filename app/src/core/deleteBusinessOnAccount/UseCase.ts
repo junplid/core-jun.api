@@ -45,7 +45,7 @@ export class DeleteBusinessOnAccountUseCase {
       client.end(new Error("Desconectado pelo servidor!"));
     }
 
-    const fileBin = resolve(__dirname, "../../bin");
+    const fileBin = resolve(__dirname, "../../../bin");
     const pathFileConnection = `${fileBin}/connections.json`;
 
     try {
