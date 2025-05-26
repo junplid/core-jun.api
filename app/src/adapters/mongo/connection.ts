@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const connectToDatabase = async () => {
   try {
     await mongoose.connect(
-      "mongodb://userdefault:passworddefault@mongo_junplid:27017/Chatbot?authSource=admin"
+      "mongodb://junplidroot:passwordjunplid@mongo_junplid:27017/junplid?authSource=admin"
     );
     console.log("DATABASE#1 -", "Conectando...");
     console.log("DATABASE#1 -", "Conectado com sucesso!");
