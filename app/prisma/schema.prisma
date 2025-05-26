@@ -113,7 +113,7 @@ model Account {
   isUsedFreeTrialTime Boolean               @default(false)
   name                String?               @db.VarChar(50)
   email               String                @unique @db.VarChar(200)
-  cpfCnpj             String                @unique
+  cpfCnpj             String?               @unique
   hash                String                @default(uuid())
   emailVerified       Boolean               @default(false)
   password            String

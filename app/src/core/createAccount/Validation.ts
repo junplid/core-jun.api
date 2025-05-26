@@ -11,7 +11,7 @@ export const createAccountValidation = (
   const schemaValidation = Joi.object({
     email: Joi.string().required(),
     name: Joi.string().required(),
-    cpfCnpj: Joi.string().required(),
+    cpfCnpj: Joi.string(),
     password: Joi.string().required(),
     number: Joi.string().required(),
     affiliate: Joi.string().optional(),
