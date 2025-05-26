@@ -2,7 +2,7 @@ name: Backend Deploy
 
 on:
   push:
-    branches: [main] # Altere para a branch que você usa
+    branches: [main]
 
 jobs:
   deploy:
@@ -16,15 +16,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Criar .env do app
-        run: echo "${{ secrets.ENV_APP_FILE }}" > app/.env
-
       - name: Criar arquivos .env
         run: |
+          echo "${{ secrets.ENV_APP_FILE }}" > ./app/.env
           echo "${{ secrets.ENV_MONGO_FILE }}" > .env.mongo
           echo "${{ secrets.ENV_PG_FILE }}" > .env.pg
 
-      - name: Instalar dependências e buildar
+      - name: Instalar dependências e buildar app
         working-directory: ./app
         run: |
           yarn install --frozen-lockfile
@@ -41,16 +39,14 @@ jobs:
         run: |
           rsync -avzr --delete -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             ./docker-compose.prod.yml \
-            ./app/Dockerfile.prod \
-            ./.env.mongo \
-            ./.env.pg \
+            .env.mongo .env.pg \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}
 
           rsync -avzr --delete -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             ./app/ \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/app
 
-      - name: Subir containers na VPS
+      - name: Subir containers com build na VPS
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
