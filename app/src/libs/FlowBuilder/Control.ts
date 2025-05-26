@@ -2,6 +2,7 @@ import { WASocket } from "baileys";
 import { prisma } from "../../adapters/Prisma/client";
 import { LibraryNodes } from "./nodes";
 import { NodePayload } from "./Payload";
+import { cacheFlowInExecution } from "../../adapters/Baileys/Cache";
 
 export type TypesNode =
   | "NodeInitial"
@@ -59,13 +60,19 @@ export type IPropsControler = {
     }
 );
 
+// responsável por executar o controle do fluxo de conversa e manipular caches
 export const NodeControler = ({
   currentNodeId = "0",
   ...propsC
 }: IPropsControler): Promise<void> => {
-  // const keyMap = propsC.numberConnection + propsC.lead.number;
+  const keyMap = `${propsC.connectionWhatsId}-${propsC.lead.number}`;
 
   return new Promise((res, rej) => {
+    if (cacheFlowInExecution.has(keyMap)) {
+      console.log("Já existe uma execução em andamento para este lead");
+      return res();
+    }
+    cacheFlowInExecution.set(keyMap, true);
     const execute = async (
       props: IPropsControler & { currentNodeId: string }
     ): Promise<void> => {
@@ -81,7 +88,10 @@ export const NodeControler = ({
               },
             });
 
-            if (!chatbot) return rejP();
+            if (!chatbot) {
+              cacheFlowInExecution.delete(keyMap);
+              return rejP();
+            }
             if (chatbot.interrupted) {
               setTimeout(() => verify, 1000 * 60 * 3);
               return;
@@ -91,17 +101,20 @@ export const NodeControler = ({
               return;
             }
             if (!chatbot.ConnectionWA) {
+              cacheFlowInExecution.delete(keyMap);
               return rejP();
             }
             if (chatbot.ConnectionWA.interrupted) {
               setTimeout(() => verify, 1000 * 60 * 3);
               return;
             }
+            cacheFlowInExecution.delete(keyMap);
             return resP();
           }
           verify();
         }).catch(() => {
           console.log("Error, chatbot não encontrado!");
+          cacheFlowInExecution.delete(keyMap);
           return rej();
         });
       }
@@ -193,7 +206,8 @@ export const NodeControler = ({
         });
 
       if (!currentNode) {
-        props.actions?.onFinish && (await props.actions?.onFinish("110"));
+        cacheFlowInExecution.delete(keyMap);
+        if (props.actions?.onFinish) await props.actions?.onFinish("110");
         return res();
       }
 
@@ -267,11 +281,10 @@ export const NodeControler = ({
           props.actions?.onExecutedNode(currentNode);
         }
         if (!nextEdgesIds.length) {
+          cacheFlowInExecution.delete(keyMap);
           props.actions?.onFinish && (await props.actions?.onFinish("110"));
           return res();
         }
-        const isDepend = nextEdgesIds[0].nodeNextType === "NodeReply";
-        if (isDepend) return res();
 
         execute({
           ...props,
@@ -303,15 +316,11 @@ export const NodeControler = ({
           nodeId: currentNode.id,
         })
           .then(async () => {
-            if (!nextEdgesIds.length) {
+            if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheFlowInExecution.delete(keyMap);
               props.actions?.onFinish && (await props.actions?.onFinish("128"));
               return;
             }
-            if (nextEdgesIds.length > 1) {
-              props.actions?.onFinish && (await props.actions?.onFinish("140"));
-              return;
-            }
-
             if (props.actions?.onExecutedNode) {
               props.actions?.onExecutedNode(currentNode);
             }
@@ -325,6 +334,7 @@ export const NodeControler = ({
           })
           .catch((error) => {
             console.log("ERROR NO MENSAGEM", error);
+            cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
@@ -351,6 +361,7 @@ export const NodeControler = ({
               nd.sourceHandle?.includes("timeout")
             );
             if (!nextNodeId) {
+              cacheFlowInExecution.delete(keyMap);
               props.actions?.onFinish && (await props.actions.onFinish("307"));
               return res();
             }
@@ -373,6 +384,7 @@ export const NodeControler = ({
                 (nh) => !nh.sourceHandle || nh.sourceHandle === "main"
               );
               if (!isNextNodeMain) {
+                cacheFlowInExecution.delete(keyMap);
                 props.actions?.onFinish && props.actions?.onFinish("332");
                 return res();
               }
@@ -382,9 +394,13 @@ export const NodeControler = ({
                 currentNodeId: isNextNodeMain.id,
               });
             }
-            if (d.action === "RETURN") return res();
+            if (d.action === "RETURN") {
+              cacheFlowInExecution.delete(keyMap);
+              return res();
+            }
           })
           .catch((error: any) => {
+            cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
@@ -408,6 +424,7 @@ export const NodeControler = ({
             );
             if (!nextNodeId) {
               props.actions?.onFinish && (await props.actions.onFinish("307"));
+              cacheFlowInExecution.delete(keyMap);
               return res();
             }
             if (props.isSavePositionLead && props.actions?.onExecutedNode) {
@@ -429,6 +446,7 @@ export const NodeControler = ({
                 (nh) => nh.sourceHandle === d.sourceHandle
               );
               if (!isNextNodeMain) {
+                cacheFlowInExecution.delete(keyMap);
                 props.actions?.onFinish && props.actions?.onFinish("332");
                 return res();
               }
@@ -438,13 +456,20 @@ export const NodeControler = ({
                 currentNodeId: isNextNodeMain.id,
               });
             }
-            if (d.action === "return") return res();
-            if (d.action === "failAttempt") return res();
+            if (d.action === "return") {
+              cacheFlowInExecution.delete(keyMap);
+              return res();
+            }
+            if (d.action === "failAttempt") {
+              cacheFlowInExecution.delete(keyMap);
+              return res();
+            }
             if (d.action === "failed") {
               const isNextNodeMain = nextEdgesIds.find((nh) =>
                 nh.sourceHandle?.includes("failed")
               );
               if (!isNextNodeMain) {
+                cacheFlowInExecution.delete(keyMap);
                 props.actions?.onFinish && props.actions?.onFinish("332");
                 return res();
               }
@@ -456,6 +481,7 @@ export const NodeControler = ({
             }
           })
           .catch((error: any) => {
+            cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
@@ -478,6 +504,7 @@ export const NodeControler = ({
               props.actions?.onExecutedNode(currentNode);
             }
             if (!nextEdgesIds.length) {
+              cacheFlowInExecution.delete(keyMap);
               props.actions?.onFinish && props.actions?.onFinish("1280");
               return res();
             }
@@ -490,6 +517,7 @@ export const NodeControler = ({
           })
           .catch((error) => {
             console.log("error ao executar nodeAddTags", error);
+            cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
@@ -513,6 +541,7 @@ export const NodeControler = ({
               props.actions?.onExecutedNode(currentNode);
             }
             if (!nextEdgesIds.length) {
+              cacheFlowInExecution.delete(keyMap);
               props.actions?.onFinish && props.actions?.onFinish("1280");
               return res();
             }
@@ -524,6 +553,7 @@ export const NodeControler = ({
           })
           .catch((error) => {
             console.log("error ao executar nodeAddTags", error);
+            cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
@@ -547,6 +577,7 @@ export const NodeControler = ({
               props.actions?.onExecutedNode(currentNode);
             }
             if (!nextEdgesIds.length) {
+              cacheFlowInExecution.delete(keyMap);
               props.actions?.onFinish && props.actions?.onFinish("1280");
               return res();
             }
@@ -559,6 +590,7 @@ export const NodeControler = ({
           })
           .catch((error) => {
             console.log("error ao executar nodeAddTags", error);
+            cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
@@ -582,6 +614,7 @@ export const NodeControler = ({
               props.actions?.onExecutedNode(currentNode);
             }
             if (!nextEdgesIds.length) {
+              cacheFlowInExecution.delete(keyMap);
               props.actions?.onFinish && props.actions?.onFinish("1280");
               return res();
             }
@@ -594,6 +627,7 @@ export const NodeControler = ({
           })
           .catch((error) => {
             console.log("error ao executar nodeAddTags", error);
+            cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
@@ -628,6 +662,7 @@ export const NodeControler = ({
           })
           .catch((error) => {
             console.log("error ao executar nodeAddTags", error);
+            cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
@@ -653,6 +688,7 @@ export const NodeControler = ({
               props.actions?.onExecutedNode(currentNode);
             }
             if (!nextEdgesIds.length) {
+              cacheFlowInExecution.delete(keyMap);
               props.actions?.onFinish && props.actions?.onFinish("1280");
               return res();
             }
@@ -661,6 +697,7 @@ export const NodeControler = ({
               nd.sourceHandle?.includes(JSON.stringify(d))
             );
             if (!nextNodeId) {
+              cacheFlowInExecution.delete(keyMap);
               props.actions?.onFinish && (await props.actions.onFinish("307"));
               return res();
             }
@@ -672,6 +709,7 @@ export const NodeControler = ({
           })
           .catch((error) => {
             console.log("error ao executar nodeAddTags", error);
+            cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
@@ -690,6 +728,7 @@ export const NodeControler = ({
               props.actions?.onExecutedNode(currentNode);
             }
             if (!nextEdgesIds.length) {
+              cacheFlowInExecution.delete(keyMap);
               props.actions?.onFinish && props.actions?.onFinish("1280");
               return res();
             }
@@ -702,6 +741,7 @@ export const NodeControler = ({
           })
           .catch((error) => {
             console.log("error ao executar nodeAddTags", error);
+            cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });

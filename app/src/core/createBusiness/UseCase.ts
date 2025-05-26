@@ -83,7 +83,7 @@ export class CreateBusinessUseCase {
       where: { accountId: dto.accountId },
     });
 
-    if (countResource > 1) {
+    if (countResource >= 1) {
       throw new ErrorResponse(400).input({
         path: "name",
         text: "Limite de projetos atingido.",

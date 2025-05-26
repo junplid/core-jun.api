@@ -53,6 +53,22 @@ export const NodeMenu = async (
       scheduleExecution.cancel();
       scheduleExecutionsMenu.delete(keyMap);
     }
+    let text = "";
+    if (props.data.header) text = `*${props.data.header}*\n\n`;
+    for (let i = 0; i < props.data.items.length; i++) {
+      text += `[${i + 1}] - ${props.data.items[i].value}\n`;
+    }
+    if (props.data.footer) text += `\n_${props.data.footer}_`;
+
+    await SendMessageText({
+      connectionId: props.connectionWhatsId,
+      text,
+      toNumber: props.numberLead,
+    }).catch((error) => {
+      console.error("Error sending message:", error);
+      throw new Error("Failed to send message");
+    });
+
     if (props.onExecuteSchedule) {
       const { type, value } = props.data.timeout || {};
       const nextTimeStart = getNextTimeOut(
@@ -68,52 +84,102 @@ export const NodeMenu = async (
     return { action: "return" };
   }
 
-  const message = remove(props.message).toLowerCase();
+  const isNumber = !isNaN(Number(props.message));
+
   const messageErrorAttempts = props.data.validateReply?.messageErrorAttempts;
 
-  const isActivatedItem = props.data.items.some((item) => {
-    return remove(item.value).toLowerCase() === message;
-  });
+  if (!isNumber) {
+    const message = remove(props.message).toLowerCase();
 
-  if (!isActivatedItem) {
-    if (!countAttempts) {
-      countAttemptsMenu.set(keyMap, 1);
-    } else {
-      countAttempts += 1;
-      countAttemptsMenu.set(keyMap, countAttempts);
-    }
+    const isActivatedItem = props.data.items.some((item) => {
+      return remove(item.value).toLowerCase() === message;
+    });
 
-    if (messageErrorAttempts?.value) {
-      try {
-        await TypingDelay({
-          delay: props.data.interval ? Number(props.data.interval) : undefined,
-          toNumber: props.numberLead,
-          connectionId: props.connectionWhatsId,
-        });
-        await SendMessageText({
-          connectionId: props.connectionWhatsId,
-          text: messageErrorAttempts.value,
-          toNumber: props.numberLead,
-        });
-      } catch (error) {
-        console.log(error);
-        throw new Error("Failed to send message");
+    if (!isActivatedItem) {
+      if (!countAttempts) {
+        countAttemptsMenu.set(keyMap, 1);
+      } else {
+        countAttempts += 1;
+        countAttemptsMenu.set(keyMap, countAttempts);
       }
+
+      if (messageErrorAttempts?.value) {
+        try {
+          await TypingDelay({
+            delay: props.data.interval
+              ? Number(props.data.interval)
+              : undefined,
+            toNumber: props.numberLead,
+            connectionId: props.connectionWhatsId,
+          });
+          await SendMessageText({
+            connectionId: props.connectionWhatsId,
+            text: messageErrorAttempts.value,
+            toNumber: props.numberLead,
+          });
+        } catch (error) {
+          console.log(error);
+          throw new Error("Failed to send message");
+        }
+      }
+
+      const attempts = props.data.validateReply?.attempts || 0;
+      if (attempts && countAttempts >= attempts) {
+        countAttemptsMenu.delete(keyMap);
+        return { action: "failed" };
+      }
+      return { action: "failAttempt" };
     }
 
-    const attempts = props.data.validateReply?.attempts || 0;
-    if (attempts && countAttempts >= attempts) {
-      countAttemptsMenu.delete(keyMap);
-      return { action: "failed" };
+    scheduleExecution?.cancel();
+    countAttemptsMenu.delete(keyMap);
+    const activatedItem = props.data.items.find((item) => {
+      return remove(item.value).toLowerCase() === message;
+    })!;
+
+    return { action: "sucess", sourceHandle: activatedItem.key };
+  } else {
+    const msgIndex = Number(props.message);
+
+    const findIndex = props.data.items?.[msgIndex - 1]?.key;
+    if (!findIndex) {
+      if (!countAttempts) {
+        countAttemptsMenu.set(keyMap, 1);
+      } else {
+        countAttempts += 1;
+        countAttemptsMenu.set(keyMap, countAttempts);
+      }
+
+      if (messageErrorAttempts?.value) {
+        try {
+          await TypingDelay({
+            delay: props.data.interval
+              ? Number(props.data.interval)
+              : undefined,
+            toNumber: props.numberLead,
+            connectionId: props.connectionWhatsId,
+          });
+          await SendMessageText({
+            connectionId: props.connectionWhatsId,
+            text: messageErrorAttempts.value,
+            toNumber: props.numberLead,
+          });
+        } catch (error) {
+          console.log(error);
+          throw new Error("Failed to send message");
+        }
+      }
+
+      const attempts = props.data.validateReply?.attempts || 0;
+      if (attempts && countAttempts >= attempts) {
+        countAttemptsMenu.delete(keyMap);
+        return { action: "failed" };
+      }
+      return { action: "failAttempt" };
     }
-    return { action: "failAttempt" };
+
+    scheduleExecution?.cancel();
+    countAttemptsMenu.delete(keyMap);
+    return { action: "sucess", sourceHandle: findIndex };
   }
-
-  scheduleExecution?.cancel();
-  countAttemptsMenu.delete(keyMap);
-  const activatedItem = props.data.items.find((item) => {
-    return remove(item.value).toLowerCase() === message;
-  })!;
-
-  return { action: "sucess", sourceHandle: activatedItem.key };
 };

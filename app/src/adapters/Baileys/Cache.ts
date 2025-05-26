@@ -46,3 +46,5 @@ export const indexesCurrentLeadChatbot: Map<string, string> = new Map();
  */
 
 export const cacheConnectionsWAOnline: Map<number, boolean> = new Map();
+
+export const cacheFlowInExecution: Map<string, boolean> = new Map();

@@ -25,7 +25,7 @@ export const NodeSendContact = (props: PropsNodeReply): Promise<void> =>
     const waId = validatePhoneNumber(data.number, { removeNine: true });
 
     if (!verifiedNumber || !waId) {
-      console.log("Deu erro para recuperar número do lead");
+      console.log("Deu erro para recuperar número do lead", data.number);
       return;
     }
 

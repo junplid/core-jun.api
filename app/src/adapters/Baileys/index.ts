@@ -155,18 +155,6 @@ export const killConnectionWA = async (
   }
 };
 
-interface PropsSynchronizeTicketMessageHumanService {
-  ticketId: number;
-  data: {
-    id: number;
-    message: string;
-    read: boolean;
-    sentBy: "lead" | "attendant" | "system";
-    type: "text";
-    createAt: Date;
-  };
-}
-
 type BaileysStatus = "connecting" | "open" | "close";
 
 export const Baileys = async ({
@@ -419,7 +407,10 @@ export const Baileys = async ({
           const numberPhone = phone(`+${numberLead}`)?.format("INTERNATIONAL");
 
           if (!numberPhone) {
-            console.log("Deu erro para recuperar número do lead");
+            console.log(
+              "Deu erro para recuperar número do lead",
+              `+${numberLead}`
+            );
             return;
           }
           const destructurePhone = numberPhone.split(" ");

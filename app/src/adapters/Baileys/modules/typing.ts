@@ -21,8 +21,6 @@ export const TypingDelay = async ({
       throw new Error("CONEXÃO OFFLINE");
     await bot.sendPresenceUpdate("composing", props.toNumber);
     await wait(Math.max(delay, 2) * 1_000);
-    await bot.sendPresenceUpdate("paused", props.toNumber);
-    await wait(1_000);
     await bot.sendPresenceUpdate("available", props.toNumber);
   };
 

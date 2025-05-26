@@ -197,4 +197,11 @@ RouterV1Public_Get.use(
 //   }
 // );
 
+RouterV1Public_Get.get("/av", async (_, res) => {
+  const count = await prisma.account.count();
+
+  if (count < 32) return res.status(200).json({ f: true });
+  return res.status(200).json({ f: false });
+});
+
 export default RouterV1Public_Get;
