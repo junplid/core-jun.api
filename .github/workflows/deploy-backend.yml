@@ -27,9 +27,9 @@ jobs:
       - name: Instalar dependências e buildar
         working-directory: ./app
         run: |
-          npm ci --omit=dev
+          yarn install --frozen-lockfile
           npx prisma generate
-          npm run build
+          yarn build
 
       - name: Preparar chave SSH
         run: |
