@@ -1,7 +1,6 @@
 import { config } from "dotenv";
 import "../../adapters/mongo/connection";
 import { readdirSync } from "fs";
-import { ensureDir, pathExistsSync, writeFile } from "fs-extra";
 import http from "http";
 import { resolve } from "path";
 import { Server } from "socket.io";
@@ -44,7 +43,7 @@ const startServer = async (): Promise<void> => {
           });
           await startConnections();
 
-          const pathQueue = resolve(__dirname, "../../bin/chatbot-queue");
+          const pathQueue = resolve(__dirname, "../../../bin/chatbot-queue");
           const dirPathQueue = readdirSync(pathQueue);
 
           for await (const fileName of dirPathQueue) {
