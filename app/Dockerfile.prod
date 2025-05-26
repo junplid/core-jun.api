@@ -17,7 +17,9 @@ RUN apt-get update && \
 
 # apenas dependências runtime
 COPY package*.json ./
-RUN yarn install --production --frozen-lockfile
+COPY prisma/ ./prisma
+RUN yarn install --production --frozen-lockfile \
+    && npx prisma generate
 
 # artefatos já compilados pelo CI
 COPY dist/ ./dist
