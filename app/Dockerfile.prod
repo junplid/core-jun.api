@@ -35,4 +35,4 @@ COPY --from=builder /app/prisma             ./prisma
 ENV NODE_ENV=production
 EXPOSE 4000
 
-CMD ["node", "start"]
+CMD ["yarn", "start"]
