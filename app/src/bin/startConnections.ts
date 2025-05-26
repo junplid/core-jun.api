@@ -22,6 +22,9 @@ import { resolve } from "path";
 export const startConnections = (): Promise<void> =>
   new Promise(async (res, rej) => {
     const path = resolve(__dirname, "../../bin/connections.json");
+    console.log("--------------------------");
+    console.log({ path });
+    console.log("--------------------------");
     readFile(path, async (err, file) => {
       if (err) return rej(err);
       console.log("--------------------------");
