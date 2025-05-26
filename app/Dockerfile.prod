@@ -22,7 +22,7 @@ RUN yarn install --production --frozen-lockfile \
     && npx prisma generate
 
 # artefatos já compilados pelo CI
-COPY .env .env
+COPY .env .env 
 COPY dist/ ./dist
 COPY main.js ./main.js
 COPY prisma/ ./prisma
