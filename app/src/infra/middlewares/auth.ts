@@ -16,10 +16,6 @@ interface PropsMiddleware_I {
 const keyBody = {
   root: "rootId",
   adm: "accountId",
-  // subUser: "accountId",
-  // attendant: "userId",
-  // supervisor: "userId",
-  // api: "userId",
 };
 
 export const MiddlewareAuth = async ({

@@ -1,8 +1,6 @@
 import { NextFunction, Request, Response, Router } from "express";
 import { updatePasswordAccountController } from "../../../../../core/updatePasswordAccount";
 import { updatePasswordAccountValidation } from "../../../../../core/updatePasswordAccount/Validation";
-// import { updatePasswordHumanServiceController } from "../../../../../core/updatePasswordHumanService";
-// import { updatePasswordHumanServiceValidation } from "../../../../../core/updatePasswordHumanService/Validation";
 import { decodeTokenAuth } from "../../../../../helpers/authToken";
 
 const RouterV1Public_Put = Router();

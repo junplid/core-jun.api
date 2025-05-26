@@ -31,28 +31,6 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 const startServer = async (): Promise<void> => {
   try {
-    if (!pathExistsSync(resolve(__dirname, "../../config/root.json"))) {
-      await writeFile(
-        resolve(__dirname, "../../config/root.json"),
-        `{"token-asaas": "", "endpoint-asaas": ""}`
-      );
-    }
-
-    if (!pathExistsSync(resolve(__dirname, "../../bin/connections.json"))) {
-      await writeFile(resolve(__dirname, "../../bin/connections.json"), `[]`);
-    }
-
-    // const rPath = "../../..";
-    // await ensureDir(resolve(__dirname, rPath + "/static/audio"));
-    // await ensureDir(resolve(__dirname, rPath + "/static/file"));
-    // await ensureDir(resolve(__dirname, rPath + "/static/image"));
-    // await ensureDir(resolve(__dirname, rPath + "/static/pdf"));
-    // await ensureDir(resolve(__dirname, rPath + "/static/video"));
-    // await ensureDir(
-    //   resolve(__dirname, rPath + "/static/documents-contact-account")
-    // );
-    await ensureDir(resolve(__dirname, "../../bin/chatbot-queue"));
-
     console.log("DATABASE#2 -", "Conectando...");
 
     await prisma

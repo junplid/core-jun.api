@@ -1,1 +1,0 @@
-export interface GetRootCampaignParameterRangesConfigDTO_I {}

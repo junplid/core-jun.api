@@ -1,21 +1,8 @@
 import { WASocket } from "baileys";
 import { prisma } from "../../adapters/Prisma/client";
 import { LibraryNodes } from "./nodes";
-import { NodePayload } from "./Payload";
+import { NodePayload, TypeNodesPayload } from "./Payload";
 import { cacheFlowInExecution } from "../../adapters/Baileys/Cache";
-
-export type TypesNode =
-  | "NodeInitial"
-  | "NodeMessage"
-  | "NodeReply"
-  | "NodeAddTags"
-  | "NodeRemoveTags"
-  | "NodeRemoveVariables"
-  | "NodeAddVariables"
-  | "NodeSendFlow"
-  | "NodeTimer"
-  | "NodeMenu"
-  | "NodeIF";
 
 interface Edges {
   source: string;
@@ -26,9 +13,9 @@ interface Edges {
 
 export type IPropsControler = {
   actions?: {
-    onEnterNode?(props: { id: string; type: TypesNode }): Promise<void>;
+    onEnterNode?(props: { id: string; type: TypeNodesPayload }): Promise<void>;
     onExecutedNode?(
-      props: { id: string; type: TypesNode },
+      props: { id: string; type: TypeNodesPayload },
       isShots?: boolean
     ): void;
     onFinish?(vl?: string): Promise<void>;
@@ -118,79 +105,6 @@ export const NodeControler = ({
           return rej();
         });
       }
-
-      // if (props.campaignId) {
-      //   await new Promise<void>(async (resP, rejP) => {
-      //     async function verify() {
-      //       const campaign = await prisma.campaign.findFirst({
-      //         where: { id: props.campaignId },
-      //         select: {
-      //           interrupted: true,
-      //           CampaignOnBusiness: {
-      //             select: {
-      //               ConnectionOnCampaign: {
-      //                 where: {
-      //                   connectionOnBusinessId: props.connectionWhatsId,
-      //                 },
-      //                 select: {
-      //                   ConnectionOnBusiness: { select: { interrupted: true } },
-      //                 },
-      //               },
-      //               Business: { select: { interrupted: true } },
-      //             },
-      //           },
-      //         },
-      //       });
-
-      //       if (!campaign) return rejP();
-
-      //       const allBusinessInterruped = campaign.CampaignOnBusiness.map(
-      //         (s) => s.Business.interrupted
-      //       ).every((s) => s);
-
-      //       if (allBusinessInterruped) {
-      //         setTimeout(() => verify, 1000 * 60 * 3);
-      //         return;
-      //       }
-      //       if (campaign.interrupted) {
-      //         setTimeout(() => verify, 1000 * 60 * 3);
-      //         return;
-      //       }
-
-      //       const allConnectionsInterruped = campaign.CampaignOnBusiness.map(
-      //         (s) => {
-      //           return s.ConnectionOnCampaign.map(
-      //             (v) => v.ConnectionOnBusiness.interrupted
-      //           );
-      //         }
-      //       )
-      //         .flat()
-      //         .every((s) => s);
-
-      //       if (allConnectionsInterruped) {
-      //         setTimeout(() => verify, 1000 * 60 * 3);
-      //         return;
-      //       }
-
-      //       return resP();
-      //     }
-      //     verify();
-      //   }).catch(() => {
-      //     console.log("Error, campanha não encontrada!");
-      //     return rej();
-      //   });
-
-      //   const findCampaign = await prisma.campaign.count({
-      //     where: {
-      //       id: props.campaignId,
-      //       status: { in: ["paused", "finished"] },
-      //     },
-      //   });
-
-      //   if (findCampaign) {
-      //     return props.onFinish && (await props.onFinish("112"));
-      //   }
-      // }
 
       const currentNode = props.nodes.find((f) => f.id === props.currentNodeId);
 

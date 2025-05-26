@@ -16,6 +16,7 @@ app/src/libs/Nodes/Library/teste.js
 app/dist
 app/prisma/migrations
 v2
+postgres
 app/src/bin/connections.json
 app/static/audio/*
 app/static/file/*
@@ -28,3 +29,5 @@ app/static/documents-contact-account/*
 app/static/*
 .vscode/extensions.json
 app/src/bin/chats-ai/*
+.env.pg
+.env.mongo
