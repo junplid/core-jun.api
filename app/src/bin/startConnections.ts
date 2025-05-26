@@ -11,6 +11,7 @@ import {
 // import { startCampaign } from "./startCampaign";
 import { socketIo } from "../infra/express";
 import { cacheAccountSocket } from "../infra/websocket/cache";
+import { resolve } from "path";
 
 // interface CampaignInstruction {
 //   accountId: number;
@@ -20,7 +21,8 @@ import { cacheAccountSocket } from "../infra/websocket/cache";
 
 export const startConnections = (): Promise<void> =>
   new Promise(async (res, rej) => {
-    readFile(`${__dirname}/connections.json`, async (err, file) => {
+    const path = resolve(__dirname, "../../bin/connections.json");
+    readFile(path, async (err, file) => {
       if (err) return rej(err);
       console.log("--------------------------");
       console.log("INICIANDO CONEXÕES!!");
