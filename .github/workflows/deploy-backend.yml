@@ -40,7 +40,7 @@ jobs:
       - name: Enviar arquivos para a VPS
         run: |
           rsync -avzr --delete -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            ./docker-compose.prod.yml \
+            ./app/docker-compose.prod.yml \
             ./Dockerfile.prod \
             ./.env.mongo \
             ./.env.pg \
