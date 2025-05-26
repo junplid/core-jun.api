@@ -2,7 +2,7 @@ name: Backend Deploy
 
 on:
   push:
-    branches: [main] # Altere para a branch que você usa para
+    branches: [main] # Altere para a branch que você usa
 
 jobs:
   deploy:
