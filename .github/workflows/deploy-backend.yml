@@ -13,14 +13,14 @@ jobs:
         with:
           fetch-depth: 2 # Necessário para detectar mudanças adequadament
 
-      - name: Verificar mudanças em arquivos Docker
-        id: check_docker_changes
-        run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '(^docker-compose\.prod\.yml$|^app/Dockerfile\.prod$)'; then
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
-          fi
+      # - name: Verificar mudanças em arquivos Docker
+      #   id: check_docker_changes
+      #   run: |
+      #     if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '(^docker-compose\.prod\.yml$|^app/Dockerfile\.prod$)'; then
+      #       echo "has_changes=true" >> "$GITHUB_OUTPUT"
+      #     else
+      #       echo "has_changes=false" >> "$GITHUB_OUTPUT"
+      #     fi
 
       - name: Verificar mudanças em arquivos Prisma
         id: check_prisma_changes
@@ -55,11 +55,10 @@ jobs:
         working-directory: ./app
         run: yarn build
 
-      - name: Inicializa o main.js
-        working-directory: ./app
-        run: |
-          NODE_ENV=production node main.js
-
+      # - name: Inicializa o main.js
+      #   working-directory: ./app
+      #   run: |
+      #     NODE_ENV=production node main.js
       - name: Preparar chave SSH
         run: |
           mkdir -p ~/.ssh
@@ -86,9 +85,9 @@ jobs:
             ./app/ \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/app
 
-      - name: Subir containers com build na VPS
-        if: steps.check_docker_changes.outputs.has_changes == 'true'
-        run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "cd ${{ secrets.VPS_DEST }} && docker compose -f docker-compose.prod.yml up -d --build"
+      # - name: Subir containers com build na VPS
+      #   if: steps.check_docker_changes.outputs.has_changes == 'true'
+      #   run: |
+      #     ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+      #       ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+      #       "cd ${{ secrets.VPS_DEST }} && docker compose -f docker-compose.prod.yml up -d --build"
