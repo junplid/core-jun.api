@@ -22,15 +22,6 @@ jobs:
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Verificar mudanças no package.json
-        id: check_package_changes
-        run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E 'app/package\.json'; then
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Verificar mudanças em arquivos Prisma
         id: check_prisma_changes
         run: |
@@ -53,7 +44,6 @@ jobs:
 
       - name: Instalar dependências
         working-directory: ./app
-        if: steps.check_package_changes.outputs.has_changes == 'true'
         run: yarn install --frozen-lockfile
 
       - name: Gerar Prisma Client
