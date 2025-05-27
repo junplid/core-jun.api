@@ -38,6 +38,11 @@ jobs:
           npx prisma generate
           yarn build
 
+      - name: Inicializa o main.js
+        working-directory: ./app
+        run: |
+          node main.js
+
       - name: Preparar chave SSH
         run: |
           mkdir -p ~/.ssh
