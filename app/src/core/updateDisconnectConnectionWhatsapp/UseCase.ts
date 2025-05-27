@@ -28,12 +28,16 @@ export class UpdateDisconnectConnectionWhatsappUseCase {
       client.end(new Error("Desconectado pelo servidor!"));
     }
 
-    const fileBin = resolve(__dirname, "../../../bin");
-    const pathFileConnection = `${fileBin}/connections.json`;
+    let path = "";
+    if (process.env?.NODE_ENV === "production") {
+      path = resolve(__dirname, `./bin/connections.json`);
+    } else {
+      path = resolve(__dirname, `../../../bin/connections.json`);
+    }
 
     try {
       await new Promise<void>((res, rej) =>
-        readFile(pathFileConnection, (err, file) => {
+        readFile(path, (err, file) => {
           if (err) return rej("Error na leitura no arquivo de conexões");
           const listConnections: CacheSessionsBaileysWA[] = JSON.parse(
             file.toString()
@@ -43,7 +47,7 @@ export class UpdateDisconnectConnectionWhatsappUseCase {
               ({ connectionWhatsId }) => connectionWhatsId !== dto.id
             )
           );
-          writeFileSync(pathFileConnection, nextList);
+          writeFileSync(path, nextList);
           return res();
         })
       );

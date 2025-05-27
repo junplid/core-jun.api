@@ -29,8 +29,14 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
   return new Promise(async (res, rej) => {
     // const redis = await clientRedis();
     console.log("INICIOU A FILA DE ESPERA DO ROBO");
-    const pathQueue = resolve(__dirname, `./chatbot-queue/${chatbotId}.json`);
-    const content: ChatbotQueue_I = JSON.parse(String(readFileSync(pathQueue)));
+    let path = "";
+    if (process.env?.NODE_ENV === "production") {
+      path = resolve(__dirname, `./bin/chatbot-queue/${chatbotId}.json`);
+    } else {
+      path = resolve(__dirname, `./chatbot-queue/${chatbotId}.json`);
+    }
+
+    const content: ChatbotQueue_I = JSON.parse(String(readFileSync(path)));
 
     const nextTimeShorts = Math.floor(Math.random() * (400 - 800)) + 400;
     await new Promise((ress) => setTimeout(ress, nextTimeShorts));
@@ -71,13 +77,11 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
     scheduleJob(
       isBeforeNextExecution ? nextDate : nextExecution.toDate(),
       async () => {
-        const content2: ChatbotQueue_I = JSON.parse(
-          String(readFileSync(pathQueue))
-        );
+        const content2: ChatbotQueue_I = JSON.parse(String(readFileSync(path)));
 
         try {
           console.log("REMOVEU O ARQUIVO de lista 1");
-          await remove(pathQueue);
+          await remove(path);
           cacheJobsChatbotQueue.delete(chatbotId);
           console.log("Deletou o cache =====");
         } catch (error) {

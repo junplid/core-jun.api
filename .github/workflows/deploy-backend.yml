@@ -47,7 +47,7 @@ jobs:
         # Enviar artefatos e infra para a VPS (sem src/*.ts)
       - name: Enviar arquivos para a VPS
         run: |
-          rsync -avzr --delete \
+          rsync -avzr \
             --exclude='src' --exclude='**/*.ts' --exclude='**/*.tsx' \
             --exclude='Dockerfile.dev' --exclude='.env.exemple' \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
@@ -57,7 +57,7 @@ jobs:
             ./.env.pg \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}
 
-          rsync -avzr --delete \
+          rsync -avzr \
             --exclude='src' --exclude='**/*.ts' --exclude='**/*.tsx' \
             --exclude='Dockerfile.dev' --exclude='.env.exemple' \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \

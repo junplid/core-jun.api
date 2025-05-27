@@ -21,10 +21,12 @@ import { resolve } from "path";
 
 export const startConnections = (): Promise<void> =>
   new Promise(async (res, rej) => {
-    const path = resolve(__dirname, "../bin/connections.json");
-    console.log("--------------------------");
-    console.log({ path });
-    console.log("--------------------------");
+    let path = "";
+    if (process.env?.NODE_ENV === "production") {
+      path = resolve(__dirname, "./bin/connections.json");
+    } else {
+      path = resolve(__dirname, "./connections.json");
+    }
     readFile(path, async (err, file) => {
       if (err) return rej(err);
       console.log("--------------------------");

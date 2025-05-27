@@ -78,10 +78,14 @@ export const WebSocketIo = (io: Server) => {
             });
           }, 4500);
 
-          const fileBin = resolve(__dirname, "../../../bin");
-          const pathFileConnection = `${fileBin}/connections.json`;
+          let path = "";
+          if (process.env?.NODE_ENV === "production") {
+            path = resolve(__dirname, `./bin/connections.json`);
+          } else {
+            path = resolve(__dirname, `../../../bin/connections.json`);
+          }
 
-          readFile(pathFileConnection, (err, file) => {
+          readFile(path, (err, file) => {
             if (err) {
               return console.log(err);
             }
@@ -101,10 +105,7 @@ export const WebSocketIo = (io: Server) => {
                 nameSession,
                 type: connectionDB.type,
               });
-              writeFileSync(
-                pathFileConnection,
-                JSON.stringify(listConnections)
-              );
+              writeFileSync(path, JSON.stringify(listConnections));
             }
           });
         },

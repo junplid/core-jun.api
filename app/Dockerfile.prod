@@ -1,9 +1,7 @@
-# ---------  RUNTIME  (imagem única – já recebe o build pronto) ----------
 FROM node:24.0.2
 
 WORKDIR /app
 
-# Chrome headless (mantive porque você pediu)
 RUN apt-get update && \
     apt-get install -y wget gnupg ca-certificates && \
     wget -qO- https://dl-ssl.google.com/linux/linux_signing_key.pub | \
@@ -15,13 +13,11 @@ RUN apt-get update && \
     apt-get install -y google-chrome-stable && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# apenas dependências runtime
 COPY package*.json ./
 COPY prisma/ ./prisma
 RUN yarn install --production --frozen-lockfile \
     && npx prisma generate
 
-# artefatos já compilados pelo CI
 COPY .env .env 
 COPY dist/ ./dist
 COPY main.js ./main.js
