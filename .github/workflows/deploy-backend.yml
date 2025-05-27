@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2 # Necessário para detectar mudanças adequadamente
+          fetch-depth: 2 # Necessário para detectar mudanças adequadament
 
       - name: Verificar mudanças em arquivos Docker
         id: check_docker_changes
