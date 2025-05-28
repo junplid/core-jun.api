@@ -31,7 +31,10 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io =
+  process.env.NODE_ENV === "production"
+    ? new Server(server)
+    : new Server(server, { cors: { origin: "*" } });
 
 const startServer = async (): Promise<void> => {
   try {
