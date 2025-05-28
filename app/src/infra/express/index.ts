@@ -43,8 +43,13 @@ const startServer = async (): Promise<void> => {
           });
           await startConnections();
 
-          const pathQueue = resolve(__dirname, "../../../bin/chatbot-queue");
-          const dirPathQueue = readdirSync(pathQueue);
+          let path = "";
+          if (process.env?.NODE_ENV === "production") {
+            path = resolve(__dirname, `./bin/chatbot-queue`);
+          } else {
+            path = resolve(__dirname, `../../../bin/chatbot-queue`);
+          }
+          const dirPathQueue = readdirSync(path);
 
           for await (const fileName of dirPathQueue) {
             const chatbotId = Number(fileName.split(".")[0]);
