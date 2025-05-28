@@ -12,18 +12,23 @@ import { startChatbotQueue } from "../../bin/startChatbotQueue";
 
 config();
 
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
-  next();
-});
+if (process.env.NODE_ENV !== "production") {
+  app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, DELETE, OPTIONS"
+    );
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization"
+    );
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(204);
+    }
+    next();
+  });
+}
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
@@ -39,7 +44,7 @@ const startServer = async (): Promise<void> => {
         try {
           WebSocketIo(io);
           server.listen(process.env.PORT, () => {
-            console.log("Servidor rodando na porta:");
+            console.log("Servidor rodando na porta:", process.env.PORT);
           });
           await startConnections();
 
