@@ -13,8 +13,7 @@ app/tokens
 app/src/bin/instructions/*
 app/src/bin/scheduler/*
 app/src/libs/Nodes/Library/teste.js
-app/dist
-app/prisma/migrations
+app/dist 
 v2
 postgres
 app/src/bin/connections.json

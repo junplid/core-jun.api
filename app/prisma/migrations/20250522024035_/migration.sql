@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Chatbot" ALTER COLUMN "flowId" SET DATA TYPE TEXT;
+
+-- AlterTable
+ALTER TABLE "FlowState" ALTER COLUMN "flowId" SET DATA TYPE TEXT;
