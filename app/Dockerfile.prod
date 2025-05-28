@@ -21,7 +21,6 @@ RUN yarn install --production --frozen-lockfile \
 COPY .env .env 
 COPY dist/ ./dist
 COPY main.js ./main.js
-COPY prisma/ ./prisma
 
 ENV NODE_ENV=production
 EXPOSE 4000
