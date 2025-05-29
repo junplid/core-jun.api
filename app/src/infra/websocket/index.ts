@@ -6,10 +6,6 @@ import {
   CacheSessionsBaileysWA,
   killConnectionWA,
 } from "../../adapters/Baileys";
-import {
-  generateNameConnection,
-  generateNameSession,
-} from "./../../adapters/Baileys/index";
 import { cacheAccountSocket } from "./cache";
 import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 import { prisma } from "../../adapters/Prisma/client";
@@ -49,18 +45,10 @@ export const WebSocketIo = (io: Server) => {
         });
         return;
       }
-      const nameSession = generateNameSession({
-        accountId: auth.accountId,
-        connectionWhatsId: data.connectionWhatsId,
-        type: connectionDB.type,
-        nextNameConnection: generateNameConnection(connectionDB.name),
-      });
       await Baileys({
         accountId: auth.accountId,
         connectionWhatsId: data.connectionWhatsId,
         socket: socket,
-        nameSession,
-        type: connectionDB.type,
         number: data.number,
         onConnection: async (connection) => {
           socket.emit(
@@ -82,7 +70,7 @@ export const WebSocketIo = (io: Server) => {
           if (process.env?.NODE_ENV === "production") {
             path = resolve(__dirname, `./bin/connections.json`);
           } else {
-            path = resolve(__dirname, `../../../bin/connections.json`);
+            path = resolve(__dirname, `../../bin/connections.json`);
           }
 
           readFile(path, (err, file) => {
@@ -102,8 +90,6 @@ export const WebSocketIo = (io: Server) => {
               listConnections.push({
                 accountId: auth.accountId,
                 connectionWhatsId: data.connectionWhatsId,
-                nameSession,
-                type: connectionDB.type,
               });
               writeFileSync(path, JSON.stringify(listConnections));
             }
@@ -130,16 +116,7 @@ export const WebSocketIo = (io: Server) => {
         });
         return;
       }
-      await killConnectionWA(
-        data.connectionWhatsId,
-        auth.accountId,
-        generateNameSession({
-          accountId: auth.accountId,
-          connectionWhatsId: data.connectionWhatsId,
-          type: connectionDB.type,
-          nextNameConnection: generateNameConnection(connectionDB.name),
-        })
-      );
+      await killConnectionWA(data.connectionWhatsId, auth.accountId);
     });
 
     socket.on("disconnect", async (reason) => {

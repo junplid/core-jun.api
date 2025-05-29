@@ -2,7 +2,7 @@ import { readFile, writeFileSync } from "fs-extra";
 import { resolve } from "path";
 import {
   CacheSessionsBaileysWA,
-  sessionsBaileysWA,
+  killConnectionWA,
 } from "../../adapters/Baileys";
 import { UpdateDisconnectConnectionWhatsappDTO_I } from "./DTO";
 import { UpdateDisconnectConnectionWhatsappRepository_I } from "./Repository";
@@ -22,23 +22,22 @@ export class UpdateDisconnectConnectionWhatsappUseCase {
         type: "error",
       });
     }
-
-    const client = sessionsBaileysWA.get(dto.id);
-    if (client) {
-      client.end(new Error("Desconectado pelo servidor!"));
-    }
+    await killConnectionWA(dto.id, dto.accountId);
 
     let path = "";
     if (process.env?.NODE_ENV === "production") {
       path = resolve(__dirname, `./bin/connections.json`);
     } else {
-      path = resolve(__dirname, `../../../bin/connections.json`);
+      path = resolve(__dirname, `../../bin/connections.json`);
     }
 
     try {
       await new Promise<void>((res, rej) =>
         readFile(path, (err, file) => {
-          if (err) return rej("Error na leitura no arquivo de conexões");
+          if (err) {
+            console.error("Error reading connections file:", err);
+            return rej("Error na leitura no arquivo de conexões");
+          }
           const listConnections: CacheSessionsBaileysWA[] = JSON.parse(
             file.toString()
           );
@@ -57,6 +56,7 @@ export class UpdateDisconnectConnectionWhatsappUseCase {
         connectionWA: { status: "close" },
       };
     } catch (error) {
+      console.error("Error ao atualizar conexões:", error);
       throw new ErrorResponse(400).toast({
         title: `Não foi possivel desligar a conexão`,
         type: "error",

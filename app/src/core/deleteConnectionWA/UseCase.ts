@@ -1,9 +1,5 @@
 import fs from "fs-extra";
-import {
-  generateNameConnection,
-  generateNameSession,
-  sessionsBaileysWA,
-} from "../../adapters/Baileys";
+import { sessionsBaileysWA } from "../../adapters/Baileys";
 import { DeleteConnectionWADTO_I } from "./DTO";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { prisma } from "../../adapters/Prisma/client";
@@ -40,15 +36,7 @@ export class DeleteConnectionWAUseCase {
       );
     }
 
-    const nameConnection = generateNameConnection(connection.name);
-    const nameSession = generateNameSession({
-      accountId: dto.accountId,
-      connectionWhatsId: dto.id,
-      type: connection.type,
-      nextNameConnection: nameConnection,
-    });
-
-    const pathAuthBot = `./database-whatsapp/${dto.accountId}/${nameSession}`;
+    const pathAuthBot = `./database-whatsapp/${dto.id}`;
 
     if (fs.existsSync(pathAuthBot)) {
       try {

@@ -2,11 +2,7 @@ import { readFile } from "fs";
 // import { readFileSync } from "fs-extra";
 // import { readdir } from "fs/promises";
 // import { resolve } from "path";
-import {
-  Baileys,
-  CacheSessionsBaileysWA,
-  // sessionsBaileysWA,
-} from "../adapters/Baileys";
+import { Baileys, CacheSessionsBaileysWA } from "../adapters/Baileys";
 // import { prisma } from "../adapters/Prisma/client";
 // import { startCampaign } from "./startCampaign";
 import { socketIo } from "../infra/express";

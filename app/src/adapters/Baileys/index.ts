@@ -1,5 +1,4 @@
 import { Boom } from "@hapi/boom";
-import { TypeConnetion } from "@prisma/client";
 import makeWASocket, {
   DisconnectReason,
   WAConnectionState,
@@ -8,11 +7,17 @@ import makeWASocket, {
   useMultiFileAuthState,
 } from "baileys";
 import { writeFileSync } from "fs";
-import { existsSync, readFileSync, removeSync, writeFile } from "fs-extra";
+import {
+  emptyDirSync,
+  ensureDirSync,
+  existsSync,
+  readFileSync,
+  removeSync,
+  writeFile,
+} from "fs-extra";
 import phone from "libphonenumber-js";
 import moment, { Moment } from "moment-timezone";
 import { resolve } from "path";
-import removeAccents from "remove-accents";
 import { Socket } from "socket.io";
 import { socketIo } from "../../infra/express";
 import { cacheAccountSocket } from "../../infra/websocket/cache";
@@ -65,9 +70,7 @@ export const sessionsBaileysWA = new Map<number, WASocket>();
 interface PropsBaileys {
   accountId: number;
   connectionWhatsId: number;
-  nameSession: GenerateNameSession;
   socket?: Socket;
-  type: TypeConnetion | null;
   onConnection?(
     connection: WAConnectionState | "connectionLost" | undefined,
     bot?: WASocket
@@ -81,49 +84,23 @@ export type CacheSessionsBaileysWA = Omit<
   "socket" | "onConnection"
 >;
 
-export type GenerateNameConnection = string & {
-  generateNameConnection: () => string;
-};
-
-export const generateNameConnection = (identificationName: string) => {
-  return identificationName
-    .trim()
-    .replace(/\s+/g, "-") as GenerateNameConnection;
-};
-
-interface PropsGenerateNameSession {
-  accountId: number;
-  connectionWhatsId: number;
-  nextNameConnection: GenerateNameConnection;
-  type: TypeConnetion | null;
-}
-
-export type GenerateNameSession = string & {
-  generateNameSession: () => string;
-};
-
-export const generateNameSession = (props: PropsGenerateNameSession) => {
-  return removeAccents(
-    `${props.accountId}-${props.connectionWhatsId}-${
-      props.nextNameConnection
-    }-${props.type || "all"}`
-  ) as GenerateNameSession;
-};
-
 export const killConnectionWA = async (
   connectionId: number,
-  accountId: number,
-  nameSession: string
+  accountId: number
 ) => {
-  const pathAuthBot = `./database-whatsapp/${accountId}/${nameSession}`;
-  const pathConnections = resolve(__dirname, "../../../bin/connections.json");
+  let path = "";
+  if (process.env.NODE_ENV === "production") {
+    path = resolve(__dirname, `./bin/connections.json`);
+  } else {
+    path = resolve(__dirname, `../../bin/connections.json`);
+  }
   const connectionsList: CacheSessionsBaileysWA[] = JSON.parse(
-    readFileSync(pathConnections).toString()
+    readFileSync(path).toString()
   );
   const newConnectionsList = connectionsList.filter(
     (c) => c.connectionWhatsId !== connectionId
   );
-  writeFileSync(pathConnections, JSON.stringify(newConnectionsList));
+  writeFileSync(path, JSON.stringify(newConnectionsList));
   const alreadyExist = !!(await prisma.connectionWA.findFirst({
     where: {
       id: connectionId,
@@ -138,32 +115,39 @@ export const killConnectionWA = async (
     });
   }
   const bot = sessionsBaileysWA.get(connectionId);
-  bot?.ev.emit("connection.update", { connection: "close" });
-  bot?.end({
-    message: "Desconectando para reconectar...",
-    name: "desconect-reconect",
-  });
-  sessionsBaileysWA.delete(connectionId);
-  if (existsSync(pathAuthBot)) {
-    try {
-      removeSync(pathAuthBot);
-    } catch (err) {
-      console.error(`Ocorreu um erro ao excluir o diretório: ${err}`);
+  if (bot) {
+    if (cacheConnectionsWAOnline.get(connectionId)) {
+      try {
+        await bot.logout();
+      } catch (err) {
+        console.error("Erro no logout:", err);
+      }
     }
-  } else {
-    console.log(`O diretório ${pathAuthBot} não existe.`);
+
+    bot.end({ message: "Sessão encerrada pelo usuário", name: "USER_LOGOUT" });
+    sessionsBaileysWA.delete(connectionId);
   }
+
+  cacheConnectionsWAOnline.set(connectionId, false);
+
+  if (process.env.NODE_ENV === "production") {
+    path = resolve(__dirname, `./database-whatsapp/${connectionId}`);
+  } else {
+    path = resolve(__dirname, `../../../database-whatsapp/${connectionId}`);
+  }
+
+  if (existsSync(path)) emptyDirSync(path);
 };
 
 type BaileysStatus = "connecting" | "open" | "close";
 
 export const Baileys = async ({
   socket,
-  nameSession,
   ...props
 }: PropsBaileys): Promise<void> => {
+  let attempts = 0;
   return new Promise((res, rej) => {
-    const run = async () => {
+    const run = async (restart: boolean = false) => {
       function emitStatus(id: number, status: BaileysStatus) {
         cacheAccountSocket.get(props.accountId)?.listSocket?.forEach((sockId) =>
           socketIo.to(sockId).emit(`status-connection`, {
@@ -176,17 +160,32 @@ export const Baileys = async ({
       async function softReconnect() {
         emitStatus(props.connectionWhatsId, "connecting");
         await new Promise((s) => setTimeout(s, 2_000));
-        await run();
+        await run(true);
       }
 
       async function killAndClean(id: number, msg: string) {
-        await killConnectionWA(id, props.accountId, nameSession);
+        await killConnectionWA(id, props.accountId);
         emitStatus(id, "close");
       }
       const socketIds = cacheAccountSocket.get(props.accountId)?.listSocket;
 
-      const pathAuthBot = `./database-whatsapp/${props.accountId}/${nameSession}`;
-      const { state, saveCreds } = await useMultiFileAuthState(pathAuthBot);
+      let path = "";
+      if (process.env.NODE_ENV === "production") {
+        path = resolve(
+          __dirname,
+          `./database-whatsapp/${props.connectionWhatsId}`
+        );
+      } else {
+        path = resolve(
+          __dirname,
+          `../../../database-whatsapp/${props.connectionWhatsId}`
+        );
+      }
+      ensureDirSync(path);
+
+      const { state, saveCreds } = await useMultiFileAuthState(
+        `./database-whatsapp/${props.connectionWhatsId}`
+      );
 
       if (!saveCreds) {
         console.error("Bot desconectado");
@@ -197,31 +196,12 @@ export const Baileys = async ({
         auth: state,
         version: baileysVersion.version,
         defaultQueryTimeoutMs: undefined,
-        qrTimeout: 20000,
+        qrTimeout: 40000,
+        browser: ["Windows", "Chrome", "114.0.5735.198"],
       });
-      sessionsBaileysWA.set(props.connectionWhatsId, bot);
 
-      // const reconnectInterval = setInterval(async () => {
-      //   if (isOnlineLocal) {
-      //     reconect = true;
-      //     cacheBaileys_SocketInReset.set(props.connectionWhatsId, true);
-      //     console.log(
-      //       "BAILEYS - Desconectando para reconectar...",
-      //       props.connectionWhatsId,
-      //       cacheBaileys_SocketInReset
-      //     );
-      //     bot.ev.emit("connection.update", { connection: "close" });
-      //     bot.end({
-      //       message: "Desconectando para reconectar...",
-      //       name: "desconect-reconect",
-      //     });
-      //     isOnlineLocal = false;
-      //     await new Promise((resolve) => setTimeout(resolve, 1000 * 3));
-      //     await run();
-      //   } else {
-      //     console.log("Não esta conectado!");
-      //   }
-      // }, 1000 * 60 * 50);
+      sessionsBaileysWA.set(props.connectionWhatsId, bot);
+      const botfind = sessionsBaileysWA.get(props.connectionWhatsId);
 
       bot.ev.on(
         "connection.update",
@@ -232,11 +212,12 @@ export const Baileys = async ({
               connection === "open"
             );
           }
-          if (!!qr && socketIds?.length) {
+          if (!!qr && socketIds?.length && !restart) {
             if (!!props.number) {
-              const code = (await bot.requestPairingCode(props.number)).split(
-                ""
+              const paircode = await bot.requestPairingCode(
+                props.number.replace(/\D/g, "")
               );
+              const code = paircode.split("");
               code.splice(4, 0, "-");
               socketIds.forEach((socketId) => {
                 socketIo
@@ -260,7 +241,7 @@ export const Baileys = async ({
           const reason = new Boom(lastDisconnect?.error).output.statusCode;
 
           if (connection === "close") {
-            switch (reason as DisconnectReason) {
+            switch (reason) {
               case DisconnectReason.badSession:
                 cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
                 await killAndClean(
@@ -273,9 +254,12 @@ export const Baileys = async ({
               case DisconnectReason.connectionLost:
               case DisconnectReason.timedOut:
               case DisconnectReason.unavailableService:
-                console.log("Conexão perdida - tentando reconectar…");
+                console.log("Conexão perdida - tentando reconectar…", attempts);
                 cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
-                await softReconnect();
+                if (attempts < (props.maxConnectionAttempts || 5)) {
+                  attempts++;
+                  await softReconnect();
+                }
                 break;
 
               case DisconnectReason.connectionReplaced:
@@ -306,6 +290,14 @@ export const Baileys = async ({
                 emitStatus(props.connectionWhatsId, "close");
                 break;
 
+              case 405:
+                cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
+                await killAndClean(
+                  props.connectionWhatsId,
+                  "Sessão corrompida - limpando credenciais."
+                );
+                break;
+
               default:
                 cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
                 console.error("Motivo de desconexão não mapeado:", reason);
@@ -314,8 +306,8 @@ export const Baileys = async ({
             return;
           }
           if (connection === "open") {
+            attempts = 0;
             try {
-              sessionsBaileysWA.set(props.connectionWhatsId, bot);
               emitStatus(props.connectionWhatsId, "open");
               const number = bot.user?.id.split(":")[0];
               const { ConnectionConfig } = await prisma.connectionWA.update({
@@ -1410,10 +1402,19 @@ export const Baileys = async ({
                 const dateNextExecution = moment()
                   .tz("America/Sao_paulo")
                   .add(minutesToNextExecutionInQueue, "minutes");
-                const pathChatbotQueue = resolve(
-                  __dirname,
-                  `../../bin/chatbot-queue/${chatbot.id}.json`
-                );
+
+                let path = "";
+                if (process.env.NODE_ENV === "production") {
+                  path = resolve(
+                    __dirname,
+                    `./bin/chatbot-queue/${chatbot.id}.json`
+                  );
+                } else {
+                  path = resolve(
+                    __dirname,
+                    `../../bin/chatbot-queue/${chatbot.id}.json`
+                  );
+                }
 
                 const dataLeadQueue = {
                   number: numberLead,
@@ -1425,13 +1426,13 @@ export const Baileys = async ({
                   messageVideo,
                 };
 
-                if (!existsSync(pathChatbotQueue)) {
+                if (!existsSync(path)) {
                   console.info("======= Path não existia");
                   try {
                     console.info("======= Escrevendo PATH");
 
                     await writeFile(
-                      pathChatbotQueue,
+                      path,
                       JSON.stringify({
                         "next-execution": dateNextExecution,
                         queue: [dataLeadQueue],
@@ -1442,10 +1443,7 @@ export const Baileys = async ({
                     console.log(error);
                   }
                 } else {
-                  console.info("======= Path existi");
-
-                  const chatbotQueue =
-                    readFileSync(pathChatbotQueue).toString();
+                  const chatbotQueue = readFileSync(path).toString();
 
                   if (chatbotQueue !== "") {
                     const JSONQueue: ChatbotQueue = JSON.parse(chatbotQueue);
@@ -1453,17 +1451,14 @@ export const Baileys = async ({
                       JSONQueue.queue.push(dataLeadQueue);
                     }
                     try {
-                      await writeFile(
-                        pathChatbotQueue,
-                        JSON.stringify(JSONQueue)
-                      );
+                      await writeFile(path, JSON.stringify(JSONQueue));
                     } catch (error) {
                       console.log(error);
                     }
                   } else {
                     try {
                       await writeFile(
-                        pathChatbotQueue,
+                        path,
                         JSON.stringify({
                           "next-execution": dateNextExecution,
                           queue: [dataLeadQueue],

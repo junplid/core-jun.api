@@ -55,7 +55,7 @@ const startServer = async (): Promise<void> => {
           if (process.env?.NODE_ENV === "production") {
             path = resolve(__dirname, `./bin/chatbot-queue`);
           } else {
-            path = resolve(__dirname, `../../../bin/chatbot-queue`);
+            path = resolve(__dirname, `../../bin/chatbot-queue`);
           }
           const dirPathQueue = readdirSync(path);
 

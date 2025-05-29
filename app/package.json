@@ -55,7 +55,7 @@
     "typescript": "^5.1.6"
   },
   "scripts": {
-    "dev": "node main.js && nodemon ./src/infra/express/index.ts --watch ./src --ignore ./src/config/index.json --ignore ./src/connections.json --ignore ./src/bin/chatbot-queue",
+    "dev": "node main.js && nodemon ./src/infra/express/index.ts --watch ./src --ignore ./src/config/index.json --ignore ./src/bin/connections.json --ignore ./src/bin/chatbot-queue",
     "start:obf": "node dist/index.obf.js",
     "start": "node main.js && node dist/index.js",
     "build": "tsup",
