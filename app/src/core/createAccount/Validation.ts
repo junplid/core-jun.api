@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { Joi } from "express-validation";
 import { validatePhoneNumber } from "../../helpers/validatePhoneNumber";
 import { CreateAccountDTO_I } from "./DTO";
+import { ErrorResponse } from "../../utils/ErrorResponse";
 
 export const createAccountValidation = (
   req: Request<any, any, CreateAccountDTO_I>,
@@ -31,14 +32,14 @@ export const createAccountValidation = (
   const number = validatePhoneNumber(req.body.number, { removeNine: true });
 
   if (!number) {
-    return res.status(400).json({
-      errors: [
-        {
-          message: "Número whatsapp inválido",
-          path: ["number"],
-        },
-      ],
-    });
+    const { statusCode, ...resp } = new ErrorResponse(400)
+      .input({
+        path: "email",
+        text: "Este campo pode está vinculado a outra conta. Faça o login.",
+      })
+      .getResponse();
+
+    return res.status(statusCode).json(resp);
   }
 
   req.body = { ...req.body, number };
