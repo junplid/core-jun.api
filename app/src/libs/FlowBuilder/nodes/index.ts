@@ -3,6 +3,7 @@ import { NodeAddVariables } from "./AddVariables";
 import { NodeIf } from "./If";
 import { NodeMenu } from "./Menu";
 import { NodeMessage } from "./Message";
+import { NodeNotifyWA } from "./NotifyWA";
 import { NodeRemoveTags } from "./RemoveTags";
 import { NodeRemoveVariables } from "./RemoveVariables";
 import { NodeReply } from "./Reply";
@@ -20,4 +21,5 @@ export const LibraryNodes = {
   NodeIf,
   NodeTimer,
   NodeMenu,
+  NodeNotifyWA,
 };
