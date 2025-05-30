@@ -206,7 +206,7 @@ export const NodeControler = ({
           //   nextEdgesIds[0].nodeNextType === "nodeAttendantAI"
           //     ? "running"
           //     : "initial",
-          type: "initial",
+          ...(props.type === "running" && { message: props.message }),
           currentNodeId: nextEdgesIds[0].id,
         });
         return;
