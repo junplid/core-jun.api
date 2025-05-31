@@ -34,6 +34,8 @@ export const createChatbotValidation = (
         ),
       })
     ),
+    trigger: Joi.string().allow("").optional(),
+    flowBId: Joi.string().allow("").optional(),
   });
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });

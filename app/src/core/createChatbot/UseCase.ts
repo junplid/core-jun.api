@@ -30,7 +30,7 @@ export class CreateChatbotUseCase {
     if (exist) {
       throw new ErrorResponse(400).input({
         path: "name",
-        text: "Já existe um `Bot` com esse nome",
+        text: "Já existe um `Bot` com esse nome.",
       });
     }
 
@@ -45,6 +45,7 @@ export class CreateChatbotUseCase {
             select: {
               id: true,
               name: true,
+              trigger: true,
               OperatingDays: {
                 select: {
                   dayOfWeek: true,
@@ -59,7 +60,7 @@ export class CreateChatbotUseCase {
       if (!pickConnection) {
         throw new ErrorResponse(400).input({
           path: "connectionWAId",
-          text: "Conexão WA não encontrada",
+          text: "Conexão WA não encontrada.",
         });
       }
 
@@ -68,7 +69,21 @@ export class CreateChatbotUseCase {
           if (!dto.operatingDays?.length || !oldChatbot.OperatingDays.length) {
             throw new ErrorResponse(400).input({
               path: "connectionWAId",
-              text: `O bot "${oldChatbot.name}", que opera 24 horas por dia, 7 dias por semana, já utiliza a conexão WA`,
+              text: `O bot de recepção "${oldChatbot.name}", que opera 24 horas por dia, 7 dias por semana, já utiliza a conexão WA.`,
+            });
+          }
+
+          if (dto.trigger === oldChatbot.trigger) {
+            throw new ErrorResponse(400).input({
+              path: "trigger",
+              text: `O bot de recepção "${oldChatbot.name}" com essa mesma conexão, já utiliza a mesma palavra-chave.`,
+            });
+          }
+
+          if (!dto.trigger && !oldChatbot.trigger) {
+            throw new ErrorResponse(400).input({
+              path: "trigger",
+              text: `O bot de recepção "${oldChatbot.name}" com essa mesma conexão, também não utiliza nenhuma palavra-chave.`,
             });
           }
 

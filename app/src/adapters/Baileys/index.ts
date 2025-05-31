@@ -836,6 +836,8 @@ export const Baileys = async ({
                 },
               },
               TimeToRestart: { select: { type: true, value: true } },
+              trigger: true,
+              flowBId: true,
             },
           });
 
@@ -868,6 +870,97 @@ export const Baileys = async ({
 
             if (chatbot.status) {
               const validMsgChatbot = async () => {
+                let flow: any = null;
+                if (chatbot.trigger !== messageText) {
+                  if (!chatbot.flowBId) return;
+                  flow = cacheFlowsMap.get(chatbot.flowBId);
+                  if (!flow) {
+                    const flowFetch = await ModelFlows.aggregate([
+                      {
+                        $match: {
+                          accountId: props.accountId,
+                          _id: chatbot.flowBId,
+                        },
+                      },
+                      {
+                        $project: {
+                          businessIds: 1,
+                          nodes: {
+                            $map: {
+                              input: "$data.nodes",
+                              in: {
+                                id: "$$this.id",
+                                type: "$$this.type",
+                                data: "$$this.data",
+                              },
+                            },
+                          },
+                          edges: {
+                            $map: {
+                              input: "$data.edges",
+                              in: {
+                                id: "$$this.id",
+                                source: "$$this.source",
+                                target: "$$this.target",
+                                sourceHandle: "$$this.sourceHandle",
+                              },
+                            },
+                          },
+                        },
+                      },
+                    ]);
+                    if (!flowFetch?.length)
+                      return console.log(`Flow not found.`);
+                    const { edges, nodes, businessIds } = flowFetch[0];
+                    flow = { edges, nodes, businessIds };
+                    cacheFlowsMap.set(chatbot.flowId, flow);
+                  }
+                } else {
+                  flow = cacheFlowsMap.get(chatbot.flowId);
+                  if (!flow) {
+                    const flowFetch = await ModelFlows.aggregate([
+                      {
+                        $match: {
+                          accountId: props.accountId,
+                          _id: chatbot.flowId,
+                        },
+                      },
+                      {
+                        $project: {
+                          businessIds: 1,
+                          nodes: {
+                            $map: {
+                              input: "$data.nodes",
+                              in: {
+                                id: "$$this.id",
+                                type: "$$this.type",
+                                data: "$$this.data",
+                              },
+                            },
+                          },
+                          edges: {
+                            $map: {
+                              input: "$data.edges",
+                              in: {
+                                id: "$$this.id",
+                                source: "$$this.source",
+                                target: "$$this.target",
+                                sourceHandle: "$$this.sourceHandle",
+                              },
+                            },
+                          },
+                        },
+                      },
+                    ]);
+                    if (!flowFetch?.length)
+                      return console.log(`Flow not found.`);
+                    const { edges, nodes, businessIds } = flowFetch[0];
+                    flow = { edges, nodes, businessIds };
+                    cacheFlowsMap.set(chatbot.flowId, flow);
+                  }
+                }
+
+                if (!flow) return console.log(`Flow não encontrado.`);
                 //   const {
                 //     typeActivation,
                 //     typeMessageWhatsApp,
@@ -1191,48 +1284,6 @@ export const Baileys = async ({
                 //       });
                 //     }
                 //   }
-                let flow = cacheFlowsMap.get(chatbot.flowId);
-
-                if (!flow) {
-                  const flowFetch = await ModelFlows.aggregate([
-                    {
-                      $match: {
-                        accountId: props.accountId,
-                        _id: chatbot.flowId,
-                      },
-                    },
-                    {
-                      $project: {
-                        businessIds: 1,
-                        nodes: {
-                          $map: {
-                            input: "$data.nodes",
-                            in: {
-                              id: "$$this.id",
-                              type: "$$this.type",
-                              data: "$$this.data",
-                            },
-                          },
-                        },
-                        edges: {
-                          $map: {
-                            input: "$data.edges",
-                            in: {
-                              id: "$$this.id",
-                              source: "$$this.source",
-                              target: "$$this.target",
-                              sourceHandle: "$$this.sourceHandle",
-                            },
-                          },
-                        },
-                      },
-                    },
-                  ]);
-                  if (!flowFetch?.length) return console.log(`Flow not found.`);
-                  const { edges, nodes, businessIds } = flowFetch[0];
-                  flow = { edges, nodes, businessIds };
-                  cacheFlowsMap.set(chatbot.flowId, flow);
-                }
 
                 let currentIndexNodeLead = await prisma.flowState.findFirst({
                   where: {
@@ -1474,6 +1525,8 @@ export const Baileys = async ({
                 if (!cacheThisChatbot) {
                   await startChatbotQueue(chatbot.id);
                 }
+              } else {
+                return await validMsgChatbot();
               }
             }
             return;

@@ -21,6 +21,7 @@ export class GetChatbotDetailsUseCase {
         description: true,
         status: true,
         updateAt: true,
+        trigger: true,
       },
     });
 
@@ -31,12 +32,17 @@ export class GetChatbotDetailsUseCase {
       });
     }
 
-    const { Business, ConnectionWA, status, ...rest } = chatbot;
+    const { Business, ConnectionWA, status, trigger, ...rest } = chatbot;
 
     let statusConnection = status;
+    let target = undefined;
 
-    if (status) {
+    if (status && ConnectionWA) {
       statusConnection = !!cacheConnectionsWAOnline.get(dto.id);
+      if (statusConnection) {
+        target = `https://api.whatsapp.com/send?phone=${ConnectionWA.number}`;
+        if (trigger) target += `&text=${encodeURIComponent(trigger)}`;
+      }
     }
 
     return {
@@ -47,6 +53,7 @@ export class GetChatbotDetailsUseCase {
         status: statusConnection,
         business: Business,
         connection: ConnectionWA,
+        target,
       },
     };
   }

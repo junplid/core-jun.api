@@ -930,6 +930,8 @@ model Chatbot {
   flowId                String
   addLeadToAudiencesIds Int[]                 @default([])
   addToLeadTagsIds      Int[]                 @default([])
+  trigger               String?               @db.VarChar(160)
+  flowBId               String?
   ConnectionWA          ConnectionWA?         @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   businessId            Int
   Business              Business              @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)

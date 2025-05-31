@@ -16,4 +16,6 @@ export interface CreateChatbotDTO_I {
     dayOfWeek: number;
     workingTimes?: { start: string; end: string }[];
   }[];
+  trigger?: string;
+  flowBId?: string;
 }
