@@ -34,8 +34,8 @@ export const createAccountValidation = (
   if (!number) {
     const { statusCode, ...resp } = new ErrorResponse(400)
       .input({
-        path: "email",
-        text: "Este campo pode está vinculado a outra conta. Faça o login.",
+        path: "number",
+        text: "Número de Whatsapp inválido.",
       })
       .getResponse();
 

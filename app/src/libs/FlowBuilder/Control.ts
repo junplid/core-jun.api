@@ -20,7 +20,9 @@ export type IPropsControler = {
     ): void;
     onFinish?(vl?: string): Promise<void>;
     onErrorNumber?(): void;
+    onErrorClient?(indexNode: string): void;
   };
+  oldNodeId: string;
   nodes: NodePayload[];
   ticketProtocol?: string;
   edges: Edges[];
@@ -50,6 +52,7 @@ export type IPropsControler = {
 // responsável por executar o controle do fluxo de conversa e manipular caches
 export const NodeControler = ({
   currentNodeId = "0",
+  oldNodeId = "0",
   ...propsC
 }: IPropsControler): Promise<void> => {
   const keyMap = `${propsC.connectionWhatsId}-${propsC.lead.number}`;
@@ -60,9 +63,7 @@ export const NodeControler = ({
       return res();
     }
     cacheFlowInExecution.set(keyMap, true);
-    const execute = async (
-      props: IPropsControler & { currentNodeId: string }
-    ): Promise<void> => {
+    const execute = async (props: IPropsControler): Promise<void> => {
       if (props.chatbotId) {
         await new Promise<void>(async (resP, rejP) => {
           async function verify() {
@@ -102,6 +103,29 @@ export const NodeControler = ({
         }).catch(() => {
           console.log("Error, chatbot não encontrado!");
           cacheFlowInExecution.delete(keyMap);
+          return rej();
+        });
+      }
+
+      if (props.campaignId) {
+        await new Promise<void>(async (resP, rejP) => {
+          async function verify() {
+            const campaign = await prisma.campaign.findFirst({
+              where: { id: props.campaignId },
+              select: { status: true },
+            });
+
+            if (!campaign) return rejP();
+
+            if (campaign.status === "paused" || campaign.status === "stopped") {
+              setTimeout(() => verify(), 1000 * 60 * 3);
+              return;
+            }
+            return resP();
+          }
+          verify();
+        }).catch(() => {
+          console.log("Error, campanha não encontrada!");
           return rej();
         });
       }
@@ -208,6 +232,7 @@ export const NodeControler = ({
           //     : "initial",
           ...(props.type === "running" && { message: props.message }),
           currentNodeId: nextEdgesIds[0].id,
+          oldNodeId: currentNode.id,
         });
         return;
       }
@@ -228,6 +253,14 @@ export const NodeControler = ({
           ticketProtocol: props.ticketProtocol,
           connectionWhatsId: props.connectionWhatsId,
           nodeId: currentNode.id,
+          action: {
+            onErrorClient: () => {
+              if (props.oldNodeId === "0") {
+                props.actions?.onErrorClient &&
+                  props.actions?.onErrorClient(currentNode.id);
+              }
+            },
+          },
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
@@ -243,6 +276,7 @@ export const NodeControler = ({
               ...props,
               type: "initial",
               currentNodeId: nextEdgesIds[0].id,
+              oldNodeId: currentNode.id,
             });
             return;
           })
@@ -286,6 +320,7 @@ export const NodeControler = ({
               ...props,
               type: "initial",
               currentNodeId: nextNodeId.id,
+              oldNodeId: currentNode.id,
             });
           },
         })
@@ -306,6 +341,7 @@ export const NodeControler = ({
                 ...props,
                 type: "initial",
                 currentNodeId: isNextNodeMain.id,
+                oldNodeId: currentNode.id,
               });
             }
             if (d.action === "RETURN") {
@@ -332,6 +368,14 @@ export const NodeControler = ({
           data: currentNode.data,
           message: props.type === "initial" ? undefined : props.message,
           connectionWhatsId: props.connectionWhatsId,
+          action: {
+            onErrorClient: () => {
+              if (props.oldNodeId === "0") {
+                props.actions?.onErrorClient &&
+                  props.actions?.onErrorClient(currentNode.id);
+              }
+            },
+          },
           async onExecuteSchedule() {
             const nextNodeId = nextEdgesIds?.find((nd) =>
               nd.sourceHandle?.includes("timeout")
@@ -348,6 +392,7 @@ export const NodeControler = ({
               ...props,
               type: "initial",
               currentNodeId: nextNodeId.id,
+              oldNodeId: currentNode.id,
             });
           },
         })
@@ -368,6 +413,7 @@ export const NodeControler = ({
                 ...props,
                 type: "initial",
                 currentNodeId: isNextNodeMain.id,
+                oldNodeId: currentNode.id,
               });
             }
             if (d.action === "return") {
@@ -391,6 +437,7 @@ export const NodeControler = ({
                 ...props,
                 type: "initial",
                 currentNodeId: isNextNodeMain.id,
+                oldNodeId: currentNode.id,
               });
             }
           })
@@ -427,6 +474,7 @@ export const NodeControler = ({
               ...props,
               type: "initial",
               currentNodeId: nextEdgesIds[0].id,
+              oldNodeId: currentNode.id,
             });
           })
           .catch((error) => {
@@ -463,6 +511,7 @@ export const NodeControler = ({
               ...props,
               type: "initial",
               currentNodeId: nextEdgesIds[0].id,
+              oldNodeId: currentNode.id,
             });
           })
           .catch((error) => {
@@ -500,6 +549,7 @@ export const NodeControler = ({
               ...props,
               type: "initial",
               currentNodeId: nextEdgesIds[0].id,
+              oldNodeId: currentNode.id,
             });
           })
           .catch((error) => {
@@ -537,6 +587,7 @@ export const NodeControler = ({
               ...props,
               type: "initial",
               currentNodeId: nextEdgesIds[0].id,
+              oldNodeId: currentNode.id,
             });
           })
           .catch((error) => {
@@ -568,6 +619,7 @@ export const NodeControler = ({
               ...props,
               type: "initial",
               currentNodeId: "0",
+              oldNodeId: "0",
               nodes: d.nodes,
               edges: d.edges,
               flowBusinessIds: d.businessIds,
@@ -619,6 +671,7 @@ export const NodeControler = ({
               ...props,
               type: "initial",
               currentNodeId: nextNodeId.id,
+              oldNodeId: currentNode.id,
             });
           })
           .catch((error) => {
@@ -651,6 +704,7 @@ export const NodeControler = ({
               ...props,
               type: "initial",
               currentNodeId: nextEdgesIds[0].id,
+              oldNodeId: currentNode.id,
             });
           })
           .catch((error) => {
@@ -664,6 +718,6 @@ export const NodeControler = ({
       return res();
     };
 
-    execute({ ...propsC, currentNodeId });
+    execute({ ...propsC, currentNodeId, oldNodeId });
   });
 };

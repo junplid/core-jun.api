@@ -15,6 +15,8 @@ import { createVariableValidation } from "../../../../../core/createVariable/Val
 import { resolve } from "path";
 import multer from "multer";
 import { storageMulter } from "../../../../../adapters/Multer/storage";
+import { createCampaignValidation } from "../../../../../core/createCampaign/Validation";
+import { createCampaignController } from "../../../../../core/createCampaign";
 
 const RouterV1Private_Post = Router();
 
@@ -54,6 +56,12 @@ RouterV1Private_Post.post(
   "/chatbots",
   createChatbotValidation,
   createChatbotController
+);
+
+RouterV1Private_Post.post(
+  "/campaigns",
+  createCampaignValidation,
+  createCampaignController
 );
 
 export default RouterV1Private_Post;

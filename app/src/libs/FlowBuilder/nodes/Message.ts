@@ -15,6 +15,7 @@ interface PropsNodeMessage {
   businessName: string;
   ticketProtocol?: string;
   nodeId: string;
+  action: { onErrorClient?(): void };
 }
 
 export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
@@ -38,6 +39,7 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
           connectionId: props.connectionWhatsId,
         });
       } catch (error) {
+        props.action.onErrorClient?.();
         rej(error);
       }
 
@@ -49,6 +51,7 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
         });
         return res();
       } catch (error) {
+        props.action.onErrorClient?.();
         console.log("error para enviar a mensagem", error);
         rej("Error ao enviar mensagem");
       }

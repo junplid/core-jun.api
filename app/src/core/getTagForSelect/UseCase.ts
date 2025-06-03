@@ -10,12 +10,12 @@ export class GetTagForSelectUseCase {
         accountId: dto.accountId,
         type: dto.type,
         ...(dto.businessIds?.length && {
-          TagOnBusiness: {
-            some: {
-              businessId: { in: dto.businessIds },
-              Business: { accountId: dto.accountId },
+          OR: [
+            {
+              TagOnBusiness: { some: { businessId: { in: dto.businessIds } } },
             },
-          },
+            { TagOnBusiness: { none: {} } },
+          ],
         }),
         ...(dto.name && { name: { contains: dto.name } }),
       },

@@ -59,8 +59,8 @@ async function main() {
     where: { id: 1 },
     create: {
       id: 1,
-      email: "root@whabot.com",
-      password: await hash("Shalim7090", await genSalt(8)),
+      email: "root@email.com",
+      password: await hash("aBc09812@.0", await genSalt(8)),
     },
     update: {},
   });

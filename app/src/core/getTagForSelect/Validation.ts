@@ -10,7 +10,7 @@ export const getTagForSelectValidation = (
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
     type: Joi.string().valid("contactwa", "audience"),
-    businessIds: Joi.string(),
+    businessIds: Joi.array().items(Joi.number()),
     name: Joi.string(),
   });
 
@@ -29,9 +29,7 @@ export const getTagForSelectValidation = (
   }
 
   if (req.query.businessIds?.length) {
-    req.query.businessIds = (req.query.businessIds as unknown as string)
-      .split("-")
-      .map((b) => Number(b));
+    req.query.businessIds = req.query.businessIds.map((b) => Number(b));
   }
 
   next();

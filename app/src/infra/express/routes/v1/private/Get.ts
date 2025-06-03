@@ -51,6 +51,14 @@ import { getChatbotDetailsValidation } from "../../../../../core/getChatbotDetai
 import { getChatbotDetailsController } from "../../../../../core/getChatbotDetails";
 import { getBusinessDetailsValidation } from "../../../../../core/getBusinessDetails/Validation";
 import { getBusinessDetailsController } from "../../../../../core/getBusinessDetails";
+import { getShootingSpeedsValidation } from "../../../../../core/getShootingSpeeds/Validation";
+import { getShootingSpeedsController } from "../../../../../core/getShootingSpeeds";
+import { getCampaignDetailsValidation } from "../../../../../core/getCampaignDetails/Validation";
+import { getCampaignDetailsController } from "../../../../../core/getCampaignDetails";
+import { getCampaignValidation } from "../../../../../core/getCampaign/Validation";
+import { getCampaignController } from "../../../../../core/getCampaign";
+import { getCampaignsValidation } from "../../../../../core/getCampaigns/Validation";
+import { getCampaignsController } from "../../../../../core/getCampaigns";
 
 const RouterV1Private_Get = Router();
 
@@ -188,6 +196,30 @@ RouterV1Private_Get.get(
   "/chatbots/:id/details",
   getChatbotDetailsValidation,
   getChatbotDetailsController
+);
+
+RouterV1Private_Get.get(
+  "/shooting-speeds",
+  getShootingSpeedsValidation,
+  getShootingSpeedsController
+);
+
+RouterV1Private_Get.get(
+  "/campaigns/:id",
+  getCampaignValidation,
+  getCampaignController
+);
+
+RouterV1Private_Get.get(
+  "/campaigns",
+  getCampaignsValidation,
+  getCampaignsController
+);
+
+RouterV1Private_Get.get(
+  "/campaigns/:id/details",
+  getCampaignDetailsValidation,
+  getCampaignDetailsController
 );
 
 export default RouterV1Private_Get;

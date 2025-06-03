@@ -871,15 +871,17 @@ export const Baileys = async ({
             if (chatbot.status) {
               const validMsgChatbot = async () => {
                 let flow: any = null;
-                if (chatbot.trigger !== messageText) {
-                  if (!chatbot.flowBId) return;
-                  flow = cacheFlowsMap.get(chatbot.flowBId);
+                if (
+                  (chatbot.trigger && chatbot.trigger === messageText) ||
+                  !chatbot.trigger
+                ) {
+                  flow = cacheFlowsMap.get(chatbot.flowId);
                   if (!flow) {
                     const flowFetch = await ModelFlows.aggregate([
                       {
                         $match: {
                           accountId: props.accountId,
-                          _id: chatbot.flowBId,
+                          _id: chatbot.flowId,
                         },
                       },
                       {
@@ -915,14 +917,17 @@ export const Baileys = async ({
                     flow = { edges, nodes, businessIds };
                     cacheFlowsMap.set(chatbot.flowId, flow);
                   }
-                } else {
-                  flow = cacheFlowsMap.get(chatbot.flowId);
+                }
+
+                if (chatbot.trigger && chatbot.trigger !== messageText) {
+                  if (!chatbot.flowBId) return;
+                  flow = cacheFlowsMap.get(chatbot.flowBId);
                   if (!flow) {
                     const flowFetch = await ModelFlows.aggregate([
                       {
                         $match: {
                           accountId: props.accountId,
-                          _id: chatbot.flowId,
+                          _id: chatbot.flowBId,
                         },
                       },
                       {
@@ -1320,12 +1325,13 @@ export const Baileys = async ({
                   type: "running",
                   connectionWhatsId: props.connectionWhatsId,
                   chatbotId: chatbot.id,
+                  oldNodeId: currentIndexNodeLead?.indexNode || "0",
                   clientWA: bot,
                   isSavePositionLead: true,
                   flowStateId: currentIndexNodeLead.id,
                   contactsWAOnAccountId: ContactsWAOnAccount[0].id,
                   lead: { number: body.messages[0].key.remoteJid! },
-                  currentNodeId: currentIndexNodeLead?.indexNode ?? "0",
+                  currentNodeId: currentIndexNodeLead?.indexNode || "0",
                   edges: flow.edges,
                   nodes: flow.nodes,
                   numberConnection: numberConnection + "@s.whatsapp.net",

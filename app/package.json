@@ -1,6 +1,7 @@
 {
-  "name": "junplid",
-  "version": "0.1.2",
+  "name": "core-junplid",
+  "version": "0.3.0-alpha",
+  "private": true,
   "dependencies": {
     "@hapi/boom": "^10.0.1",
     "@prisma/client": "^5.3.1",
@@ -47,6 +48,7 @@
     "@types/node": "^22.15.21",
     "@types/node-schedule": "^2.1.1",
     "@types/nodemailer": "^6.4.9",
+    "@types/underscore": "^1.13.0",
     "@types/uuid": "^9.0.6",
     "javascript-obfuscator": "^4.1.1",
     "nodemon": "^2.0.22",
@@ -55,7 +57,7 @@
     "typescript": "^5.1.6"
   },
   "scripts": {
-    "dev": "node main.js && nodemon ./src/infra/express/index.ts --watch ./src --ignore ./src/config/index.json --ignore ./src/bin/connections.json --ignore ./src/bin/chatbot-queue",
+    "dev": "node main.js && nodemon ./src/infra/express/index.ts --watch ./src --ignore ./src/config/index.json --ignore ./src/bin/connections.json --ignore ./src/bin/chatbot-queue --ignore ./src/bin/instructions",
     "start:obf": "node dist/index.obf.js",
     "start": "node main.js && node dist/index.js",
     "build": "tsup",

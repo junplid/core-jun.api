@@ -238,11 +238,12 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
               type: "running",
               connectionWhatsId: infoChatbot.ConnectionWA.id,
               clientWA: bot,
+              oldNodeId: currentIndexNodeLead.indexNode || "0",
               isSavePositionLead: true,
               flowStateId: currentIndexNodeLead.id,
               contactsWAOnAccountId: ContactsWAOnAccount[0].id,
               lead: { number: leadData.number + "@s.whatsapp.net" },
-              currentNodeId: currentIndexNodeLead?.indexNode ?? "0",
+              currentNodeId: currentIndexNodeLead?.indexNode || "0",
               edges: edges,
               nodes: nodes,
               numberConnection:

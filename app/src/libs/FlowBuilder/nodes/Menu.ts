@@ -33,6 +33,7 @@ interface PropsNodeReply {
   message?: string;
   connectionWhatsId: number;
   onExecuteSchedule?: () => Promise<void>;
+  action: { onErrorClient?(): void };
 }
 
 type ResultPromise =
@@ -66,6 +67,7 @@ export const NodeMenu = async (
       toNumber: props.numberLead,
     }).catch((error) => {
       console.error("Error sending message:", error);
+      props.action.onErrorClient?.();
       throw new Error("Failed to send message");
     });
 
@@ -119,6 +121,7 @@ export const NodeMenu = async (
           });
         } catch (error) {
           console.log(error);
+          props.action.onErrorClient?.();
           throw new Error("Failed to send message");
         }
       }
@@ -165,6 +168,7 @@ export const NodeMenu = async (
             toNumber: props.numberLead,
           });
         } catch (error) {
+          props.action.onErrorClient?.();
           console.log(error);
           throw new Error("Failed to send message");
         }

@@ -20,6 +20,8 @@ import { resolve } from "path";
 import { storageMulter } from "../../../../../adapters/Multer/storage";
 import { updateAccountValidation } from "../../../../../core/updateAccount/Validation";
 import { updateAccountController } from "../../../../../core/updateAccount";
+import { updateCampaignValidation } from "../../../../../core/updateCampaign/Validation";
+import { updateCampaignController } from "../../../../../core/updateCampaign";
 
 const RouterV1Private_Put = Router();
 
@@ -81,6 +83,12 @@ RouterV1Private_Put.put(
   "/account",
   updateAccountValidation,
   updateAccountController
+);
+
+RouterV1Private_Put.put(
+  "/campaigns/:id",
+  updateCampaignValidation,
+  updateCampaignController
 );
 
 export default RouterV1Private_Put;

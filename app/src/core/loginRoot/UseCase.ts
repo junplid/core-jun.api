@@ -1,15 +1,18 @@
 import { LoginRootDTO_I } from "./DTO";
-import { LoginRootRepository_I } from "./Repository";
 
 import { compare } from "bcrypt";
 import { createTokenAuth } from "../../helpers/authToken";
+import { prisma } from "../../adapters/Prisma/client";
 
 export class LoginRootUseCase {
-  constructor(private repository: LoginRootRepository_I) {}
+  constructor() {}
 
   async run(dto: LoginRootDTO_I) {
-    const user = await this.repository.find({
-      email: dto.email,
+    const user = await prisma.rootUsers.findFirst({
+      where: {
+        email: dto.email,
+      },
+      select: { id: true, hash: true, password: true },
     });
 
     if (!user) {
