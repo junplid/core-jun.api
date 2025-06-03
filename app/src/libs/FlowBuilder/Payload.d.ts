@@ -80,6 +80,11 @@ export type NodeTimerData = {
   type: ["seconds" | "minutes" | "hours" | "days"];
 };
 
+export type NodeNotifyWAData = {
+  numbers: { key: string; number: string }[];
+  text: string;
+};
+
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeMessage"
@@ -92,7 +97,8 @@ export type TypeNodesPayload =
   | "NodeSendFlow"
   | "NodeIF"
   | "NodeTimer"
-  | "NodeNewCardTrello";
+  | "NodeNewCardTrello"
+  | "NodeNotifyWA";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -107,4 +113,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeTimer"; data: NodeTimer }
   | { type: "NodeInitial" }
   | { type: "NodeMenu"; data: NodeMenuData }
+  | { type: "NodeNotifyWA"; data: NodeNotifyWAData }
 );
