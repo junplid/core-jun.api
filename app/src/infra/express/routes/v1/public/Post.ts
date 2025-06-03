@@ -8,6 +8,8 @@ import { sendPasswordRecoveryEmailController } from "../../../../../core/sendPas
 import { sendPasswordRecoveryEmailValidation } from "../../../../../core/sendPasswordRecoveryEmail/Validation";
 import { loginRootValidation } from "../../../../../core/loginRoot/Validation";
 import { loginRootController } from "../../../../../core/loginRoot";
+import { createRootValidation } from "../../../../../core/createRoot/Validation";
+import { createRootController } from "../../../../../core/createRoot";
 
 const RouterV1Public_Post = Router();
 
@@ -24,6 +26,12 @@ RouterV1Public_Post.post(
 );
 
 RouterV1Public_Post.post("/login", loginRootValidation, loginRootController);
+
+RouterV1Public_Post.post(
+  "/register-root",
+  createRootValidation,
+  createRootController
+);
 
 RouterV1Public_Post.post(
   "/send-password-recovery-email/:type",

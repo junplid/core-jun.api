@@ -75,4 +75,9 @@ RouterV1Public_Get.get("/health", (req, res) => {
   res.status(200).send("ok");
 });
 
+RouterV1Public_Get.get("/ex-root", async (req, res) => {
+  const exist = await prisma.rootUsers.count();
+  return res.status(200).json({ s: exist });
+});
+
 export default RouterV1Public_Get;
