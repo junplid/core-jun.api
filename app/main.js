@@ -19,11 +19,7 @@ config();
       await writeFile(resolve(__dirname, pathBin + "/connections.json"), `[]`);
     }
 
-    await ensureDir(resolve(__dirname, "./static/audio"));
-    await ensureDir(resolve(__dirname, "./static/file"));
-    await ensureDir(resolve(__dirname, "./static/image"));
-    await ensureDir(resolve(__dirname, "./static/pdf"));
-    await ensureDir(resolve(__dirname, "./static/video"));
+    await ensureDir(resolve(__dirname, "./static/storage"));
     await ensureDir(resolve(__dirname, pathBin + "/chatbot-queue"));
   } catch (errors) {
     error(errors, 44);

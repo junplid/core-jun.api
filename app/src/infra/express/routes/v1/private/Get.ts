@@ -59,6 +59,12 @@ import { getCampaignValidation } from "../../../../../core/getCampaign/Validatio
 import { getCampaignController } from "../../../../../core/getCampaign";
 import { getCampaignsValidation } from "../../../../../core/getCampaigns/Validation";
 import { getCampaignsController } from "../../../../../core/getCampaigns";
+import { getStorageFilesValidation } from "../../../../../core/getStorageFiles/Validation";
+import { getStorageFilesController } from "../../../../../core/getStorageFiles";
+import { getStorageFileValidation } from "../../../../../core/getStorageFile/Validation";
+import { getStorageFileController } from "../../../../../core/getStorageFile";
+import { getStorageFilesForSelectValidation } from "../../../../../core/getStorageFilesForSelect/Validation";
+import { getStorageFilesForSelectController } from "../../../../../core/getStorageFilesForSelect";
 
 const RouterV1Private_Get = Router();
 
@@ -220,6 +226,24 @@ RouterV1Private_Get.get(
   "/campaigns/:id/details",
   getCampaignDetailsValidation,
   getCampaignDetailsController
+);
+
+RouterV1Private_Get.get(
+  "/storage-files",
+  getStorageFilesValidation,
+  getStorageFilesController
+);
+
+RouterV1Private_Get.get(
+  "/storage-files/options",
+  getStorageFilesForSelectValidation,
+  getStorageFilesForSelectController
+);
+
+RouterV1Private_Get.get(
+  "/storage-files/:id",
+  getStorageFileValidation,
+  getStorageFileController
 );
 
 export default RouterV1Private_Get;

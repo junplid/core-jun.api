@@ -13,6 +13,8 @@ import { deleteVariableController } from "../../../../../core/deleteVariables";
 import { deleteVariableValidation } from "../../../../../core/deleteVariables/Validation";
 import { deleteCampaignValidation } from "../../../../../core/deleteCampaign/Validation";
 import { deleteCampaignController } from "../../../../../core/deleteCampaign";
+import { deleteStorageFileValidation } from "../../../../../core/deleteStorageFile/Validation";
+import { deleteStorageFileController } from "../../../../../core/deleteStorageFile";
 
 const RouterV1Private_Delete = Router();
 
@@ -56,6 +58,12 @@ RouterV1Private_Delete.delete(
   "/campaigns/:id",
   deleteCampaignValidation,
   deleteCampaignController
+);
+
+RouterV1Private_Delete.delete(
+  "/storage-files/:id",
+  deleteStorageFileValidation,
+  deleteStorageFileController
 );
 
 export default RouterV1Private_Delete;

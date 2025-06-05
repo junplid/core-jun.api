@@ -17,17 +17,27 @@ import multer from "multer";
 import { storageMulter } from "../../../../../adapters/Multer/storage";
 import { createCampaignValidation } from "../../../../../core/createCampaign/Validation";
 import { createCampaignController } from "../../../../../core/createCampaign";
+import { createStorageFileValidation } from "../../../../../core/createStorageFile/Validation";
+import { createStorageFileController } from "../../../../../core/createStorageFile";
 
 const RouterV1Private_Post = Router();
 
-const pathOfDestiny = resolve(__dirname, `../../../../../../static`);
+let pathOfDestiny = "";
+if (process.env.NODE_ENV === "production") {
+  pathOfDestiny = resolve(__dirname, `./static`);
+} else {
+  pathOfDestiny = resolve(__dirname, `../../../../../../static`);
+}
 
-const uploadFiles = storageMulter({ pathOfDestiny: pathOfDestiny + "/image" });
+const uploadFile = storageMulter({ pathOfDestiny: pathOfDestiny + "/image" });
+const uploadFiles = storageMulter({
+  pathOfDestiny: pathOfDestiny + "/storage",
+});
 
 RouterV1Private_Post.post(
   "/connections-wa",
   // @ts-expect-error
-  multer({ storage: uploadFiles }).single("fileImage"),
+  multer({ storage: uploadFile }).single("fileImage"),
   (req: Request, _, next: NextFunction) => {
     req.body.accountId = Number(req.headers.authorization);
     next();
@@ -62,6 +72,18 @@ RouterV1Private_Post.post(
   "/campaigns",
   createCampaignValidation,
   createCampaignController
+);
+
+RouterV1Private_Post.post(
+  "/storage-files",
+  // @ts-expect-error
+  multer({ storage: uploadFiles }).single("file"),
+  (req: Request, _, next: NextFunction) => {
+    req.body.accountId = Number(req.headers.authorization);
+    next();
+  },
+  createStorageFileValidation,
+  createStorageFileController
 );
 
 export default RouterV1Private_Post;

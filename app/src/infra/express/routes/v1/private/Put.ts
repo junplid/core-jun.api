@@ -22,6 +22,8 @@ import { updateAccountValidation } from "../../../../../core/updateAccount/Valid
 import { updateAccountController } from "../../../../../core/updateAccount";
 import { updateCampaignValidation } from "../../../../../core/updateCampaign/Validation";
 import { updateCampaignController } from "../../../../../core/updateCampaign";
+import { updateStorageFileValidation } from "../../../../../core/updateStorageFile/Validation";
+import { updateStorageFileController } from "../../../../../core/updateStorageFile";
 
 const RouterV1Private_Put = Router();
 
@@ -89,6 +91,12 @@ RouterV1Private_Put.put(
   "/campaigns/:id",
   updateCampaignValidation,
   updateCampaignController
+);
+
+RouterV1Private_Put.put(
+  "/storage-files/:id",
+  updateStorageFileValidation,
+  updateStorageFileController
 );
 
 export default RouterV1Private_Put;

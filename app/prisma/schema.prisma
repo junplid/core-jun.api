@@ -136,7 +136,7 @@ model Account {
   Tag                 Tag[]
   Variable            Variable[]
   // Campaign                  Campaign[]
-  StaticPaths         StaticPaths[]
+  StoragePaths        StoragePaths[]
   // Checkpoint                Checkpoint[]
   // Sectors                   Sectors[]
   // SectorsMessages           SectorsMessages[]
@@ -625,20 +625,21 @@ model AccountAssetsUsed {
 // }
 
 model Business {
-  id                  Int                  @id @default(autoincrement())
-  interrupted         Boolean              @default(false)
-  name                String               @db.VarChar(50)
-  description         String?
-  accountId           Int
-  createAt            DateTime             @default(now())
-  updateAt            DateTime             @default(now()) @updatedAt
-  Account             Account              @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  ConnectionWA        ConnectionWA[]
-  TagOnBusiness       TagOnBusiness[]
-  VariablesOnBusiness VariableOnBusiness[]
-  Chatbot             Chatbot[]
-  CampaignOnBusiness  CampaignOnBusiness[]
-  AudienceOnBusiness  AudienceOnBusiness[]
+  id                     Int                      @id @default(autoincrement())
+  interrupted            Boolean                  @default(false)
+  name                   String                   @db.VarChar(50)
+  description            String?
+  accountId              Int
+  createAt               DateTime                 @default(now())
+  updateAt               DateTime                 @default(now()) @updatedAt
+  Account                Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ConnectionWA           ConnectionWA[]
+  TagOnBusiness          TagOnBusiness[]
+  VariablesOnBusiness    VariableOnBusiness[]
+  Chatbot                Chatbot[]
+  CampaignOnBusiness     CampaignOnBusiness[]
+  AudienceOnBusiness     AudienceOnBusiness[]
+  StoragePathsOnBusiness StoragePathsOnBusiness[]
 
   @@index([id, accountId])
 }
@@ -1095,24 +1096,29 @@ model ContactsWAOnAccountVariable {
   @@index([value, variableId, contactsWAOnAccountId])
 }
 
-enum TypeStaticPath {
-  video
-  image
-  pdf
-  file
-  audio
-}
-
-model StaticPaths {
-  id           Int            @id @default(autoincrement())
-  name         String
-  originalName String
-  size         Float
-  type         TypeStaticPath
-  accountId    Int
-  Account      Account        @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+model StoragePaths {
+  id                     Int                      @id @default(autoincrement())
+  name                   String?
+  originalName           String
+  fileName               String
+  size                   Float
+  mimetype               String?
+  createAt               DateTime                 @default(now())
+  accountId              Int
+  Account                Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  StoragePathsOnBusiness StoragePathsOnBusiness[]
 
   @@index([name, id])
+}
+
+model StoragePathsOnBusiness {
+  id            Int          @id @default(autoincrement())
+  businessId    Int
+  storagePathId Int
+  Business      Business     @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  StoragePaths  StoragePaths @relation(fields: [storagePathId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([businessId, storagePathId])
 }
 
 // model Checkpoint {

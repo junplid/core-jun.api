@@ -9,10 +9,15 @@ import {
 
 const RouterV1Public_Get = Router();
 
-RouterV1Public_Get.use(
-  "/images",
-  static_(resolve(__dirname, "../../../../../../static/image"))
-);
+let path = "";
+if (process.env.NODE_ENV === "production") {
+  path = resolve(__dirname, `./static`);
+} else {
+  path = resolve(__dirname, `../../../../../../static`);
+}
+
+RouterV1Public_Get.use("/images", static_(path + "/image"));
+RouterV1Public_Get.use("/storage", static_(path + "/storage"));
 
 RouterV1Public_Get.use(
   "/some-token-recover-password/:type",
