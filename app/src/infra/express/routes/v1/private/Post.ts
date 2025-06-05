@@ -24,7 +24,7 @@ const RouterV1Private_Post = Router();
 
 let pathOfDestiny = "";
 if (process.env.NODE_ENV === "production") {
-  pathOfDestiny = resolve(__dirname, `./static`);
+  pathOfDestiny = resolve(__dirname, `../static`);
 } else {
   pathOfDestiny = resolve(__dirname, `../../../../../../static`);
 }
