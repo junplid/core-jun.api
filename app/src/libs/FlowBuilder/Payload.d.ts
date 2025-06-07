@@ -85,6 +85,29 @@ export type NodeNotifyWAData = {
   text: string;
 };
 
+export type NodeSendFilesData = {
+  files: { id: number; originalName: string; mimetype: string | null }[];
+  caption?: string;
+};
+
+export type NodeSendImagesData = {
+  files: { id: number; fileName: string | null }[];
+  caption?: string;
+};
+
+export type NodeSendVideosData = {
+  files: { id: number; originalName: string | null }[];
+  caption?: string;
+};
+
+export type NodeSendAudiosData = {
+  files: { id: number; fileName: string | null; originalName: string }[];
+};
+
+export type NodeSendAudiosLiveData = {
+  files: { id: number; fileName: string | null; originalName: string }[];
+};
+
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeMessage"
@@ -98,6 +121,11 @@ export type TypeNodesPayload =
   | "NodeIF"
   | "NodeTimer"
   | "NodeNewCardTrello"
+  | "NodeSendFiles"
+  | "NodeSendImages"
+  | "NodeSendVideos"
+  | "NodeSendAudios"
+  | "NodeSendAudiosLive"
   | "NodeNotifyWA";
 
 export type NodePayload = { id: string } & (
@@ -114,4 +142,9 @@ export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
   | { type: "NodeMenu"; data: NodeMenuData }
   | { type: "NodeNotifyWA"; data: NodeNotifyWAData }
+  | { type: "NodeSendFiles"; data: NodeSendFilesData }
+  | { type: "NodeSendImages"; data: NodeSendImagesData }
+  | { type: "NodeSendVideos"; data: NodeSendVideosData }
+  | { type: "NodeSendAudios"; data: NodeSendAudiosData }
+  | { type: "NodeSendAudiosLive"; data: NodeSendAudiosLiveData }
 );

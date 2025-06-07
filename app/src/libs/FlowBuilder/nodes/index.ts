@@ -7,7 +7,12 @@ import { NodeNotifyWA } from "./NotifyWA";
 import { NodeRemoveTags } from "./RemoveTags";
 import { NodeRemoveVariables } from "./RemoveVariables";
 import { NodeReply } from "./Reply";
+import { NodeSendAudios } from "./SendAudios";
+import { NodeSendAudiosLive } from "./SendAudiosLive";
+import { NodeSendFiles } from "./SendFiles";
 import { NodeSendFlow } from "./SendFlow";
+import { NodeSendImages } from "./SendImages";
+import { NodeSendVideos } from "./SendVideos";
 import { NodeTimer } from "./Timer";
 
 export const LibraryNodes = {
@@ -22,4 +27,9 @@ export const LibraryNodes = {
   NodeTimer,
   NodeMenu,
   NodeNotifyWA,
+  NodeSendFiles,
+  NodeSendVideos,
+  NodeSendImages,
+  NodeSendAudiosLive,
+  NodeSendAudios,
 };

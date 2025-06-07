@@ -13,6 +13,7 @@ export class GetStorageFilesForSelectUseCase {
         id: true,
         mimetype: true,
         originalName: true,
+        fileName: true,
         StoragePathsOnBusiness: {
           select: { Business: { select: { id: true } } },
         },

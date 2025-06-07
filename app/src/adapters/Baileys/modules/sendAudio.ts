@@ -7,10 +7,12 @@ interface Props {
   toNumber: string;
   mimetype?: string;
   urlStatic: string;
+  ptt?: boolean;
 }
 
 export const SendAudio = async ({
   connectionId,
+  ptt = false,
   ...props
 }: Props): Promise<proto.WebMessageInfo | undefined> => {
   const MAX_ATTEMPTS = 5;
@@ -21,7 +23,7 @@ export const SendAudio = async ({
       throw new Error("CONEXÃO OFFLINE");
     return await bot.sendMessage(props.toNumber, {
       audio: { url: props.urlStatic },
-      ptt: true,
+      ptt,
       mimetype: props.mimetype,
     });
   };

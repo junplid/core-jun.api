@@ -758,6 +758,222 @@ export const NodeControler = ({
           });
         return;
       }
+      if (currentNode.type === "NodeSendFiles") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
+        await LibraryNodes.NodeSendFiles({
+          botWA: props.clientWA,
+          numberLead: props.lead.number,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          data: currentNode.data,
+          accountId: props.accountId,
+          ticketProtocol: props.ticketProtocol,
+          connectionWAId: props.connectionWhatsId,
+          action: {},
+          nodeId: currentNode.id,
+        })
+          .then(async () => {
+            if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheFlowInExecution.delete(keyMap);
+              props.actions?.onFinish && (await props.actions?.onFinish("128"));
+              return;
+            }
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+
+            execute({
+              ...props,
+              type: "initial",
+              currentNodeId: nextEdgesIds[0].id,
+            });
+            return;
+          })
+          .catch((error) => {
+            console.log("ERROR NO MENSAGEM", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+      if (currentNode.type === "NodeSendVideos") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
+        await LibraryNodes.NodeSendVideos({
+          botWA: props.clientWA,
+          numberLead: props.lead.number,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          data: currentNode.data,
+          accountId: props.accountId,
+          ticketProtocol: props.ticketProtocol,
+          connectionWAId: props.connectionWhatsId,
+          action: {},
+          nodeId: currentNode.id,
+        })
+          .then(async () => {
+            if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheFlowInExecution.delete(keyMap);
+              props.actions?.onFinish && (await props.actions?.onFinish("128"));
+              return;
+            }
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+
+            execute({
+              ...props,
+              type: "initial",
+              currentNodeId: nextEdgesIds[0].id,
+            });
+            return;
+          })
+          .catch((error) => {
+            console.log("ERROR NO MENSAGEM", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+      if (currentNode.type === "NodeSendImages") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
+        await LibraryNodes.NodeSendImages({
+          botWA: props.clientWA,
+          numberLead: props.lead.number,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          data: currentNode.data,
+          accountId: props.accountId,
+          ticketProtocol: props.ticketProtocol,
+          connectionWAId: props.connectionWhatsId,
+          action: {},
+          nodeId: currentNode.id,
+        })
+          .then(async () => {
+            if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheFlowInExecution.delete(keyMap);
+              props.actions?.onFinish && (await props.actions?.onFinish("128"));
+              return;
+            }
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+
+            execute({
+              ...props,
+              type: "initial",
+              currentNodeId: nextEdgesIds[0].id,
+            });
+            return;
+          })
+          .catch((error) => {
+            console.log("ERROR NO MENSAGEM", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+      if (currentNode.type === "NodeSendAudiosLive") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
+        await LibraryNodes.NodeSendAudiosLive({
+          botWA: props.clientWA,
+          numberLead: props.lead.number,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          data: currentNode.data,
+          accountId: props.accountId,
+          ticketProtocol: props.ticketProtocol,
+          connectionWAId: props.connectionWhatsId,
+          action: {},
+          nodeId: currentNode.id,
+        })
+          .then(async () => {
+            if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheFlowInExecution.delete(keyMap);
+              props.actions?.onFinish && (await props.actions?.onFinish("128"));
+              return;
+            }
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+
+            execute({
+              ...props,
+              type: "initial",
+              currentNodeId: nextEdgesIds[0].id,
+            });
+            return;
+          })
+          .catch((error) => {
+            console.log("ERROR NO MENSAGEM", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+      if (currentNode.type === "NodeSendAudios") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
+        await LibraryNodes.NodeSendAudios({
+          botWA: props.clientWA,
+          numberLead: props.lead.number,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          data: currentNode.data,
+          accountId: props.accountId,
+          ticketProtocol: props.ticketProtocol,
+          connectionWAId: props.connectionWhatsId,
+          action: {},
+          nodeId: currentNode.id,
+        })
+          .then(async () => {
+            if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheFlowInExecution.delete(keyMap);
+              props.actions?.onFinish && (await props.actions?.onFinish("128"));
+              return;
+            }
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+
+            execute({
+              ...props,
+              type: "initial",
+              currentNodeId: nextEdgesIds[0].id,
+            });
+            return;
+          })
+          .catch((error) => {
+            console.log("ERROR NO MENSAGEM", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+
       return res();
     };
 
