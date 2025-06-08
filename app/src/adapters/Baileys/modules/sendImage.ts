@@ -1,6 +1,9 @@
 import { cacheConnectionsWAOnline } from "../Cache";
 import { sessionsBaileysWA } from "..";
 import { proto } from "baileys";
+import { lookup } from "mime-types";
+import path from "path";
+import { Jimp } from "jimp";
 
 interface Props {
   connectionId: number;
@@ -18,9 +21,18 @@ export const SendImage = async ({
     const bot = sessionsBaileysWA.get(connectionId);
     if (!bot || !cacheConnectionsWAOnline.get(connectionId))
       throw new Error("CONEXÃO OFFLINE");
+    const mimetype = lookup(props.url) || "image/jpeg";
+    const fileName = path.basename(props.url);
+
+    const img = await Jimp.read(props.url);
+    const buffer = await img.getBuffer(mimetype as any);
+
     return await bot.sendMessage(props.toNumber, {
-      image: { url: props.url },
+      image: buffer,
+      //  jpegThumbnail: props.url,
+      mimetype,
       caption: props.caption,
+      fileName,
     });
   };
 

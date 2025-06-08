@@ -5,6 +5,7 @@ import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { SendVideo } from "../../../adapters/Baileys/modules/sendVideo";
 import { readFileSync } from "fs-extra";
 import { lookup } from "mime-types";
+import { resolve } from "path";
 
 interface PropsNodeSendVideos {
   numberLead: string;
@@ -22,9 +23,9 @@ export const NodeSendVideos = (props: PropsNodeSendVideos): Promise<void> => {
   return new Promise(async (res, rej) => {
     let path = "";
     if (process.env.NODE_ENV === "production") {
-      path = "../static/storage";
+      path = resolve(__dirname, "../static/storage");
     } else {
-      path = "../../../../static/storage";
+      path = resolve(__dirname, "../../../../static/storage");
     }
 
     const firstFile = props.data.files.shift();

@@ -214,6 +214,7 @@ export const NodeControler = ({
       //       return res();
       //     });
       // }
+      console.log(currentNode.type);
       if (currentNode.type === "NodeInitial") {
         if (props.actions?.onExecutedNode) {
           props.actions?.onExecutedNode(currentNode);

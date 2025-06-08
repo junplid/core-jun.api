@@ -3,6 +3,7 @@ import { prisma } from "../../../adapters/Prisma/client";
 import { NodeSendImagesData } from "../Payload";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { SendImage } from "../../../adapters/Baileys/modules/sendImage";
+import { resolve } from "path";
 
 interface PropsNodeSendImages {
   numberLead: string;
@@ -20,9 +21,9 @@ export const NodeSendImages = (props: PropsNodeSendImages): Promise<void> => {
   return new Promise(async (res, rej) => {
     let path = "";
     if (process.env.NODE_ENV === "production") {
-      path = "../static/storage";
+      path = resolve(__dirname, "../static/storage");
     } else {
-      path = "../../../../static/storage";
+      path = resolve(__dirname, "../../../../static/storage");
     }
 
     const firstFile = props.data.files.shift();
@@ -55,6 +56,7 @@ export const NodeSendImages = (props: PropsNodeSendImages): Promise<void> => {
             caption,
           });
         } catch (error) {
+          console.error("Error sending image:", error);
           return props.action.onErrorClient?.();
         }
       }
@@ -74,6 +76,8 @@ export const NodeSendImages = (props: PropsNodeSendImages): Promise<void> => {
             toNumber: props.numberLead,
           });
         } catch (error) {
+          console.error("Error sending image:", error);
+
           return props.action.onErrorClient?.();
         }
       }

@@ -5,6 +5,7 @@ import { lookup } from "mime-types";
 import { SendFile } from "../../../adapters/Baileys/modules/sendFile";
 import { readFileSync } from "fs-extra";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
+import { resolve } from "path";
 
 interface PropsNodeSendFiles {
   numberLead: string;
@@ -22,9 +23,9 @@ export const NodeSendFiles = (props: PropsNodeSendFiles): Promise<void> => {
   return new Promise(async (res, rej) => {
     let path = "";
     if (process.env.NODE_ENV === "production") {
-      path = "../static/storage";
+      path = resolve(__dirname, "../static/storage");
     } else {
-      path = "../../../../static/storage";
+      path = resolve(__dirname, "../../../../static/storage");
     }
 
     const firstFile = props.data.files.shift();
@@ -49,7 +50,6 @@ export const NodeSendFiles = (props: PropsNodeSendFiles): Promise<void> => {
             nodeId: props.nodeId,
           });
         }
-
         try {
           await SendFile({
             connectionId: props.connectionWAId,

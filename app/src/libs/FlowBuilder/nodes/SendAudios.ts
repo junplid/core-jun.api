@@ -3,6 +3,7 @@ import { prisma } from "../../../adapters/Prisma/client";
 import { NodeSendAudiosData } from "../Payload";
 import { lookup } from "mime-types";
 import { SendAudio } from "../../../adapters/Baileys/modules/sendAudio";
+import { resolve } from "path";
 
 interface PropsNodeSendAudios {
   numberLead: string;
@@ -20,9 +21,9 @@ export const NodeSendAudios = (props: PropsNodeSendAudios): Promise<void> => {
   return new Promise(async (res, rej) => {
     let path = "";
     if (process.env.NODE_ENV === "production") {
-      path = "../static/storage";
+      path = resolve(__dirname, "../static/storage");
     } else {
-      path = "../../../../static/storage";
+      path = resolve(__dirname, "../../../../static/storage");
     }
 
     const firstFile = props.data.files.shift();
