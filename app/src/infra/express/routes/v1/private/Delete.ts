@@ -15,6 +15,8 @@ import { deleteCampaignValidation } from "../../../../../core/deleteCampaign/Val
 import { deleteCampaignController } from "../../../../../core/deleteCampaign";
 import { deleteStorageFileValidation } from "../../../../../core/deleteStorageFile/Validation";
 import { deleteStorageFileController } from "../../../../../core/deleteStorageFile";
+import { deleteAgentAIValidation } from "../../../../../core/deleteAgentAI/Validation";
+import { deleteAgentAIController } from "../../../../../core/deleteAgentAI";
 
 const RouterV1Private_Delete = Router();
 
@@ -64,6 +66,12 @@ RouterV1Private_Delete.delete(
   "/storage-files/:id",
   deleteStorageFileValidation,
   deleteStorageFileController
+);
+
+RouterV1Private_Delete.delete(
+  "/agents-ai/:id",
+  deleteAgentAIValidation,
+  deleteAgentAIController
 );
 
 export default RouterV1Private_Delete;

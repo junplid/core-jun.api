@@ -19,6 +19,8 @@ import { createCampaignValidation } from "../../../../../core/createCampaign/Val
 import { createCampaignController } from "../../../../../core/createCampaign";
 import { createStorageFileValidation } from "../../../../../core/createStorageFile/Validation";
 import { createStorageFileController } from "../../../../../core/createStorageFile";
+import { createAgentAIValidation } from "../../../../../core/createAgentAI/Validation";
+import { createAgentAIController } from "../../../../../core/createAgentAI";
 
 const RouterV1Private_Post = Router();
 
@@ -84,6 +86,12 @@ RouterV1Private_Post.post(
   },
   createStorageFileValidation,
   createStorageFileController
+);
+
+RouterV1Private_Post.post(
+  "/agents-ai",
+  createAgentAIValidation,
+  createAgentAIController
 );
 
 export default RouterV1Private_Post;

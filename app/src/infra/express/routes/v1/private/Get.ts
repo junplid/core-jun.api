@@ -65,6 +65,10 @@ import { getStorageFileValidation } from "../../../../../core/getStorageFile/Val
 import { getStorageFileController } from "../../../../../core/getStorageFile";
 import { getStorageFilesForSelectValidation } from "../../../../../core/getStorageFilesForSelect/Validation";
 import { getStorageFilesForSelectController } from "../../../../../core/getStorageFilesForSelect";
+import { getAgentsAIValidation } from "../../../../../core/getAgentsAI/Validation";
+import { getAgentsAIController } from "../../../../../core/getAgentsAI";
+import { getAgentAIValidation } from "../../../../../core/getAgentAI/Validation";
+import { getAgentAIController } from "../../../../../core/getAgentAI";
 
 const RouterV1Private_Get = Router();
 
@@ -244,6 +248,18 @@ RouterV1Private_Get.get(
   "/storage-files/:id",
   getStorageFileValidation,
   getStorageFileController
+);
+
+RouterV1Private_Get.get(
+  "/agents-ai",
+  getAgentsAIValidation,
+  getAgentsAIController
+);
+
+RouterV1Private_Get.get(
+  "/agents-ai/:id",
+  getAgentAIValidation,
+  getAgentAIController
 );
 
 export default RouterV1Private_Get;

@@ -165,6 +165,8 @@ model Account {
   AccountLogDate      AccountLogDate[]
   Campaign            Campaign[]
   Audience            Audience[]
+  ProviderCredential  ProviderCredential[]
+  AgentAI             AgentAI[]
 
   @@index([id, email, hash, status, available, isUsedFreeTrialTime])
 }
@@ -640,6 +642,7 @@ model Business {
   CampaignOnBusiness     CampaignOnBusiness[]
   AudienceOnBusiness     AudienceOnBusiness[]
   StoragePathsOnBusiness StoragePathsOnBusiness[]
+  AgentAIOnBusiness      AgentAIOnBusiness[]
 
   @@index([id, accountId])
 }
@@ -1097,16 +1100,18 @@ model ContactsWAOnAccountVariable {
 }
 
 model StoragePaths {
-  id                     Int                      @id @default(autoincrement())
-  name                   String?
-  originalName           String
-  fileName               String
-  size                   Float
-  mimetype               String?
-  createAt               DateTime                 @default(now())
-  accountId              Int
-  Account                Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  StoragePathsOnBusiness StoragePathsOnBusiness[]
+  id                                Int                                 @id @default(autoincrement())
+  name                              String?
+  originalName                      String
+  fileName                          String
+  size                              Float
+  mimetype                          String?
+  createAt                          DateTime                            @default(now())
+  accountId                         Int
+  Account                           Account                             @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  StoragePathsOnBusiness            StoragePathsOnBusiness[]
+  StoragePathOnAgentAI              StoragePathOnAgentAI[]
+  StoragePathOnInstructionOnAgentAI StoragePathOnInstructionOnAgentAI[]
 
   @@index([name, id])
 }
@@ -1726,4 +1731,92 @@ model GeralLogDate {
   createAt DateTime         @default(now())
 
   @@index([createAt, type])
+}
+
+enum TypeProviderCredential {
+  openai
+}
+
+model ProviderCredential {
+  id        Int                    @id @default(autoincrement())
+  provider  TypeProviderCredential
+  label     String
+  apiKey    String
+  accountId Int
+  Account   Account                @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createAt  DateTime               @default(now())
+  AgentAI   AgentAI[]
+
+  @@unique([label, accountId, provider])
+  @@index([createAt, label, accountId, provider])
+}
+
+enum TypeEmojiLevel {
+  none
+  low
+  medium
+  high
+}
+
+model AgentAI {
+  id                    Int                    @id @default(autoincrement())
+  name                  String
+  personality           String?                @db.Text
+  knowledgeBase         String?                @db.Text
+  emojiLevel            TypeEmojiLevel         @default(none)
+  language              String                 @default("PT-BR")
+  model                 String
+  temperature           Decimal?               @default(0.1) @db.Decimal(2, 1)
+  createAt              DateTime               @default(now())
+  updateAt              DateTime               @default(now()) @updatedAt
+  accountId             Int
+  providerCredentialId  Int
+  Account               Account                @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ProviderCredential    ProviderCredential     @relation(fields: [providerCredentialId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  AgentAIOnBusiness     AgentAIOnBusiness[]
+  StoragePathsOnAgentAI StoragePathOnAgentAI[]
+  InstructionOnAgentAI  InstructionOnAgentAI[]
+
+  @@index([id, name, accountId])
+}
+
+model InstructionOnAgentAI {
+  id                                Int                                 @id @default(autoincrement())
+  prompt                            String                              @db.Text
+  promptAfterReply                  String                              @db.Text
+  agentAIId                         Int
+  AgentAI                           AgentAI                             @relation(fields: [agentAIId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  StoragePathOnInstructionOnAgentAI StoragePathOnInstructionOnAgentAI[]
+
+  @@index([id, agentAIId])
+}
+
+model AgentAIOnBusiness {
+  id         Int      @id @default(autoincrement())
+  businessId Int
+  Business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  agentId    Int
+  AgentAI    AgentAI  @relation(fields: [agentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([businessId, agentId])
+}
+
+model StoragePathOnAgentAI {
+  id            Int          @id @default(autoincrement())
+  agentAIId     Int
+  AgentAI       AgentAI      @relation(fields: [agentAIId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storagePathId Int
+  StoragePaths  StoragePaths @relation(fields: [storagePathId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([agentAIId, storagePathId])
+}
+
+model StoragePathOnInstructionOnAgentAI {
+  id                     Int                  @id @default(autoincrement())
+  instructionOnAgentAIId Int
+  InstructionOnAgentAI   InstructionOnAgentAI @relation(fields: [instructionOnAgentAIId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storagePathId          Int
+  StoragePaths           StoragePaths         @relation(fields: [storagePathId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([instructionOnAgentAIId, storagePathId])
 }
