@@ -18,24 +18,9 @@ export class GetAgentAIUseCase {
         personality: true,
         providerCredentialId: true,
         AgentAIOnBusiness: { select: { businessId: true } },
-        InstructionOnAgentAI: {
-          select: {
-            prompt: true,
-            promptAfterReply: true,
-            StoragePathOnInstructionOnAgentAI: {
-              select: {
-                StoragePaths: {
-                  select: {
-                    id: true,
-                    fileName: true,
-                    originalName: true,
-                    mimetype: true,
-                  },
-                },
-              },
-            },
-          },
-        },
+        instructions: true,
+        debounce: true,
+        timeout: true,
         StoragePathsOnAgentAI: {
           select: {
             StoragePaths: {
@@ -55,12 +40,7 @@ export class GetAgentAIUseCase {
       throw new ErrorResponse(400).container("Agente IA não encontrado.");
     }
 
-    const {
-      AgentAIOnBusiness,
-      InstructionOnAgentAI,
-      StoragePathsOnAgentAI,
-      ...rest
-    } = data;
+    const { AgentAIOnBusiness, StoragePathsOnAgentAI, ...rest } = data;
 
     return {
       message: "OK!",
@@ -68,14 +48,7 @@ export class GetAgentAIUseCase {
       agentAI: {
         ...rest,
         businessIds: AgentAIOnBusiness.map((item) => item.businessId),
-        instructions: InstructionOnAgentAI.map(
-          ({ StoragePathOnInstructionOnAgentAI, ...r }) => ({
-            ...r,
-            files: StoragePathOnInstructionOnAgentAI.map(
-              (item) => item.StoragePaths
-            ),
-          })
-        ),
+        instructions: true,
         files: StoragePathsOnAgentAI.map((item) => item.StoragePaths),
       },
     };

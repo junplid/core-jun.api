@@ -21,6 +21,8 @@ import { createStorageFileValidation } from "../../../../../core/createStorageFi
 import { createStorageFileController } from "../../../../../core/createStorageFile";
 import { createAgentAIValidation } from "../../../../../core/createAgentAI/Validation";
 import { createAgentAIController } from "../../../../../core/createAgentAI";
+import { testAgentAIValidation } from "../../../../../core/testAgentAI/Validation";
+import { testAgentAIController } from "../../../../../core/testAgentAI";
 
 const RouterV1Private_Post = Router();
 
@@ -86,6 +88,12 @@ RouterV1Private_Post.post(
   },
   createStorageFileValidation,
   createStorageFileController
+);
+
+RouterV1Private_Post.post(
+  "/agents-ai/test",
+  testAgentAIValidation,
+  testAgentAIController
 );
 
 RouterV1Private_Post.post(

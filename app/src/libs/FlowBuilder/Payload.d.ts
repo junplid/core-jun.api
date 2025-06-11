@@ -108,6 +108,22 @@ export type NodeSendAudiosLiveData = {
   files: { id: number; fileName: string | null; originalName: string }[];
 };
 
+export type NodeAgentAIData = {
+  id: number;
+  // attendantAI: number;
+  // prompt?: string;
+  // typingTime?: number;
+  // objective?: string;
+  // waitForCompletion?: number;
+  // roles?: { limitInteractions?: number };
+  // actions?: {
+  //   type: "variable" | "add-tag" | "del-tag";
+  //   id?: number;
+  //   prompt: string;
+  //   key: string;
+  // }[];
+};
+
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeMessage"
@@ -126,7 +142,8 @@ export type TypeNodesPayload =
   | "NodeSendVideos"
   | "NodeSendAudios"
   | "NodeSendAudiosLive"
-  | "NodeNotifyWA";
+  | "NodeNotifyWA"
+  | "NodeAgentAI";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -147,4 +164,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeSendVideos"; data: NodeSendVideosData }
   | { type: "NodeSendAudios"; data: NodeSendAudiosData }
   | { type: "NodeSendAudiosLive"; data: NodeSendAudiosLiveData }
+  | { type: "NodeAgentAI"; data: NodeAgentAIData }
 );

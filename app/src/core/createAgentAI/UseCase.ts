@@ -1,5 +1,4 @@
 import { CreateAgentAIDTO_I } from "./DTO";
-import { genSalt, hash as hashBcrypt } from "bcrypt";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import OpenAI from "openai";
@@ -36,20 +35,37 @@ export class CreateAgentAIUseCase {
         });
       }
 
-      // try {
-      //   const client = new OpenAI({ apiKey: dto.apiKey });
-      //   await client.models.list();
-      // } catch (error) {
-      //   throw new ErrorResponse(400).input({
-      //     path: "apiKey",
-      //     text: "Credencial de API inválida",
-      //   });
-      // }
+      const existingCredential = await prisma.providerCredential.findFirst({
+        where: {
+          accountId,
+          label: dto.nameProvider,
+          provider: "openai",
+          apiKey: dto.apiKey,
+        },
+        select: { id: true, label: true },
+      });
+
+      if (existingCredential) {
+        throw new ErrorResponse(400).input({
+          path: "apiKey",
+          text: `Esse provedor já existe. Selecione: ${existingCredential.label} na lista de provedores`,
+        });
+      }
+
+      try {
+        const client = new OpenAI({ apiKey: dto.apiKey });
+        await client.models.list();
+      } catch (error) {
+        throw new ErrorResponse(400).input({
+          path: "apiKey",
+          text: "Credencial de API inválida",
+        });
+      }
 
       const newProviderCredential = await prisma.providerCredential.create({
         data: {
           accountId,
-          apiKey: await hashBcrypt(dto.apiKey, await genSalt(10)),
+          apiKey: dto.apiKey,
           label: dto.nameProvider,
           provider: "openai",
         },
@@ -59,7 +75,7 @@ export class CreateAgentAIUseCase {
     }
 
     const exist = await prisma.agentAI.findFirst({
-      where: { accountId, name: dto.name },
+      where: { accountId, name: dto.name, providerCredentialId },
       select: { id: true },
     });
 
@@ -67,10 +83,15 @@ export class CreateAgentAIUseCase {
       await prisma.providerCredential.delete({
         where: { id: providerCredentialId },
       });
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Já existe um agente IA com esse nome",
-      });
+      throw new ErrorResponse(400)
+        .input({
+          path: "name",
+          text: "Já existe um agente IA com esse nome e provedor",
+        })
+        .input({
+          path: "providerCredentialId",
+          text: `Já existe um agente IA com esse provedor e nome: "${dto.name}"`,
+        });
     }
 
     try {
@@ -81,6 +102,9 @@ export class CreateAgentAIUseCase {
           name: dto.name,
           emojiLevel: dto.emojiLevel || "none",
           model: dto.model,
+          instructions: dto.instructions,
+          debounce: dto.debounce,
+          timeout: dto.timeout,
           AgentAIOnBusiness: {
             createMany: {
               data: dto.businessIds.map((businessId) => ({
@@ -94,43 +118,19 @@ export class CreateAgentAIUseCase {
           StoragePathsOnAgentAI: {
             createMany: {
               data:
-                dto.files?.map((fileId) => ({
-                  storagePathId: fileId,
-                })) || [],
+                dto.files?.map((fileId) => ({ storagePathId: fileId })) || [],
             },
           },
-          ...(dto.instructions?.length && {
-            InstructionOnAgentAI: {
-              createMany: {
-                data: dto.instructions.map((instruction) => ({
-                  prompt: instruction.prompt || "",
-                  promptAfterReply: instruction.promptAfterReply || "",
-                  ...(instruction.files?.length && {
-                    StoragePathsOnInstruction: {
-                      createMany: {
-                        data: instruction.files.map((fileId) => ({
-                          storagePathId: fileId,
-                        })),
-                      },
-                    },
-                  }),
-                })),
-              },
-            },
-          }),
         },
         select: {
           id: true,
           createAt: true,
           AgentAIOnBusiness: {
-            select: {
-              Business: {
-                select: { id: true, name: true },
-              },
-            },
+            select: { Business: { select: { id: true, name: true } } },
           },
         },
       });
+
       return {
         status: 201,
         agentAI: {

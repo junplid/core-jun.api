@@ -30,3 +30,4 @@ app/static/*
 app/src/bin/chats-ai/*
 .env.pg
 .env.mongo
+app/src/bin/files-test.json

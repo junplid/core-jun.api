@@ -1,32 +1,27 @@
 import { NextFunction, Request, Response } from "express";
 import { Joi } from "express-validation";
-import { validatePhoneNumber } from "../../helpers/validatePhoneNumber";
-import { CreateAgentAIDTO_I } from "./DTO";
-import { ErrorResponse } from "../../utils/ErrorResponse";
+import { TestAgentAIDTO_I } from "./DTO";
 
-export const createAgentAIValidation = (
-  req: Request<any, any, CreateAgentAIDTO_I>,
+export const testAgentAIValidation = (
+  req: Request<any, any, TestAgentAIDTO_I>,
   res: Response,
   next: NextFunction
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
+    content: Joi.string().required(),
     providerCredentialId: Joi.number().optional(),
     apiKey: Joi.string().allow("").optional(),
-    nameProvider: Joi.string().allow("").optional(),
-    businessIds: Joi.array().items(Joi.number()).required(),
+    accountId: Joi.number().required(),
+    tokenTest: Joi.string().required(),
     name: Joi.string().required(),
     emojiLevel: Joi.string().valid("none", "low", "medium", "high").optional(),
-    language: Joi.string().optional(),
     personality: Joi.string().optional(),
     model: Joi.string().required(),
-    temperature: Joi.number().min(0).max(1).optional(),
+    temperature: Joi.number().min(0).max(2).optional(),
     knowledgeBase: Joi.string().optional(),
     files: Joi.array().items(Joi.number()).optional(),
     instructions: Joi.string().allow("").optional(),
-    timeout: Joi.number().min(1).max(7200).optional(),
-    debounce: Joi.number().min(0).max(9).optional(),
-  });
+  }).or("providerCredentialId", "apiKey");
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });
 

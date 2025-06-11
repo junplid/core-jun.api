@@ -11,3 +11,4 @@ export const scheduleExecutionsMenu: Map<string, Job | null> = new Map();
 export const countAttemptsMenu: Map<string, number> = new Map();
 export const cacheConnectionsWAOnline: Map<number, boolean> = new Map();
 export const cacheFlowInExecution: Map<string, boolean> = new Map();
+export const cacheTestAgentAI = new Map<string, string>();

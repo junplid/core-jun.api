@@ -1100,18 +1100,17 @@ model ContactsWAOnAccountVariable {
 }
 
 model StoragePaths {
-  id                                Int                                 @id @default(autoincrement())
-  name                              String?
-  originalName                      String
-  fileName                          String
-  size                              Float
-  mimetype                          String?
-  createAt                          DateTime                            @default(now())
-  accountId                         Int
-  Account                           Account                             @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  StoragePathsOnBusiness            StoragePathsOnBusiness[]
-  StoragePathOnAgentAI              StoragePathOnAgentAI[]
-  StoragePathOnInstructionOnAgentAI StoragePathOnInstructionOnAgentAI[]
+  id                     Int                      @id @default(autoincrement())
+  name                   String?
+  originalName           String
+  fileName               String
+  size                   Float
+  mimetype               String?
+  createAt               DateTime                 @default(now())
+  accountId              Int
+  Account                Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  StoragePathsOnBusiness StoragePathsOnBusiness[]
+  StoragePathOnAgentAI   StoragePathOnAgentAI[]
 
   @@index([name, id])
 }
@@ -1763,6 +1762,9 @@ model AgentAI {
   name                  String
   personality           String?                @db.Text
   knowledgeBase         String?                @db.Text
+  instructions          String?                @db.Text
+  timeout               Int?                   @default(900)
+  debounce              Int?                   @default(9)
   emojiLevel            TypeEmojiLevel         @default(none)
   language              String                 @default("PT-BR")
   model                 String
@@ -1775,20 +1777,8 @@ model AgentAI {
   ProviderCredential    ProviderCredential     @relation(fields: [providerCredentialId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   AgentAIOnBusiness     AgentAIOnBusiness[]
   StoragePathsOnAgentAI StoragePathOnAgentAI[]
-  InstructionOnAgentAI  InstructionOnAgentAI[]
 
   @@index([id, name, accountId])
-}
-
-model InstructionOnAgentAI {
-  id                                Int                                 @id @default(autoincrement())
-  prompt                            String                              @db.Text
-  promptAfterReply                  String                              @db.Text
-  agentAIId                         Int
-  AgentAI                           AgentAI                             @relation(fields: [agentAIId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  StoragePathOnInstructionOnAgentAI StoragePathOnInstructionOnAgentAI[]
-
-  @@index([id, agentAIId])
 }
 
 model AgentAIOnBusiness {
@@ -1803,20 +1793,11 @@ model AgentAIOnBusiness {
 
 model StoragePathOnAgentAI {
   id            Int          @id @default(autoincrement())
+  fileId        String?
   agentAIId     Int
   AgentAI       AgentAI      @relation(fields: [agentAIId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   storagePathId Int
   StoragePaths  StoragePaths @relation(fields: [storagePathId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([agentAIId, storagePathId])
-}
-
-model StoragePathOnInstructionOnAgentAI {
-  id                     Int                  @id @default(autoincrement())
-  instructionOnAgentAIId Int
-  InstructionOnAgentAI   InstructionOnAgentAI @relation(fields: [instructionOnAgentAIId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  storagePathId          Int
-  StoragePaths           StoragePaths         @relation(fields: [storagePathId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([instructionOnAgentAIId, storagePathId])
 }

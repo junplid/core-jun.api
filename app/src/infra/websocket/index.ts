@@ -1,4 +1,4 @@
-import { readFile, writeFileSync } from "fs";
+import { readFile, writeFile, writeFileSync } from "fs-extra";
 import { resolve } from "path";
 import { Server } from "socket.io";
 import {
@@ -7,12 +7,30 @@ import {
   killConnectionWA,
 } from "../../adapters/Baileys";
 import { cacheAccountSocket } from "./cache";
-import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
+import {
+  cacheConnectionsWAOnline,
+  cacheTestAgentAI,
+} from "../../adapters/Baileys/Cache";
 import { prisma } from "../../adapters/Prisma/client";
+import OpenAI from "openai";
 
 interface PropsCreateSessionWA_I {
   connectionWhatsId: number;
   number?: string;
+}
+
+interface VectorStoreTest {
+  apiKey: string;
+  vectorStoreId: string;
+  tokenTest: string;
+  files: { localId: number; openFileId: string }[];
+}
+
+let pathFilesTest = "";
+if (process.env.NODE_ENV === "production") {
+  pathFilesTest = resolve(__dirname, `./bin/files-test.json`);
+} else {
+  pathFilesTest = resolve(__dirname, `../../bin/files-test.json`);
 }
 
 export const WebSocketIo = (io: Server) => {
@@ -117,6 +135,30 @@ export const WebSocketIo = (io: Server) => {
         return;
       }
       await killConnectionWA(data.connectionWhatsId, auth.accountId);
+    });
+
+    socket.on("agent-ai:clear-tokenTest", async (tokenTest: string) => {
+      cacheTestAgentAI.delete(tokenTest);
+      const vsTest: VectorStoreTest[] = JSON.parse(
+        (await readFile(resolve(pathFilesTest), "utf-8")) || "[]"
+      );
+
+      const existingTokenTest = vsTest.find((v) => v.tokenTest === tokenTest);
+      if (existingTokenTest) {
+        const openai = new OpenAI({ apiKey: existingTokenTest.apiKey });
+        const filesVs = await openai.vectorStores.files.list(
+          existingTokenTest.vectorStoreId
+        );
+        await openai.vectorStores.delete(existingTokenTest.vectorStoreId);
+        for (const file of filesVs.data) {
+          await openai.files.delete(file.id);
+        }
+        const updatedVsTest = vsTest.filter((v) => v.tokenTest !== tokenTest);
+        await writeFile(
+          resolve(pathFilesTest),
+          JSON.stringify(updatedVsTest, null, 2)
+        );
+      }
     });
 
     socket.on("disconnect", async (reason) => {

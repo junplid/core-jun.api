@@ -1,18 +1,15 @@
-export interface CreateAgentAIDTO_I {
+export interface TestAgentAIDTO_I {
+  content: string;
   accountId: number;
   providerCredentialId?: number;
   apiKey?: string;
-  nameProvider?: string;
-  businessIds: number[];
+  tokenTest: string;
   name: string;
-  emojiLevel?: "none" | "low" | "medium" | "high";
-  language?: string;
-  personality?: string;
   model: string;
+  emojiLevel?: "none" | "low" | "medium" | "high";
+  personality?: string;
   temperature?: number;
   knowledgeBase?: string;
   files?: number[];
   instructions?: string;
-  timeout?: number;
-  debounce?: number;
 }
