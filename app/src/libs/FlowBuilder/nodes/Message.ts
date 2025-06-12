@@ -1,5 +1,4 @@
 import { WASocket } from "baileys";
-import { prisma } from "../../../adapters/Prisma/client";
 import { NodeMessageData } from "../Payload";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { TypingDelay } from "../../../adapters/Baileys/modules/typing";

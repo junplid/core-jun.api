@@ -48,7 +48,6 @@ export class GetAgentAIUseCase {
       agentAI: {
         ...rest,
         businessIds: AgentAIOnBusiness.map((item) => item.businessId),
-        instructions: true,
         files: StoragePathsOnAgentAI.map((item) => item.StoragePaths),
       },
     };

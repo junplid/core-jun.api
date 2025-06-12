@@ -71,6 +71,8 @@ import { getAgentAIValidation } from "../../../../../core/getAgentAI/Validation"
 import { getAgentAIController } from "../../../../../core/getAgentAI";
 import { getProvidersForSelectValidation } from "../../../../../core/getProvidersForSelect/Validation";
 import { getProvidersForSelectController } from "../../../../../core/getProvidersForSelect";
+import { getAgentsAIForSelectValidation } from "../../../../../core/getAgentsAIForSelect/Validation";
+import { getAgentsAIForSelectController } from "../../../../../core/getAgentsAIForSelect";
 
 const RouterV1Private_Get = Router();
 
@@ -256,6 +258,12 @@ RouterV1Private_Get.get(
   "/agents-ai",
   getAgentsAIValidation,
   getAgentsAIController
+);
+
+RouterV1Private_Get.get(
+  "/agents-ai/options",
+  getAgentsAIForSelectValidation,
+  getAgentsAIForSelectController
 );
 
 RouterV1Private_Get.get(

@@ -1,23 +1,24 @@
 import { NextFunction, Request, Response } from "express";
 import { Joi } from "express-validation";
-import { CreateAgentAIDTO_I } from "./DTO";
+import { UpdateAgentAIBodyDTO_I, UpdateAgentAIParamsDTO_I } from "./DTO";
 
-export const createAgentAIValidation = (
-  req: Request<any, any, CreateAgentAIDTO_I>,
+export const updateAgentAIValidation = (
+  req: Request<UpdateAgentAIParamsDTO_I, any, UpdateAgentAIBodyDTO_I>,
   res: Response,
   next: NextFunction
 ) => {
   const schemaValidation = Joi.object({
+    id: Joi.number().required(),
     accountId: Joi.number().required(),
     providerCredentialId: Joi.number().optional(),
     apiKey: Joi.string().allow("").optional(),
     nameProvider: Joi.string().allow("").optional(),
-    businessIds: Joi.array().items(Joi.number()).required(),
-    name: Joi.string().required(),
+    businessIds: Joi.array().items(Joi.number()).optional(),
+    name: Joi.string().optional(),
     emojiLevel: Joi.string().valid("none", "low", "medium", "high").optional(),
     language: Joi.string().optional(),
     personality: Joi.string().optional(),
-    model: Joi.string().required(),
+    model: Joi.string().optional(),
     temperature: Joi.number().min(0).max(1).optional(),
     knowledgeBase: Joi.string().optional(),
     files: Joi.array().items(Joi.number()).optional(),
@@ -26,7 +27,10 @@ export const createAgentAIValidation = (
     debounce: Joi.number().min(0).max(9).optional(),
   });
 
-  const validation = schemaValidation.validate(req.body, { abortEarly: false });
+  const validation = schemaValidation.validate(
+    { ...req.body, ...req.params },
+    { abortEarly: false }
+  );
 
   if (validation.error) {
     const errors = validation.error.details.map((detail) => ({
@@ -36,6 +40,8 @@ export const createAgentAIValidation = (
     }));
     return res.status(400).json({ errors });
   }
+
+  req.params.id = Number(req.params.id);
 
   next();
 };

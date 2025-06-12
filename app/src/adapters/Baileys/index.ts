@@ -1296,7 +1296,11 @@ export const Baileys = async ({
                     contactsWAOnAccountId: ContactsWAOnAccount[0].id,
                     isFinish: false,
                   },
-                  select: { indexNode: true, id: true },
+                  select: {
+                    indexNode: true,
+                    id: true,
+                    previous_response_id: true,
+                  },
                 });
                 if (!currentIndexNodeLead) {
                   currentIndexNodeLead = await prisma.flowState.create({
@@ -1306,7 +1310,11 @@ export const Baileys = async ({
                       indexNode: "0",
                       flowId: chatbot.flowId,
                     },
-                    select: { indexNode: true, id: true },
+                    select: {
+                      indexNode: true,
+                      id: true,
+                      previous_response_id: true,
+                    },
                   });
                 }
                 const businessInfo = await prisma.connectionWA.findFirst({
@@ -1326,6 +1334,8 @@ export const Baileys = async ({
                   connectionWhatsId: props.connectionWhatsId,
                   chatbotId: chatbot.id,
                   oldNodeId: currentIndexNodeLead?.indexNode || "0",
+                  previous_response_id:
+                    currentIndexNodeLead.previous_response_id || undefined,
                   clientWA: bot,
                   isSavePositionLead: true,
                   flowStateId: currentIndexNodeLead.id,
@@ -1357,7 +1367,6 @@ export const Baileys = async ({
                       }
                     },
                     onExecutedNode: async (node) => {
-                      console.log({ nodeExecuted: node });
                       if (currentIndexNodeLead?.id) {
                         try {
                           await prisma.flowState
@@ -1372,8 +1381,6 @@ export const Baileys = async ({
                       }
                     },
                     onEnterNode: async (node) => {
-                      console.log({ nodeEnter: node });
-
                       const indexCurrentAlreadyExist =
                         await prisma.flowState.findFirst({
                           where: {

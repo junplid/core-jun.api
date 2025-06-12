@@ -24,6 +24,8 @@ import { updateCampaignValidation } from "../../../../../core/updateCampaign/Val
 import { updateCampaignController } from "../../../../../core/updateCampaign";
 import { updateStorageFileValidation } from "../../../../../core/updateStorageFile/Validation";
 import { updateStorageFileController } from "../../../../../core/updateStorageFile";
+import { updateAgentAIValidation } from "../../../../../core/updateAgentAI/Validation";
+import { updateAgentAIController } from "../../../../../core/updateAgentAI";
 
 const RouterV1Private_Put = Router();
 
@@ -97,6 +99,12 @@ RouterV1Private_Put.put(
   "/storage-files/:id",
   updateStorageFileValidation,
   updateStorageFileController
+);
+
+RouterV1Private_Put.put(
+  "/agents-ai/:id",
+  updateAgentAIValidation,
+  updateAgentAIController
 );
 
 export default RouterV1Private_Put;

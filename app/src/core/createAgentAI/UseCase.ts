@@ -2,16 +2,42 @@ import { CreateAgentAIDTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import OpenAI from "openai";
+import { resolve } from "path";
+import { createReadStream } from "fs-extra";
+
+let path = "";
+if (process.env.NODE_ENV === "production") {
+  path = resolve(__dirname, `../static/storage`);
+} else {
+  path = resolve(__dirname, `../../../static/storage`);
+}
+
+export async function ensureFileByName(
+  openai: OpenAI,
+  fileName: string,
+  absPath: string
+): Promise<string> {
+  for await (const file of openai.files.list({ purpose: "assistants" })) {
+    if (file.filename === fileName) return file.id;
+  }
+  const { id } = await openai.files.create({
+    file: createReadStream(resolve(absPath)),
+    purpose: "assistants",
+  });
+
+  return id;
+}
 
 export class CreateAgentAIUseCase {
   constructor() {}
 
   async run({ accountId, ...dto }: CreateAgentAIDTO_I) {
     let providerCredentialId: number | undefined = undefined;
+    let apiKey: string | undefined = undefined;
     if (dto.providerCredentialId) {
       const credential = await prisma.providerCredential.findFirst({
         where: { id: dto.providerCredentialId, accountId },
-        select: { id: true },
+        select: { id: true, apiKey: true },
       });
 
       if (!credential) {
@@ -21,6 +47,7 @@ export class CreateAgentAIUseCase {
         });
       }
       providerCredentialId = credential.id;
+      apiKey = credential.apiKey;
     } else {
       if (!dto.apiKey) {
         throw new ErrorResponse(400).input({
@@ -72,6 +99,7 @@ export class CreateAgentAIUseCase {
         select: { id: true },
       });
       providerCredentialId = newProviderCredential.id;
+      apiKey = dto.apiKey;
     }
 
     const exist = await prisma.agentAI.findFirst({
@@ -95,7 +123,7 @@ export class CreateAgentAIUseCase {
     }
 
     try {
-      const { AgentAIOnBusiness, ...agent } = await prisma.agentAI.create({
+      const { AgentAIOnBusiness, id, ...agent } = await prisma.agentAI.create({
         data: {
           accountId,
           providerCredentialId,
@@ -107,20 +135,12 @@ export class CreateAgentAIUseCase {
           timeout: dto.timeout,
           AgentAIOnBusiness: {
             createMany: {
-              data: dto.businessIds.map((businessId) => ({
-                businessId,
-              })),
+              data: dto.businessIds.map((businessId) => ({ businessId })),
             },
           },
           knowledgeBase: dto.knowledgeBase,
           personality: dto.personality,
-          temperature: dto.temperature || 0.2,
-          StoragePathsOnAgentAI: {
-            createMany: {
-              data:
-                dto.files?.map((fileId) => ({ storagePathId: fileId })) || [],
-            },
-          },
+          temperature: dto.temperature || 1,
         },
         select: {
           id: true,
@@ -131,9 +151,44 @@ export class CreateAgentAIUseCase {
         },
       });
 
+      if (dto.files?.length) {
+        const openai = new OpenAI({ apiKey });
+
+        const filesIds = await Promise.all(
+          dto.files.map(async (fileLocalId) => {
+            const existFile = await prisma.storagePaths.findFirst({
+              where: { id: fileLocalId, accountId },
+              select: { id: true, fileName: true },
+            });
+            if (existFile?.id) {
+              const fileId = await ensureFileByName(
+                openai,
+                existFile.fileName,
+                resolve(path, existFile.fileName)
+              );
+              await prisma.storagePathOnAgentAI.create({
+                data: { agentAIId: id, storagePathId: existFile.id, fileId },
+              });
+              return fileId;
+            }
+            return undefined;
+          })
+        );
+        const filterFiles = filesIds.filter((id) => id) as string[];
+        const { id: vsId } = await openai.vectorStores.create({
+          name: `knowledge-base-${id}`,
+          file_ids: filterFiles,
+        });
+        await prisma.agentAI.update({
+          where: { id },
+          data: { vectorStoreId: vsId },
+        });
+      }
+
       return {
         status: 201,
         agentAI: {
+          id,
           ...agent,
           businesses: AgentAIOnBusiness.map((item) => item.Business),
         },

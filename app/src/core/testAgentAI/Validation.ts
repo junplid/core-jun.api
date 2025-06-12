@@ -17,6 +17,7 @@ export const testAgentAIValidation = (
     emojiLevel: Joi.string().valid("none", "low", "medium", "high").optional(),
     personality: Joi.string().optional(),
     model: Joi.string().required(),
+    language: Joi.string().optional(),
     temperature: Joi.number().min(0).max(2).optional(),
     knowledgeBase: Joi.string().optional(),
     files: Joi.array().items(Joi.number()).optional(),

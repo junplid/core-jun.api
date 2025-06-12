@@ -38,6 +38,7 @@ export type IPropsControler = {
   isSavePositionLead?: boolean;
   numberConnection: string;
   accountId: number;
+  previous_response_id?: string;
   businessName: string;
   flowBusinessIds?: number[];
 } & (
@@ -227,10 +228,6 @@ export const NodeControler = ({
 
         execute({
           ...props,
-          // type:
-          //   nextEdgesIds[0].nodeNextType === "nodeAttendantAI"
-          //     ? "running"
-          //     : "initial",
           ...(props.type === "running" && { message: props.message }),
           currentNodeId: nextEdgesIds[0].id,
           oldNodeId: currentNode.id,
@@ -314,7 +311,7 @@ export const NodeControler = ({
               props.actions?.onFinish && (await props.actions.onFinish("307"));
               return res();
             }
-            if (props.isSavePositionLead && props.actions?.onExecutedNode) {
+            if (props.actions?.onExecutedNode) {
               props.actions.onExecutedNode(currentNode);
             }
             return execute({
@@ -337,6 +334,15 @@ export const NodeControler = ({
                 cacheFlowInExecution.delete(keyMap);
                 props.actions?.onFinish && props.actions?.onFinish("332");
                 return res();
+              }
+              if (isNextNodeMain.nodeNextType === "NodeAgentAI") {
+                return execute({
+                  ...props,
+                  type: "running",
+                  message: props.type === "initial" ? "" : props.message,
+                  currentNodeId: isNextNodeMain.id,
+                  oldNodeId: currentNode.id,
+                });
               }
               return execute({
                 ...props,
@@ -386,7 +392,7 @@ export const NodeControler = ({
               cacheFlowInExecution.delete(keyMap);
               return res();
             }
-            if (props.isSavePositionLead && props.actions?.onExecutedNode) {
+            if (props.actions?.onExecutedNode) {
               props.actions.onExecutedNode(currentNode);
             }
             return execute({
@@ -973,6 +979,127 @@ export const NodeControler = ({
             return res();
           });
         return;
+      }
+      if (currentNode.type === "NodeAgentAI") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
+        await LibraryNodes.NodeAgentAI({
+          numberLead: props.lead.number,
+          numberConnection: props.numberConnection,
+          data: currentNode.data,
+          message: props.type === "initial" ? undefined : props.message,
+          connectionWhatsId: props.connectionWhatsId,
+          action: {
+            onErrorClient: () => {
+              if (props.oldNodeId === "0") {
+                props.actions?.onErrorClient &&
+                  props.actions?.onErrorClient(currentNode.id);
+              }
+            },
+            onExecuteTimeout: async () => {
+              const nextNodeId = nextEdgesIds?.find((nd) =>
+                nd.sourceHandle?.includes("timeout")
+              );
+              if (!nextNodeId) {
+                props.actions?.onFinish &&
+                  (await props.actions.onFinish("307"));
+                cacheFlowInExecution.delete(keyMap);
+                return res();
+              }
+              if (props.actions?.onExecutedNode) {
+                props.actions.onExecutedNode(currentNode);
+              }
+              return execute({
+                ...props,
+                type: "initial",
+                currentNodeId: nextNodeId.id,
+                oldNodeId: currentNode.id,
+              });
+            },
+            onExitNode: async (NAME_HANDLE) => {
+              // await prisma.flowState.update({
+              //   where: { id: props.flowStateId },
+              //   data: { previous_response_id: null },
+              // });
+              const nextNodeId = nextEdgesIds?.find((nd) =>
+                nd.sourceHandle?.includes(NAME_HANDLE)
+              );
+              if (!nextNodeId) {
+                cacheFlowInExecution.delete(keyMap);
+                props.actions?.onFinish &&
+                  (await props.actions.onFinish("307"));
+                return res();
+              }
+              if (props.actions?.onExecutedNode) {
+                props.actions.onExecutedNode(currentNode);
+              }
+              return execute({
+                ...props,
+                type: "initial",
+                currentNodeId: nextNodeId.id,
+                oldNodeId: currentNode.id,
+              });
+            },
+          },
+          accountId: props.accountId,
+          contactAccountId: props.contactsWAOnAccountId,
+          previous_response_id: props.previous_response_id,
+          flowStateId: props.flowStateId,
+        })
+          .then(async (d) => {
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+            if (d.action === "sucess") {
+              const isNextNodeMain = nextEdgesIds.find(
+                (nh) => nh.sourceHandle === d.sourceHandle
+              );
+              if (!isNextNodeMain) {
+                cacheFlowInExecution.delete(keyMap);
+                props.actions?.onFinish && props.actions?.onFinish("332");
+                return res();
+              }
+              return execute({
+                ...props,
+                type: "initial",
+                currentNodeId: isNextNodeMain.id,
+                oldNodeId: currentNode.id,
+              });
+            }
+            if (d.action === "return") {
+              cacheFlowInExecution.delete(keyMap);
+              return res();
+            }
+            if (d.action === "failAttempt") {
+              cacheFlowInExecution.delete(keyMap);
+              return res();
+            }
+            if (d.action === "failed") {
+              const isNextNodeMain = nextEdgesIds.find((nh) =>
+                nh.sourceHandle?.includes("failed")
+              );
+              if (!isNextNodeMain) {
+                cacheFlowInExecution.delete(keyMap);
+                props.actions?.onFinish && props.actions?.onFinish("332");
+                return res();
+              }
+              return execute({
+                ...props,
+                type: "initial",
+                currentNodeId: isNextNodeMain.id,
+                oldNodeId: currentNode.id,
+              });
+            }
+          })
+          .catch((error: any) => {
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
       }
 
       return res();

@@ -109,19 +109,8 @@ export type NodeSendAudiosLiveData = {
 };
 
 export type NodeAgentAIData = {
-  id: number;
-  // attendantAI: number;
-  // prompt?: string;
-  // typingTime?: number;
-  // objective?: string;
-  // waitForCompletion?: number;
-  // roles?: { limitInteractions?: number };
-  // actions?: {
-  //   type: "variable" | "add-tag" | "del-tag";
-  //   id?: number;
-  //   prompt: string;
-  //   key: string;
-  // }[];
+  prompt?: string;
+  agentId: number;
 };
 
 export type TypeNodesPayload =

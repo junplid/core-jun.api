@@ -12,3 +12,7 @@ export const countAttemptsMenu: Map<string, number> = new Map();
 export const cacheConnectionsWAOnline: Map<number, boolean> = new Map();
 export const cacheFlowInExecution: Map<string, boolean> = new Map();
 export const cacheTestAgentAI = new Map<string, string>();
+
+export const cacheDebounceAgentAI = new Map<string, Job | null>();
+export const cacheMessagesDebouceAgentAI = new Map<string, string[]>();
+export const scheduleTimeoutAgentAI: Map<string, Job | null> = new Map();
