@@ -73,6 +73,18 @@ import { getProvidersForSelectValidation } from "../../../../../core/getProvider
 import { getProvidersForSelectController } from "../../../../../core/getProvidersForSelect";
 import { getAgentsAIForSelectValidation } from "../../../../../core/getAgentsAIForSelect/Validation";
 import { getAgentsAIForSelectController } from "../../../../../core/getAgentsAIForSelect";
+import { getInboxUsersValidation } from "../../../../../core/getInboxUsers/Validation";
+import { getInboxUsersController } from "../../../../../core/getInboxUsers";
+import { getInboxUserValidation } from "../../../../../core/getInboxUser/Validation";
+import { getInboxUserController } from "../../../../../core/getInboxUser";
+import { getInboxUserForSelectValidation } from "../../../../../core/getInboxUsersForSelect/Validation";
+import { getInboxUserForSelectController } from "../../../../../core/getInboxUsersForSelect";
+import { getInboxDepartmentValidation } from "../../../../../core/getInboxDepartment/Validation";
+import { getInboxDepartmentController } from "../../../../../core/getInboxDepartment";
+import { getInboxDepartmentsValidation } from "../../../../../core/getInboxDepartments/Validation";
+import { getInboxDepartmentsController } from "../../../../../core/getInboxDepartments";
+import { getInboxDepartmentsForSelectValidation } from "../../../../../core/getInboxDepartmentsForSelect/Validation";
+import { getInboxDepartmentsForSelectController } from "../../../../../core/getInboxDepartmentsForSelect";
 
 const RouterV1Private_Get = Router();
 
@@ -276,6 +288,42 @@ RouterV1Private_Get.get(
   "/providers/options",
   getProvidersForSelectValidation,
   getProvidersForSelectController
+);
+
+RouterV1Private_Get.get(
+  "/inbox-users",
+  getInboxUsersValidation,
+  getInboxUsersController
+);
+
+RouterV1Private_Get.get(
+  "/inbox-users/options",
+  getInboxUserForSelectValidation,
+  getInboxUserForSelectController
+);
+
+RouterV1Private_Get.get(
+  "/inbox-users/:id",
+  getInboxUserValidation,
+  getInboxUserController
+);
+
+RouterV1Private_Get.get(
+  "/inbox-departments",
+  getInboxDepartmentsValidation,
+  getInboxDepartmentsController
+);
+
+RouterV1Private_Get.get(
+  "/inbox-departments/options",
+  getInboxDepartmentsForSelectValidation,
+  getInboxDepartmentsForSelectController
+);
+
+RouterV1Private_Get.get(
+  "/inbox-departments/:id",
+  getInboxDepartmentValidation,
+  getInboxDepartmentController
 );
 
 export default RouterV1Private_Get;

@@ -1,4 +1,3 @@
-// import { TypeStaticPath } from "@prisma/client";
 import { NextFunction, Request, Router } from "express";
 import { createBusinessController } from "../../../../../core/createBusiness";
 import { createBusinessValidation } from "../../../../../core/createBusiness/Validation";
@@ -23,6 +22,10 @@ import { createAgentAIValidation } from "../../../../../core/createAgentAI/Valid
 import { createAgentAIController } from "../../../../../core/createAgentAI";
 import { testAgentAIValidation } from "../../../../../core/testAgentAI/Validation";
 import { testAgentAIController } from "../../../../../core/testAgentAI";
+import { createInboxUsersValidation } from "../../../../../core/createInboxUser/Validation";
+import { createInboxUsersController } from "../../../../../core/createInboxUser";
+import { createInboxDepartmentValidation } from "../../../../../core/createInboxDepartment/Validation";
+import { createInboxDepartmentController } from "../../../../../core/createInboxDepartment";
 
 const RouterV1Private_Post = Router();
 
@@ -100,6 +103,18 @@ RouterV1Private_Post.post(
   "/agents-ai",
   createAgentAIValidation,
   createAgentAIController
+);
+
+RouterV1Private_Post.post(
+  "/inbox-users",
+  createInboxUsersValidation,
+  createInboxUsersController
+);
+
+RouterV1Private_Post.post(
+  "/inbox-departments",
+  createInboxDepartmentValidation,
+  createInboxDepartmentController
 );
 
 export default RouterV1Private_Post;

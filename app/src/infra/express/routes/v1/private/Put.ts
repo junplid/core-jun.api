@@ -26,6 +26,10 @@ import { updateStorageFileValidation } from "../../../../../core/updateStorageFi
 import { updateStorageFileController } from "../../../../../core/updateStorageFile";
 import { updateAgentAIValidation } from "../../../../../core/updateAgentAI/Validation";
 import { updateAgentAIController } from "../../../../../core/updateAgentAI";
+import { updateInboxUserValidation } from "../../../../../core/updateInboxUser/Validation";
+import { updateInboxUserController } from "../../../../../core/updateInboxUser";
+import { updateInboxDepartmentValidation } from "../../../../../core/updateInboxDepartment/Validation";
+import { updateInboxDepartmentController } from "../../../../../core/updateInboxDepartment";
 
 const RouterV1Private_Put = Router();
 
@@ -105,6 +109,18 @@ RouterV1Private_Put.put(
   "/agents-ai/:id",
   updateAgentAIValidation,
   updateAgentAIController
+);
+
+RouterV1Private_Put.put(
+  "/inbox-users/:id",
+  updateInboxUserValidation,
+  updateInboxUserController
+);
+
+RouterV1Private_Put.put(
+  "/inbox-departments/:id",
+  updateInboxDepartmentValidation,
+  updateInboxDepartmentController
 );
 
 export default RouterV1Private_Put;

@@ -2,6 +2,7 @@ import { DeleteAgentAIDTO_I } from "./DTO";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { prisma } from "../../adapters/Prisma/client";
 import OpenAI from "openai";
+import { cacheInfoAgentAI } from "../../adapters/Baileys/Cache";
 
 export class DeleteAgentAIUseCase {
   constructor() {}
@@ -38,6 +39,7 @@ export class DeleteAgentAIUseCase {
     }
 
     await prisma.agentAI.delete({ where: dto });
+    cacheInfoAgentAI.delete(dto.id);
 
     return { message: "OK!", status: 200 };
   }

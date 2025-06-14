@@ -1,6 +1,9 @@
 import {
+  cacheDebouceAgentAIRun,
   cacheDebounceAgentAI,
+  cacheInfoAgentAI,
   cacheMessagesDebouceAgentAI,
+  cacheNewMessageOnDebouceAgentAI,
   scheduleTimeoutAgentAI,
 } from "../../../adapters/Baileys/Cache";
 import { NodeAgentAIData } from "../Payload";
@@ -17,7 +20,7 @@ import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
  * @param text Texto que a pessoa digitou.
  * @param wpm  Velocidade média de digitação (padrão = 40 palavras/minuto).
  */
-export function estimateTypingTime(text: string, wpm = 120): number {
+export function estimateTypingTime(text: string, wpm = 250): number {
   const words = text.trim().split(/\s+/).filter(Boolean).length; // conta palavras
   const minutes = words / wpm;
   return Math.round(minutes * 60); // segundos (arredondado)
@@ -382,16 +385,38 @@ export const NodeAgentAI = async ({
 }: PropsNodeAgentAI): Promise<ResultPromise> => {
   const keyMap = props.numberConnection + props.numberLead;
 
+  const isRunDebounce = cacheDebouceAgentAIRun.get(keyMap) || false;
+  if (isRunDebounce) {
+    cacheNewMessageOnDebouceAgentAI.set(keyMap, true);
+    return { action: "return" };
+  }
+
   if (!message) {
     const getTimeoutJob = scheduleTimeoutAgentAI.get(keyMap);
 
     if (!getTimeoutJob) {
-      const agent = await prisma.agentAI.findFirst({
-        where: { id: props.data.agentId, accountId: props.accountId },
-        select: { timeout: true },
-      });
-      if (!agent) throw new Error("AgentAI not found");
-      const nextTimeout = getNextTimeOut("seconds", agent.timeout!);
+      let agentAIf = cacheInfoAgentAI.get(props.data.agentId);
+      if (!agentAIf) {
+        const agent = await prisma.agentAI.findFirst({
+          where: { id: props.data.agentId, accountId: props.accountId },
+          select: {
+            timeout: true,
+            model: true,
+            temperature: true,
+            name: true,
+            personality: true,
+            knowledgeBase: true,
+            instructions: true,
+            emojiLevel: true,
+            ProviderCredential: { select: { apiKey: true } },
+            vectorStoreId: true,
+            debounce: true,
+          },
+        });
+        if (!agent) throw new Error("AgentAI not found");
+        agentAIf = agent;
+      }
+      const nextTimeout = getNextTimeOut("seconds", agentAIf.timeout);
       const timeoutJob = scheduleJob(
         nextTimeout,
         async () => props.action?.onExecuteTimeout
@@ -412,403 +437,429 @@ export const NodeAgentAI = async ({
   scheduleTimeoutAgentAI.delete(keyMap);
   cacheDebounceAgentAI.delete(keyMap);
 
-  const agent = await prisma.agentAI.findFirst({
-    where: { id: props.data.agentId, accountId: props.accountId },
-    select: { debounce: true },
-  });
-  if (!agent) throw new Error("AgentAI not found");
+  //debouse esta sendo executado, entao a mensagem que chegou nao pode ser lida;
+
+  let agentAIf = cacheInfoAgentAI.get(props.data.agentId);
+  if (!agentAIf) {
+    const agent = await prisma.agentAI.findFirst({
+      where: { id: props.data.agentId, accountId: props.accountId },
+      select: {
+        timeout: true,
+        model: true,
+        temperature: true,
+        name: true,
+        personality: true,
+        knowledgeBase: true,
+        instructions: true,
+        emojiLevel: true,
+        ProviderCredential: { select: { apiKey: true } },
+        vectorStoreId: true,
+        debounce: true,
+      },
+    });
+    if (!agent) throw new Error("AgentAI not found");
+    agentAIf = agent;
+  }
   // salvar a mensagem em uma lista de mensagens pendentes
   const messages = cacheMessagesDebouceAgentAI.get(keyMap) || [];
   cacheMessagesDebouceAgentAI.set(keyMap, [...messages, message]);
 
   // cria um novo debounce
   const debounceJob = scheduleJob(
-    moment().add(agent.debounce, "seconds").toDate(),
+    moment().add(agentAIf.debounce, "seconds").toDate(),
     async () => {
-      TypingDelay({
-        delay: 4.5,
-        toNumber: props.numberLead,
-        connectionId: props.connectionWhatsId,
-      });
+      async function runDebounceAgentAI() {
+        return new Promise<void>(async (resolve) => {
+          cacheDebouceAgentAIRun.set(keyMap, true);
+          cacheNewMessageOnDebouceAgentAI.set(keyMap, false);
+          let agentAI = cacheInfoAgentAI.get(props.data.agentId);
+          if (!agentAI) {
+            const find = await prisma.agentAI.findFirst({
+              where: { id: props.data.agentId, accountId: props.accountId },
+              select: {
+                timeout: true,
+                model: true,
+                temperature: true,
+                name: true,
+                personality: true,
+                knowledgeBase: true,
+                instructions: true,
+                emojiLevel: true,
+                ProviderCredential: { select: { apiKey: true } },
+                vectorStoreId: true,
+                debounce: true,
+              },
+            });
+            if (!find) throw new Error("AgentAI not found");
+            agentAI = find;
+          }
+          const listMsg = cacheMessagesDebouceAgentAI.get(keyMap) || [];
+          const openai = new OpenAI({
+            apiKey: agentAI.ProviderCredential.apiKey,
+          });
+          const instructions = buildInstructions({
+            name: agentAI.name,
+            emojiLevel: agentAI.emojiLevel,
+            personality: agentAI.personality || undefined,
+            knowledgeBase: agentAI.knowledgeBase || undefined,
+            instructions: agentAI.instructions || undefined,
+            property: props.data.prompt,
+          });
+          if (agentAI.vectorStoreId) {
+            tools.push({
+              vector_store_ids: [agentAI.vectorStoreId],
+              type: "file_search",
+            });
+          }
+          let response = await openai.responses.create({
+            model: agentAI.model,
+            temperature: agentAI.temperature.toNumber() || 1.0,
+            input: listMsg.join("\n"),
+            previous_response_id: props.previous_response_id,
+            instructions: instructions,
+            store: true,
+            tools,
+          });
+          // executa ferramentas do agente recursivamente com as mensagens pendentes;
+          let isExit = false;
+          const fnCallPromise = (propsCALL: OpenAI.Responses.Response) => {
+            return new Promise<OpenAI.Responses.Response>((resolve) => {
+              const run = async (rProps: OpenAI.Responses.Response) => {
+                const calls = rProps.output.filter(
+                  (o) => o.type === "function_call"
+                );
+                if (!calls.length) return resolve(rProps);
 
-      const agentAI = await prisma.agentAI.findFirst({
-        where: { id: props.data.agentId, accountId: props.accountId },
-        select: {
-          timeout: true,
-          model: true,
-          temperature: true,
-          name: true,
-          personality: true,
-          knowledgeBase: true,
-          instructions: true,
-          emojiLevel: true,
-          ProviderCredential: { select: { apiKey: true } },
-          AgentAIOnBusiness: { select: { businessId: true } },
-          vectorStoreId: true,
-        },
-      });
-      if (!agentAI) throw new Error("AgentAI not found");
+                const outputs = await Promise.all(
+                  calls.map(async (c) => {
+                    const args = JSON.parse(c.arguments);
 
-      const listMsg = cacheMessagesDebouceAgentAI.get(keyMap) || [];
-      // executar o agente com as mensagens pendentes;
-      // o agente envia as mensagens pendentes;
-      // executa salva o timeout parao proximo ciclo de execução do agente;
-
-      const openai = new OpenAI({
-        apiKey: agentAI.ProviderCredential.apiKey,
-      });
-      const instructions = buildInstructions({
-        name: agentAI.name,
-        emojiLevel: agentAI.emojiLevel,
-        personality: agentAI.personality || undefined,
-        knowledgeBase: agentAI.knowledgeBase || undefined,
-        instructions: agentAI.instructions || undefined,
-        property: props.data.prompt,
-      });
-      if (agentAI.vectorStoreId) {
-        tools.push({
-          vector_store_ids: [agentAI.vectorStoreId],
-          type: "file_search",
-        });
-      }
-      let response = await openai.responses.create({
-        model: agentAI.model,
-        temperature: agentAI.temperature.toNumber() || 1.0,
-        input: listMsg.join("\n"),
-        previous_response_id: props.previous_response_id,
-        instructions: instructions,
-        store: true,
-        tools,
-      });
-      // executa ferramentas do agente recursivamente com as mensagens pendentes;
-      let isExit = false;
-      const fnCallPromise = (propsCALL: OpenAI.Responses.Response) => {
-        return new Promise<OpenAI.Responses.Response>((resolve) => {
-          const run = async (rProps: OpenAI.Responses.Response) => {
-            const calls = rProps.output.filter(
-              (o) => o.type === "function_call"
-            );
-            if (!calls.length) return resolve(rProps);
-
-            const outputs = await Promise.all(
-              calls.map(async (c) => {
-                const args = JSON.parse(c.arguments);
-
-                switch (c.name) {
-                  case "add_variable":
-                  case "add_var":
-                    if (isExit) {
-                      return {
-                        type: "function_call_output",
-                        call_id: c.call_id,
-                        output:
-                          "Saiu do node, não foi possível atribuir a variável. Mas essa ação é esperada, não é um ERROR.",
-                      };
-                    }
-                    const nameV = (args.name as string)
-                      .trim()
-                      .replace(/\s/, "_");
-                    let addVari = await prisma.variable.findFirst({
-                      where: { name: nameV, accountId: props.accountId },
-                      select: { id: true },
-                    });
-                    if (!addVari) {
-                      addVari = await prisma.variable.create({
-                        data: {
-                          name: nameV,
-                          accountId: props.accountId,
-                          type: "dynamics",
-                        },
-                        select: { id: true },
-                      });
-                    }
-                    const isExistVar =
-                      await prisma.contactsWAOnAccountVariable.findFirst({
-                        where: {
-                          contactsWAOnAccountId: props.contactAccountId,
-                          variableId: addVari.id,
-                        },
-                        select: { id: true },
-                      });
-                    if (!isExistVar) {
-                      await prisma.contactsWAOnAccountVariable.create({
-                        data: {
-                          contactsWAOnAccountId: props.contactAccountId,
-                          variableId: addVari.id,
-                          value: args.value,
-                        },
-                      });
-                    } else {
-                      await prisma.contactsWAOnAccountVariable.update({
-                        where: { id: isExistVar.id },
-                        data: {
-                          contactsWAOnAccountId: props.contactAccountId,
-                          variableId: addVari.id,
-                          value: args.value,
-                        },
-                      });
-                    }
-                    return {
-                      type: "function_call_output",
-                      call_id: c.call_id,
-                      output: "Variável atribuída com sucesso.",
-                    };
-
-                  case "remove_variavel":
-                  case "remove_var":
-                    if (isExit) {
-                      return {
-                        type: "function_call_output",
-                        call_id: c.call_id,
-                        output:
-                          "Saiu do node, não foi possível atribuir a variável. Mas essa ação é esperada, não é um ERROR.",
-                      };
-                    }
-                    const nameV2 = (args.name as string)
-                      .trim()
-                      .replace(/\s/, "_");
-                    const rmVar = await prisma.variable.findFirst({
-                      where: { name: nameV2, accountId: props.accountId },
-                      select: { id: true },
-                    });
-                    if (rmVar) {
-                      const picked =
-                        await prisma.contactsWAOnAccountVariable.findFirst({
-                          where: {
-                            contactsWAOnAccountId: props.contactAccountId,
-                            variableId: rmVar.id,
-                          },
+                    switch (c.name) {
+                      case "add_variable":
+                      case "add_var":
+                        if (isExit) {
+                          return {
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output:
+                              "Saiu do node, não foi possível atribuir a variável. Mas essa ação é esperada, não é um ERROR.",
+                          };
+                        }
+                        const nameV = (args.name as string)
+                          .trim()
+                          .replace(/\s/, "_");
+                        let addVari = await prisma.variable.findFirst({
+                          where: { name: nameV, accountId: props.accountId },
                           select: { id: true },
                         });
-                      if (picked) {
-                        await prisma.contactsWAOnAccountVariable.delete({
-                          where: { id: picked.id },
-                        });
-                      }
-                    }
-                    return {
-                      type: "function_call_output",
-                      call_id: c.call_id,
-                      output: "Variável removida com sucesso.",
-                    };
+                        if (!addVari) {
+                          addVari = await prisma.variable.create({
+                            data: {
+                              name: nameV,
+                              accountId: props.accountId,
+                              type: "dynamics",
+                            },
+                            select: { id: true },
+                          });
+                        }
+                        const isExistVar =
+                          await prisma.contactsWAOnAccountVariable.findFirst({
+                            where: {
+                              contactsWAOnAccountId: props.contactAccountId,
+                              variableId: addVari.id,
+                            },
+                            select: { id: true },
+                          });
+                        if (!isExistVar) {
+                          await prisma.contactsWAOnAccountVariable.create({
+                            data: {
+                              contactsWAOnAccountId: props.contactAccountId,
+                              variableId: addVari.id,
+                              value: args.value,
+                            },
+                          });
+                        } else {
+                          await prisma.contactsWAOnAccountVariable.update({
+                            where: { id: isExistVar.id },
+                            data: {
+                              contactsWAOnAccountId: props.contactAccountId,
+                              variableId: addVari.id,
+                              value: args.value,
+                            },
+                          });
+                        }
+                        return {
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output: "Variável atribuída com sucesso.",
+                        };
 
-                  case "add_tag":
-                  case "add_etiqueta":
-                    if (isExit) {
-                      return {
-                        type: "function_call_output",
-                        call_id: c.call_id,
-                        output:
-                          "Saiu do node, não foi possível atribuir a variável. Mas essa ação é esperada, não é um ERROR.",
-                      };
-                    }
-                    const nameT = (args.name as string)
-                      .trim()
-                      .replace(/\s/, "_");
-                    let tag = await prisma.tag.findFirst({
-                      where: { name: nameT, accountId: props.accountId },
-                      select: { id: true },
-                    });
-                    if (!tag) {
-                      tag = await prisma.tag.create({
-                        data: {
-                          name: nameT,
-                          accountId: props.accountId,
-                          type: "contactwa",
-                        },
-                        select: { id: true },
-                      });
-                    }
-                    const isExist =
-                      await prisma.tagOnContactsWAOnAccount.findFirst({
-                        where: {
-                          contactsWAOnAccountId: props.contactAccountId,
-                          tagId: tag.id,
-                        },
-                      });
-                    if (!isExist) {
-                      await prisma.tagOnContactsWAOnAccount.create({
-                        data: {
-                          contactsWAOnAccountId: props.contactAccountId,
-                          tagId: tag.id,
-                        },
-                      });
-                    }
-                    return {
-                      type: "function_call_output",
-                      call_id: c.call_id,
-                      output: "Tag/etiqueta adicionada com sucesso.",
-                    };
-
-                  case "remove_tag":
-                  case "remove_etiqueta":
-                    if (isExit) {
-                      return {
-                        type: "function_call_output",
-                        call_id: c.call_id,
-                        output:
-                          "Saiu do node, não foi possível atribuir a variável. Mas essa ação é esperada, não é um ERROR.",
-                      };
-                    }
-                    const nameT2 = (args.name as string)
-                      .trim()
-                      .replace(/\s/, "_");
-                    const rmTag = await prisma.tag.findFirst({
-                      where: { name: nameT2, accountId: props.accountId },
-                      select: { id: true },
-                    });
-                    if (rmTag) {
-                      await prisma.tagOnContactsWAOnAccount.delete({
-                        where: { id: rmTag.id },
-                      });
-                    }
-                    return {
-                      type: "function_call_output",
-                      call_id: c.call_id,
-                      output: "Tag/etiqueta removida com sucesso.",
-                    };
-
-                  case "notificar_wa":
-                  case "notify_wa":
-                    if (isExit)
-                      return {
-                        type: "function_call_output",
-                        call_id: c.call_id,
-                        output:
-                          "Saiu do node, não foi possível atribuir a variável. Mas essa ação é esperada, não é um ERROR.",
-                      };
-                    const newNumber = validatePhoneNumber(args.number, {
-                      removeNine: true,
-                    });
-                    if (newNumber) {
-                      try {
-                        await TypingDelay({
-                          delay: estimateTypingTime(response.output_text),
-                          toNumber: newNumber + "@s.whatsapp.net",
-                          connectionId: props.connectionWhatsId,
+                      case "remove_variavel":
+                      case "remove_var":
+                        if (isExit) {
+                          return {
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output:
+                              "Saiu do node, não foi possível atribuir a variável. Mas essa ação é esperada, não é um ERROR.",
+                          };
+                        }
+                        const nameV2 = (args.name as string)
+                          .trim()
+                          .replace(/\s/, "_");
+                        const rmVar = await prisma.variable.findFirst({
+                          where: { name: nameV2, accountId: props.accountId },
+                          select: { id: true },
                         });
-                        await SendMessageText({
-                          connectionId: props.connectionWhatsId,
-                          text: args.text,
-                          toNumber: newNumber + "@s.whatsapp.net",
+                        if (rmVar) {
+                          const picked =
+                            await prisma.contactsWAOnAccountVariable.findFirst({
+                              where: {
+                                contactsWAOnAccountId: props.contactAccountId,
+                                variableId: rmVar.id,
+                              },
+                              select: { id: true },
+                            });
+                          if (picked) {
+                            await prisma.contactsWAOnAccountVariable.delete({
+                              where: { id: picked.id },
+                            });
+                          }
+                        }
+                        return {
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output: "Variável removida com sucesso.",
+                        };
+
+                      case "add_tag":
+                      case "add_etiqueta":
+                        if (isExit) {
+                          return {
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output:
+                              "Saiu do node, não foi possível atribuir a variável. Mas essa ação é esperada, não é um ERROR.",
+                          };
+                        }
+                        const nameT = (args.name as string)
+                          .trim()
+                          .replace(/\s/, "_");
+                        let tag = await prisma.tag.findFirst({
+                          where: { name: nameT, accountId: props.accountId },
+                          select: { id: true },
                         });
+                        if (!tag) {
+                          tag = await prisma.tag.create({
+                            data: {
+                              name: nameT,
+                              accountId: props.accountId,
+                              type: "contactwa",
+                            },
+                            select: { id: true },
+                          });
+                        }
+                        const isExist =
+                          await prisma.tagOnContactsWAOnAccount.findFirst({
+                            where: {
+                              contactsWAOnAccountId: props.contactAccountId,
+                              tagId: tag.id,
+                            },
+                          });
+                        if (!isExist) {
+                          await prisma.tagOnContactsWAOnAccount.create({
+                            data: {
+                              contactsWAOnAccountId: props.contactAccountId,
+                              tagId: tag.id,
+                            },
+                          });
+                        }
+                        return {
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output: "Tag/etiqueta adicionada com sucesso.",
+                        };
+
+                      case "remove_tag":
+                      case "remove_etiqueta":
+                        if (isExit) {
+                          return {
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output:
+                              "Saiu do node, não foi possível atribuir a variável. Mas essa ação é esperada, não é um ERROR.",
+                          };
+                        }
+                        const nameT2 = (args.name as string)
+                          .trim()
+                          .replace(/\s/, "_");
+                        const rmTag = await prisma.tag.findFirst({
+                          where: { name: nameT2, accountId: props.accountId },
+                          select: { id: true },
+                        });
+                        if (rmTag) {
+                          await prisma.tagOnContactsWAOnAccount.delete({
+                            where: { id: rmTag.id },
+                          });
+                        }
+                        return {
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output: "Tag/etiqueta removida com sucesso.",
+                        };
+
+                      case "notificar_wa":
+                      case "notify_wa":
+                        if (isExit)
+                          return {
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output:
+                              "Saiu do node, não foi possível atribuir a variável. Mas essa ação é esperada, não é um ERROR.",
+                          };
+                        const newNumber = validatePhoneNumber(args.number, {
+                          removeNine: true,
+                        });
+                        if (newNumber) {
+                          try {
+                            await TypingDelay({
+                              delay: estimateTypingTime(response.output_text),
+                              toNumber: newNumber + "@s.whatsapp.net",
+                              connectionId: props.connectionWhatsId,
+                            });
+                            await SendMessageText({
+                              connectionId: props.connectionWhatsId,
+                              text: args.text,
+                              toNumber: newNumber + "@s.whatsapp.net",
+                            });
+                            return {
+                              type: "function_call_output",
+                              call_id: c.call_id,
+                              output: "Notificação enviada com sucesso.",
+                            };
+                          } catch (error) {
+                            props.action.onErrorClient?.();
+                          }
+                        }
                         return {
                           type: "function_call_output",
                           call_id: c.call_id,
                           output: "Notificação enviada com sucesso.",
                         };
-                      } catch (error) {
-                        props.action.onErrorClient?.();
-                      }
+
+                      case "pausar":
+                        if (isExit)
+                          return {
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output:
+                              "Saiu do node, não foi possível atribuir a variável. Mas essa ação é esperada, não é um ERROR.",
+                          };
+                        const { type, value } = args;
+                        const nextTimeStart = moment()
+                          .add(value, type)
+                          .toDate();
+                        await new Promise<void>((resJob) => {
+                          scheduleJob(nextTimeStart, () => resJob());
+                        });
+                        return {
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output: "Pausado com sucesso.",
+                        };
+
+                      case "sair_node":
+                        const debounceJob = cacheDebounceAgentAI.get(keyMap);
+                        debounceJob?.cancel();
+                        cacheDebounceAgentAI.delete(keyMap);
+                        const timeoutJob = scheduleTimeoutAgentAI.get(keyMap);
+                        timeoutJob?.cancel();
+                        scheduleTimeoutAgentAI.delete(keyMap);
+                        cacheMessagesDebouceAgentAI.delete(keyMap);
+                        props.action.onExitNode?.(args.name);
+                        isExit = true;
+                        return {
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output: "Saiu com node com sucesso.",
+                        };
+
+                      default:
+                        if (isExit)
+                          return {
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output:
+                              "Saiu do node, não foi possível atribuir a variável. Mas essa ação é esperada, não é um ERROR.",
+                          };
+                        return {
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output: `Função ${c.name} ainda não foi implementada.`,
+                        };
                     }
-                    return {
-                      type: "function_call_output",
-                      call_id: c.call_id,
-                      output: "Notificação enviada com sucesso.",
-                    };
+                  })
+                );
+                const responseRun = await openai.responses.create({
+                  model: agentAI.model,
+                  temperature: agentAI.temperature.toNumber(),
+                  instructions,
+                  // @ts-expect-error
+                  input: outputs,
+                  previous_response_id: rProps.id,
+                  tools,
+                  store: true,
+                });
 
-                  case "pausar":
-                    if (isExit)
-                      return {
-                        type: "function_call_output",
-                        call_id: c.call_id,
-                        output:
-                          "Saiu do node, não foi possível atribuir a variável. Mas essa ação é esperada, não é um ERROR.",
-                      };
-                    const { type, value } = args;
-                    const nextTimeStart = moment().add(value, type).toDate();
-                    await new Promise<void>((resJob) => {
-                      scheduleJob(nextTimeStart, () => resJob());
-                    });
-                    return {
-                      type: "function_call_output",
-                      call_id: c.call_id,
-                      output: "Pausado com sucesso.",
-                    };
+                return run(responseRun);
+              };
+              run(propsCALL);
+            });
+          };
 
-                  case "sair_node":
-                    const debounceJob = cacheDebounceAgentAI.get(keyMap);
-                    debounceJob?.cancel();
-                    cacheDebounceAgentAI.delete(keyMap);
-                    const timeoutJob = scheduleTimeoutAgentAI.get(keyMap);
-                    timeoutJob?.cancel();
-                    scheduleTimeoutAgentAI.delete(keyMap);
-                    cacheMessagesDebouceAgentAI.delete(keyMap);
-                    props.action.onExitNode?.(args.name);
-                    isExit = true;
-                    return {
-                      type: "function_call_output",
-                      call_id: c.call_id,
-                      output: "Saiu com node com sucesso.",
-                    };
+          response = await fnCallPromise(response);
 
-                  default:
-                    if (isExit)
-                      return {
-                        type: "function_call_output",
-                        call_id: c.call_id,
-                        output:
-                          "Saiu do node, não foi possível atribuir a variável. Mas essa ação é esperada, não é um ERROR.",
-                      };
-                    return {
-                      type: "function_call_output",
-                      call_id: c.call_id,
-                      output: `Função ${c.name} ainda não foi implementada.`,
-                    };
-                }
-              })
-            );
-            const responseRun = await openai.responses.create({
-              model: agentAI.model,
-              temperature: agentAI.temperature.toNumber(),
-              instructions,
-              // @ts-expect-error
-              input: outputs,
-              previous_response_id: rProps.id,
-              tools,
-              store: true,
+          if (!isExit) {
+            const isNewMsg = !!cacheNewMessageOnDebouceAgentAI.get(keyMap);
+            if (isNewMsg) {
+              await runDebounceAgentAI();
+              return;
+            }
+            await prisma.flowState.update({
+              where: { id: props.flowStateId },
+              data: { previous_response_id: response.id },
             });
 
-            return run(responseRun);
-          };
-          run(propsCALL);
+            // agendar o timeout para o proximo ciclo de execução do agente
+            const nextTimeout = getNextTimeOut("seconds", agentAI.timeout!);
+            const timeoutJob = scheduleJob(
+              nextTimeout,
+              // vai executar um node de timeout - OK
+              async () => props.action?.onExecuteTimeout?.()
+            );
+            scheduleTimeoutAgentAI.set(keyMap, timeoutJob);
+            try {
+              await TypingDelay({
+                delay: estimateTypingTime(response.output_text),
+                toNumber: props.numberLead,
+                connectionId: props.connectionWhatsId,
+              });
+              await SendMessageText({
+                connectionId: props.connectionWhatsId,
+                text: response.output_text,
+                toNumber: props.numberLead,
+              });
+            } catch (error) {
+              props.action.onErrorClient?.();
+            }
+          }
+          resolve();
         });
-      };
-
-      response = await fnCallPromise(response);
-
-      await prisma.flowState.update({
-        where: { id: props.flowStateId },
-        data: { previous_response_id: response.id },
-      });
-
+      }
+      await runDebounceAgentAI();
+      cacheDebouceAgentAIRun.set(keyMap, false);
       // limpar as mensagens pendentes
       cacheMessagesDebouceAgentAI.delete(keyMap);
-
-      if (!isExit) {
-        // agendar o timeout para o proximo ciclo de execução do agente
-        const nextTimeout = getNextTimeOut("seconds", agentAI.timeout!);
-        const timeoutJob = scheduleJob(
-          nextTimeout,
-          // vai executar um node de timeout - OK
-          async () => props.action?.onExecuteTimeout?.()
-        );
-        scheduleTimeoutAgentAI.set(keyMap, timeoutJob);
-        try {
-          await TypingDelay({
-            delay: estimateTypingTime(response.output_text),
-            toNumber: props.numberLead,
-            connectionId: props.connectionWhatsId,
-          });
-          await SendMessageText({
-            connectionId: props.connectionWhatsId,
-            text: response.output_text,
-            toNumber: props.numberLead,
-          });
-        } catch (error) {
-          props.action.onErrorClient?.();
-        }
-      }
     }
   );
 

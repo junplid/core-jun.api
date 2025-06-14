@@ -5,6 +5,8 @@ import { UpdateAgentAIDTO_I } from "./DTO";
 import deepEqual from "fast-deep-equal";
 import { resolve } from "path";
 import { createReadStream } from "fs-extra";
+import { cacheInfoAgentAI } from "../../adapters/Baileys/Cache";
+import { Decimal } from "@prisma/client/runtime/library";
 
 let path = "";
 if (process.env.NODE_ENV === "production") {
@@ -151,7 +153,6 @@ export class UpdateAgentAIUseCase {
           fileId: f.fileId,
         }));
         const isEqual = deepEqual(filesInAgent, files);
-
         if (!isEqual) {
           const newFileIds = nextFiles.filter(
             (f) => !filesInAgent.some((e) => e.id === f.id)
@@ -211,6 +212,17 @@ export class UpdateAgentAIUseCase {
             }
           }
         }
+        const { temperature, ...r } = rest;
+        const cacheAgent = cacheInfoAgentAI.get(id);
+        if (cacheAgent) {
+          cacheInfoAgentAI.set(id, {
+            ...cacheAgent,
+            ...r,
+            temperature: temperature
+              ? new Decimal(temperature)
+              : cacheAgent.temperature,
+          });
+        }
       } else {
         const openai = new OpenAI({
           apiKey: agent.ProviderCredential.apiKey,
@@ -247,6 +259,18 @@ export class UpdateAgentAIUseCase {
           where: { id },
           data: { vectorStoreId: null },
         });
+        const cacheAgent = cacheInfoAgentAI.get(id);
+        if (cacheAgent) {
+          const { temperature, ...r } = rest;
+          cacheInfoAgentAI.set(id, {
+            ...cacheAgent,
+            ...r,
+            vectorStoreId: null,
+            temperature: temperature
+              ? new Decimal(temperature)
+              : cacheAgent.temperature,
+          });
+        }
       }
 
       return {
