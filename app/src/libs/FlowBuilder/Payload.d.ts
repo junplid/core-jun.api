@@ -113,6 +113,9 @@ export type NodeAgentAIData = {
   agentId: number;
 };
 
+export interface NodeTransferDepartmentData {
+  id: number;
+}
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeMessage"
@@ -132,7 +135,8 @@ export type TypeNodesPayload =
   | "NodeSendAudios"
   | "NodeSendAudiosLive"
   | "NodeNotifyWA"
-  | "NodeAgentAI";
+  | "NodeAgentAI"
+  | "NodeTransferDepartment";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -154,4 +158,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeSendAudios"; data: NodeSendAudiosData }
   | { type: "NodeSendAudiosLive"; data: NodeSendAudiosLiveData }
   | { type: "NodeAgentAI"; data: NodeAgentAIData }
+  | { type: "NodeTransferDepartment"; data: NodeTransferDepartmentData }
 );

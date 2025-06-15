@@ -140,23 +140,25 @@ model Account {
   AgentAI             AgentAI[]
   InboxUsers          InboxUsers[]
   InboxDepartments    InboxDepartments[]
+  Tickets             Tickets[]
 
   @@index([id, email, hash, status, available, isUsedFreeTrialTime])
 }
 
 model InboxUsers {
-  id                Int               @id @default(autoincrement())
-  name              String            @db.VarChar(50)
-  hash              String            @default(uuid())
-  email             String            @unique @db.VarChar(200)
-  password          String
-  createAt          DateTime          @default(now())
-  updateAt          DateTime          @default(now()) @updatedAt
-  accountId         Int
-  inboxDepartmentId Int?
-  Account           Account?          @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  InboxDepartment   InboxDepartments? @relation(fields: [inboxDepartmentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  Tickets           Tickets[]
+  id                 Int               @id @default(autoincrement())
+  name               String            @db.VarChar(50)
+  hash               String            @default(uuid())
+  email              String            @unique @db.VarChar(200)
+  password           String
+  createAt           DateTime          @default(now())
+  updateAt           DateTime          @default(now()) @updatedAt
+  accountId          Int
+  inboxDepartmentId  Int?
+  Account            Account?          @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  InboxDepartment    InboxDepartments? @relation(fields: [inboxDepartmentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  Tickets            Tickets[]
+  ConversationTickes TicketMessage[]
 
   @@index([id, email, accountId, inboxDepartmentId])
 }
@@ -200,6 +202,10 @@ model Tickets {
   destination          TypeDestinationTicket
   createAt             DateTime              @default(now())
   updateAt             DateTime              @default(now()) @updatedAt
+  accountId            Int
+  Account              Account               @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  goBackFlowStateId    Int?
+  GoBackFlowState      FlowState?            @relation(fields: [goBackFlowStateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   inboxUserId          Int?
   InboxUser            InboxUsers?           @relation(fields: [inboxUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   inboxDepartmentId    Int
@@ -208,42 +214,42 @@ model Tickets {
   ContactsWAOnAccount  ContactsWAOnAccount   @relation(fields: [contactWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   connectionWAId       Int
   ConnectionWA         ConnectionWA          @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  // ConversationTickes             ConversationTickes[]
+  TicketMessages       TicketMessage[]
 
   @@index([id, protocol, contactWAOnAccountId, status, destination, inboxDepartmentId, inboxUserId])
 }
 
-// enum TypeSentBy {
-//   contact
-//   user
-//   system
-// }
+enum TypeSentBy {
+  contact
+  user
+  system
+}
 
-// model ConversationTickes {
-//   id                  Int                @id @default(autoincrement())
-//   type                String
-//   sentBy              TypeSentBy
-//   degreesLatitude     String             @default("")
-//   degreesLongitude    String             @default("")
-//   address             String             @default("")
-//   name                String             @default("")
-//   fullName            String             @default("")
-//   number              String             @default("")
-//   org                 String             @default("")
-//   read                Boolean            @default(false)
-//   message             String             @db.Text
-//   caption             String             @default("")
-//   fileName            String             @default("")
-//   sectorsAttendantsId Int?
-//   messageKey          String?
-//   SectorsAttendants   SectorsAttendants? @relation(fields: [sectorsAttendantsId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-//   createAt            DateTime           @default(now())
-//   updateAt            DateTime           @default(now()) @updatedAt
-//   ticketsId           Int
-//   Tickets             Tickets            @relation(fields: [ticketsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+model TicketMessage {
+  id          Int         @id @default(autoincrement())
+  type        String
+  by          TypeSentBy
+  latitude    String      @default("")
+  longitude   String      @default("")
+  address     String      @default("")
+  name        String      @default("")
+  fullName    String      @default("")
+  number      String      @default("")
+  org         String      @default("")
+  read        Boolean     @default(false)
+  message     String      @db.Text
+  caption     String      @default("")
+  fileName    String      @default("")
+  messageKey  String?
+  inboxUserId Int?
+  InboxUser   InboxUsers? @relation(fields: [inboxUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createAt    DateTime    @default(now())
+  updateAt    DateTime    @default(now()) @updatedAt
+  ticketsId   Int
+  Tickets     Tickets     @relation(fields: [ticketsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-//   @@index([id, sectorsAttendantsId, ticketsId])
-// }
+  @@index([id, inboxUserId, ticketsId])
+}
 
 model AccountAssetsUsed {
   id       Int @id @default(autoincrement())
@@ -909,6 +915,7 @@ model FlowState {
   Campaign              Campaign?            @relation(fields: [campaignId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ContactsWAOnAccount   ContactsWAOnAccount? @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ConnectionWA          ConnectionWA?        @relation(fields: [connectionWAId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  Tickets               Tickets[]
 }
 
 // enum TypeLogFlowState {

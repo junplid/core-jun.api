@@ -15,6 +15,7 @@ import { NodeSendFlow } from "./SendFlow";
 import { NodeSendImages } from "./SendImages";
 import { NodeSendVideos } from "./SendVideos";
 import { NodeTimer } from "./Timer";
+import { NodeTransferDepartment } from "./TransferDepartment";
 
 export const LibraryNodes = {
   NodeReply,
@@ -34,4 +35,5 @@ export const LibraryNodes = {
   NodeSendAudiosLive,
   NodeSendAudios,
   NodeAgentAI,
+  NodeTransferDepartment,
 };

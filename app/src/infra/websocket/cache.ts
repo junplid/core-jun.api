@@ -1,8 +1,8 @@
 interface CacheStateUserSocket {
   // accountId: number;
   listSocket: string[];
-  // isMobile: boolean;
-  // linkedPages: string[];
+  isMobile?: boolean;
+  linkedPages?: string[];
 }
 
 export const cacheAccountSocket: Map<number, CacheStateUserSocket> = new Map();

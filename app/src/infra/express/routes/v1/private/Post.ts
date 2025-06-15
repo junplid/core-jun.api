@@ -26,6 +26,10 @@ import { createInboxUsersValidation } from "../../../../../core/createInboxUser/
 import { createInboxUsersController } from "../../../../../core/createInboxUser";
 import { createInboxDepartmentValidation } from "../../../../../core/createInboxDepartment/Validation";
 import { createInboxDepartmentController } from "../../../../../core/createInboxDepartment";
+import { pickTicketValidation } from "../../../../../core/pickTicket/Validation";
+import { pickTicketController } from "../../../../../core/pickTicket";
+import { sendTicketMessageValidation } from "../../../../../core/sendTicketMessage/Validation";
+import { sendTicketMessageController } from "../../../../../core/sendTicketMessage";
 
 const RouterV1Private_Post = Router();
 
@@ -115,6 +119,24 @@ RouterV1Private_Post.post(
   "/inbox-departments",
   createInboxDepartmentValidation,
   createInboxDepartmentController
+);
+
+RouterV1Private_Post.post(
+  "/tickets/:id/pick",
+  pickTicketValidation,
+  pickTicketController
+);
+
+RouterV1Private_Post.post(
+  "/tickets/:id/message",
+  // @ts-expect-error
+  multer({ storage: uploadFiles }).array("files"),
+  (req: Request, _, next: NextFunction) => {
+    req.body.accountId = Number(req.headers.authorization);
+    next();
+  },
+  sendTicketMessageValidation,
+  sendTicketMessageController
 );
 
 export default RouterV1Private_Post;

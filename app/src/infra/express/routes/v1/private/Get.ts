@@ -85,6 +85,10 @@ import { getInboxDepartmentsValidation } from "../../../../../core/getInboxDepar
 import { getInboxDepartmentsController } from "../../../../../core/getInboxDepartments";
 import { getInboxDepartmentsForSelectValidation } from "../../../../../core/getInboxDepartmentsForSelect/Validation";
 import { getInboxDepartmentsForSelectController } from "../../../../../core/getInboxDepartmentsForSelect";
+import { getTicketsValidation } from "../../../../../core/getTickets/Validation";
+import { getTicketsController } from "../../../../../core/getTickets";
+import { getTicketController } from "../../../../../core/getTicket";
+import { getTicketValidation } from "../../../../../core/getTicket/Validation";
 
 const RouterV1Private_Get = Router();
 
@@ -324,6 +328,14 @@ RouterV1Private_Get.get(
   "/inbox-departments/:id",
   getInboxDepartmentValidation,
   getInboxDepartmentController
+);
+
+RouterV1Private_Get.get("/tickets", getTicketsValidation, getTicketsController);
+
+RouterV1Private_Get.get(
+  "/tickets/:id",
+  getTicketValidation,
+  getTicketController
 );
 
 export default RouterV1Private_Get;

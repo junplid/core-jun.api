@@ -1101,6 +1101,63 @@ export const NodeControler = ({
             return res();
           });
       }
+      if (currentNode.type === "NodeTransferDepartment") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
+        await LibraryNodes.NodeTransferDepartment({
+          data: currentNode.data,
+          flowStateId: props.flowStateId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          nodeId: currentNodeId,
+          accountId: props.accountId,
+          connectionWAId: props.connectionWhatsId,
+        })
+          .then(async (d) => {
+            if (d === "OK") {
+              if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+                cacheFlowInExecution.delete(keyMap);
+                props.actions?.onFinish &&
+                  (await props.actions?.onFinish("128"));
+                return;
+              }
+              props.actions?.onExecutedNode?.({
+                id: nextEdgesIds[0].id,
+                type: "NodeTransferDepartment",
+              });
+              return res();
+            }
+            if (d === "ERROR") {
+              if (props.actions?.onExecutedNode) {
+                props.actions?.onExecutedNode(currentNode);
+              }
+              const isNextNodeMain = nextEdgesIds.find((nh) =>
+                nh.sourceHandle?.includes("failed")
+              );
+              if (!isNextNodeMain) {
+                cacheFlowInExecution.delete(keyMap);
+                props.actions?.onFinish && props.actions?.onFinish("332");
+                return res();
+              }
+              return execute({
+                ...props,
+                type: "initial",
+                currentNodeId: isNextNodeMain.id,
+                oldNodeId: isNextNodeMain.id,
+              });
+            }
+          })
+          .catch((error) => {
+            console.log("error ao executar nodeAddTags", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return res();
+      }
 
       return res();
     };
