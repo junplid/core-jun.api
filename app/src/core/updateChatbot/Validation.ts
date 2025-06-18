@@ -28,6 +28,7 @@ export const updateChatbotValidation = (
     description: Joi.string().optional().allow(""),
     addLeadToAudiencesIds: Joi.array().items(Joi.number()).optional(),
     addToLeadTagsIds: Joi.array().items(Joi.number()).optional(),
+    fallback: Joi.string().optional().allow(""),
     timeToRestart: Joi.object({
       value: Joi.number().optional(),
       type: Joi.string().valid("seconds", "minutes", "hours", "days"),

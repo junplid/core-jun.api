@@ -17,6 +17,7 @@ export const createChatbotValidation = (
     description: Joi.string().optional(),
     addLeadToAudiencesIds: Joi.array().items(Joi.number()).optional(),
     addToLeadTagsIds: Joi.array().items(Joi.number()).optional(),
+    fallback: Joi.string().optional().allow(""),
     timeToRestart: Joi.object({
       value: Joi.number().required(),
       type: Joi.string()

@@ -226,27 +226,29 @@ enum TypeSentBy {
 }
 
 model TicketMessage {
-  id          Int         @id @default(autoincrement())
-  type        String
-  by          TypeSentBy
-  latitude    String      @default("")
-  longitude   String      @default("")
-  address     String      @default("")
-  name        String      @default("")
-  fullName    String      @default("")
-  number      String      @default("")
-  org         String      @default("")
-  read        Boolean     @default(false)
-  message     String      @db.Text
-  caption     String      @default("")
-  fileName    String      @default("")
-  messageKey  String?
-  inboxUserId Int?
-  InboxUser   InboxUsers? @relation(fields: [inboxUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  createAt    DateTime    @default(now())
-  updateAt    DateTime    @default(now()) @updatedAt
-  ticketsId   Int
-  Tickets     Tickets     @relation(fields: [ticketsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id               Int         @id @default(autoincrement())
+  type             String
+  by               TypeSentBy
+  latitude         String      @default("")
+  longitude        String      @default("")
+  address          String      @default("")
+  name             String      @default("")
+  fullName         String      @default("")
+  number           String      @default("")
+  org              String      @default("")
+  fileNameOriginal String      @default("")
+  read             Boolean     @default(false)
+  ptt              Boolean     @default(false)
+  message          String      @db.Text
+  caption          String      @default("")
+  fileName         String      @default("")
+  messageKey       String?
+  inboxUserId      Int?
+  InboxUser        InboxUsers? @relation(fields: [inboxUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createAt         DateTime    @default(now())
+  updateAt         DateTime    @default(now()) @updatedAt
+  ticketsId        Int
+  Tickets          Tickets     @relation(fields: [ticketsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([id, inboxUserId, ticketsId])
 }
@@ -905,6 +907,7 @@ model FlowState {
   indexNode             String?
   flowId                String?
   previous_response_id  String?
+  fallbackSent          Boolean              @default(false)
   createAt              DateTime             @default(now())
   updateAt              DateTime             @default(now()) @updatedAt
   campaignId            Int?
@@ -1032,6 +1035,7 @@ model Chatbot {
   description           String?
   connectionWAId        Int?
   leadOriginList        String?
+  fallback              String?               @db.Text
   flowId                String
   addLeadToAudiencesIds Int[]                 @default([])
   addToLeadTagsIds      Int[]                 @default([])

@@ -100,10 +100,28 @@ export class UpdateChatbotUseCase {
 
           const conflicts = checkConflictOfOperatingDays(
             dto.operatingDays,
-            oldChatbot.OperatingDays
+            oldChatbot.OperatingDays.map((day) => ({
+              dayOfWeek: day.dayOfWeek,
+              workingTimes: day.WorkingTimes,
+            }))
           );
 
           if (conflicts.length) {
+            const errors = new ErrorResponse(400);
+            conflicts.forEach((conflicts) => {
+              if (conflicts.indexTime === undefined) {
+                errors.input({
+                  path: `operatingDays.${conflicts.dayOfWeek}`,
+                  text: conflicts.text,
+                });
+              } else {
+                errors.input({
+                  path: `operatingDays.${conflicts.dayOfWeek}.workingTimes.${conflicts.indexTime}`,
+                  text: conflicts.text,
+                });
+              }
+            });
+            throw errors;
           }
         }
       }
@@ -113,7 +131,23 @@ export class UpdateChatbotUseCase {
     try {
       const { ConnectionWA, Business, status } = await prisma.chatbot.update({
         where: { id, accountId },
-        data: rest,
+        data: {
+          ...rest,
+          ...(operatingDays?.length && {
+            OperatingDays: {
+              deleteMany: {},
+              create: operatingDays.map((day) => ({
+                dayOfWeek: day.dayOfWeek,
+                WorkingTimes: {
+                  create: day.workingTimes?.map((time) => ({
+                    start: time.start,
+                    end: time.end,
+                  })),
+                },
+              })),
+            },
+          }),
+        },
         select: {
           ConnectionWA: { select: { id: true } },
           Business: { select: { name: true, id: true } },

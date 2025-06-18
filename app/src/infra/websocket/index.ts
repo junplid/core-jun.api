@@ -173,4 +173,38 @@ export const WebSocketIo = (io: Server) => {
       }
     });
   });
+
+  io.of(/^\/business-\d+\/inbox$/).on("connection", async (socket) => {
+    const {
+      headers,
+      auth,
+      //  query
+    } = socket.handshake;
+
+    const stateUser = cacheAccountSocket.get(auth.accountId);
+    if (!headers["user-agent"] || !stateUser) {
+      console.log("Desconectando por falta de informações");
+      return socket.disconnect();
+    }
+
+    socket.on("disconnect", async (reason) => {
+      const stateUser = cacheAccountSocket.get(auth.accountId);
+      if (stateUser) {
+        stateUser.currentTicket = null;
+        cacheAccountSocket.set(auth.accountId, stateUser);
+      }
+    });
+
+    socket.on("join-ticket", async (props: { id: number | null }) => {
+      const stateUser = cacheAccountSocket.get(auth.accountId);
+      if (stateUser) {
+        if (props.id) {
+          stateUser.currentTicket = props.id;
+        } else {
+          stateUser.currentTicket = null;
+        }
+        cacheAccountSocket.set(auth.accountId, stateUser);
+      }
+    });
+  });
 };

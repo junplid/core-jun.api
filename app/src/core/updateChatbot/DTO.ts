@@ -19,6 +19,7 @@ export interface UpdateChatbotBodyQueryDTO_I {
     dayOfWeek: number;
     workingTimes?: { start: string; end: string }[];
   }[];
+  fallback?: string;
 }
 
 export interface UpdateChatbotBodyDTO_I {

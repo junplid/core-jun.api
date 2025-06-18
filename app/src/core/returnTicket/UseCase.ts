@@ -2,17 +2,17 @@ import { prisma } from "../../adapters/Prisma/client";
 import { socketIo } from "../../infra/express";
 import { cacheAccountSocket } from "../../infra/websocket/cache";
 import { ErrorResponse } from "../../utils/ErrorResponse";
-import { PickTicketDTO_I } from "./DTO";
+import { ReturnTicketDTO_I } from "./DTO";
 
-export class PickTicketUseCase {
+export class ReturnTicketUseCase {
   constructor() {}
 
-  async run({ ...dto }: PickTicketDTO_I) {
+  async run({ ...dto }: ReturnTicketDTO_I) {
     const exist = await prisma.tickets.findFirst({
       where: {
         id: dto.id,
         ...(dto.accountId && { accountId: dto.accountId }),
-        status: "NEW",
+        status: "OPEN",
       },
     });
 
@@ -26,18 +26,13 @@ export class PickTicketUseCase {
       const { InboxDepartment, ContactsWAOnAccount, updateAt } =
         await prisma.tickets.update({
           where: { id: dto.id },
-          data: {
-            status: "OPEN",
-            ...(dto.userId && { inboxUserId: dto.userId }),
-          },
+          data: { status: "NEW", inboxUserId: null },
           select: {
             id: true,
             InboxDepartment: {
               select: { name: true, id: true, businessId: true },
             },
-            ContactsWAOnAccount: {
-              select: { name: true },
-            },
+            ContactsWAOnAccount: { select: { name: true } },
             updateAt: true,
           },
         });
@@ -48,19 +43,20 @@ export class PickTicketUseCase {
             accountId: dto.accountId,
             departmentId: InboxDepartment.id,
             departmentName: InboxDepartment.name,
-            status: "OPEN",
-            notifyMsc: true,
-            notifyToast: true,
+            status: "RETURN",
+            notifyMsc: false,
+            notifyToast: false,
             id: dto.id,
           });
 
+          console.log("emit list return");
           socketIo
             .of(`/business-${InboxDepartment.businessId}/inbox`)
             .emit("list", {
-              status: "OPEN",
+              status: "RETURN",
               forceOpen: false,
               departmentId: InboxDepartment.id,
-              notifyMsc: true,
+              notifyMsc: false,
               notifyToast: false,
               name: ContactsWAOnAccount.name,
               lastInteractionDate: updateAt,

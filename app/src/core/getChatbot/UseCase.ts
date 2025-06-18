@@ -24,6 +24,7 @@ export class GetChatbotUseCase {
         description: true,
         status: true,
         addLeadToAudiencesIds: true,
+        fallback: true,
         addToLeadTagsIds: true,
         businessId: true,
         connectionWAId: true,
@@ -49,7 +50,10 @@ export class GetChatbotUseCase {
       chatbot: {
         ...rest,
         status: statusConnection,
-        operatingDays: OperatingDays,
+        operatingDays: OperatingDays.map((s) => ({
+          dayOfWeek: s.dayOfWeek,
+          workingTimes: s.WorkingTimes,
+        })),
         timeToRestart: TimeToRestart,
       },
     };

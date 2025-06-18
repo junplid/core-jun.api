@@ -35,7 +35,7 @@ export default function checkConflictOfOperatingDays(
         if (!newDay.workingTimes?.length || !oldDay.workingTimes?.length) {
           conflict.push({
             dayOfWeek: newDay.dayOfWeek,
-            text: "Conflito de dia da semana",
+            text: "Conflito de dia da semana com a conexão WA.",
           });
         }
 
@@ -98,7 +98,7 @@ export default function checkConflictOfOperatingDays(
               conflict.push({
                 dayOfWeek: newDay.dayOfWeek,
                 indexTime: newIndex,
-                text: "Conflito de horário",
+                text: "Conflito de horário com a conexão WA.",
               });
             }
           }

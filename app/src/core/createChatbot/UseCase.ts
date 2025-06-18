@@ -89,10 +89,28 @@ export class CreateChatbotUseCase {
 
           const conflicts = checkConflictOfOperatingDays(
             dto.operatingDays,
-            oldChatbot.OperatingDays
+            oldChatbot.OperatingDays.map((day) => ({
+              dayOfWeek: day.dayOfWeek,
+              workingTimes: day.WorkingTimes,
+            }))
           );
 
           if (conflicts.length) {
+            const errors = new ErrorResponse(400);
+            conflicts.forEach((conflicts, index) => {
+              if (conflicts.indexTime === undefined) {
+                errors.input({
+                  path: `operatingDays.${index}`,
+                  text: conflicts.text,
+                });
+              } else {
+                errors.input({
+                  path: `operatingDays.${index}.workingTimes.${conflicts.indexTime}`,
+                  text: conflicts.text,
+                });
+              }
+            });
+            throw errors;
           }
         }
       }
@@ -116,9 +134,12 @@ export class CreateChatbotUseCase {
       for await (const operationDay of operatingDays) {
         await prisma.operatingDays.create({
           data: {
+            chatbotId: id,
             dayOfWeek: operationDay.dayOfWeek,
             ...(operationDay.workingTimes?.length && {
-              WorkingTimes: { createMany: { data: operationDay.workingTimes } },
+              WorkingTimes: {
+                createMany: { data: operationDay.workingTimes },
+              },
             }),
           },
         });

@@ -17,6 +17,8 @@ if (process.env.NODE_ENV === "production") {
 }
 
 RouterV1Public_Get.use("/images", static_(path + "/image"));
+RouterV1Public_Get.use("/files", static_(path + "/file"));
+RouterV1Public_Get.use("/audios", static_(path + "/audio"));
 RouterV1Public_Get.use("/storage", static_(path + "/storage"));
 
 RouterV1Public_Get.use(

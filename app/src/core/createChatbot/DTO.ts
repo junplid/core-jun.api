@@ -8,6 +8,7 @@ export interface CreateChatbotDTO_I {
   description?: string;
   addLeadToAudiencesIds?: number[];
   addToLeadTagsIds?: number[];
+  fallback?: string;
   timeToRestart?: {
     value: number;
     type: "seconds" | "minutes" | "hours" | "days";

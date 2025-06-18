@@ -29,10 +29,13 @@ export class GetTicketsUseCase {
         ContactsWAOnAccount: { select: { name: true } },
         inboxUserId: true,
         createAt: true,
+        _count: {
+          select: { TicketMessages: { where: { read: false, by: "contact" } } },
+        },
         TicketMessages: {
           take: 1, // pega apenas a última mensagem
-          orderBy: { createAt: "asc" },
-          select: { createAt: true },
+          orderBy: { createAt: "desc" },
+          select: { createAt: true, type: true, message: true },
         },
       },
     });
@@ -41,10 +44,20 @@ export class GetTicketsUseCase {
       message: "OK!",
       status: 200,
       tickets: data.map(
-        ({ ContactsWAOnAccount, TicketMessages, createAt, ...r }) => {
+        ({ ContactsWAOnAccount, _count, TicketMessages, createAt, ...r }) => {
+          let lastMessage = null;
+          if (TicketMessages.length) {
+            if (TicketMessages[0].type === "text") {
+              lastMessage = TicketMessages[0].message;
+            } else {
+              lastMessage = "🎤📷 Arquivo de midia.";
+            }
+          }
           return {
             ...r,
             name: ContactsWAOnAccount?.name || "<Desconhecido(a)>",
+            count_unread: _count.TicketMessages,
+            lastMessage,
             lastInteractionDate: TicketMessages.length
               ? TicketMessages[0].createAt
               : createAt,

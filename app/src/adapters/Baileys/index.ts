@@ -3,6 +3,7 @@ import makeWASocket, {
   DisconnectReason,
   WAConnectionState,
   WASocket,
+  downloadMediaMessage,
   fetchLatestBaileysVersion,
   useMultiFileAuthState,
 } from "baileys";
@@ -12,10 +13,8 @@ import {
   ensureDirSync,
   existsSync,
   readFileSync,
-  removeSync,
   writeFile,
 } from "fs-extra";
-import phone from "libphonenumber-js";
 import moment, { Moment } from "moment-timezone";
 import { resolve } from "path";
 import { Socket } from "socket.io";
@@ -30,8 +29,25 @@ import {
   cacheFlowsMap,
   leadAwaiting,
   scheduleExecutionsReply,
+  chatbotRestartInDate,
 } from "./Cache";
 import { startChatbotQueue } from "../../bin/startChatbotQueue";
+import { validatePhoneNumber } from "../../helpers/validatePhoneNumber";
+import mime from "mime-types";
+import { SendMessageText } from "./modules/sendMessage";
+import { TypingDelay } from "./modules/typing";
+import { TypeStatusCampaign } from "@prisma/client";
+
+/**
+ * Estima quanto tempo (em segundos) alguém levou para digitar `text`.
+ * @param text Texto que a pessoa digitou.
+ * @param wpm  Velocidade média de digitação (padrão = 250 palavras/minuto).
+ */
+export function estimateTypingTime(text: string, wpm = 250): number {
+  const words = text.trim().split(/\s+/).filter(Boolean).length; // conta palavras
+  const minutes = words / wpm;
+  return Math.round(minutes * 60); // segundos (arredondado)
+}
 
 function getTimeBR(time: string) {
   return moment()
@@ -141,6 +157,13 @@ export const killConnectionWA = async (
 
 type BaileysStatus = "connecting" | "open" | "close";
 
+let pathStatic = "";
+if (process.env.NODE_ENV === "production") {
+  pathStatic = resolve(__dirname, `../static/storage`);
+} else {
+  pathStatic = resolve(__dirname, `../../../static/storage`);
+}
+
 export const Baileys = async ({
   socket,
   ...props
@@ -198,6 +221,7 @@ export const Baileys = async ({
         defaultQueryTimeoutMs: undefined,
         qrTimeout: 40000,
         browser: ["Windows", "Chrome", "114.0.5735.198"],
+        markOnlineOnConnect: true,
       });
 
       sessionsBaileysWA.set(props.connectionWhatsId, bot);
@@ -378,14 +402,15 @@ export const Baileys = async ({
           body.type === "notify" &&
           !body.messages[0].key.fromMe
         ) {
+          const number = body.messages[0].key.remoteJid?.split("@")[0];
+          if (!number) {
+            console.log("Deu erro para recuperar número do lead");
+            return;
+          }
+          // await bot.readMessages(body.messages.map((m) => m.key));
           // console.log({ audio: body.messages[0].message?.audioMessage?.url });
 
-          const numberLead = body.messages[0].key.remoteJid?.split("@")[0];
           const numberConnection = bot.user?.id.split(":")[0];
-          const isTextMessage = !!(
-            body.messages[0].message?.conversation ||
-            body.messages[0].message?.extendedTextMessage?.text
-          );
           const isAudioMessage = !!body.messages[0].message?.audioMessage?.url;
           const isImageMessage = !!body.messages[0].message?.imageMessage;
           const isDocumentMessage = !!body.messages[0].message?.documentMessage;
@@ -396,33 +421,21 @@ export const Baileys = async ({
           //   body.messages[0].message?.contactsArrayMessage?.contacts?.length;
           const locationMessage = body.messages[0].message?.locationMessage;
 
-          const numberPhone = phone(`+${numberLead}`)?.format("INTERNATIONAL");
+          const messageText =
+            body.messages[0].message?.extendedTextMessage?.text ??
+            body.messages[0].message?.conversation;
 
-          if (!numberPhone) {
-            console.log(
-              "Deu erro para recuperar número do lead",
-              `+${numberLead}`
-            );
+          const numberLead = validatePhoneNumber(number, { removeNine: true });
+
+          if (!numberLead) {
+            console.log("Error, Número do lead", `${number}`);
             return;
           }
-          const destructurePhone = numberPhone.split(" ");
-
-          let completeNumber = "";
-
-          if (destructurePhone[0] === "+55") {
-            const isNineOnTheFront = destructurePhone.length > 2;
-            if (isNineOnTheFront) {
-              completeNumber =
-                destructurePhone[0] +
-                destructurePhone[1] +
-                destructurePhone[2].slice(1) +
-                destructurePhone[3];
-            } else {
-              completeNumber = destructurePhone.join("");
-            }
-          } else {
-            completeNumber = destructurePhone.join("");
+          if (!numberConnection) {
+            console.log("Error, Número da conexão", `${numberConnection}`);
+            return;
           }
+
           const profilePicUrl = await bot
             .profilePictureUrl(body.messages[0].key.remoteJid!)
             .then((s) => s)
@@ -430,10 +443,10 @@ export const Baileys = async ({
 
           const { ContactsWAOnAccount, ...contactWA } =
             await prisma.contactsWA.upsert({
-              where: { completeNumber: numberLead },
+              where: { completeNumber: number },
               create: {
                 img: profilePicUrl,
-                completeNumber: numberLead!,
+                completeNumber: number!,
                 ContactsWAOnAccount: {
                   create: {
                     accountId: props.accountId,
@@ -451,37 +464,6 @@ export const Baileys = async ({
               },
             });
 
-          // const accountInfo = await prisma.accountSubscriptions.findFirst({
-          //   where: { Account: { id: props.accountId, Plan: { type: "paid" } } },
-          //   orderBy: { id: "desc" },
-          //   select: {
-          //     Payment: {
-          //       take: 1,
-          //       orderBy: { id: "desc" },
-          //       select: { status: true },
-          //     },
-          //   },
-          // });
-
-          // if (accountInfo) {
-          //   const validStatusPayment = Joi.string()
-          //     .valid(
-          //       "RECEIVED",
-          //       "CONFIRMED",
-          //       "RECEIVED_IN_CASH",
-          //       "PAYMENT_ANTICIPATED"
-          //     )
-          //     .optional()
-          //     .validate(accountInfo.Payment[0].status);
-
-          //   if (validStatusPayment.error) {
-          //     console.log("Os recursos foram interrompidos", {
-          //       accountId: props.accountId,
-          //     });
-          //     return;
-          //   }
-          // }
-
           if (!ContactsWAOnAccount.length) {
             const { id } = await prisma.contactsWAOnAccount.create({
               data: {
@@ -494,327 +476,322 @@ export const Baileys = async ({
             ContactsWAOnAccount.push({ id });
           }
 
-          const messageText =
-            body.messages[0].message?.extendedTextMessage?.text ??
-            body.messages[0].message?.conversation;
-          const messageAudio = body.messages[0].message?.audioMessage?.url;
-          const messageImage = body.messages[0].message?.imageMessage?.url;
+          // Verifica se o lead está aguardando processamento
+          if (leadAwaiting.get(number)) return;
+
+          const messageAudio = body.messages[0].message?.audioMessage;
+          const messageImage = body.messages[0].message?.imageMessage;
           const messageVideo = body.messages[0].message?.videoMessage?.url;
           const capitionImage = body.messages[0].message?.imageMessage?.caption;
+
           const doc = body.messages[0].message?.documentMessage;
           const docWithCaption =
             body.messages[0].message?.documentWithCaptionMessage?.message
               ?.documentMessage;
 
-          if (!numberLead || !numberConnection) return;
-          if (leadAwaiting.get(numberLead)) return;
-          // const ticket = await prisma.tickets.findFirst({
-          //   where: {
-          //     Sectors: { status: true },
-          //     status: { in: ["open", "new"] },
-          //     ContactsWAOnAccount: {
-          //       ContactsWA: { completeNumber: numberLead },
-          //     },
-          //     ConnectionOnBusiness: { number: numberConnection },
-          //   },
-          //   select: {
-          //     protocol: true,
-          //     businessId: true,
-          //     id: true,
-          //     sectorsAttendantsId: true,
-          //     status: true,
-          //     StepsFunnelKanbanOnTickets: {
-          //       select: {
-          //         StepsFunnelKanban: { select: { funnelKanbanId: true } },
-          //       },
-          //     },
-          //   },
-          // });
-          // if (
-          //   ticket &&
-          //   (messageText ||
-          //     messageAudio ||
-          //     messageImage ||
-          //     contactMessage ||
-          //     // messageVideo ||
-          //     doc ||
-          //     docWithCaption ||
-          //     locationMessage)
-          // ) {
-          //   const fileNameAudio = `audio_human-service_${Date.now()}`;
-          //   const nameFile = `file_human-service_${Date.now()}_${
-          //     doc?.fileName ?? docWithCaption?.fileName
-          //   }`;
-          //   const fileNameImage = `image_human-service_${Date.now()}`;
-          //   // const fileNameVideo = `video_human-service_${Date.now()}`;
-          //   if (
-          //     messageAudio &&
-          //     body.messages[0].message?.audioMessage?.mimetype
-          //   ) {
-          //     const exten = mime.extension(
-          //       body.messages[0].message?.audioMessage?.mimetype
-          //     );
-          //     const pathFileAudio = resolve(
-          //       __dirname,
-          //       `../../../static/audio/${fileNameAudio}.${exten}`
-          //     );
-          //     try {
-          //       const buffer = await downloadMediaMessage(
-          //         body.messages[0],
-          //         "buffer",
-          //         {}
-          //       );
-          //       writeFileSync(pathFileAudio, new Uint8Array(buffer));
-          //       leadAwaiting.set(numberLead, false);
-          //     } catch (error) {
-          //       console.log(error);
-          //     }
-          //   }
-          //   if (
-          //     messageImage &&
-          //     body.messages[0].message?.imageMessage?.mimetype
-          //   ) {
-          //     const exten = mime.extension(
-          //       body.messages[0].message?.imageMessage?.mimetype
-          //     );
-          //     const pathFileImageJpg = resolve(
-          //       __dirname,
-          //       `../../../static/image/${fileNameImage}.${exten}`
-          //     );
-          //     try {
-          //       const buffer = await downloadMediaMessage(
-          //         body.messages[0],
-          //         "buffer",
-          //         {}
-          //       );
+          const ticket = await prisma.tickets.findFirst({
+            where: {
+              status: { in: ["OPEN", "NEW"] },
+              ContactsWAOnAccount: {
+                ContactsWA: { completeNumber: numberLead },
+              },
+              ConnectionWA: { number: numberConnection },
+            },
+            select: {
+              accountId: true,
+              protocol: true,
+              InboxDepartment: {
+                select: { businessId: true, id: true, name: true },
+              },
+              id: true,
+              inboxUserId: true,
+              status: true,
+            },
+          });
+          if (ticket) {
+            if (!!messageText) {
+              const isValidText = messageText.trim().length > 0;
+              if (!isValidText) {
+                console.log("Mensagem de texto inválida ou vazia.");
+                return;
+              }
+            }
+            let fileName = "";
+            let fileNameOriginal = "";
+            if (messageAudio) {
+              const ext = mime.extension(messageAudio.mimetype || "audio/mpeg");
+              fileName = `image_inbox_${Date.now()}.${ext}`;
+              try {
+                const buffer = await downloadMediaMessage(
+                  body.messages[0],
+                  "buffer",
+                  {}
+                );
+                writeFileSync(
+                  pathStatic + `/${fileName}`,
+                  new Uint8Array(buffer)
+                );
+                leadAwaiting.set(numberLead, false);
+              } catch (error) {
+                console.log(error);
+              }
+            }
+            if (messageImage) {
+              const ext = mime.extension(messageImage.mimetype || "image/jpeg");
+              fileName = `image_inbox_${Date.now()}.${ext}`;
+              try {
+                const buffer = await downloadMediaMessage(
+                  body.messages[0],
+                  "buffer",
+                  {}
+                );
 
-          //       await writeFile(pathFileImageJpg, new Uint8Array(buffer));
-          //     } catch (error) {
-          //       console.log("ERRO NA OPERAÇÃO DE SALVAR IMAGEM!");
-          //       console.log(error);
-          //     }
-          //   }
-          //   const objectVcard = {};
-          //   if (contactMessage) {
-          //     contactMessage.split("\n").forEach((item) => {
-          //       if (/waid=(\d*)/.test(item)) {
-          //         Object.assign(objectVcard, {
-          //           number: item.match(/waid=(\d*)/)?.[1],
-          //         });
-          //         return;
-          //       }
-          //       if (/FN:(.*)/.test(item)) {
-          //         Object.assign(objectVcard, {
-          //           fullName: item.match(/FN:(.*)/)?.[1],
-          //         });
-          //         return;
-          //       }
-          //     });
-          //   }
+                await writeFile(
+                  pathStatic + `/${fileName}`,
+                  new Uint8Array(buffer)
+                );
+              } catch (error) {
+                console.log("ERRO NA OPERAÇÃO DE SALVAR IMAGEM!");
+                console.log(error);
+              }
+            }
+            if (doc) {
+              const ext = mime.extension(
+                doc?.mimetype || "text/html; charset=utf-8"
+              );
+              fileName = `file_inbox_${Date.now()}.${ext}`;
+              fileNameOriginal = doc.fileName || "";
+              try {
+                const buffer = await downloadMediaMessage(
+                  body.messages[0],
+                  "buffer",
+                  {}
+                );
+                if (!buffer || buffer.length === 0) {
+                  console.log("Buffer de mídia vazio.");
+                  return;
+                }
+                await writeFile(
+                  pathStatic + `/${fileName}`,
+                  new Uint8Array(buffer)
+                );
+              } catch (error) {
+                console.log(error);
+              }
+            }
+            if (docWithCaption) {
+              const ext = mime.extension(
+                doc?.mimetype || "text/html; charset=utf-8"
+              );
+              fileName = `file_inbox_${Date.now()}.${ext}`;
+              fileNameOriginal = docWithCaption.fileName || "";
+              try {
+                const buffer = await downloadMediaMessage(
+                  body.messages[0],
+                  "buffer",
+                  {}
+                );
+                if (!buffer || buffer.length === 0) {
+                  console.log("Buffer de mídia vazio.");
+                  return;
+                }
+                await writeFile(
+                  pathStatic + `/${fileName}`,
+                  new Uint8Array(buffer)
+                );
+              } catch (error) {
+                console.log(error);
+              }
+            }
 
-          //   let nameFileWithExt = "";
+            //   const objectVcard = {};
+            //   if (contactMessage) {
+            //     contactMessage.split("\n").forEach((item) => {
+            //       if (/waid=(\d*)/.test(item)) {
+            //         Object.assign(objectVcard, {
+            //           number: item.match(/waid=(\d*)/)?.[1],
+            //         });
+            //         return;
+            //       }
+            //       if (/FN:(.*)/.test(item)) {
+            //         Object.assign(objectVcard, {
+            //           fullName: item.match(/FN:(.*)/)?.[1],
+            //         });
+            //         return;
+            //       }
+            //     });
+            //   }
 
-          //   if (doc) {
-          //     const exten = mime.extension(
-          //       doc?.mimetype || "text/html; charset=utf-8"
-          //     );
-          //     nameFileWithExt = nameFile + `.${exten}`;
-          //     const pathFileDoc = resolve(
-          //       __dirname,
-          //       `../../../static/file/${nameFileWithExt}`
-          //     );
-          //     try {
-          //       const buffer = await downloadMediaMessage(
-          //         body.messages[0],
-          //         "buffer",
-          //         {}
-          //       );
-          //       if (!buffer || buffer.length === 0) {
-          //         console.log("Buffer de mídia vazio.");
-          //         return;
-          //       }
-          //       await writeFile(pathFileDoc, new Uint8Array(buffer));
-          //     } catch (error) {
-          //       console.log(error);
-          //     }
-          //   }
-          //   if (docWithCaption) {
-          //     const exten = mime.extension(
-          //       docWithCaption?.mimetype || "text/html; charset=utf-8"
-          //     );
-          //     nameFileWithExt = nameFile + `.${exten}`;
-          //     const pathFileAudio = resolve(
-          //       __dirname,
-          //       `../../../static/file/${nameFileWithExt}`
-          //     );
-          //     try {
-          //       const buffer = await downloadMediaMessage(
-          //         body.messages[0],
-          //         "buffer",
-          //         {}
-          //       );
-          //       if (!buffer || buffer.length === 0) {
-          //         console.log("Buffer de mídia vazio.");
-          //         return;
-          //       }
-          //       await writeFile(pathFileAudio, new Uint8Array(buffer));
-          //     } catch (error) {
-          //       console.log(error);
-          //     }
-          //   }
-          //   let isCurrentTicket = false;
-          //   if (ticket.sectorsAttendantsId) {
-          //     const user = CacheStateUserSocket.get(ticket.sectorsAttendantsId);
-          //     isCurrentTicket = user?.currentTicket === ticket.id;
-          //   }
-          //   const extenImg = mime.extension(
-          //     body.messages[0].message?.imageMessage?.mimetype || ""
-          //   );
-          //   const extenAudio = mime.extension(
-          //     body.messages[0].message?.audioMessage?.mimetype || ""
-          //   );
-          //   // const extenVideo = mime.extension(
-          //   //   body.messages[0].message?.videoMessage?.mimetype||''
-          //   // );
-          //   const filenameImg =
-          //     fileNameImage + `${extenImg ? `.${extenImg}` : ""}`;
-          //   const filenameAudio =
-          //     fileNameAudio + `${extenAudio ? `.${extenAudio}` : ""}`;
-          //   // const filenameVideo =
-          //   // fileNameVideo + `${extenVideo ? `.${extenVideo}` : ""}`;
+            //   verificar se o atendente esta na pagina do ticket;
 
-          //   const mess = await prisma.conversationTickes.create({
-          //     data: {
-          //       ticketsId: ticket.id,
-          //       message: "",
-          //       type: "text",
-          //       ...(messageAudio && { type: "audio", fileName: filenameAudio }),
-          //       ...(messageText && { type: "text", message: messageText }),
-          //       ...(messageImage && {
-          //         type: "image",
-          //         fileName: filenameImg,
-          //         ...(capitionImage && { caption: capitionImage }),
-          //       }),
-          //       ...(contactMessage && { type: "contact", ...objectVcard }),
-          //       ...(locationMessage && {
-          //         type: "location",
-          //         degreesLatitude: String(locationMessage.degreesLatitude!),
-          //         degreesLongitude: String(locationMessage.degreesLongitude!),
-          //         address: locationMessage.address ?? "",
-          //         name: locationMessage.name ?? "",
-          //       }),
-          //       ...((doc || docWithCaption) && {
-          //         type: "file",
-          //         fileName: nameFileWithExt,
-          //         caption: docWithCaption?.caption ?? "",
-          //       }),
-          //       sentBy: "lead",
-          //       messageKey: body.messages[0].key.id,
-          //       read: isCurrentTicket,
-          //     },
-          //     select: { createAt: true, id: true },
-          //   });
+            let isCurrentTicket = false;
+            if (!ticket.inboxUserId) {
+              // é o account que esta no socket
+              //   const user = CacheStateUserSocket.get(ticket.sectorsAttendantsId);
+              //   isCurrentTicket = user?.currentTicket === ticket.id;
+              const user = cacheAccountSocket.get(props.accountId);
+              if (user) isCurrentTicket = user.currentTicket === ticket.id;
+            }
 
-          //   const businessSpace = socketIo.of(
-          //     `/business-${ticket.businessId}/human-service`
-          //   );
+            const msg = await prisma.ticketMessage.create({
+              data: {
+                ticketsId: ticket.id,
+                message: "",
+                type: "text",
+                ...(messageText && { type: "text", message: messageText }),
+                ...(messageAudio && { type: "audio", fileName }),
+                ...(messageImage && {
+                  type: "image",
+                  fileName: fileName,
+                  ...(messageImage.caption && {
+                    caption: messageImage.caption,
+                  }),
+                }),
+                ...(doc && {
+                  type: "file",
+                  fileName: fileName,
+                  fileNameOriginal,
+                  ...(doc.caption && { caption: doc.caption }),
+                }),
+                ...(docWithCaption && {
+                  type: "file",
+                  fileName: fileName,
+                  fileNameOriginal,
+                  ...(docWithCaption.caption && {
+                    caption: docWithCaption.caption,
+                  }),
+                }),
+                // ...(contactMessage && { type: "contact", ...objectVcard }),
+                // ...(locationMessage && {
+                //   type: "location",
+                //   degreesLatitude: String(locationMessage.degreesLatitude!),
+                //   degreesLongitude: String(locationMessage.degreesLongitude!),
+                //   address: locationMessage.address ?? "",
+                //   name: locationMessage.name ?? "",
+                // }),
+                by: "contact",
+                messageKey: body.messages[0].key.id,
+                read: isCurrentTicket,
+              },
+              select: { createAt: true, id: true },
+            });
 
-          //   if (ticket.sectorsAttendantsId) {
-          //     const content = messageText ?? "🎤📷 Arquivo de midia";
-          //     const subject = `Nova mensagem | ticket: #${ticket.protocol}`;
-          //     // const notification =
-          //     //   await prisma.notificationsSectorsAttendants.create({
-          //     //     data: {
-          //     //       status: "unread",
-          //     //       sectorsAttendantId: ticket.sectorsAttendantsId,
-          //     //       content,
-          //     //       subject,
-          //     //     },
-          //     //     select: { createAt: true, id: true },
-          //     //   });
+            const inboxSpace = socketIo.of(
+              `/business-${ticket.InboxDepartment.businessId}/inbox`
+            );
 
-          //     if (!isCurrentTicket) {
-          //       businessSpace.emit("insert-new-notification", {
-          //         userId: ticket.sectorsAttendantsId,
-          //         // ...notification,
-          //         content,
-          //         subject,
-          //       });
-          //     }
-          //   }
+            cacheAccountSocket
+              .get(ticket.accountId)
+              ?.listSocket?.forEach((sockId) => {
+                socketIo.to(sockId).emit(`inbox`, {
+                  accountId: ticket.accountId,
+                  departmentId: ticket.InboxDepartment.id,
+                  departmentName: ticket.InboxDepartment.name,
+                  status: "MESSAGE",
+                  notifyMsc: true,
+                  notifyToast: true,
+                  id: ticket.id,
+                });
+                inboxSpace.emit("message-list", {
+                  content: {
+                    id: msg.id,
+                    ...(messageText && { type: "text", text: messageText }),
+                    ...(messageAudio && { type: "audio" }),
+                    ...(messageImage && { type: "image" }),
+                    ...((doc || docWithCaption) && { type: "file" }),
+                  },
+                  by: "contact",
+                  departmentId: ticket.InboxDepartment.id,
+                  notifyMsc: !isCurrentTicket,
+                  notifyToast: false,
+                  ticketId: ticket.id,
+                  userId: ticket.inboxUserId, // caso seja enviado para um usuário.
+                  lastInteractionDate: msg.createAt,
+                  read: isCurrentTicket,
+                });
+                inboxSpace.emit("message", {
+                  content: {
+                    id: msg.id,
+                    ...(messageText && { type: "text", text: messageText }),
+                    ...(messageAudio && {
+                      type: "audio",
+                      fileName,
+                      ptt: messageAudio.ptt,
+                    }),
+                    ...(messageImage && {
+                      type: "image",
+                      fileName,
+                      ...(messageImage.caption && {
+                        caption: messageImage?.caption,
+                      }),
+                    }),
+                    ...(doc && {
+                      type: "file",
+                      fileName: fileName,
+                      fileNameOriginal,
+                      ...(doc.caption && { caption: doc.caption }),
+                    }),
+                    ...(docWithCaption && {
+                      type: "file",
+                      fileName: fileName,
+                      fileNameOriginal,
+                      ...(docWithCaption.caption && {
+                        caption: docWithCaption.caption,
+                      }),
+                    }),
+                  },
+                  by: "contact",
+                  departmentId: ticket.InboxDepartment.id,
+                  notifyMsc: !isCurrentTicket,
+                  notifyToast: false,
+                  ticketId: ticket.id,
+                  userId: ticket.inboxUserId, // caso seja enviado para um usuário.
+                  lastInteractionDate: msg.createAt,
+                });
+              });
 
-          //   // atualizar a mensagem no kanban
-          //   if (ticket.status === "open" && ticket.sectorsAttendantsId) {
-          //     const stateUserHumanServide = CacheStateUserSocket.get(
-          //       ticket.sectorsAttendantsId
-          //     );
-          //     if (stateUserHumanServide) {
-          //       if (
-          //         !stateUserHumanServide.isMobile &&
-          //         stateUserHumanServide.linkedPages.includes("/kanban")
-          //       ) {
-          //         businessSpace.emit("synchronize-message-kanban", {
-          //           ticketId: ticket.id,
-          //           kanbanId:
-          //             ticket.StepsFunnelKanbanOnTickets[0].StepsFunnelKanban
-          //               .funnelKanbanId,
-          //           lastMsg: {
-          //             value: "🎤📷 Arquivo de midia",
-          //             ...(messageText && { value: messageText }),
-          //             date: moment(mess.createAt)
-          //               .tz("America/Sao_Paulo")
-          //               .toDate(),
-          //           },
-          //         });
-          //       }
-          //     }
-          //     businessSpace.emit("sound-new-message", {
-          //       userId: ticket.sectorsAttendantsId,
-          //     });
-          //   }
+            //   businessSpace.emit("synchronize-message", {
+            //     ticketId: ticket.id,
+            //     ...(ticket.sectorsAttendantsId && {
+            //       userId: ticket.sectorsAttendantsId,
+            //     }),
+            //     data: {
+            //       clear: false,
+            //       ...(messageAudio && { type: "audio", fileName: filenameAudio }),
+            //       ...(messageImage && {
+            //         type: "image",
+            //         fileName: filenameImg,
+            //         caption: capitionImage,
+            //       }),
+            //       ...(messageText && {
+            //         type: "text",
+            //         message: messageText,
+            //       }),
+            //       ...(contactMessage && { type: "contact", ...objectVcard }),
+            //       ...(locationMessage && {
+            //         type: "location",
+            //         degreesLatitude: locationMessage.degreesLatitude,
+            //         degreesLongitude: locationMessage.degreesLongitude,
+            //         address: locationMessage.address ?? "",
+            //         name: locationMessage.name ?? "",
+            //       }),
+            //       ...((doc || docWithCaption) && {
+            //         type: "file",
+            //         fileName: nameFileWithExt,
+            //         caption: docWithCaption?.caption ?? "",
+            //       }),
+            //       createAt: moment(mess.createAt)
+            //         .tz("America/Sao_Paulo")
+            //         .toDate(),
+            //       id: mess.id,
+            //       read: isCurrentTicket,
+            //       sentBy: "lead",
+            //     },
+            //   } as PropsSynchronizeTicketMessageHumanService);
 
-          //   businessSpace.emit("synchronize-message", {
-          //     ticketId: ticket.id,
-          //     ...(ticket.sectorsAttendantsId && {
-          //       userId: ticket.sectorsAttendantsId,
-          //     }),
-          //     data: {
-          //       clear: false,
-          //       ...(messageAudio && { type: "audio", fileName: filenameAudio }),
-          //       ...(messageImage && {
-          //         type: "image",
-          //         fileName: filenameImg,
-          //         caption: capitionImage,
-          //       }),
-          //       ...(messageText && {
-          //         type: "text",
-          //         message: messageText,
-          //       }),
-          //       ...(contactMessage && { type: "contact", ...objectVcard }),
-          //       ...(locationMessage && {
-          //         type: "location",
-          //         degreesLatitude: locationMessage.degreesLatitude,
-          //         degreesLongitude: locationMessage.degreesLongitude,
-          //         address: locationMessage.address ?? "",
-          //         name: locationMessage.name ?? "",
-          //       }),
-          //       ...((doc || docWithCaption) && {
-          //         type: "file",
-          //         fileName: nameFileWithExt,
-          //         caption: docWithCaption?.caption ?? "",
-          //       }),
-          //       createAt: moment(mess.createAt)
-          //         .tz("America/Sao_Paulo")
-          //         .toDate(),
-          //       id: mess.id,
-          //       read: isCurrentTicket,
-          //       sentBy: "lead",
-          //     },
-          //   } as PropsSynchronizeTicketMessageHumanService);
-
-          //   leadAwaiting.set(numberLead, false);
-          //   return;
-          // }
+            //   leadAwaiting.set(numberLead, false);
+            return;
+          }
 
           const chatbot = await prisma.chatbot.findFirst({
             where: {
@@ -825,6 +802,7 @@ export const Baileys = async ({
             select: {
               id: true,
               flowId: true,
+              fallback: true,
               addToLeadTagsIds: true,
               addLeadToAudiencesIds: true,
               status: true,
@@ -842,6 +820,23 @@ export const Baileys = async ({
           });
 
           if (chatbot) {
+            const isToRestartChatbot = chatbotRestartInDate.get(
+              `${numberConnection}+${numberLead}`
+            );
+            if (!!isToRestartChatbot) {
+              const isbefore = moment()
+                .tz("America/Sao_Paulo")
+                .isBefore(isToRestartChatbot);
+              console.log({ isbefore });
+              if (isbefore) {
+                return;
+              } else {
+                chatbotRestartInDate.delete(
+                  `${numberConnection}+${numberLead}`
+                );
+              }
+            }
+
             if (chatbot.addToLeadTagsIds.length) {
               const tagOnBusinessIds = await prisma.tag.findMany({
                 where: { id: { in: chatbot.addToLeadTagsIds } },
@@ -1364,6 +1359,19 @@ export const Baileys = async ({
                           where: { id: currentIndexNodeLead.id },
                           data: { isFinish: true },
                         });
+                        if (chatbot.TimeToRestart) {
+                          const nextDate = moment()
+                            .tz("America/Sao_Paulo")
+                            .add(
+                              chatbot.TimeToRestart.value,
+                              chatbot.TimeToRestart.type
+                            )
+                            .toDate();
+                          chatbotRestartInDate.set(
+                            `${numberConnection}+${numberLead}`,
+                            nextDate
+                          );
+                        }
                       }
                     },
                     onExecutedNode: async (node) => {
@@ -1406,7 +1414,7 @@ export const Baileys = async ({
                     },
                   },
                 }).finally(() => {
-                  leadAwaiting.set(numberLead, false);
+                  leadAwaiting.set(number, false);
                 });
               };
 
@@ -1443,26 +1451,99 @@ export const Baileys = async ({
                 // } else {
                 // }
 
+                if (chatbot.fallback) {
+                  const flowState = await prisma.flowState.findFirst({
+                    where: {
+                      connectionWAId: props.connectionWhatsId,
+                      contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                      isFinish: false,
+                    },
+                    select: { id: true, fallbackSent: true },
+                  });
+                  if (!flowState) {
+                    await new Promise((resolve) =>
+                      setTimeout(resolve, 1000 * 60)
+                    );
+                    await TypingDelay({
+                      connectionId: props.connectionWhatsId,
+                      toNumber: numberLead + "@s.whatsapp.net",
+                      delay: estimateTypingTime(chatbot.fallback),
+                    });
+                    await SendMessageText({
+                      connectionId: props.connectionWhatsId,
+                      text: chatbot.fallback,
+                      toNumber: numberLead + "@s.whatsapp.net",
+                    });
+                    await prisma.flowState.create({
+                      data: {
+                        connectionWAId: props.connectionWhatsId,
+                        contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                        indexNode: "0",
+                        flowId: chatbot.flowId,
+                        fallbackSent: true,
+                      },
+                      select: { id: true },
+                    });
+                  } else {
+                    if (!flowState.fallbackSent) {
+                      await new Promise((resolve) =>
+                        setTimeout(resolve, 1000 * 60)
+                      );
+                      await TypingDelay({
+                        connectionId: props.connectionWhatsId,
+                        toNumber: numberLead + "@s.whatsapp.net",
+                        delay: estimateTypingTime(chatbot.fallback),
+                      });
+                      await SendMessageText({
+                        connectionId: props.connectionWhatsId,
+                        text: chatbot.fallback,
+                        toNumber: numberLead + "@s.whatsapp.net",
+                      });
+                      await prisma.flowState.update({
+                        where: { id: flowState.id },
+                        data: { fallbackSent: true },
+                      });
+                    }
+                  }
+                }
+
                 const minutesToNextExecutionInQueue = Math.min(
                   ...chatbot.OperatingDays.map((day) => {
                     const nowDate = moment().tz("America/Sao_Paulo");
-
                     const listNextWeeks = day.WorkingTimes.map((time) => {
-                      const nextDayWeek = nowDate.startOf("day").set({
-                        weekday: day.dayOfWeek,
-                        hours: Number(time.start.slice(0, 2)),
-                        minutes: Number(time.start.slice(3, 5)),
-                      });
-                      return nextDayWeek.diff(
-                        moment().tz("America/Sao_Paulo"),
-                        "minutes"
-                      );
+                      const [hour, minute] = time.start.split(":").map(Number);
+                      let next = moment()
+                        .tz("America/Sao_Paulo")
+                        .day(day.dayOfWeek)
+                        .hour(hour)
+                        .minute(minute)
+                        .second(0);
+                      if (next.isBefore(nowDate)) next = next.add(1, "week");
+                      return next.diff(nowDate, "minutes");
+
+                      // const nextDayWeek = nowDate.set({
+                      //   weekday: day.dayOfWeek,
+                      //   hours: Number(time.start.slice(0, 2)),
+                      //   minutes: Number(time.start.slice(3, 5)),
+                      // });
+                      // const minutes = nextDayWeek.diff(
+                      //   moment().tz("America/Sao_Paulo"),
+                      //   "minutes"
+                      // );
+                      // if (minutes >= 0) {
+                      //   return minutes;
+                      // } else {
+                      //   // proxima semana.
+                      // }
                     });
+
+                    console.log({ listNextWeeks });
 
                     return Math.min(...listNextWeeks);
                   }).filter((s) => s >= 0)
                 );
 
+                console.log({ minutesToNextExecutionInQueue });
                 const dateNextExecution = moment()
                   .tz("America/Sao_paulo")
                   .add(minutesToNextExecutionInQueue, "minutes");
@@ -1481,14 +1562,16 @@ export const Baileys = async ({
                 }
 
                 const dataLeadQueue = {
-                  number: numberLead,
+                  number: number,
                   pushName: body.messages[0].pushName ?? "SEM NOME",
                   messageText,
-                  messageAudio,
-                  messageImage,
+                  messageAudio: messageAudio?.url,
+                  messageImage: messageImage?.url,
                   messageImageCation: capitionImage,
                   messageVideo,
                 };
+
+                console.log({ dateNextExecution });
 
                 if (!existsSync(path)) {
                   console.info("======= Path não existia");
@@ -1511,7 +1594,7 @@ export const Baileys = async ({
 
                   if (chatbotQueue !== "") {
                     const JSONQueue: ChatbotQueue = JSON.parse(chatbotQueue);
-                    if (!JSONQueue.queue.some((s) => s.number === numberLead)) {
+                    if (!JSONQueue.queue.some((s) => s.number === number)) {
                       JSONQueue.queue.push(dataLeadQueue);
                     }
                     try {
@@ -1545,280 +1628,237 @@ export const Baileys = async ({
             return;
           }
 
-          // const campaignOfConnection = await prisma.campaign.findFirst({
-          //   where: {
-          //     accountId: props.accountId,
-          //     status: "running",
-          //     CampaignOnBusiness: {
-          //       some: {
-          //         ConnectionOnCampaign: {
-          //           some: {
-          //             ConnectionOnBusiness: {
-          //               id: props.connectionWhatsId,
-          //               type: props.type,
-          //               number: numberConnection,
-          //             },
-          //           },
-          //         },
-          //       },
-          //     },
-          //     FlowState: {
-          //       some: {
-          //         type: "campaign",
-          //         isFinish: false,
-          //         ContactsWAOnAccountOnAudience: {
-          //           ContactsWAOnAccount: {
-          //             ContactsWA: { completeNumber: numberLead },
-          //           },
-          //         },
-          //       },
-          //     },
-          //   },
-          //   select: {
-          //     id: true,
-          //     flowId: true,
-          //     AudienceOnCampaign: {
-          //       select: {
-          //         Audience: {
-          //           select: {
-          //             ContactsWAOnAccountOnAudience: {
-          //               where: {
-          //                 ContactsWAOnAccount: {
-          //                   ContactsWA: {
-          //                     completeNumber: numberLead,
-          //                   },
-          //                 },
-          //               },
-          //               select: {
-          //                 contactWAOnAccountId: true,
-          //                 FlowState: {
-          //                   where: {
-          //                     isFinish: false,
-          //                     type: "campaign",
-          //                     Campaign: {
-          //                       CampaignOnBusiness: {
-          //                         some: {
-          //                           ConnectionOnCampaign: {
-          //                             some: {
-          //                               ConnectionOnBusiness: {
-          //                                 id: props.connectionWhatsId,
-          //                                 type: props.type,
-          //                                 number: numberConnection,
-          //                               },
-          //                             },
-          //                           },
-          //                         },
-          //                       },
-          //                     },
-          //                   },
-          //                   select: {
-          //                     id: true,
-          //                     flowId: true,
-          //                     indexNode: true,
-          //                     ContactsWAOnAccountOnAudience: {
-          //                       select: {
-          //                         ContactsWAOnAccount: {
-          //                           select: {
-          //                             ContactsWA: {
-          //                               select: {
-          //                                 completeNumber: true,
-          //                               },
-          //                             },
-          //                           },
-          //                         },
-          //                       },
-          //                     },
-          //                   },
-          //                 },
-          //               },
-          //             },
-          //           },
-          //         },
-          //       },
-          //     },
-          //   },
-          // });
+          const campaignOfConnection = await prisma.campaign.findFirst({
+            where: {
+              accountId: props.accountId,
+              status: "running",
+              ConnectionOnCampaign: {
+                some: { connectionWAId: props.connectionWhatsId },
+              },
+              FlowState: {
+                some: {
+                  isFinish: false,
+                  ContactsWAOnAccount: {
+                    ContactsWA: { completeNumber: numberLead },
+                  },
+                },
+              },
+            },
+            select: {
+              id: true,
+              flowId: true,
+            },
+          });
 
-          // if (!!campaignOfConnection) {
-          //   leadAwaiting.set(numberLead, true);
-          //   const { AudienceOnCampaign, id, flowId } = campaignOfConnection;
+          if (!!campaignOfConnection) {
+            const flowState = await prisma.flowState.findFirst({
+              where: {
+                campaignId: campaignOfConnection?.id,
+                ContactsWAOnAccount: {
+                  ContactsWA: { completeNumber: numberLead },
+                },
+              },
+              select: {
+                id: true,
+                indexNode: true,
+                flowId: true,
+                ContactsWAOnAccount: { select: { id: true } },
+              },
+            });
 
-          //   const infoLead =
-          //     AudienceOnCampaign[0].Audience.ContactsWAOnAccountOnAudience[0]
-          //       .FlowState[0];
-          //   let currentFlow: { nodes: any; edges: any } = {} as {
-          //     nodes: any;
-          //     edges: any;
-          //   };
+            if (!flowState) return console.log("FlowState not found for lead");
 
-          //   if (!infoLead?.flowId) {
-          //     let flowFetch = flowsMap.get("current");
-          //     if (!flowFetch) {
-          //       flowFetch = await ModelFlows.aggregate([
-          //         { $match: { accountId: props.accountId, _id: flowId } },
-          //         {
-          //           $project: {
-          //             nodes: {
-          //               $map: {
-          //                 input: "$data.nodes",
-          //                 in: {
-          //                   id: "$$this.id",
-          //                   type: "$$this.type",
-          //                   data: "$$this.data",
-          //                 },
-          //               },
-          //             },
-          //             edges: {
-          //               $map: {
-          //                 input: "$data.edges",
-          //                 in: {
-          //                   id: "$$this.id",
-          //                   source: "$$this.source",
-          //                   target: "$$this.target",
-          //                   sourceHandle: "$$this.sourceHandle",
-          //                 },
-          //               },
-          //             },
-          //           },
-          //         },
-          //       ]);
-          //       if (!flowFetch) return console.log(`Flow not found.`);
-          //       const { edges, nodes } = flowFetch[0];
-          //       flowsMap.set("current", { nodes, edges });
-          //     }
-          //     const { edges, nodes } = flowsMap.get("current");
-          //     currentFlow = { edges, nodes };
-          //   } else {
-          //     let flowFetch = flowsMap.get("current");
-          //     if (!flowFetch) {
-          //       flowFetch = await ModelFlows.aggregate([
-          //         {
-          //           $match: {
-          //             accountId: props.accountId,
-          //             _id: infoLead.flowId,
-          //           },
-          //         },
-          //         {
-          //           $project: {
-          //             nodes: {
-          //               $map: {
-          //                 input: "$data.nodes",
-          //                 in: {
-          //                   id: "$$this.id",
-          //                   type: "$$this.type",
-          //                   data: "$$this.data",
-          //                 },
-          //               },
-          //             },
-          //             edges: {
-          //               $map: {
-          //                 input: "$data.edges",
-          //                 in: {
-          //                   id: "$$this.id",
-          //                   source: "$$this.source",
-          //                   target: "$$this.target",
-          //                   sourceHandle: "$$this.sourceHandle",
-          //                 },
-          //               },
-          //             },
-          //           },
-          //         },
-          //       ]);
-          //       if (!flowFetch) return console.log(`Flow not found.`);
-          //       const { edges, nodes } = flowFetch[0];
-          //       flowsMap.set(String(infoLead.flowId), { nodes, edges });
-          //     }
-          //     const { edges, nodes } = flowsMap.get(String(infoLead.flowId));
-          //     currentFlow = { edges, nodes };
-          //   }
-          //   const businessInfo = await prisma.connectionWA.findFirst({
-          //     where: { id: props.connectionWhatsId },
-          //     select: { Business: { select: { name: true } } },
-          //   });
+            leadAwaiting.set(numberLead, true);
+            const { id, flowId } = flowState;
 
-          //   await NodeControler({
-          //     businessName: businessInfo?.Business.name!,
-          //     isSavePositionLead: true,
-          //     flowId: infoLead.flowId!,
-          //     isMidia:
-          //       isAudioMessage ||
-          //       isImageMessage ||
-          //       isDocumentMessage ||
-          //       isVideoMessage ||
-          //       !!contactMessage ||
-          //       !!locationMessage,
-          //     type: "running",
-          //     connectionWhatsId: props.connectionWhatsId,
-          //     clientWA: bot,
-          //     campaignId: id,
-          //     flowStateId: infoLead.id,
-          //     contactsWAOnAccountId:
-          //       AudienceOnCampaign[0].Audience.ContactsWAOnAccountOnAudience[0]
-          //         .contactWAOnAccountId,
-          //     lead: {
-          //       number:
-          //         infoLead.ContactsWAOnAccountOnAudience!.ContactsWAOnAccount.ContactsWA.completeNumber.replace(
-          //           "+",
-          //           ""
-          //         ) + "@s.whatsapp.net",
-          //     },
-          //     currentNodeId: infoLead.indexNode ?? "0",
-          //     edges: currentFlow.edges,
-          //     nodes: currentFlow.nodes,
-          //     numberConnection: numberConnection + "@s.whatsapp.net",
-          //     message: messageText ?? "",
-          //     accountId: props.accountId,
-          //     onFinish: async (vl) => {
-          //       try {
-          //         await prisma.flowState.update({
-          //           where: { id: infoLead.id },
-          //           data: { isFinish: true },
-          //         });
-          //       } catch (error) {
-          //         console.log("Lead já foi finalizado nesse fluxo!");
-          //       }
-          //       // verificar se todos foram encerrados
-          //       const contactsInFlow = await prisma.flowState.count({
-          //         where: { isFinish: false, campaignId: id },
-          //       });
-          //       if (!contactsInFlow) {
-          //         await prisma.campaign.update({
-          //           where: { id },
-          //           data: { status: "finished" },
-          //         });
-          //         const socketId = cacheSocketAccount.get(props.accountId);
-          //         if (socketId) {
-          //           socketIo.to(socketId).emit("status-campaign", {
-          //             campaignId: id,
-          //             status: "finished" as TypeStatusCampaign,
-          //           });
-          //         }
-          //       }
-          //       console.log("Finalizou!");
-          //     },
-          //     onExecutedNode: async (node, isShots) => {
-          //       await prisma.flowState
-          //         .update({
-          //           where: { id: infoLead.id },
-          //           data: {
-          //             indexNode: node.id,
-          //             ...(isShots && { isSent: isShots }),
-          //           },
-          //         })
-          //         .catch((err) => console.log(err));
-          //     },
-          //     onEnterNode: async (nodeId) => {
-          //       await prisma.flowState
-          //         .update({
-          //           where: { id: infoLead.id },
-          //           data: { indexNode: nodeId },
-          //         })
-          //         .catch((err) => console.log(err));
-          //     },
-          //   }).finally(() => {
-          //     leadAwaiting.set(numberLead, false);
-          //   });
-          // }
+            let currentFlow = {} as {
+              nodes: any;
+              edges: any;
+              businessIds: number[];
+            };
+
+            if (flowId) {
+              let flowFetch = cacheFlowsMap.get(flowId);
+              if (!flowFetch) {
+                const getFlow = await ModelFlows.aggregate([
+                  { $match: { accountId: props.accountId, _id: flowId } },
+                  {
+                    $project: {
+                      businessIds: 1,
+                      nodes: {
+                        $map: {
+                          input: "$data.nodes",
+                          in: {
+                            id: "$$this.id",
+                            type: "$$this.type",
+                            data: "$$this.data",
+                          },
+                        },
+                      },
+                      edges: {
+                        $map: {
+                          input: "$data.edges",
+                          in: {
+                            id: "$$this.id",
+                            source: "$$this.source",
+                            target: "$$this.target",
+                            sourceHandle: "$$this.sourceHandle",
+                          },
+                        },
+                      },
+                    },
+                  },
+                ]);
+                if (!flowFetch) return console.log(`Flow not found.`);
+                const { edges, nodes, businessIds } = getFlow[0];
+                currentFlow = { nodes, edges, businessIds };
+                cacheFlowsMap.set(flowId, currentFlow);
+              }
+            } else {
+              let flowFetch = cacheFlowsMap.get(campaignOfConnection.flowId);
+              if (!flowFetch) {
+                const getFlow = await ModelFlows.aggregate([
+                  {
+                    $match: {
+                      accountId: props.accountId,
+                      _id: campaignOfConnection.flowId,
+                    },
+                  },
+                  {
+                    $project: {
+                      businessIds: 1,
+                      nodes: {
+                        $map: {
+                          input: "$data.nodes",
+                          in: {
+                            id: "$$this.id",
+                            type: "$$this.type",
+                            data: "$$this.data",
+                          },
+                        },
+                      },
+                      edges: {
+                        $map: {
+                          input: "$data.edges",
+                          in: {
+                            id: "$$this.id",
+                            source: "$$this.source",
+                            target: "$$this.target",
+                            sourceHandle: "$$this.sourceHandle",
+                          },
+                        },
+                      },
+                    },
+                  },
+                ]);
+                if (!flowFetch) return console.log(`Flow not found.`);
+                const { edges, nodes, businessIds } = getFlow[0];
+                currentFlow = { nodes, edges, businessIds };
+                cacheFlowsMap.set(campaignOfConnection.flowId, currentFlow);
+              }
+            }
+
+            const businessInfo = await prisma.connectionWA.findFirst({
+              where: { id: props.connectionWhatsId },
+              select: { Business: { select: { name: true } } },
+            });
+
+            if (!flowState.ContactsWAOnAccount) {
+              console.log("ContactsWAOnAccount not found for lead");
+              return;
+            }
+
+            await NodeControler({
+              businessName: businessInfo?.Business.name!,
+              isSavePositionLead: true,
+              flowId: flowId || campaignOfConnection.flowId,
+              isMidia:
+                isAudioMessage ||
+                isImageMessage ||
+                isDocumentMessage ||
+                isVideoMessage ||
+                !!contactMessage ||
+                !!locationMessage,
+              type: "running",
+              connectionWhatsId: props.connectionWhatsId,
+              clientWA: bot,
+              campaignId: id,
+              oldNodeId: flowState.indexNode || "0",
+              flowStateId: flowState.id,
+              contactsWAOnAccountId: flowState.ContactsWAOnAccount.id,
+              lead: {
+                number: numberLead + "@s.whatsapp.net",
+              },
+              currentNodeId: flowState.indexNode || "0",
+              edges: currentFlow.edges,
+              nodes: currentFlow.nodes,
+              numberConnection: numberConnection + "@s.whatsapp.net",
+              message: messageText || "",
+              accountId: props.accountId,
+              actions: {
+                onFinish: async (vl) => {
+                  try {
+                    await prisma.flowState.update({
+                      where: { id: flowState.id },
+                      data: { isFinish: true },
+                    });
+                  } catch (error) {
+                    console.log("Lead já foi finalizado nesse fluxo!");
+                  }
+                  // verificar se todos foram encerrados
+                  const contactsInFlow = await prisma.flowState.count({
+                    where: { isFinish: false, campaignId: id },
+                  });
+                  if (!contactsInFlow) {
+                    await prisma.campaign.update({
+                      where: { id },
+                      data: { status: "finished" },
+                    });
+                    cacheAccountSocket
+                      .get(props.accountId)
+                      ?.listSocket.forEach((socketId) => {
+                        socketIo.to(socketId).emit("status-campaign", {
+                          campaignId: id,
+                          status: "finished" as TypeStatusCampaign,
+                        });
+                      });
+                  }
+                  console.log("Finalizou!");
+                },
+                onEnterNode: async (nodeId) => {
+                  await prisma.flowState
+                    .update({
+                      where: { id: flowState.id },
+                      data: { indexNode: nodeId.id },
+                    })
+                    .catch((err) => console.log(err));
+                },
+                onErrorClient: async () => {
+                  console.log(
+                    "Erro no cliente, não foi possível enviar a mensagem"
+                  );
+                },
+                onErrorNumber: async () => {
+                  console.log(
+                    "Erro no número, não foi possível enviar a mensagem"
+                  );
+                },
+                onExecutedNode: async (node, isShots) => {
+                  await prisma.flowState
+                    .update({
+                      where: { id: flowState.id },
+                      data: {
+                        indexNode: node.id,
+                        ...(isShots && { isSent: isShots }),
+                      },
+                    })
+                    .catch((err) => console.log(err));
+                },
+              },
+            }).finally(() => {
+              leadAwaiting.set(numberLead, false);
+            });
+          }
           return;
         }
       });

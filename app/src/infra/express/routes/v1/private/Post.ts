@@ -30,6 +30,10 @@ import { pickTicketValidation } from "../../../../../core/pickTicket/Validation"
 import { pickTicketController } from "../../../../../core/pickTicket";
 import { sendTicketMessageValidation } from "../../../../../core/sendTicketMessage/Validation";
 import { sendTicketMessageController } from "../../../../../core/sendTicketMessage";
+import { returnTicketValidation } from "../../../../../core/returnTicket/Validation";
+import { returnTicketController } from "../../../../../core/returnTicket";
+import { resolveTicketValidation } from "../../../../../core/resolveTicket/Validation";
+import { resolveTicketController } from "../../../../../core/resolveTicket";
 
 const RouterV1Private_Post = Router();
 
@@ -128,13 +132,19 @@ RouterV1Private_Post.post(
 );
 
 RouterV1Private_Post.post(
+  "/tickets/:id/return",
+  returnTicketValidation,
+  returnTicketController
+);
+
+RouterV1Private_Post.post(
+  "/tickets/:id/resolve",
+  resolveTicketValidation,
+  resolveTicketController
+);
+
+RouterV1Private_Post.post(
   "/tickets/:id/message",
-  // @ts-expect-error
-  multer({ storage: uploadFiles }).array("files"),
-  (req: Request, _, next: NextFunction) => {
-    req.body.accountId = Number(req.headers.authorization);
-    next();
-  },
   sendTicketMessageValidation,
   sendTicketMessageController
 );

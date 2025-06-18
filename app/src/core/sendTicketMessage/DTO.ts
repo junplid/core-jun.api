@@ -8,9 +8,21 @@ export type SendTicketMessageBodyDTO_I =
       userId?: number;
     } & (
       | { type: "text"; text: string }
-      | { type: "audio"; ptt?: boolean; files?: any[] }
-      | { type: "image"; caption?: string; files?: any[] }
-      | { type: "file"; caption?: string; files?: any[] }
+      | {
+          type: "audio";
+          ptt?: boolean;
+          files: { id: number; type: "audio" | "image/video" | "document" }[];
+        }
+      | {
+          type: "image";
+          text?: string;
+          files: { id: number; type: "audio" | "image/video" | "document" }[];
+        }
+      | {
+          type: "file";
+          text?: string;
+          files: { id: number; type: "audio" | "image/video" | "document" }[];
+        }
     );
 
 export type SendTicketMessageDTO_I = SendTicketMessageParamsDTO_I &

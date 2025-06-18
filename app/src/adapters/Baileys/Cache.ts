@@ -18,6 +18,10 @@ export const cacheTestAgentAI = new Map<string, string>();
 export const cacheDebounceAgentAI = new Map<string, Job | null>();
 export const cacheMessagesDebouceAgentAI = new Map<string, string[]>();
 export const cacheNewMessageOnDebouceAgentAI = new Map<string, boolean>();
+/**
+ * key = `{numero da conexão}+{numero do contato}`
+ */
+export const chatbotRestartInDate: Map<string, Date> = new Map();
 
 export const cacheDebouceAgentAIRun = new Map<string, boolean>();
 export const scheduleTimeoutAgentAI: Map<string, Job | null> = new Map();

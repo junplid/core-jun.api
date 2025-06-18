@@ -20,9 +20,8 @@ export const sendTicketMessageValidation = (
     base.keys({
       type: Joi.string().valid("text").required(),
       text: Joi.string().trim().min(1).required(),
-      files: Joi.forbidden(),
+      files: Joi.array().items(Joi.any()),
       ptt: Joi.forbidden(),
-      caption: Joi.forbidden(),
     }),
 
     base.keys({
@@ -30,22 +29,19 @@ export const sendTicketMessageValidation = (
       ptt: Joi.boolean().default(false),
       files: Joi.array().items(Joi.any()).min(1).required(),
       text: Joi.forbidden(),
-      caption: Joi.forbidden(),
     }),
 
     base.keys({
       type: Joi.string().valid("image").required(),
-      caption: Joi.string().max(2048).allow(""),
+      text: Joi.string().max(2048).allow(""),
       files: Joi.array().items(Joi.any()).min(1).required(),
-      text: Joi.forbidden(),
       ptt: Joi.forbidden(),
     }),
 
     base.keys({
       type: Joi.string().valid("file").required(),
-      caption: Joi.string().max(2048).allow(""),
+      text: Joi.string().max(2048).allow(""),
       files: Joi.array().items(Joi.any()).min(1).required(),
-      text: Joi.forbidden(),
       ptt: Joi.forbidden(),
     })
   );
