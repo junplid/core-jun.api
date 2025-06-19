@@ -76,12 +76,6 @@ async function main() {
       });
     }
   }
-  const contactwa = await prisma.contactsWA.upsert({
-    where: { id: 1 },
-    create: { completeNumber: "557186751101" },
-    update: {},
-    select: { id: true },
-  });
   // const plan = await prisma.plan.upsert({
   //   where: { id: 1 },
   //   create: {
@@ -137,29 +131,6 @@ async function main() {
   //   update: {},
   //   select: { id: true },
   // });
-  const salt = await genSalt(8);
-  const password = await hash("teste123", salt);
-
-  const assetsUsedId = await prisma.accountAssetsUsed.create({
-    data: {
-      chatbots: 0,
-    },
-  });
-
-  await prisma.account.upsert({
-    where: { id: 1 },
-    update: {},
-    create: {
-      id: 1,
-      cpfCnpj: "0000",
-      assetsUsedId: assetsUsedId.id,
-      contactWAId: contactwa.id,
-      email: "teste@teste.com",
-      password,
-      status: true,
-      available: true,
-    },
-  });
 }
 
 main()
