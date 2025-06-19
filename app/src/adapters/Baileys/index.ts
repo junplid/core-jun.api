@@ -1571,8 +1571,6 @@ export const Baileys = async ({
                   messageVideo,
                 };
 
-                console.log({ dateNextExecution });
-
                 if (!existsSync(path)) {
                   console.info("======= Path não existia");
                   try {
