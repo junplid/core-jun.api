@@ -69,6 +69,6 @@
     "obfuscate": "javascript-obfuscator dist/index.js -o dist/index.obf.js --compact true --rename-globals true"
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "node prisma/seed.js"
   }
 }

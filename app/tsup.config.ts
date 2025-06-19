@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/infra/express/index.ts"],
+  entry: ["src/infra/express/index.ts", "app/prisma/seed.ts"],
   target: "node21",
   platform: "node",
   format: ["cjs"],
