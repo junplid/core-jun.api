@@ -70,12 +70,12 @@ jobs:
             --exclude='Dockerfile.dev' --exclude='.env.exemple' \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             ./app/ \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/app
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/app 
 
-          # rsync -avzr \
-          #   -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-          #   ./app/prisma/migrations/ \
-          #   ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/app/prisma/migrations
+          rsync -avzr \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            ./app/prisma/seed.ts \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/app/prisma
 
       - name: Reiniciar serviço na VPS
         run: |
