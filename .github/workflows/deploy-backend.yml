@@ -46,6 +46,10 @@ jobs:
         working-directory: ./app
         run: yarn build
 
+      - name: Ver pastas do prisma
+        working-directory: ./app
+        run: ls -la prisma
+
       - name: Preparar chave SSH
         run: |
           mkdir -p ~/.ssh
@@ -74,7 +78,7 @@ jobs:
 
           rsync -avzr \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            ./app/prisma/seed.ts \
+            ./app/prisma/seed.js \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/app/prisma
 
       - name: Reiniciar serviço na VPS
