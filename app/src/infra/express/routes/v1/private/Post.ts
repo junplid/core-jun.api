@@ -34,6 +34,8 @@ import { returnTicketValidation } from "../../../../../core/returnTicket/Validat
 import { returnTicketController } from "../../../../../core/returnTicket";
 import { resolveTicketValidation } from "../../../../../core/resolveTicket/Validation";
 import { resolveTicketController } from "../../../../../core/resolveTicket";
+import { createTagOnContactWAValidation } from "../../../../../core/createTagOnContactWA/Validation";
+import { createTagOnContactWAController } from "../../../../../core/createTagOnContactWA";
 
 const RouterV1Private_Post = Router();
 
@@ -147,6 +149,12 @@ RouterV1Private_Post.post(
   "/tickets/:id/message",
   sendTicketMessageValidation,
   sendTicketMessageController
+);
+
+RouterV1Private_Post.post(
+  "/tags/:id/contact-wa",
+  createTagOnContactWAValidation,
+  createTagOnContactWAController
 );
 
 export default RouterV1Private_Post;

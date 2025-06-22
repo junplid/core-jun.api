@@ -22,11 +22,20 @@ export class GetTagsUseCase {
     return {
       message: "OK!",
       status: 200,
-      tags: tags.map(({ _count, TagOnBusiness, ...tag }) => ({
-        records: _count.TagOnContactsWAOnAccount,
-        ...tag,
-        businesses: TagOnBusiness.map((s) => s.Business),
-      })),
+      tags: [
+        ...tags.map(({ _count, TagOnBusiness, ...tag }) => ({
+          records: _count.TagOnContactsWAOnAccount,
+          ...tag,
+          businesses: TagOnBusiness.map((s) => s.Business),
+        })),
+        {
+          id: 22,
+          name: "⭐_CLIENTE_JUNPLID",
+          type: "contactwa",
+          businesses: [],
+          records: 16,
+        },
+      ],
     };
   }
 }

@@ -21,6 +21,8 @@ import { deleteInboxUsersValidation } from "../../../../../core/deleteInboxUser/
 import { deleteInboxUsersController } from "../../../../../core/deleteInboxUser";
 import { deleteInboxDepartmentValidation } from "../../../../../core/deleteInboxDepartment/Validation";
 import { deleteInboxDepartmentController } from "../../../../../core/deleteInboxDepartment";
+import { deleteTagOnContactWAValidation } from "../../../../../core/deleteTagOnContactWA copy/Validation";
+import { deleteTagOnContactWAController } from "../../../../../core/deleteTagOnContactWA copy";
 
 const RouterV1Private_Delete = Router();
 
@@ -88,6 +90,12 @@ RouterV1Private_Delete.delete(
   "/inbox-departments/:id",
   deleteInboxDepartmentValidation,
   deleteInboxDepartmentController
+);
+
+RouterV1Private_Delete.delete(
+  "/tags/:id/contact-wa",
+  deleteTagOnContactWAValidation,
+  deleteTagOnContactWAController
 );
 
 export default RouterV1Private_Delete;

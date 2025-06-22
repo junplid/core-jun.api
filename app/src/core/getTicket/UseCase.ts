@@ -17,7 +17,9 @@ export class GetTicketUseCase {
       select: {
         id: true,
         status: true,
-        inboxDepartmentId: true,
+        InboxDepartment: {
+          select: { id: true, businessId: true },
+        },
         ContactsWAOnAccount: {
           select: {
             name: true,
@@ -66,13 +68,16 @@ export class GetTicketUseCase {
       data: { read: true },
     });
 
-    const { ContactsWAOnAccount, TicketMessages, ...rest } = data;
+    const { ContactsWAOnAccount, TicketMessages, InboxDepartment, ...rest } =
+      data;
 
     return {
       message: "OK!",
       status: 200,
       ticket: {
         ...rest,
+        inboxDepartmentId: InboxDepartment.id,
+        businessId: InboxDepartment.businessId,
         messages: TicketMessages.map((msg) => {
           if (msg.type === "text") {
             return {
