@@ -116,6 +116,37 @@ export type NodeAgentAIData = {
 export interface NodeTransferDepartmentData {
   id: number;
 }
+
+export interface NodeFbPixelData {
+  fbPixelId: number;
+  viewFieldsUser?: boolean;
+  viewFieldsOthers?: boolean;
+  event: {
+    name: FbConversionEvents;
+    userEmail?: string;
+    userFirstName?: string;
+    userLastName?: string;
+    userDobd?: string;
+    userDobm?: string;
+    userDoby?: string;
+    userDateOfBirth?: string;
+    userCity?: string;
+    userState?: string;
+    userCountry?: string;
+    userZip?: string;
+    userGender?: string;
+    customValue?: string;
+    customCurrency?: string;
+    customStatus?: string;
+    customMethod?: string;
+    customContentName?: string;
+    customContentType?: string;
+    customNumItems?: string;
+    customContentCategory?: string;
+    // customContents?: Content[];
+  };
+}
+
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeMessage"
@@ -136,7 +167,8 @@ export type TypeNodesPayload =
   | "NodeSendAudiosLive"
   | "NodeNotifyWA"
   | "NodeAgentAI"
-  | "NodeTransferDepartment";
+  | "NodeTransferDepartment"
+  | "NodeFbPixel";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -159,4 +191,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeSendAudiosLive"; data: NodeSendAudiosLiveData }
   | { type: "NodeAgentAI"; data: NodeAgentAIData }
   | { type: "NodeTransferDepartment"; data: NodeTransferDepartmentData }
+  | { type: "NodeFbPixel"; data: NodeFbPixelData }
 );

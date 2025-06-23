@@ -1,6 +1,7 @@
 import { NodeAddTags } from "./AddTags";
 import { NodeAddVariables } from "./AddVariables";
 import { NodeAgentAI } from "./AgentAI";
+import { NodeFbPixel } from "./FbPixel";
 import { NodeIf } from "./If";
 import { NodeMenu } from "./Menu";
 import { NodeMessage } from "./Message";
@@ -36,4 +37,5 @@ export const LibraryNodes = {
   NodeSendAudios,
   NodeAgentAI,
   NodeTransferDepartment,
+  NodeFbPixel,
 };

@@ -23,6 +23,8 @@ import { deleteInboxDepartmentValidation } from "../../../../../core/deleteInbox
 import { deleteInboxDepartmentController } from "../../../../../core/deleteInboxDepartment";
 import { deleteTagOnContactWAValidation } from "../../../../../core/deleteTagOnContactWA copy/Validation";
 import { deleteTagOnContactWAController } from "../../../../../core/deleteTagOnContactWA copy";
+import { deleteFbPixelValidation } from "../../../../../core/deleteFbPixel/Validation";
+import { deleteFbPixelController } from "../../../../../core/deleteFbPixel";
 
 const RouterV1Private_Delete = Router();
 
@@ -96,6 +98,12 @@ RouterV1Private_Delete.delete(
   "/tags/:id/contact-wa",
   deleteTagOnContactWAValidation,
   deleteTagOnContactWAController
+);
+
+RouterV1Private_Delete.delete(
+  "/fb-pixels/:id",
+  deleteFbPixelValidation,
+  deleteFbPixelController
 );
 
 export default RouterV1Private_Delete;

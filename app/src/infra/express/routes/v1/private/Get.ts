@@ -91,6 +91,12 @@ import { getTicketController } from "../../../../../core/getTicket";
 import { getTicketValidation } from "../../../../../core/getTicket/Validation";
 import { getTicketCountValidation } from "../../../../../core/getTicketCount/Validation";
 import { getTicketCountController } from "../../../../../core/getTicketCount";
+import { getFbPixelValidation } from "../../../../../core/getFbPixel/Validation";
+import { getFbPixelController } from "../../../../../core/getFbPixel";
+import { getFbPixelsController } from "../../../../../core/getFbPixels";
+import { getFbPixelsValidation } from "../../../../../core/getFbPixels/Validation";
+import { getFbPixelsForSelectValidation } from "../../../../../core/getFbPixelsForSelect/Validation";
+import { getFbPixelsForSelectController } from "../../../../../core/getFbPixelsForSelect";
 
 const RouterV1Private_Get = Router();
 
@@ -344,6 +350,24 @@ RouterV1Private_Get.get(
   "/tickets/:id",
   getTicketValidation,
   getTicketController
+);
+
+RouterV1Private_Get.get(
+  "/fb-pixels",
+  getFbPixelsValidation,
+  getFbPixelsController
+);
+
+RouterV1Private_Get.get(
+  "/fb-pixels/options",
+  getFbPixelsForSelectValidation,
+  getFbPixelsForSelectController
+);
+
+RouterV1Private_Get.get(
+  "/fb-pixels/:id",
+  getFbPixelValidation,
+  getFbPixelController
 );
 
 export default RouterV1Private_Get;

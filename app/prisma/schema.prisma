@@ -141,6 +141,7 @@ model Account {
   InboxUsers          InboxUsers[]
   InboxDepartments    InboxDepartments[]
   Tickets             Tickets[]
+  FbPixel             FbPixel[]
 
   @@index([id, email, hash, status, available, isUsedFreeTrialTime])
 }
@@ -726,6 +727,7 @@ model Business {
   StoragePathsOnBusiness StoragePathsOnBusiness[]
   AgentAIOnBusiness      AgentAIOnBusiness[]
   InboxDepartments       InboxDepartments[]
+  FbPixel                FbPixel[]
 
   @@index([id, accountId])
 }
@@ -1673,35 +1675,21 @@ model ShootingSpeed {
 //   @@index([id, businessId, attendantId])
 // }
 
-// model FacebookIntegration {
-//   id                            Int                             @id @default(autoincrement())
-//   name                          String
-//   description                   String?
-//   access_token                  String?                         @db.VarChar(240)
-//   status                        Boolean                         @default(true)
-//   createAt                      DateTime                        @default(now())
-//   updateAt                      DateTime                        @default(now()) @updatedAt
-//   accountId                     Int
-//   Account                       Account                         @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-//   FacebookIntegrationOnBusiness FacebookIntegrationOnBusiness[]
+model FbPixel {
+  id           Int       @id @default(autoincrement())
+  name         String
+  pixel_id     String
+  access_token String    @db.VarChar(240)
+  status       Boolean   @default(true)
+  createAt     DateTime  @default(now())
+  updateAt     DateTime  @default(now()) @updatedAt
+  accountId    Int
+  businessId   Int?
+  Account      Account   @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Business     Business? @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-//   @@index([id])
-// }
-
-// model FacebookIntegrationOnBusiness {
-//   id                    Int                 @id @default(autoincrement())
-//   businessId            Int
-//   Business              Business            @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-//   facebookIntegrationId Int
-//   FacebookIntegration   FacebookIntegration @relation(fields: [facebookIntegrationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-//   @@index([id, businessId, facebookIntegrationId])
-// }
-
-// enum TypeTimeLackResponse {
-//   minutes
-//   hours
-// }
+  @@index([id, name, pixel_id, businessId, accountId])
+}
 
 // enum TypeDistributionSectors {
 //   normal

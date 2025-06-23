@@ -36,6 +36,10 @@ import { resolveTicketValidation } from "../../../../../core/resolveTicket/Valid
 import { resolveTicketController } from "../../../../../core/resolveTicket";
 import { createTagOnContactWAValidation } from "../../../../../core/createTagOnContactWA/Validation";
 import { createTagOnContactWAController } from "../../../../../core/createTagOnContactWA";
+import { createFbPixelsValidation } from "../../../../../core/createFbPixels/Validation";
+import { createFbPixelsController } from "../../../../../core/createFbPixels";
+import { testFbPixelValidation } from "../../../../../core/testFbPixel/Validation";
+import { testFbPixelController } from "../../../../../core/testFbPixel";
 
 const RouterV1Private_Post = Router();
 
@@ -155,6 +159,18 @@ RouterV1Private_Post.post(
   "/tags/:id/contact-wa",
   createTagOnContactWAValidation,
   createTagOnContactWAController
+);
+
+RouterV1Private_Post.post(
+  "/fb-pixels",
+  createFbPixelsValidation,
+  createFbPixelsController
+);
+
+RouterV1Private_Post.post(
+  "/fb-pixels/test",
+  testFbPixelValidation,
+  testFbPixelController
 );
 
 export default RouterV1Private_Post;

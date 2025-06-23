@@ -1158,6 +1158,50 @@ export const NodeControler = ({
           });
         return res();
       }
+      if (currentNode.type === "NodeFbPixel") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
+        await LibraryNodes.NodeFbPixel({
+          botWA: props.clientWA,
+          numberLead: props.lead.number,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          data: currentNode.data,
+          accountId: props.accountId,
+          businessName: props.businessName,
+          ticketProtocol: props.ticketProtocol,
+          connectionWhatsId: props.connectionWhatsId,
+          nodeId: currentNode.id,
+        })
+          .then(async () => {
+            if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheFlowInExecution.delete(keyMap);
+              props.actions?.onFinish && (await props.actions?.onFinish("128"));
+              return;
+            }
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+
+            execute({
+              ...props,
+              type: "initial",
+              currentNodeId: nextEdgesIds[0].id,
+              oldNodeId: currentNode.id,
+            });
+            return;
+          })
+          .catch((error) => {
+            console.log("ERROR NO MENSAGEM", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
 
       return res();
     };
