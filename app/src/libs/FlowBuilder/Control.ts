@@ -1175,6 +1175,7 @@ export const NodeControler = ({
           ticketProtocol: props.ticketProtocol,
           connectionWhatsId: props.connectionWhatsId,
           nodeId: currentNode.id,
+          flowStateId: props.flowStateId,
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {

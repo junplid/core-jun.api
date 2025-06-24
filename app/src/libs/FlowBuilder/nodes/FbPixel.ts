@@ -8,6 +8,7 @@ import {
   UserData,
 } from "facebook-nodejs-business-sdk";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
+import { listFbChatbot } from "../../../utils/cachesMap";
 
 interface PropsFbPixel {
   numberLead: string;
@@ -19,6 +20,7 @@ interface PropsFbPixel {
   businessName: string;
   ticketProtocol?: string;
   nodeId: string;
+  flowStateId: number;
 }
 
 export const NodeFbPixel = (props: PropsFbPixel): Promise<void> => {
@@ -58,6 +60,44 @@ export const NodeFbPixel = (props: PropsFbPixel): Promise<void> => {
           nextData(nextValue);
         }
       });
+
+      const dataFb = await prisma.flowState.findFirst({
+        where: { id: props.flowStateId, expires_at: { gte: new Date() } },
+        select: {
+          fbc: true,
+          fbp: true,
+          ip: true,
+          ua: true,
+          chatbotId: true,
+          expires_at: true,
+        },
+      });
+
+      if (dataFb?.chatbotId) {
+        const { fbc, fbp, ip, ua } = dataFb;
+        if (!fbc || !fbp) {
+          const listfb = listFbChatbot.get(dataFb.chatbotId) || [];
+          const picked = listfb[0];
+          if (picked) {
+            userData.setFbc(picked.fbc);
+            userData.setFbp(picked.fbp);
+            if (picked.ip) userData.setClientIpAddress(picked.ip);
+            if (picked.ua) userData.setClientUserAgent(picked.ua);
+            await prisma.flowState.update({
+              where: { id: props.flowStateId },
+              data: {
+                ...picked,
+                expires_at: new Date(Date.now() + 90 * 24 * 3600_000),
+              },
+            });
+          }
+        } else {
+          userData.setFbc(fbc);
+          userData.setFbp(fbp);
+          if (ip) userData.setClientIpAddress(ip);
+          if (ua) userData.setClientUserAgent(ua);
+        }
+      }
 
       const serverEvent = new ServerEvent()
         .setEventName(props.data.event.name)

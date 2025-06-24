@@ -907,6 +907,11 @@ model FlowState {
   firedOnDate           DateTime?
   isFinish              Boolean?             @default(false)
   indexNode             String?
+  fbc                   String?
+  fbp                   String?
+  ua                    String?
+  expires_at            DateTime?
+  ip                    String?
   flowId                String?
   previous_response_id  String?
   fallbackSent          Boolean              @default(false)
@@ -916,11 +921,15 @@ model FlowState {
   contactsWAOnAccountId Int?
   connectionWAId        Int?
   audienceId            Int?
-  Audience              Audience?            @relation(fields: [audienceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Campaign              Campaign?            @relation(fields: [campaignId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  chatbotId             Int?
+  Chatbot               Chatbot?             @relation(fields: [chatbotId], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  Audience              Audience?            @relation(fields: [audienceId], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  Campaign              Campaign?            @relation(fields: [campaignId], references: [id], onDelete: SetNull, onUpdate: SetNull)
   ContactsWAOnAccount   ContactsWAOnAccount? @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  ConnectionWA          ConnectionWA?        @relation(fields: [connectionWAId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  ConnectionWA          ConnectionWA?        @relation(fields: [connectionWAId], references: [id], onDelete: SetNull, onUpdate: SetNull)
   Tickets               Tickets[]
+
+  @@index([id, flowId, campaignId, contactsWAOnAccountId, connectionWAId, audienceId, isSent, isFinish, createAt])
 }
 
 // enum TypeLogFlowState {
@@ -1032,11 +1041,13 @@ model TimeToRestartChatbot {
 model Chatbot {
   id                    Int                   @id @default(autoincrement())
   interrupted           Boolean               @default(false)
+  cbj                   String                @default(uuid())
   name                  String                @db.VarChar(60)
   status                Boolean?              @default(false)
   description           String?
   connectionWAId        Int?
   leadOriginList        String?
+  destLink              String?               @db.Text
   fallback              String?               @db.Text
   flowId                String
   addLeadToAudiencesIds Int[]                 @default([])
@@ -1052,6 +1063,7 @@ model Chatbot {
   updateAt              DateTime              @default(now()) @updatedAt
   OperatingDays         OperatingDays[]
   TimeToRestart         TimeToRestartChatbot?
+  FlowState             FlowState[]
 
   @@index([name, accountId, businessId, status])
 }

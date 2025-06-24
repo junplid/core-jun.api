@@ -20,6 +20,9 @@ export interface UpdateChatbotBodyQueryDTO_I {
     workingTimes?: { start: string; end: string }[];
   }[];
   fallback?: string;
+  trigger?: string;
+  flowBId?: string;
+  destLink?: string;
 }
 
 export interface UpdateChatbotBodyDTO_I {

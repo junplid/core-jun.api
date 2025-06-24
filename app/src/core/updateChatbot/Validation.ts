@@ -50,6 +50,9 @@ export const updateChatbotValidation = (
         ),
       })
     ),
+    trigger: Joi.string().allow("").optional(),
+    flowBId: Joi.string().allow("").optional(),
+    destLink: Joi.string().allow("").optional(),
   });
 
   const validation = schemaValidation.validate(
@@ -66,6 +69,8 @@ export const updateChatbotValidation = (
   }
 
   const { accountId, id, ...rest } = validation.value as UpdateChatbotDTO_I;
+
+  console.log(rest);
 
   req.params.id = id;
   req.query = rest;

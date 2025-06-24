@@ -11,9 +11,7 @@ export class GetChatbotDetailsUseCase {
       where: { id: dto.id, accountId: dto.accountId },
       orderBy: { id: "desc" },
       select: {
-        ConnectionWA: {
-          select: { name: true, id: true, number: true },
-        },
+        ConnectionWA: { select: { name: true, id: true, number: true } },
         Business: { select: { id: true, name: true } },
         name: true,
         createAt: true,
@@ -22,6 +20,7 @@ export class GetChatbotDetailsUseCase {
         status: true,
         updateAt: true,
         trigger: true,
+        cbj: true,
       },
     });
 
@@ -32,7 +31,7 @@ export class GetChatbotDetailsUseCase {
       });
     }
 
-    const { Business, ConnectionWA, status, trigger, ...rest } = chatbot;
+    const { Business, ConnectionWA, status, trigger, cbj, ...rest } = chatbot;
 
     let statusConnection = status;
     let target = undefined;
@@ -45,6 +44,11 @@ export class GetChatbotDetailsUseCase {
       }
     }
 
+    let linkAds = "";
+    if (cbj) {
+      linkAds = `https://api.junplid.com.br/v1/public/fb/${cbj}`;
+    }
+
     return {
       message: "OK!",
       status: 200,
@@ -54,6 +58,7 @@ export class GetChatbotDetailsUseCase {
         business: Business,
         connection: ConnectionWA,
         target,
+        linkAds,
       },
     };
   }

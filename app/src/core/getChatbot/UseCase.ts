@@ -28,6 +28,9 @@ export class GetChatbotUseCase {
         addToLeadTagsIds: true,
         businessId: true,
         connectionWAId: true,
+        destLink: true,
+        trigger: true,
+        flowBId: true,
       },
     });
 

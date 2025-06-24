@@ -124,6 +124,8 @@ export class CreateChatbotUseCase {
         ...(timeToRestart && { TimeToRestart: { create: timeToRestart } }),
       },
       select: {
+        // cbj: true, poderá vizualizar o link de redirecionamento para
+        //            o anuncio no modal de view do chatbot
         Business: { select: { name: true, id: true } },
         id: true,
         createAt: true,

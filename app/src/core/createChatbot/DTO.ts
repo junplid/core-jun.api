@@ -19,4 +19,5 @@ export interface CreateChatbotDTO_I {
   }[];
   trigger?: string;
   flowBId?: string;
+  destLink?: string;
 }
