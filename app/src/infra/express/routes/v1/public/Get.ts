@@ -97,55 +97,77 @@ const mkCookie = (seed: string) =>
   `fb.1.${Math.floor(Date.now() / 1000)}.${seed}`;
 
 RouterV1Public_Get.get("/fb/:cbj", async (req, res) => {
-  const cbot = await prisma.chatbot.findFirst({
-    where: { cbj: req.params.cbj },
-    select: {
-      id: true,
-      destLink: true,
-      trigger: true,
-      status: true,
-      ConnectionWA: { select: { id: true, number: true } },
-    },
-  });
+  console.log("entrou aqui");
+  try {
+    const cbot = await prisma.chatbot.findFirst({
+      where: { cbj: req.params.cbj },
+      select: {
+        id: true,
+        destLink: true,
+        trigger: true,
+        status: true,
+        ConnectionWA: { select: { id: true, number: true } },
+      },
+    });
 
-  if (!cbot || !cbot.ConnectionWA?.number) return res.status(404);
+    if (!cbot || !cbot.ConnectionWA?.number)
+      return res
+        .status(404)
+        .json({ message: "Bot de recepção não encontrado" });
 
-  let destLink = cbot.destLink || "";
+    let destLink = cbot.destLink || "";
 
-  if (!cbot.status) return res.status(404);
-  const isOnline = !!cacheConnectionsWAOnline.get(cbot.ConnectionWA.id);
-  if (!isOnline) return res.status(404);
+    if (!cbot.status) {
+      if (!cbot.destLink) {
+        return res
+          .status(404)
+          .json({ message: "Bot de recepção não está ATIVO" });
+      }
+      return res.redirect(302, destLink);
+    }
+    const isOnline = !!cacheConnectionsWAOnline.get(cbot.ConnectionWA.id);
+    if (!isOnline) {
+      if (!cbot.destLink) {
+        return res
+          .status(404)
+          .json({ message: "A conexão do Bot de recepção não está ATIVA" });
+      }
+      return res.redirect(302, destLink);
+    }
 
-  destLink = `https://api.whatsapp.com/send?phone=${cbot.ConnectionWA.number}`;
-  if (cbot.trigger) destLink += `&text=${encodeURIComponent(cbot.trigger)}`;
+    destLink = `https://api.whatsapp.com/send?phone=${cbot.ConnectionWA.number}`;
+    if (cbot.trigger) destLink += `&text=${encodeURIComponent(cbot.trigger)}`;
 
-  const { fbclid } = req.query as { fbclid?: string };
+    const { fbclid } = req.query as { fbclid?: string };
 
-  if (!fbclid) return res.redirect(302, destLink);
+    if (!fbclid) return res.redirect(302, destLink);
 
-  const ip =
-    (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0] ||
-    req.ip;
-  const ua = req.get("User-Agent") || "unknown";
+    const ip =
+      (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0] ||
+      req.ip;
+    const ua = req.get("User-Agent") || "unknown";
 
-  if (fbclid) {
-    res.cookie("_fbc", mkCookie(fbclid), { maxAge: 90 * 24 * 3600_000 });
+    if (fbclid) {
+      res.cookie("_fbc", mkCookie(fbclid), { maxAge: 90 * 24 * 3600_000 });
+    }
+    if (!req.cookies._fbp) {
+      const rand = crypto.randomBytes(8).readUIntBE(0, 6).toString();
+      res.cookie("_fbp", mkCookie(rand), { maxAge: 90 * 24 * 3600_000 });
+    }
+
+    const listfb = listFbChatbot.get(cbot.id) || [];
+    listfb.push({
+      ua,
+      fbc: req.cookies._fbc || "",
+      fbp: req.cookies._fbp || "",
+      ip,
+    });
+    listFbChatbot.set(cbot.id, listfb);
+
+    res.redirect(302, destLink);
+  } catch (error) {
+    res.status(200).send("Ops, algo deu errado.");
   }
-  if (!req.cookies._fbp) {
-    const rand = crypto.randomBytes(8).readUIntBE(0, 6).toString();
-    res.cookie("_fbp", mkCookie(rand), { maxAge: 90 * 24 * 3600_000 });
-  }
-
-  const listfb = listFbChatbot.get(cbot.id) || [];
-  listfb.push({
-    ua,
-    fbc: req.cookies._fbc || "",
-    fbp: req.cookies._fbp || "",
-    ip,
-  });
-  listFbChatbot.set(cbot.id, listfb);
-
-  res.redirect(302, destLink);
 });
 
 export default RouterV1Public_Get;
