@@ -311,9 +311,9 @@ if (process.env.NODE_ENV === "production") {
 
 let pathFilesTest = "";
 if (process.env.NODE_ENV === "production") {
-  pathFilesTest = resolve(__dirname, `./bin/files-test.json`);
+  pathFilesTest = resolve(__dirname, `../bin/files-test.json`);
 } else {
-  pathFilesTest = resolve(__dirname, `../../bin/files-test.json`);
+  pathFilesTest = resolve(__dirname, `../../../bin/files-test.json`);
 }
 
 interface VectorStoreTest {

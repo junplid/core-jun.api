@@ -8,7 +8,7 @@ import { ulid } from "ulid";
 import { ensureDir, writeFile } from "fs-extra";
 import { cacheAccountSocket } from "../../infra/websocket/cache";
 import { socketIo } from "../../infra/express";
-import { startCampaign } from "../../bin/startCampaign";
+import { startCampaign } from "../../utils/startCampaign";
 
 export class CreateCampaignUseCase {
   constructor() {}
@@ -195,16 +195,6 @@ export class CreateCampaignUseCase {
     });
 
     try {
-      let path = "";
-      if (process.env.NODE_ENV === "production") {
-        path = resolve(__dirname, `./bin/instructions/${accountId}/campaigns`);
-      } else {
-        path = resolve(
-          __dirname,
-          `../../bin/instructions/${accountId}/campaigns`
-        );
-      }
-
       const createInstruction = () => {
         (async () => {
           await new Promise((r) =>
@@ -223,19 +213,10 @@ export class CreateCampaignUseCase {
               status: "running",
             })
           );
-          startCampaign({ id, connectionIds: dto.connectionIds });
+          startCampaign({ id });
         })();
       };
 
-      await ensureDir(path);
-      await writeFile(
-        `${path}/camp_${id}.json`,
-        JSON.stringify({
-          accountId,
-          id,
-          connectionIds: dto.connectionIds,
-        })
-      );
       createInstruction();
     } catch (error) {
       throw new ErrorResponse(400).container(

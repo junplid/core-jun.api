@@ -47,7 +47,7 @@ export class DeleteBusinessOnAccountUseCase {
 
     let path = "";
     if (process.env?.NODE_ENV === "production") {
-      path = resolve(__dirname, `./bin/connections.json`);
+      path = resolve(__dirname, `../bin/connections.json`);
     } else {
       path = resolve(__dirname, `../../../bin/connections.json`);
     }

@@ -1,4 +1,10 @@
-import { readFile, writeFile, writeFileSync } from "fs-extra";
+import {
+  ensureFile,
+  ensureFileSync,
+  readFile,
+  writeFile,
+  writeFileSync,
+} from "fs-extra";
 import { resolve } from "path";
 import { Server } from "socket.io";
 import {
@@ -28,10 +34,11 @@ interface VectorStoreTest {
 
 let pathFilesTest = "";
 if (process.env.NODE_ENV === "production") {
-  pathFilesTest = resolve(__dirname, `./bin/files-test.json`);
+  pathFilesTest = resolve(__dirname, `../bin/files-test.json`);
 } else {
-  pathFilesTest = resolve(__dirname, `../../bin/files-test.json`);
+  pathFilesTest = resolve(__dirname, `../../../bin/files-test.json`);
 }
+ensureFileSync(pathFilesTest);
 
 export const WebSocketIo = (io: Server) => {
   io.on("connection", async (socket) => {
@@ -86,11 +93,11 @@ export const WebSocketIo = (io: Server) => {
 
           let path = "";
           if (process.env?.NODE_ENV === "production") {
-            path = resolve(__dirname, `./bin/connections.json`);
+            path = resolve(__dirname, `../bin/connections.json`);
           } else {
-            path = resolve(__dirname, `../../bin/connections.json`);
+            path = resolve(__dirname, `../../../bin/connections.json`);
           }
-
+          await ensureFile(path);
           readFile(path, (err, file) => {
             if (err) {
               return console.log(err);

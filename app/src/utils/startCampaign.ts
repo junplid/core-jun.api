@@ -12,7 +12,7 @@ import { remove } from "fs-extra";
 
 interface PropsStartCampaign {
   id: number;
-  connectionIds: number[];
+  connectionIds?: number[];
 }
 
 function getTimeBR(time: string) {
@@ -42,6 +42,7 @@ export const startCampaign = async ({
           end: string;
         }[];
       }[];
+      connectionIds: number[];
       accountId: number;
       flowId: string;
     }>(async (resP) => {
@@ -65,7 +66,9 @@ export const startCampaign = async ({
               },
             },
             ConnectionOnCampaign: {
-              select: { ConnectionWA: { select: { interrupted: true } } },
+              select: {
+                ConnectionWA: { select: { interrupted: true, id: true } },
+              },
             },
             CampaignOnBusiness: {
               select: { Business: { select: { interrupted: true } } },
@@ -98,19 +101,22 @@ export const startCampaign = async ({
           accountId: campaign.accountId,
           flowId: campaign.flowId,
           OperatingDays: campaign.OperatingDays,
+          connectionIds: campaign.ConnectionOnCampaign.map(
+            (s) => s.ConnectionWA.id
+          ),
         });
       }
       verify();
     });
 
-    let path = "";
-    if (process.env.NODE_ENV === "production") {
-      path = `./bin/instructions/${campaign.accountId}/campaigns/camp_${id}.json`;
+    let originalConnections: number[] = [];
+    if (connectionIds?.length) {
+      originalConnections = connectionIds;
     } else {
-      path = `./instructions/${campaign.accountId}/campaigns/camp_${id}.json`;
+      originalConnections = campaign.connectionIds;
     }
 
-    const clientsWA = connectionIds
+    const clientsWA = originalConnections
       .map((id) => {
         const connection = sessionsBaileysWA.get(id);
         if (sessionsBaileysWA.get(id) && connection)
@@ -172,9 +178,6 @@ export const startCampaign = async ({
       await prisma.campaign.update({
         where: { id },
         data: { status: "finished" },
-      });
-      await remove(path).catch(() => {
-        console.log("Erro ao remover arquivo de instruções");
       });
     }
 
@@ -434,9 +437,6 @@ export const startCampaign = async ({
                   where: { id },
                   data: { status: "finished" },
                 });
-                await remove(path).catch(() => {
-                  console.log("Erro ao remover arquivo de instruções");
-                });
                 cacheAccountSocket
                   .get(campaign.accountId)
                   ?.listSocket?.forEach((sockId) =>
@@ -471,9 +471,6 @@ export const startCampaign = async ({
                   where: { id },
                   data: { status: "finished" },
                 });
-                await remove(path).catch(() => {
-                  console.log("Erro ao remover arquivo de instruções");
-                });
                 cacheAccountSocket
                   .get(campaign.accountId)
                   ?.listSocket?.forEach((sockId) =>
@@ -499,9 +496,6 @@ export const startCampaign = async ({
                 await prisma.campaign.update({
                   where: { id },
                   data: { status: "finished" },
-                });
-                await remove(path).catch(() => {
-                  console.log("Erro ao remover arquivo de instruções");
                 });
                 cacheAccountSocket
                   .get(campaign.accountId)
@@ -689,9 +683,6 @@ export const startCampaign = async ({
                   where: { id },
                   data: { status: "finished" },
                 });
-                await remove(path).catch(() => {
-                  console.log("Erro ao remover arquivo de instruções");
-                });
                 cacheAccountSocket
                   .get(campaign.accountId)
                   ?.listSocket?.forEach((sockId) =>
@@ -726,9 +717,6 @@ export const startCampaign = async ({
                   where: { id },
                   data: { status: "finished" },
                 });
-                await remove(path).catch(() => {
-                  console.log("Erro ao remover arquivo de instruções");
-                });
                 cacheAccountSocket
                   .get(campaign.accountId)
                   ?.listSocket?.forEach((sockId) =>
@@ -748,9 +736,6 @@ export const startCampaign = async ({
                   await prisma.campaign.update({
                     where: { id },
                     data: { status: "finished" },
-                  });
-                  await remove(path).catch(() => {
-                    console.log("Erro ao remover arquivo de instruções");
                   });
                   return;
                 }

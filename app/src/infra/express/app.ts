@@ -20,9 +20,9 @@ interface VectorStoreTest {
 
 let pathFilesTest = "";
 if (process.env.NODE_ENV === "production") {
-  pathFilesTest = resolve(__dirname, `./bin/files-test.json`);
+  pathFilesTest = resolve(__dirname, `../bin/files-test.json`);
 } else {
-  pathFilesTest = resolve(__dirname, `../../bin/files-test.json`);
+  pathFilesTest = resolve(__dirname, `../../../bin/files-test.json`);
 }
 
 if (!existsSync(pathFilesTest)) {

@@ -31,7 +31,7 @@ import {
   scheduleExecutionsReply,
   chatbotRestartInDate,
 } from "./Cache";
-import { startChatbotQueue } from "../../bin/startChatbotQueue";
+import { startChatbotQueue } from "../../utils/startChatbotQueue";
 import { validatePhoneNumber } from "../../helpers/validatePhoneNumber";
 import mime from "mime-types";
 import { SendMessageText } from "./modules/sendMessage";
@@ -106,9 +106,9 @@ export const killConnectionWA = async (
 ) => {
   let path = "";
   if (process.env.NODE_ENV === "production") {
-    path = resolve(__dirname, `./bin/connections.json`);
+    path = resolve(__dirname, `../bin/connections.json`);
   } else {
-    path = resolve(__dirname, `../../bin/connections.json`);
+    path = resolve(__dirname, `../../../bin/connections.json`);
   }
   const connectionsList: CacheSessionsBaileysWA[] = JSON.parse(
     readFileSync(path).toString()
@@ -147,7 +147,7 @@ export const killConnectionWA = async (
   cacheConnectionsWAOnline.set(connectionId, false);
 
   if (process.env.NODE_ENV === "production") {
-    path = resolve(__dirname, `./database-whatsapp/${connectionId}`);
+    path = resolve(__dirname, `../database-whatsapp/${connectionId}`);
   } else {
     path = resolve(__dirname, `../../../database-whatsapp/${connectionId}`);
   }
@@ -162,6 +162,20 @@ if (process.env.NODE_ENV === "production") {
   pathStatic = resolve(__dirname, `../static/storage`);
 } else {
   pathStatic = resolve(__dirname, `../../../static/storage`);
+}
+
+let pathDataBaseWA = "";
+if (process.env.NODE_ENV === "production") {
+  pathDataBaseWA = resolve(__dirname, `../database-whatsapp`);
+} else {
+  pathDataBaseWA = resolve(__dirname, `../../../database-whatsapp`);
+}
+
+let pathChatbotQueue = "";
+if (process.env.NODE_ENV === "production") {
+  pathChatbotQueue = resolve(__dirname, `../bin/chatbot-queue`);
+} else {
+  pathChatbotQueue = resolve(__dirname, `../../../bin/chatbot-queue`);
 }
 
 export const Baileys = async ({
@@ -192,22 +206,10 @@ export const Baileys = async ({
       }
       const socketIds = cacheAccountSocket.get(props.accountId)?.listSocket;
 
-      let path = "";
-      if (process.env.NODE_ENV === "production") {
-        path = resolve(
-          __dirname,
-          `./database-whatsapp/${props.connectionWhatsId}`
-        );
-      } else {
-        path = resolve(
-          __dirname,
-          `../../../database-whatsapp/${props.connectionWhatsId}`
-        );
-      }
-      ensureDirSync(path);
+      ensureDirSync(pathDataBaseWA);
 
       const { state, saveCreds } = await useMultiFileAuthState(
-        `./database-whatsapp/${props.connectionWhatsId}`
+        pathDataBaseWA + `/${props.connectionWhatsId}`
       );
 
       if (!saveCreds) {
@@ -215,17 +217,26 @@ export const Baileys = async ({
         return;
       }
       const baileysVersion = await fetchLatestBaileysVersion();
+      const nameCon = await prisma.connectionWA.findFirst({
+        where: { id: props.connectionWhatsId },
+        select: { name: true },
+      });
+      if (!nameCon?.name) {
+        console.error(
+          "Erro ao recuperar o nome da conexão WhatsApp, verifique se a conexão existe."
+        );
+        return;
+      }
       const bot = makeWASocket({
         auth: state,
         version: baileysVersion.version,
         defaultQueryTimeoutMs: undefined,
         qrTimeout: 40000,
-        browser: ["Windows", "Chrome", "114.0.5735.198"],
+        browser: [`Junplid - ${nameCon.name}`, "Chrome", "114.0.5735.198"],
         markOnlineOnConnect: true,
       });
 
       sessionsBaileysWA.set(props.connectionWhatsId, bot);
-      const botfind = sessionsBaileysWA.get(props.connectionWhatsId);
 
       bot.ev.on(
         "connection.update",
@@ -1548,19 +1559,6 @@ export const Baileys = async ({
                   .tz("America/Sao_paulo")
                   .add(minutesToNextExecutionInQueue, "minutes");
 
-                let path = "";
-                if (process.env.NODE_ENV === "production") {
-                  path = resolve(
-                    __dirname,
-                    `./bin/chatbot-queue/${chatbot.id}.json`
-                  );
-                } else {
-                  path = resolve(
-                    __dirname,
-                    `../../bin/chatbot-queue/${chatbot.id}.json`
-                  );
-                }
-
                 const dataLeadQueue = {
                   number: number,
                   pushName: body.messages[0].pushName ?? "SEM NOME",
@@ -1571,13 +1569,15 @@ export const Baileys = async ({
                   messageVideo,
                 };
 
-                if (!existsSync(path)) {
+                const pathOriginal = pathChatbotQueue + `/${chatbot.id}.json`;
+
+                if (!existsSync(pathOriginal)) {
                   console.info("======= Path não existia");
                   try {
                     console.info("======= Escrevendo PATH");
 
                     await writeFile(
-                      path,
+                      pathOriginal,
                       JSON.stringify({
                         "next-execution": dateNextExecution,
                         queue: [dataLeadQueue],
@@ -1588,7 +1588,7 @@ export const Baileys = async ({
                     console.log(error);
                   }
                 } else {
-                  const chatbotQueue = readFileSync(path).toString();
+                  const chatbotQueue = readFileSync(pathOriginal).toString();
 
                   if (chatbotQueue !== "") {
                     const JSONQueue: ChatbotQueue = JSON.parse(chatbotQueue);
@@ -1596,14 +1596,14 @@ export const Baileys = async ({
                       JSONQueue.queue.push(dataLeadQueue);
                     }
                     try {
-                      await writeFile(path, JSON.stringify(JSONQueue));
+                      await writeFile(pathOriginal, JSON.stringify(JSONQueue));
                     } catch (error) {
                       console.log(error);
                     }
                   } else {
                     try {
                       await writeFile(
-                        path,
+                        pathOriginal,
                         JSON.stringify({
                           "next-execution": dateNextExecution,
                           queue: [dataLeadQueue],

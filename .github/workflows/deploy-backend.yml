@@ -72,8 +72,8 @@ jobs:
             ./app/ \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/app
 
-      - name: Reiniciar serviço na VPS
-        run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "cd ${{ secrets.VPS_DEST }} && docker restart junplid"
+      # - name: Reiniciar serviço na VPS
+      #   run: |
+      #     ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+      #       ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+      #       "cd ${{ secrets.VPS_DEST }} && docker restart junplid"

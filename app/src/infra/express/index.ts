@@ -7,8 +7,8 @@ import { Server } from "socket.io";
 import { prisma } from "../../adapters/Prisma/client";
 import { WebSocketIo } from "../websocket";
 import { App as app } from "./app";
-import { startConnections } from "../../bin/startConnections";
-import { startChatbotQueue } from "../../bin/startChatbotQueue";
+import { startConnections } from "../../utils/startConnections";
+import { startChatbotQueue } from "../../utils/startChatbotQueue";
 
 config();
 
@@ -53,9 +53,9 @@ const startServer = async (): Promise<void> => {
 
           let path = "";
           if (process.env?.NODE_ENV === "production") {
-            path = resolve(__dirname, `./bin/chatbot-queue`);
+            path = resolve(__dirname, `../bin/chatbot-queue`);
           } else {
-            path = resolve(__dirname, `../../bin/chatbot-queue`);
+            path = resolve(__dirname, `../../../bin/chatbot-queue`);
           }
           const dirPathQueue = readdirSync(path);
 
