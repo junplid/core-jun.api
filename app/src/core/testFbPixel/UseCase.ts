@@ -7,12 +7,13 @@ import {
 } from "facebook-nodejs-business-sdk";
 import crypto from "crypto";
 
+const hash = (v: string) =>
+  crypto.createHash("sha256").update(v.trim().toLowerCase()).digest("hex");
+
 export class TestFbPixelUseCase {
   constructor() {}
 
   async run({ test_event_code, ...dto }: TestFbPixelDTO_I) {
-    const hash = (v: string) =>
-      crypto.createHash("sha256").update(v.trim().toLowerCase()).digest("hex");
     const userData = new UserData()
       .setEmails([hash("[email protected]")])
       .setClientUserAgent("PixelTest/1.0");
@@ -22,7 +23,7 @@ export class TestFbPixelUseCase {
       .setEventTime(Math.floor(Date.now() / 1000))
       .setEventId(`test-${Date.now()}`)
       .setActionSource("website")
-      .setEventSourceUrl("https://example.com/pixel-test")
+      .setEventSourceUrl("https://junplid.com.br/pixel-test")
       .setUserData(userData);
 
     try {
