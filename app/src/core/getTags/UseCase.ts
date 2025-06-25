@@ -28,13 +28,6 @@ export class GetTagsUseCase {
           ...tag,
           businesses: TagOnBusiness.map((s) => s.Business),
         })),
-        {
-          id: 22,
-          name: "⭐_CLIENTE_JUNPLID",
-          type: "contactwa",
-          businesses: [],
-          records: 16,
-        },
       ],
     };
   }

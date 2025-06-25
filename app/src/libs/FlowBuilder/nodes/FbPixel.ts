@@ -77,19 +77,23 @@ export const NodeFbPixel = (props: PropsFbPixel): Promise<void> => {
         const { fbc, fbp, ip, ua } = dataFb;
         if (!fbc || !fbp) {
           const listfb = listFbChatbot.get(dataFb.chatbotId) || [];
-          const picked = listfb[0];
-          if (picked) {
-            userData.setFbc(picked.fbc);
-            userData.setFbp(picked.fbp);
-            if (picked.ip) userData.setClientIpAddress(picked.ip);
-            if (picked.ua) userData.setClientUserAgent(picked.ua);
-            await prisma.flowState.update({
-              where: { id: props.flowStateId },
-              data: {
-                ...picked,
-                expires_at: new Date(Date.now() + 90 * 24 * 3600_000),
-              },
-            });
+          if (listfb.length) {
+            const picked = structuredClone(listfb[0]);
+            listfb.shift();
+            listFbChatbot.set(dataFb.chatbotId, listfb);
+            if (picked) {
+              userData.setFbc(picked.fbc);
+              userData.setFbp(picked.fbp);
+              if (picked.ip) userData.setClientIpAddress(picked.ip);
+              if (picked.ua) userData.setClientUserAgent(picked.ua);
+              await prisma.flowState.update({
+                where: { id: props.flowStateId },
+                data: {
+                  ...picked,
+                  expires_at: new Date(Date.now() + 90 * 24 * 3600_000),
+                },
+              });
+            }
           }
         } else {
           userData.setFbc(fbc);
