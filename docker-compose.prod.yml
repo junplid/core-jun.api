@@ -48,6 +48,7 @@ services:
       - 4000:4000 
     volumes:
      - ./app:/app
+     - ./app/bin:/app/bin
       - /app/node_modules    
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:4000/v1/public/health"]
