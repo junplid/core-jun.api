@@ -119,6 +119,7 @@ export const NodeFbPixel = (props: PropsFbPixel): Promise<void> => {
       await eventRequest.execute();
       return res();
     } catch (error) {
+      console.log("======================= Error in NodeFbPixel:", error);
       return res();
     }
   });
