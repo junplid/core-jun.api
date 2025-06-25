@@ -135,7 +135,7 @@ RouterV1Public_Get.get("/fb/:cbj", async (req, res) => {
       return res.redirect(302, destLink);
     }
 
-    destLink = `https://api.whatsapp.com/send?phone=${cbot.ConnectionWA.number}`;
+    destLink = `https://web.whatsapp.com/send?phone=${cbot.ConnectionWA.number}`;
     if (cbot.trigger) destLink += `&text=${encodeURIComponent(cbot.trigger)}`;
 
     const { fbclid } = req.query as { fbclid?: string };

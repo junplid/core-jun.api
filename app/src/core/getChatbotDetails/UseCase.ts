@@ -39,7 +39,7 @@ export class GetChatbotDetailsUseCase {
     if (status && ConnectionWA) {
       statusConnection = !!cacheConnectionsWAOnline.get(ConnectionWA.id);
       if (statusConnection) {
-        target = `https://api.whatsapp.com/send?phone=${ConnectionWA.number}`;
+        target = `https://web.whatsapp.com/send?phone=${ConnectionWA.number}`;
         if (trigger) target += `&text=${encodeURIComponent(trigger)}`;
       }
     }
