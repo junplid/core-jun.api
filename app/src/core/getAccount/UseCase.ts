@@ -13,6 +13,7 @@ export class GetAccountUseCase {
         email: true,
         emailVerified: true,
         onboarded: true,
+        isPremium: true,
       },
     });
 
@@ -49,6 +50,7 @@ export class GetAccountUseCase {
       status: 200,
       account: {
         ...account,
+        isPremium: !!account.isPremium,
         id: dto.accountId,
         name: account.name ?? account.email,
       },

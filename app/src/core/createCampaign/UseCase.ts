@@ -1,11 +1,9 @@
-import { resolve } from "path";
 import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { CreateCampaignDTO_I } from "./DTO";
 import { ulid } from "ulid";
-import { ensureDir, writeFile } from "fs-extra";
 import { cacheAccountSocket } from "../../infra/websocket/cache";
 import { socketIo } from "../../infra/express";
 import { startCampaign } from "../../utils/startCampaign";
@@ -14,6 +12,17 @@ export class CreateCampaignUseCase {
   constructor() {}
 
   async run({ accountId, ...dto }: CreateCampaignDTO_I) {
+    const isPremium = await prisma.account.findFirst({
+      where: { id: accountId, isPremium: true },
+      select: { id: true },
+    });
+
+    if (!isPremium) {
+      throw new ErrorResponse(400).input({
+        path: "name",
+        text: "Campanhas ilimitadas — exclusivos para usuários Premium.",
+      });
+    }
     const existName = await prisma.campaign.findFirst({
       where: {
         accountId,

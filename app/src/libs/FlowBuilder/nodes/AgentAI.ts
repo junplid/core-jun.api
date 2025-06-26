@@ -400,7 +400,7 @@ export const NodeAgentAI = async ({
         const agent = await prisma.agentAI.findFirst({
           where: {
             id: props.data.agentId,
-            Account: { agentAIEnabled: true, id: props.accountId },
+            Account: { isPremium: true, id: props.accountId },
           },
           select: {
             timeout: true,
@@ -447,7 +447,7 @@ export const NodeAgentAI = async ({
     const agent = await prisma.agentAI.findFirst({
       where: {
         id: props.data.agentId,
-        Account: { agentAIEnabled: true, id: props.accountId },
+        Account: { isPremium: true, id: props.accountId },
       },
       select: {
         timeout: true,
@@ -483,7 +483,7 @@ export const NodeAgentAI = async ({
             const find = await prisma.agentAI.findFirst({
               where: {
                 id: props.data.agentId,
-                Account: { agentAIEnabled: true, id: props.accountId },
+                Account: { isPremium: true, id: props.accountId },
               },
               select: {
                 timeout: true,

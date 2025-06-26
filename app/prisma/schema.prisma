@@ -115,7 +115,7 @@ model Account {
   email               String                @unique @db.VarChar(200)
   cpfCnpj             String?               @unique
   hash                String                @default(uuid())
-  agentAIEnabled      Boolean?              @default(false)
+  isPremium           Boolean?              @default(false)
   emailVerified       Boolean               @default(false)
   password            String
   customerId          String?
