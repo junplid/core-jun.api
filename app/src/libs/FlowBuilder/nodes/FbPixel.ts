@@ -9,6 +9,7 @@ import {
 } from "facebook-nodejs-business-sdk";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { listFbChatbot } from "../../../utils/cachesMap";
+import crypto from "crypto";
 
 interface PropsFbPixel {
   numberLead: string;
@@ -22,6 +23,9 @@ interface PropsFbPixel {
   nodeId: string;
   flowStateId: number;
 }
+
+const h = (v: string) =>
+  crypto.createHash("sha256").update(v.trim().toLowerCase()).digest("hex");
 
 export const NodeFbPixel = (props: PropsFbPixel): Promise<void> => {
   return new Promise(async (res, rej) => {
@@ -37,27 +41,42 @@ export const NodeFbPixel = (props: PropsFbPixel): Promise<void> => {
       userData.setPhone("+" + props.numberLead);
       const customData = new CustomData();
 
-      const keyMap: Record<string, any> = {
-        user: userData,
-        custom: customData,
-      };
-
       Object.entries(props.data.event).forEach(async ([key, value]) => {
-        if (key !== "customContents" && key !== "name") {
-          let nextData: any = null;
-          const prefix = key.match(/^(user|custom)/)?.[0];
-          const method = `set${key.replace(prefix!, "")}`;
-          nextData = keyMap[prefix!][method];
-
+        if (value?.trim()) {
           const nextValue = await resolveTextVariables({
             accountId: props.accountId,
             contactsWAOnAccountId: props.contactsWAOnAccountId,
-            text: value,
+            text: value?.trim(),
             ticketProtocol: props.ticketProtocol,
             numberLead: props.numberLead,
             nodeId: props.nodeId,
           });
-          nextData(nextValue);
+          if (key === "userEmail") userData.setEmail(h(nextValue));
+          if (key === "userPhone") userData.setPhone(nextValue);
+          if (key === "userFirstName") userData.setFirstName(nextValue);
+          if (key === "userLastName") userData.setLastName(nextValue);
+          if (key === "userDobd") userData.setDobd(nextValue);
+          if (key === "userDobm") userData.setDobm(nextValue);
+          if (key === "userDoby") userData.setDoby(nextValue);
+          if (key === "userDateOfBirth") userData.setDateOfBirth(nextValue);
+          if (key === "userCity") userData.setCity(nextValue);
+          if (key === "userState") userData.setState(nextValue);
+          if (key === "userCountry") userData.setCountry(nextValue);
+          if (key === "userZip") userData.setZip(nextValue);
+          if (key === "userGender") userData.setGender(nextValue);
+          if (key === "customValue") {
+            customData.setValue(Number(nextValue));
+          }
+          if (key === "customCurrency") customData.setCurrency(nextValue);
+          if (key === "customStatus") customData.setStatus(nextValue);
+          if (key === "customContentName") customData.setContentName(nextValue);
+          if (key === "customContentType") customData.setContentType(nextValue);
+          if (key === "customNumItems") {
+            customData.setNumItems(Number(nextValue));
+          }
+          if (key === "customContentCategory") {
+            customData.setContentCategory(nextValue);
+          }
         }
       });
 
