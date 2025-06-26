@@ -32,6 +32,16 @@ export class CreateAgentAIUseCase {
   constructor() {}
 
   async run({ accountId, ...dto }: CreateAgentAIDTO_I) {
+    const agentAIEnabled = await prisma.account.findFirst({
+      where: { id: accountId, agentAIEnabled: true },
+    });
+    if (!agentAIEnabled) {
+      throw new ErrorResponse(400).input({
+        path: "providerCredentialId",
+        text: "Agente IA não está habilitado para essa conta.",
+      });
+    }
+
     let providerCredentialId: number | undefined = undefined;
     let apiKey: string | undefined = undefined;
     if (dto.providerCredentialId) {

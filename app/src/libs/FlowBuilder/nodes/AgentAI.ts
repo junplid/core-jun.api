@@ -398,7 +398,10 @@ export const NodeAgentAI = async ({
       let agentAIf = cacheInfoAgentAI.get(props.data.agentId);
       if (!agentAIf) {
         const agent = await prisma.agentAI.findFirst({
-          where: { id: props.data.agentId, accountId: props.accountId },
+          where: {
+            id: props.data.agentId,
+            Account: { agentAIEnabled: true, id: props.accountId },
+          },
           select: {
             timeout: true,
             model: true,
@@ -442,7 +445,10 @@ export const NodeAgentAI = async ({
   let agentAIf = cacheInfoAgentAI.get(props.data.agentId);
   if (!agentAIf) {
     const agent = await prisma.agentAI.findFirst({
-      where: { id: props.data.agentId, accountId: props.accountId },
+      where: {
+        id: props.data.agentId,
+        Account: { agentAIEnabled: true, id: props.accountId },
+      },
       select: {
         timeout: true,
         model: true,
@@ -475,7 +481,10 @@ export const NodeAgentAI = async ({
           let agentAI = cacheInfoAgentAI.get(props.data.agentId);
           if (!agentAI) {
             const find = await prisma.agentAI.findFirst({
-              where: { id: props.data.agentId, accountId: props.accountId },
+              where: {
+                id: props.data.agentId,
+                Account: { agentAIEnabled: true, id: props.accountId },
+              },
               select: {
                 timeout: true,
                 model: true,
