@@ -103,6 +103,8 @@ import { getPaymentIntegrationsValidation } from "../../../../../core/getPayment
 import { getPaymentIntegrationsController } from "../../../../../core/getPaymentIntegrations";
 import { getPaymentIntegrationValidation } from "../../../../../core/getPaymentIntegration/Validation";
 import { getPaymentIntegrationController } from "../../../../../core/getPaymentIntegration";
+import { getChargesValidation } from "../../../../../core/getCharges/Validation";
+import { getChargesController } from "../../../../../core/getCharges";
 
 const RouterV1Private_Get = Router();
 
@@ -393,5 +395,7 @@ RouterV1Private_Get.get(
   getPaymentIntegrationValidation,
   getPaymentIntegrationController
 );
+
+RouterV1Private_Get.get("/charges", getChargesValidation, getChargesController);
 
 export default RouterV1Private_Get;

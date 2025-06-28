@@ -145,6 +145,7 @@ model Account {
   FbPixel             FbPixel[]
   Orders              Orders[]
   PaymentIntegrations PaymentIntegrations[]
+  Charges             Charges[]
 
   @@index([id, email, hash, status, available, isUsedFreeTrialTime])
 }
@@ -163,6 +164,7 @@ model InboxUsers {
   InboxDepartment   InboxDepartments? @relation(fields: [inboxDepartmentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   Tickets           Tickets[]
   Messages          Messages[]
+  Charges           Charges[]
 
   @@index([id, email, accountId, inboxDepartmentId])
 }
@@ -219,6 +221,7 @@ model Tickets {
   connectionWAId       Int
   ConnectionWA         ConnectionWA          @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Messages             Messages[]
+  Charges              Charges[]
 
   @@index([id, protocol, contactWAOnAccountId, status, destination, inboxDepartmentId, inboxUserId])
 }
@@ -735,6 +738,7 @@ model Business {
   InboxDepartments       InboxDepartments[]
   FbPixel                FbPixel[]
   Orders                 Orders[]
+  Charges                Charges[]
 
   @@index([id, accountId])
 }
@@ -1113,6 +1117,7 @@ model ContactsWAOnAccount {
   ContactsWAOnAudience        ContactsWAOnAudience[]
   Tickets                     Tickets[]
   Orders                      Orders[]
+  Charges                     Charges[]
 
   @@index([id, contactWAId, createAt])
 }
@@ -1847,6 +1852,7 @@ model PaymentIntegrations {
   updateAt     DateTime            @default(now()) @updatedAt
   accountId    Int
   Account      Account             @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Charges      Charges[]
 
   @@index([id, name, accountId, status])
 }
@@ -1891,6 +1897,8 @@ model Orders {
   createAt              DateTime             @default(now())
   updateAt              DateTime             @default(now()) @updatedAt
   flowNodeId            String?
+  // qual ticket gerou o pedido
+  // qual atendente gerou o pedido
   flowStateId           Int?
   contactsWAOnAccountId Int?
   accountId             Int
@@ -1899,7 +1907,7 @@ model Orders {
   FlowState             FlowState?           @relation(fields: [flowStateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   ContactsWAOnAccount   ContactsWAOnAccount? @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   Account               Account              @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Payment               Payment[]
+  Charges               Charges[]
 
   @@index([id, name, accountId])
 }
@@ -1926,19 +1934,33 @@ enum PaymentStatus {
   cancelled
 }
 
-model Payment {
-  id            Int                 @id @default(autoincrement())
-  hash          String              @default(uuid()) // prevenir alterar status de pagamento pelo id ou transactionId, as atualizações devem ser feitas pelo hash
-  provider      TypeProviderPayment @default(mercadopago)
-  transactionId String              @db.VarChar(140)
-  amount        Decimal             @db.Decimal(10, 2)
-  currency      String              @db.VarChar(10)
-  status        PaymentStatus       @default(created)
-  metadata      Json?
-  orderId       Int
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  order         Orders              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+model Charges {
+  id                    Int                  @id @default(autoincrement())
+  hash                  String               @default(uuid()) // prevenir alterar status de pagamento pelo id ou transactionId, as atualizações devem ser feitas pelo hash
+  provider              TypeProviderPayment  @default(mercadopago)
+  transactionId         String
+  total                 Decimal              @db.Decimal(10, 2)
+  currency              String               @db.VarChar(10)
+  status                PaymentStatus        @default(created)
+  deleted               Boolean              @default(false)
+  metadata              Json?
+  flowNodeId            String?
+  contactsWAOnAccountId Int?
+  businessId            Int
+  createAt              DateTime             @default(now())
+  accountId             Int
+  paymentIntegrationId  Int?
+  orderId               Int?
+  inboxUserId           Int?
+  ticketId              Int?
+  updatedAt             DateTime             @updatedAt
+  Account               Account              @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ContactsWAOnAccount   ContactsWAOnAccount? @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  Ticket                Tickets?             @relation(fields: [ticketId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  InboxUser             InboxUsers?          @relation(fields: [inboxUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  Business              Business             @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Order                 Orders?              @relation(fields: [orderId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  PaymentIntegration    PaymentIntegrations? @relation(fields: [paymentIntegrationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
-  @@index([provider, transactionId])
+  @@index([provider, transactionId, ticketId, inboxUserId, status, deleted])
 }
