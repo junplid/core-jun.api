@@ -34,7 +34,7 @@ export class GetTicketUseCase {
           },
         },
         inboxUserId: true,
-        TicketMessages: {
+        Messages: {
           orderBy: { createAt: "asc" },
           select: {
             type: true,
@@ -63,13 +63,12 @@ export class GetTicketUseCase {
       throw new ErrorResponse(400).container("Ticket não encontrado.");
     }
 
-    await prisma.ticketMessage.updateMany({
+    await prisma.messages.updateMany({
       where: { ticketsId: dto.id, read: false },
       data: { read: true },
     });
 
-    const { ContactsWAOnAccount, TicketMessages, InboxDepartment, ...rest } =
-      data;
+    const { ContactsWAOnAccount, Messages, InboxDepartment, ...rest } = data;
 
     return {
       message: "OK!",
@@ -78,7 +77,7 @@ export class GetTicketUseCase {
         ...rest,
         inboxDepartmentId: InboxDepartment.id,
         businessId: InboxDepartment.businessId,
-        messages: TicketMessages.map((msg) => {
+        messages: Messages.map((msg) => {
           if (msg.type === "text") {
             return {
               content: {

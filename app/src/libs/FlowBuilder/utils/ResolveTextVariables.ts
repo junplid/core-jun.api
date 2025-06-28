@@ -18,8 +18,10 @@ export async function resolveTextVariables(props: IProps): Promise<string> {
 
   const sysAndCnt = await prisma.variable.findMany({
     where: {
-      accountId: props.accountId,
-      type: { in: ["system", "constant"] },
+      OR: [
+        { type: "system" },
+        { type: "constant", accountId: props.accountId },
+      ],
       name: { in: hasVariable.map((s) => s.replace(/{{|}}/g, "")) },
     },
     select: { name: true, value: true },

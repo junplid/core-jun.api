@@ -8,6 +8,7 @@ import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { remove } from "remove-accents";
 import moment from "moment-timezone";
 import { scheduleJob } from "node-schedule";
+import { prisma } from "../../../adapters/Prisma/client";
 
 const getNextTimeOut = (
   type: "minutes" | "hours" | "days" | "seconds",
@@ -34,6 +35,7 @@ interface PropsNodeReply {
   connectionWhatsId: number;
   onExecuteSchedule?: () => Promise<void>;
   action: { onErrorClient?(): void };
+  flowStateId: number;
 }
 
 type ResultPromise =
@@ -61,7 +63,7 @@ export const NodeMenu = async (
     }
     if (props.data.footer) text += `\n_${props.data.footer}_`;
 
-    await SendMessageText({
+    const msg = await SendMessageText({
       connectionId: props.connectionWhatsId,
       text,
       toNumber: props.numberLead,
@@ -69,6 +71,18 @@ export const NodeMenu = async (
       console.error("Error sending message:", error);
       props.action.onErrorClient?.();
       throw new Error("Failed to send message");
+    });
+
+    if (!msg) throw new Error("Failed to send message");
+
+    await prisma.messages.create({
+      data: {
+        by: "bot",
+        message: text,
+        type: "text",
+        messageKey: msg.key.id,
+        flowStateId: props.flowStateId,
+      },
     });
 
     if (props.onExecuteSchedule) {
@@ -114,10 +128,20 @@ export const NodeMenu = async (
             toNumber: props.numberLead,
             connectionId: props.connectionWhatsId,
           });
-          await SendMessageText({
+          const msg = await SendMessageText({
             connectionId: props.connectionWhatsId,
             text: messageErrorAttempts.value,
             toNumber: props.numberLead,
+          });
+          if (!msg) throw new Error("Failed to send message");
+          await prisma.messages.create({
+            data: {
+              by: "bot",
+              message: messageErrorAttempts.value,
+              type: "text",
+              messageKey: msg.key.id,
+              flowStateId: props.flowStateId,
+            },
           });
         } catch (error) {
           console.log(error);
@@ -162,10 +186,20 @@ export const NodeMenu = async (
             toNumber: props.numberLead,
             connectionId: props.connectionWhatsId,
           });
-          await SendMessageText({
+          const msg = await SendMessageText({
             connectionId: props.connectionWhatsId,
             text: messageErrorAttempts.value,
             toNumber: props.numberLead,
+          });
+          if (!msg) throw new Error("Failed to send message");
+          await prisma.messages.create({
+            data: {
+              by: "bot",
+              message: messageErrorAttempts.value,
+              type: "text",
+              messageKey: msg.key.id,
+              flowStateId: props.flowStateId,
+            },
           });
         } catch (error) {
           props.action.onErrorClient?.();

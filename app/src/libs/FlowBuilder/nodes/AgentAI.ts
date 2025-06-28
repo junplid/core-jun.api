@@ -14,6 +14,7 @@ import OpenAI from "openai";
 import { validatePhoneNumber } from "../../../helpers/validatePhoneNumber";
 import { TypingDelay } from "../../../adapters/Baileys/modules/typing";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
+import { resolveTextVariables } from "../utils/ResolveTextVariables";
 
 /**
  * Estima quanto tempo (em segundos) alguém levou para digitar `text`.
@@ -506,13 +507,19 @@ export const NodeAgentAI = async ({
           const openai = new OpenAI({
             apiKey: agentAI.ProviderCredential.apiKey,
           });
+          const property = await resolveTextVariables({
+            accountId: props.accountId,
+            contactsWAOnAccountId: props.contactAccountId,
+            numberLead: props.numberLead,
+            text: props.data.prompt || "",
+          });
           const instructions = buildInstructions({
             name: agentAI.name,
             emojiLevel: agentAI.emojiLevel,
             personality: agentAI.personality || undefined,
             knowledgeBase: agentAI.knowledgeBase || undefined,
             instructions: agentAI.instructions || undefined,
-            property: props.data.prompt,
+            property,
           });
           if (agentAI.vectorStoreId) {
             tools.push({
@@ -736,11 +743,22 @@ export const NodeAgentAI = async ({
                               toNumber: newNumber + "@s.whatsapp.net",
                               connectionId: props.connectionWhatsId,
                             });
-                            await SendMessageText({
+                            const msg = await SendMessageText({
                               connectionId: props.connectionWhatsId,
                               text: args.text,
                               toNumber: newNumber + "@s.whatsapp.net",
                             });
+                            if (msg) {
+                              await prisma.messages.create({
+                                data: {
+                                  messageKey: msg.key.id,
+                                  type: "text",
+                                  message: args.text,
+                                  by: "bot",
+                                  flowStateId: props.flowStateId,
+                                },
+                              });
+                            }
                             return {
                               type: "function_call_output",
                               call_id: c.call_id,

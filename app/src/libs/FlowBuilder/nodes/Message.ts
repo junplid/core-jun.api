@@ -3,6 +3,7 @@ import { NodeMessageData } from "../Payload";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { TypingDelay } from "../../../adapters/Baileys/modules/typing";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
+import { prisma } from "../../../adapters/Prisma/client";
 
 interface PropsNodeMessage {
   numberLead: string;
@@ -15,6 +16,7 @@ interface PropsNodeMessage {
   ticketProtocol?: string;
   nodeId: string;
   action: { onErrorClient?(): void };
+  flowStateId: number;
 }
 
 export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
@@ -43,10 +45,20 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
       }
 
       try {
-        await SendMessageText({
+        const msg = await SendMessageText({
           connectionId: props.connectionWhatsId,
           text: nextText,
           toNumber: props.numberLead,
+        });
+        if (!msg) return rej("Error ao enviar mensagem");
+        await prisma.messages.create({
+          data: {
+            by: "bot",
+            message: nextText,
+            type: "text",
+            messageKey: msg.key.id,
+            flowStateId: props.flowStateId,
+          },
         });
         return res();
       } catch (error) {

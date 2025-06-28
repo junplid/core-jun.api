@@ -48,6 +48,14 @@ export const NodeReply = async (
 
   const scheduleExecution = scheduleExecutionsReply.get(keyMap);
   if (message) {
+    await prisma.messages.create({
+      data: {
+        by: "contact",
+        message,
+        type: "text",
+        flowStateId: props.flowStateId,
+      },
+    });
     scheduleExecution?.cancel();
 
     if (!data?.isSave) {

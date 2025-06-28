@@ -17,6 +17,7 @@ interface PropsNodeSendFiles {
   ticketProtocol?: string;
   nodeId: string;
   action: { onErrorClient?(): void };
+  flowStateId: number;
 }
 
 export const NodeSendFiles = (props: PropsNodeSendFiles): Promise<void> => {
@@ -51,7 +52,7 @@ export const NodeSendFiles = (props: PropsNodeSendFiles): Promise<void> => {
           });
         }
         try {
-          await SendFile({
+          const msg = await SendFile({
             connectionId: props.connectionWAId,
             originalName: firstFile.originalName,
             toNumber: props.numberLead,
@@ -59,6 +60,19 @@ export const NodeSendFiles = (props: PropsNodeSendFiles): Promise<void> => {
             document: readFileSync(urlStatic),
             mimetype: mimetype || undefined,
           });
+          if (msg) {
+            await prisma.messages.create({
+              data: {
+                by: "bot",
+                type: "file",
+                fileName: e.fileName,
+                fileNameOriginal: firstFile.originalName,
+                message: "",
+                caption,
+                flowStateId: props.flowStateId,
+              },
+            });
+          }
         } catch (error) {
           return props.action.onErrorClient?.();
         }
@@ -74,13 +88,25 @@ export const NodeSendFiles = (props: PropsNodeSendFiles): Promise<void> => {
         const urlStatic = `${path}/${e.fileName}`;
         const mimetype = lookup(urlStatic);
         try {
-          await SendFile({
+          const msg = await SendFile({
             connectionId: props.connectionWAId,
             originalName: file.originalName,
             toNumber: props.numberLead,
             document: readFileSync(urlStatic),
             mimetype: mimetype || undefined,
           });
+          if (msg) {
+            await prisma.messages.create({
+              data: {
+                by: "bot",
+                type: "file",
+                fileName: e.fileName,
+                fileNameOriginal: file.originalName,
+                message: "",
+                flowStateId: props.flowStateId,
+              },
+            });
+          }
         } catch (error) {
           return props.action.onErrorClient?.();
         }

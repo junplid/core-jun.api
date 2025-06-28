@@ -15,6 +15,7 @@ interface PropsNodeSendAudiosLive {
   ticketProtocol?: string;
   nodeId: string;
   action: { onErrorClient?(): void };
+  flowStateId: number;
 }
 
 export const NodeSendAudiosLive = (
@@ -40,13 +41,25 @@ export const NodeSendAudiosLive = (
 
         try {
           const mimetype = lookup(urlStatic);
-          await SendAudio({
+          const msg = await SendAudio({
             connectionId: props.connectionWAId,
             mimetype: mimetype || undefined,
             toNumber: props.numberLead,
             urlStatic,
             ptt: true,
           });
+          if (msg) {
+            await prisma.messages.create({
+              data: {
+                by: "contact",
+                type: "audio",
+                fileName: e.fileName,
+                message: "",
+                ptt: true,
+                flowStateId: props.flowStateId,
+              },
+            });
+          }
         } catch (error) {
           return props.action.onErrorClient?.();
         }
@@ -62,13 +75,25 @@ export const NodeSendAudiosLive = (
         const urlStatic = `${path}/${e.fileName}`;
         const mimetype = lookup(urlStatic);
         try {
-          await SendAudio({
+          const msg = await SendAudio({
             connectionId: props.connectionWAId,
             mimetype: mimetype || undefined,
             toNumber: props.numberLead,
             urlStatic,
             ptt: true,
           });
+          if (msg) {
+            await prisma.messages.create({
+              data: {
+                by: "bot",
+                type: "audio",
+                fileName: e.fileName,
+                message: "",
+                ptt: true,
+                flowStateId: props.flowStateId,
+              },
+            });
+          }
         } catch (error) {
           return props.action.onErrorClient?.();
         }

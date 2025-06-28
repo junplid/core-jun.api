@@ -41,3 +41,12 @@ export const cacheInfoAgentAI: Map<
     ProviderCredential: { apiKey: string };
   }
 > = new Map();
+
+export const cacheRunningQueueReaction = new Map<string, boolean>();
+export const cachePendingReactionsList = new Map<
+  string,
+  {
+    message: string;
+    reactionText: string;
+  }[]
+>();

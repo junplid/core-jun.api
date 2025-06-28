@@ -30,6 +30,8 @@ import {
   leadAwaiting,
   scheduleExecutionsReply,
   chatbotRestartInDate,
+  cachePendingReactionsList,
+  cacheRunningQueueReaction,
 } from "./Cache";
 import { startChatbotQueue } from "../../utils/startChatbotQueue";
 import { validatePhoneNumber } from "../../helpers/validatePhoneNumber";
@@ -37,6 +39,7 @@ import mime from "mime-types";
 import { SendMessageText } from "./modules/sendMessage";
 import { TypingDelay } from "./modules/typing";
 import { TypeStatusCampaign } from "@prisma/client";
+import { scheduleJob } from "node-schedule";
 
 /**
  * Estima quanto tempo (em segundos) alguém levou para digitar `text`.
@@ -404,10 +407,201 @@ export const Baileys = async ({
 
       bot.ev.on("creds.update", saveCreds);
 
+      bot.ev.on("messages.reaction", async (body) => {
+        if (!body[0].key.fromMe && body[0].key.id && body[0].reaction.text) {
+          const msg = await prisma.messages.findFirst({
+            where: { messageKey: body[0].key.id, by: "bot", type: "text" },
+            select: {
+              message: true,
+              id: true,
+              FlowState: {
+                select: {
+                  id: true,
+                  flowId: true,
+                  chatbotId: true,
+                  ConnectionWA: { select: { number: true } },
+                },
+              },
+            },
+          });
+          if (
+            !msg?.message ||
+            !msg.FlowState?.flowId ||
+            !msg.FlowState.ConnectionWA?.number
+          )
+            return;
+          const number = body[0].key.remoteJid?.split("@")[0];
+          if (!number) {
+            console.log("Deu erro para recuperar número do lead");
+            return;
+          }
+          const { ContactsWAOnAccount, ...contactWA } =
+            await prisma.contactsWA.upsert({
+              where: { completeNumber: number },
+              create: { completeNumber: number },
+              update: {},
+              select: {
+                id: true,
+                ContactsWAOnAccount: {
+                  where: { accountId: props.accountId },
+                  select: { id: true },
+                },
+              },
+            });
+
+          if (!ContactsWAOnAccount.length) {
+            await prisma.contactsWAOnAccount.create({
+              data: {
+                name: "<unknown>",
+                accountId: props.accountId,
+                contactWAId: contactWA.id,
+              },
+              select: { id: true },
+            });
+            return;
+          }
+
+          let flow:
+            | { edges: any[]; nodes: any[]; businessIds: number[] }
+            | undefined;
+          flow = cacheFlowsMap.get(msg.FlowState?.flowId);
+          if (!flow) {
+            const flowFetch = await ModelFlows.aggregate([
+              {
+                $match: {
+                  accountId: props.accountId,
+                  _id: msg.FlowState.flowId,
+                },
+              },
+              {
+                $project: {
+                  businessIds: 1,
+                  nodes: {
+                    $map: {
+                      input: "$data.nodes",
+                      in: {
+                        id: "$$this.id",
+                        type: "$$this.type",
+                        data: "$$this.data",
+                      },
+                    },
+                  },
+                  edges: {
+                    $map: {
+                      input: "$data.edges",
+                      in: {
+                        id: "$$this.id",
+                        source: "$$this.source",
+                        target: "$$this.target",
+                        sourceHandle: "$$this.sourceHandle",
+                      },
+                    },
+                  },
+                },
+              },
+            ]);
+            if (!flowFetch?.length) return console.log(`Flow not found.`);
+            const { edges, nodes, businessIds } = flowFetch[0];
+            flow = { edges, nodes, businessIds };
+            cacheFlowsMap.set(msg.FlowState.flowId, flow);
+          }
+
+          const reactionNodes = flow.nodes.find(
+            (n: any) =>
+              n.type === "reaction" && n.data?.flowStateId === msg.FlowState!.id
+          ) as any[];
+
+          if (!reactionNodes.length) return;
+
+          const keyMap = `${msg.FlowState.ConnectionWA.number}+${number}`;
+          const reactionsList = cachePendingReactionsList.get(keyMap) || [];
+          cachePendingReactionsList.set(keyMap, [
+            ...reactionsList,
+            {
+              message: msg.message,
+              reactionText: body[0].reaction.text || "",
+            },
+          ]);
+
+          const runningQueue = cacheRunningQueueReaction.get(keyMap);
+          if (runningQueue) return;
+
+          cacheRunningQueueReaction.set(keyMap, true);
+          async function runReaction() {
+            const reactionFresh = cachePendingReactionsList.get(keyMap);
+            if (!reactionFresh?.length) {
+              cacheRunningQueueReaction.set(keyMap, false);
+              return;
+            }
+            const reaction = reactionFresh.shift();
+            cachePendingReactionsList.set(keyMap, reactionFresh);
+            if (!reaction) await runReaction();
+
+            for (const reactionNode of reactionNodes) {
+              const businessInfo = await prisma.connectionWA.findFirst({
+                where: { id: props.connectionWhatsId },
+                select: { Business: { select: { name: true } } },
+              });
+              if (!businessInfo) {
+                console.log("Connection not found");
+                return;
+              }
+
+              await NodeControler({
+                businessName: businessInfo.Business.name,
+                flowId: msg!.FlowState!.flowId!,
+                flowBusinessIds: flow!.businessIds,
+                type: "running",
+                connectionWhatsId: props.connectionWhatsId,
+                chatbotId: msg!.FlowState!.chatbotId || undefined,
+                oldNodeId: reactionNode.id,
+                currentNodeId: reactionNode.id,
+                clientWA: bot,
+                isSavePositionLead: true,
+                flowStateId: msg!.FlowState!.id,
+                contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                lead: { number: number! },
+                edges: flow!.edges,
+                nodes: flow!.nodes,
+                numberConnection:
+                  msg!.FlowState!.ConnectionWA!.number + "@s.whatsapp.net",
+                ...reaction!,
+                accountId: props.accountId,
+                actions: {
+                  onFinish: async (vl) => runReaction(),
+                  onErrorClient: async (err) => {
+                    console.error("Erro no cliente", err);
+                    cacheRunningQueueReaction.set(keyMap, false);
+                    cachePendingReactionsList.delete(keyMap);
+                    // isso aqui NÃO PODE ACONTECER.
+                    // caso acontece como vamos voltar a executar a reação?
+                    return;
+                  },
+                  onErrorNumber: async () => {
+                    console.error("Erro no número do contato", number);
+                    cacheRunningQueueReaction.set(keyMap, false);
+                    cachePendingReactionsList.delete(keyMap);
+                    return;
+                  },
+                },
+              });
+            }
+          }
+          await runReaction();
+        }
+      });
+
       bot.ev.on("messages.upsert", async (body) => {
         const isGroup = !!body.messages[0].key.remoteJid?.includes("@g.us");
         // body.messages[0].messageStubType === proto.WebMessageInfo.StubType.GROUP_PARTICIPANT_ADD;
         // const isRemovedGroup = body.messages[0].messageStubType === proto.WebMessageInfo.StubType.GROUP_PARTICIPANT_REMOVE;;
+        // if (!isGroup && !body.messages[0].key.fromMe) {
+        //   console.log({
+        //     // reaction: body.messages[0].message?.reactionMessage?.text,
+        //     // messageKey: body.messages[0].key.id,
+        //     message: body.messages[0].message,
+        //   });
+        // }
         if (
           !isGroup &&
           body.type === "notify" &&
@@ -644,7 +838,7 @@ export const Baileys = async ({
               if (user) isCurrentTicket = user.currentTicket === ticket.id;
             }
 
-            const msg = await prisma.ticketMessage.create({
+            const msg = await prisma.messages.create({
               data: {
                 ticketsId: ticket.id,
                 message: "",

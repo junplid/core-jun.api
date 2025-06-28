@@ -15,6 +15,7 @@ interface PropsNodeSendAudios {
   ticketProtocol?: string;
   nodeId: string;
   action: { onErrorClient?(): void };
+  flowStateId: number;
 }
 
 export const NodeSendAudios = (props: PropsNodeSendAudios): Promise<void> => {
@@ -38,12 +39,23 @@ export const NodeSendAudios = (props: PropsNodeSendAudios): Promise<void> => {
 
         try {
           const mimetype = lookup(urlStatic);
-          await SendAudio({
+          const msg = await SendAudio({
             connectionId: props.connectionWAId,
             mimetype: mimetype || undefined,
             toNumber: props.numberLead,
             urlStatic,
           });
+          if (msg) {
+            await prisma.messages.create({
+              data: {
+                by: "bot",
+                type: "audio",
+                fileName: e.fileName,
+                message: "",
+                flowStateId: props.flowStateId,
+              },
+            });
+          }
         } catch (error) {
           return props.action.onErrorClient?.();
         }
@@ -59,12 +71,23 @@ export const NodeSendAudios = (props: PropsNodeSendAudios): Promise<void> => {
         const urlStatic = `${path}/${e.fileName}`;
         const mimetype = lookup(urlStatic);
         try {
-          await SendAudio({
+          const msg = await SendAudio({
             connectionId: props.connectionWAId,
             mimetype: mimetype || undefined,
             toNumber: props.numberLead,
             urlStatic,
           });
+          if (msg) {
+            await prisma.messages.create({
+              data: {
+                by: "contact",
+                type: "audio",
+                fileName: e.fileName,
+                message: "",
+                flowStateId: props.flowStateId,
+              },
+            });
+          }
         } catch (error) {
           return props.action.onErrorClient?.();
         }

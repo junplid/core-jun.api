@@ -15,6 +15,7 @@ interface PropsNodeSendImages {
   ticketProtocol?: string;
   nodeId: string;
   action: { onErrorClient?(): void };
+  flowStateId: number;
 }
 
 export const NodeSendImages = (props: PropsNodeSendImages): Promise<void> => {
@@ -49,12 +50,24 @@ export const NodeSendImages = (props: PropsNodeSendImages): Promise<void> => {
         }
 
         try {
-          await SendImage({
+          const msg = await SendImage({
             connectionId: props.connectionWAId,
             url: urlStatic,
             toNumber: props.numberLead,
             caption,
           });
+          if (msg) {
+            await prisma.messages.create({
+              data: {
+                by: "bot",
+                type: "image",
+                fileName: e.fileName,
+                message: "",
+                caption,
+                flowStateId: props.flowStateId,
+              },
+            });
+          }
         } catch (error) {
           console.error("Error sending image:", error);
           return props.action.onErrorClient?.();
@@ -70,11 +83,22 @@ export const NodeSendImages = (props: PropsNodeSendImages): Promise<void> => {
       if (e) {
         const urlStatic = `${path}/${e.fileName}`;
         try {
-          await SendImage({
+          const msg = await SendImage({
             connectionId: props.connectionWAId,
             url: urlStatic,
             toNumber: props.numberLead,
           });
+          if (msg) {
+            await prisma.messages.create({
+              data: {
+                by: "bot",
+                type: "image",
+                fileName: e.fileName,
+                message: "",
+                flowStateId: props.flowStateId,
+              },
+            });
+          }
         } catch (error) {
           console.error("Error sending image:", error);
 

@@ -74,7 +74,7 @@ export class SendTicketMessageUseCase {
             type: "error",
           });
         }
-        const { id: msgId, createAt } = await prisma.ticketMessage.create({
+        const { id: msgId, createAt } = await prisma.messages.create({
           data: {
             by: "user",
             type: "text",
@@ -189,20 +189,18 @@ export class SendTicketMessageUseCase {
                   type: "error",
                 });
               }
-              const { id: msgId, createAt } = await prisma.ticketMessage.create(
-                {
-                  data: {
-                    by: "user",
-                    type: "file",
-                    caption,
-                    message: "",
-                    fileName: e.fileName,
-                    ticketsId: dto.id,
-                    messageKey: msg.key.id,
-                  },
-                  select: { id: true, createAt: true },
-                }
-              );
+              const { id: msgId, createAt } = await prisma.messages.create({
+                data: {
+                  by: "user",
+                  type: "file",
+                  caption,
+                  message: "",
+                  fileName: e.fileName,
+                  ticketsId: dto.id,
+                  messageKey: msg.key.id,
+                },
+                select: { id: true, createAt: true },
+              });
               if (dto.accountId) {
                 cacheAccountSocket
                   .get(dto.accountId)
@@ -277,19 +275,18 @@ export class SendTicketMessageUseCase {
                     type: "error",
                   });
                 }
-                const { id: msgId, createAt } =
-                  await prisma.ticketMessage.create({
-                    data: {
-                      by: "user",
-                      type: "image",
-                      caption,
-                      message: "",
-                      fileName: e.fileName,
-                      ticketsId: dto.id,
-                      messageKey: msg.key.id,
-                    },
-                    select: { id: true, createAt: true },
-                  });
+                const { id: msgId, createAt } = await prisma.messages.create({
+                  data: {
+                    by: "user",
+                    type: "image",
+                    caption,
+                    message: "",
+                    fileName: e.fileName,
+                    ticketsId: dto.id,
+                    messageKey: msg.key.id,
+                  },
+                  select: { id: true, createAt: true },
+                });
                 if (dto.accountId) {
                   cacheAccountSocket
                     .get(dto.accountId)
@@ -350,19 +347,18 @@ export class SendTicketMessageUseCase {
                     type: "error",
                   });
                 }
-                const { id: msgId, createAt } =
-                  await prisma.ticketMessage.create({
-                    data: {
-                      by: "user",
-                      type: "video",
-                      caption,
-                      message: "",
-                      fileName: e.fileName,
-                      ticketsId: dto.id,
-                      messageKey: msg.key.id,
-                    },
-                    select: { id: true, createAt: true },
-                  });
+                const { id: msgId, createAt } = await prisma.messages.create({
+                  data: {
+                    by: "user",
+                    type: "video",
+                    caption,
+                    message: "",
+                    fileName: e.fileName,
+                    ticketsId: dto.id,
+                    messageKey: msg.key.id,
+                  },
+                  select: { id: true, createAt: true },
+                });
                 if (dto.accountId) {
                   cacheAccountSocket
                     .get(dto.accountId)
@@ -431,7 +427,7 @@ export class SendTicketMessageUseCase {
                 type: "error",
               });
             }
-            const { id: msgId, createAt } = await prisma.ticketMessage.create({
+            const { id: msgId, createAt } = await prisma.messages.create({
               data: {
                 by: "user",
                 type: "audio",
@@ -528,20 +524,18 @@ export class SendTicketMessageUseCase {
                   type: "error",
                 });
               }
-              const { id: msgId, createAt } = await prisma.ticketMessage.create(
-                {
-                  data: {
-                    by: "user",
-                    type: "file",
-                    caption,
-                    message: "",
-                    fileName: e.fileName,
-                    ticketsId: dto.id,
-                    messageKey: msg.key.id,
-                  },
-                  select: { id: true, createAt: true },
-                }
-              );
+              const { id: msgId, createAt } = await prisma.messages.create({
+                data: {
+                  by: "user",
+                  type: "file",
+                  caption,
+                  message: "",
+                  fileName: e.fileName,
+                  ticketsId: dto.id,
+                  messageKey: msg.key.id,
+                },
+                select: { id: true, createAt: true },
+              });
               if (dto.accountId) {
                 cacheAccountSocket
                   .get(dto.accountId)
@@ -615,19 +609,18 @@ export class SendTicketMessageUseCase {
                     type: "error",
                   });
                 }
-                const { id: msgId, createAt } =
-                  await prisma.ticketMessage.create({
-                    data: {
-                      by: "user",
-                      type: "image",
-                      caption,
-                      message: "",
-                      fileName: e.fileName,
-                      ticketsId: dto.id,
-                      messageKey: msg.key.id,
-                    },
-                    select: { id: true, createAt: true },
-                  });
+                const { id: msgId, createAt } = await prisma.messages.create({
+                  data: {
+                    by: "user",
+                    type: "image",
+                    caption,
+                    message: "",
+                    fileName: e.fileName,
+                    ticketsId: dto.id,
+                    messageKey: msg.key.id,
+                  },
+                  select: { id: true, createAt: true },
+                });
                 if (dto.accountId) {
                   cacheAccountSocket
                     .get(dto.accountId)
@@ -688,19 +681,18 @@ export class SendTicketMessageUseCase {
                     type: "error",
                   });
                 }
-                const { id: msgId, createAt } =
-                  await prisma.ticketMessage.create({
-                    data: {
-                      by: "user",
-                      type: "video",
-                      caption,
-                      message: "",
-                      fileName: e.fileName,
-                      ticketsId: dto.id,
-                      messageKey: msg.key.id,
-                    },
-                    select: { id: true, createAt: true },
-                  });
+                const { id: msgId, createAt } = await prisma.messages.create({
+                  data: {
+                    by: "user",
+                    type: "video",
+                    caption,
+                    message: "",
+                    fileName: e.fileName,
+                    ticketsId: dto.id,
+                    messageKey: msg.key.id,
+                  },
+                  select: { id: true, createAt: true },
+                });
                 if (dto.accountId) {
                   cacheAccountSocket
                     .get(dto.accountId)
@@ -769,7 +761,7 @@ export class SendTicketMessageUseCase {
                 type: "error",
               });
             }
-            const { id: msgId, createAt } = await prisma.ticketMessage.create({
+            const { id: msgId, createAt } = await prisma.messages.create({
               data: {
                 by: "user",
                 type: "audio",

@@ -46,6 +46,7 @@ export type IPropsControler = {
   | {
       type: "running";
       message: string;
+      reactionText?: string;
       isMidia?: boolean;
     }
 );
@@ -251,6 +252,7 @@ export const NodeControler = ({
           ticketProtocol: props.ticketProtocol,
           connectionWhatsId: props.connectionWhatsId,
           nodeId: currentNode.id,
+          flowStateId: props.flowStateId,
           action: {
             onErrorClient: () => {
               if (props.oldNodeId === "0") {
@@ -375,6 +377,7 @@ export const NodeControler = ({
           data: currentNode.data,
           message: props.type === "initial" ? undefined : props.message,
           connectionWhatsId: props.connectionWhatsId,
+          flowStateId: props.flowStateId,
           action: {
             onErrorClient: () => {
               if (props.oldNodeId === "0") {
@@ -739,6 +742,7 @@ export const NodeControler = ({
           ticketProtocol: props.ticketProtocol,
           connectionWhatsId: props.connectionWhatsId,
           nodeId: currentNode.id,
+          flowStateId: props.flowStateId,
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
@@ -782,6 +786,7 @@ export const NodeControler = ({
           connectionWAId: props.connectionWhatsId,
           action: {},
           nodeId: currentNode.id,
+          flowStateId: props.flowStateId,
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
@@ -868,6 +873,7 @@ export const NodeControler = ({
           connectionWAId: props.connectionWhatsId,
           action: {},
           nodeId: currentNode.id,
+          flowStateId: props.flowStateId,
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
@@ -910,6 +916,7 @@ export const NodeControler = ({
           ticketProtocol: props.ticketProtocol,
           connectionWAId: props.connectionWhatsId,
           action: {},
+          flowStateId: props.flowStateId,
           nodeId: currentNode.id,
         })
           .then(async () => {
@@ -954,6 +961,7 @@ export const NodeControler = ({
           connectionWAId: props.connectionWhatsId,
           action: {},
           nodeId: currentNode.id,
+          flowStateId: props.flowStateId,
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
@@ -1197,6 +1205,123 @@ export const NodeControler = ({
           })
           .catch((error) => {
             console.log("ERROR NO MENSAGEM", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+      if (currentNode.type === "NodeListenReaction") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
+        if (props.type !== "running") return res();
+        await LibraryNodes.NodeListenReaction({
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          data: currentNode.data,
+          message: props.message,
+          reactionText: props.reactionText || "",
+        })
+          .then(async () => {
+            if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheFlowInExecution.delete(keyMap);
+              props.actions?.onFinish && (await props.actions?.onFinish("128"));
+              return;
+            }
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+
+            execute({
+              ...props,
+              type: "initial",
+              currentNodeId: nextEdgesIds[0].id,
+              oldNodeId: currentNode.id,
+            });
+            return;
+          })
+          .catch((error) => {
+            console.log("ERROR NO NodeListenReaction", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+      if (currentNode.type === "NodeSwitchVariable") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
+        await LibraryNodes.NodeSwitchVariable({
+          data: currentNode.data,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+        })
+          .then(async (d) => {
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+            if (!d.handleId) return res();
+            const isNextNodeMain = nextEdgesIds.find(
+              (nh) => nh.sourceHandle === d.handleId
+            );
+            if (!isNextNodeMain) {
+              cacheFlowInExecution.delete(keyMap);
+              props.actions?.onFinish && props.actions?.onFinish("332");
+              return res();
+            }
+            return execute({
+              ...props,
+              type: "initial",
+              currentNodeId: isNextNodeMain.id,
+              oldNodeId: currentNode.id,
+            });
+          })
+          .catch((error: any) => {
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+      }
+      if (currentNode.type === "NodeExtractVariable") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
+        await LibraryNodes.NodeExtractVariable({
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          data: currentNode.data,
+          accountId: props.accountId,
+          nodeId: currentNodeId,
+          numberLead: props.lead.number,
+        })
+          .then(async () => {
+            if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheFlowInExecution.delete(keyMap);
+              props.actions?.onFinish && (await props.actions?.onFinish("128"));
+              return;
+            }
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+
+            execute({
+              ...props,
+              type: "initial",
+              currentNodeId: nextEdgesIds[0].id,
+              oldNodeId: currentNode.id,
+            });
+            return;
+          })
+          .catch((error) => {
+            console.log("ERROR NO NodeListenReaction", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();

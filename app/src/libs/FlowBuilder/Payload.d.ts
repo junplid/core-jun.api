@@ -147,6 +147,24 @@ export interface NodeFbPixelData {
   };
 }
 
+export interface NodeListenReactionData {
+  varIdToReaction?: number;
+  varIdToMessage?: number;
+}
+
+export type NodeSwitchVariableData = {
+  id: number;
+  values: { v: string; key: string }[];
+};
+
+export type NodeExtractVariableData = {
+  var1Id: number;
+  regex: string;
+  flags: string[];
+  value: string;
+  var2Id: number;
+};
+
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeMessage"
@@ -168,7 +186,10 @@ export type TypeNodesPayload =
   | "NodeNotifyWA"
   | "NodeAgentAI"
   | "NodeTransferDepartment"
-  | "NodeFbPixel";
+  | "NodeFbPixel"
+  | "NodeListenReaction"
+  | "NodeSwitchVariable"
+  | "NodeExtractVariable";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -192,4 +213,7 @@ export type NodePayload = { id: string } & (
   | { type: "NodeAgentAI"; data: NodeAgentAIData }
   | { type: "NodeTransferDepartment"; data: NodeTransferDepartmentData }
   | { type: "NodeFbPixel"; data: NodeFbPixelData }
+  | { type: "NodeListenReaction"; data: NodeListenReactionData }
+  | { type: "NodeSwitchVariable"; data: NodeSwitchVariableData }
+  | { type: "NodeExtractVariable"; data: NodeExtractVariableData }
 );

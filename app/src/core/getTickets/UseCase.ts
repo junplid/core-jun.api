@@ -30,9 +30,9 @@ export class GetTicketsUseCase {
         inboxUserId: true,
         createAt: true,
         _count: {
-          select: { TicketMessages: { where: { read: false, by: "contact" } } },
+          select: { Messages: { where: { read: false, by: "contact" } } },
         },
-        TicketMessages: {
+        Messages: {
           take: 1, // pega apenas a última mensagem
           orderBy: { createAt: "desc" },
           select: { createAt: true, type: true, message: true },
@@ -44,11 +44,11 @@ export class GetTicketsUseCase {
       message: "OK!",
       status: 200,
       tickets: data.map(
-        ({ ContactsWAOnAccount, _count, TicketMessages, createAt, ...r }) => {
+        ({ ContactsWAOnAccount, _count, Messages, createAt, ...r }) => {
           let lastMessage = null;
-          if (TicketMessages.length) {
-            if (TicketMessages[0].type === "text") {
-              lastMessage = TicketMessages[0].message;
+          if (Messages.length) {
+            if (Messages[0].type === "text") {
+              lastMessage = Messages[0].message;
             } else {
               lastMessage = "🎤📷 Arquivo de midia.";
             }
@@ -56,10 +56,10 @@ export class GetTicketsUseCase {
           return {
             ...r,
             name: ContactsWAOnAccount?.name || "<Desconhecido(a)>",
-            count_unread: _count.TicketMessages,
+            count_unread: _count.Messages,
             lastMessage,
-            lastInteractionDate: TicketMessages.length
-              ? TicketMessages[0].createAt
+            lastInteractionDate: Messages.length
+              ? Messages[0].createAt
               : createAt,
           };
         }
