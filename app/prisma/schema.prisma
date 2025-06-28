@@ -143,6 +143,8 @@ model Account {
   InboxDepartments    InboxDepartments[]
   Tickets             Tickets[]
   FbPixel             FbPixel[]
+  Orders              Orders[]
+  PaymentIntegrations PaymentIntegrations[]
 
   @@index([id, email, hash, status, available, isUsedFreeTrialTime])
 }
@@ -732,6 +734,7 @@ model Business {
   AgentAIOnBusiness      AgentAIOnBusiness[]
   InboxDepartments       InboxDepartments[]
   FbPixel                FbPixel[]
+  Orders                 Orders[]
 
   @@index([id, accountId])
 }
@@ -933,6 +936,7 @@ model FlowState {
   ConnectionWA          ConnectionWA?        @relation(fields: [connectionWAId], references: [id], onDelete: SetNull, onUpdate: SetNull)
   Tickets               Tickets[]
   Messages              Messages[]
+  Orders                Orders[]
 
   @@index([id, flowId, campaignId, contactsWAOnAccountId, connectionWAId, audienceId, isSent, isFinish, createAt])
 }
@@ -1108,6 +1112,7 @@ model ContactsWAOnAccount {
   DocumentsOnContact          DocumentsOnContact[]
   ContactsWAOnAudience        ContactsWAOnAudience[]
   Tickets                     Tickets[]
+  Orders                      Orders[]
 
   @@index([id, contactWAId, createAt])
 }
@@ -1826,4 +1831,114 @@ model StoragePathOnAgentAI {
   StoragePaths  StoragePaths @relation(fields: [storagePathId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([agentAIId, storagePathId])
+}
+
+enum TypeProviderPayment {
+  mercadopago
+}
+
+model PaymentIntegrations {
+  id           Int                 @id @default(autoincrement())
+  name         String              @db.VarChar(150)
+  provider     TypeProviderPayment @default(mercadopago)
+  status       Boolean             @default(true)
+  access_token String?             @db.VarChar(240)
+  createAt     DateTime            @default(now())
+  updateAt     DateTime            @default(now()) @updatedAt
+  accountId    Int
+  Account      Account             @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([id, name, accountId, status])
+}
+
+enum TypeStatusOrder {
+  draft
+  pending
+  processing
+  confirmed
+  shipped
+  delivered
+  cancelled
+  returned
+  refunded
+  failed
+  on_way
+}
+
+enum TypePriorityOrder {
+  low
+  medium
+  high
+  urgent
+  critical
+}
+
+model Orders {
+  id                    Int                  @id @default(autoincrement())
+  n_order               String
+  name                  String               @db.VarChar(150)
+  description           String?              @db.Text
+  deleted               Boolean              @default(false)
+  status                TypeStatusOrder      @default(draft)
+  priority              TypePriorityOrder?
+  origin                String?              @db.VarChar(150)
+  delivery_address      String?              @db.Text
+  tracking_code         String?              @db.VarChar(150)
+  itens_count           Int?                 @default(0)
+  completedAt           DateTime?
+  note                  String?              @db.Text
+  total                 Decimal?             @db.Decimal(10, 2)
+  createAt              DateTime             @default(now())
+  updateAt              DateTime             @default(now()) @updatedAt
+  flowNodeId            String?
+  flowStateId           Int?
+  contactsWAOnAccountId Int?
+  accountId             Int
+  businessId            Int
+  Business              Business             @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  FlowState             FlowState?           @relation(fields: [flowStateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  ContactsWAOnAccount   ContactsWAOnAccount? @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  Account               Account              @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Payment               Payment[]
+
+  @@index([id, name, accountId])
+}
+
+// log de atualização de status de pedidos. serve para manter o histórico de mudanças de status dos pedidos
+// e também para permitir que o usuário veja o histórico de mudanças de status de um pedido específico
+// model OrdersLog {
+//   id          Int                @id @default(autoincrement())
+//   orderId     Int
+//   status      TypeStatusOrder
+//   note             String?            @db.Text
+//   createAt    DateTime           @default(now())
+//   Orders      Orders             @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+//   @@index([id, orderId, status, createAt])
+// }
+
+enum PaymentStatus {
+  created
+  pending
+  approved
+  refused
+  refunded
+  cancelled
+}
+
+model Payment {
+  id            Int                 @id @default(autoincrement())
+  hash          String              @default(uuid()) // prevenir alterar status de pagamento pelo id ou transactionId, as atualizações devem ser feitas pelo hash
+  provider      TypeProviderPayment @default(mercadopago)
+  transactionId String              @db.VarChar(140)
+  amount        Decimal             @db.Decimal(10, 2)
+  currency      String              @db.VarChar(10)
+  status        PaymentStatus       @default(created)
+  metadata      Json?
+  orderId       Int
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  order         Orders              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([provider, transactionId])
 }

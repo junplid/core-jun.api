@@ -408,7 +408,11 @@ export const Baileys = async ({
       bot.ev.on("creds.update", saveCreds);
 
       bot.ev.on("messages.reaction", async (body) => {
-        if (!body[0].key.fromMe && body[0].key.id && body[0].reaction.text) {
+        if (
+          body[0].key.fromMe &&
+          !body[0].reaction.key?.fromMe &&
+          body[0].reaction.text
+        ) {
           const msg = await prisma.messages.findFirst({
             where: { messageKey: body[0].key.id, by: "bot", type: "text" },
             select: {
@@ -420,6 +424,12 @@ export const Baileys = async ({
                   flowId: true,
                   chatbotId: true,
                   ConnectionWA: { select: { number: true } },
+                  ContactsWAOnAccount: {
+                    select: {
+                      id: true,
+                      ContactsWA: { select: { completeNumber: true } },
+                    },
+                  },
                 },
               },
             },
@@ -427,39 +437,42 @@ export const Baileys = async ({
           if (
             !msg?.message ||
             !msg.FlowState?.flowId ||
-            !msg.FlowState.ConnectionWA?.number
-          )
-            return;
-          const number = body[0].key.remoteJid?.split("@")[0];
-          if (!number) {
-            console.log("Deu erro para recuperar número do lead");
+            !msg.FlowState.ConnectionWA?.number ||
+            !msg.FlowState.ContactsWAOnAccount?.ContactsWA.completeNumber
+          ) {
             return;
           }
-          const { ContactsWAOnAccount, ...contactWA } =
-            await prisma.contactsWA.upsert({
-              where: { completeNumber: number },
-              create: { completeNumber: number },
-              update: {},
-              select: {
-                id: true,
-                ContactsWAOnAccount: {
-                  where: { accountId: props.accountId },
-                  select: { id: true },
-                },
-              },
-            });
 
-          if (!ContactsWAOnAccount.length) {
-            await prisma.contactsWAOnAccount.create({
-              data: {
-                name: "<unknown>",
-                accountId: props.accountId,
-                contactWAId: contactWA.id,
-              },
-              select: { id: true },
-            });
-            return;
-          }
+          // const number = body[0].key.remoteJid?.split("@")[0];
+          // if (!number) {
+          //   console.log("Deu erro para recuperar número do lead");
+          //   return;
+          // }
+          // const { ContactsWAOnAccount, ...contactWA } =
+          //   await prisma.contactsWA.upsert({
+          //     where: { completeNumber: number },
+          //     create: { completeNumber: number },
+          //     update: {},
+          //     select: {
+          //       id: true,
+          //       ContactsWAOnAccount: {
+          //         where: { accountId: props.accountId },
+          //         select: { id: true },
+          //       },
+          //     },
+          //   });
+
+          // if (!ContactsWAOnAccount.length) {
+          //   await prisma.contactsWAOnAccount.create({
+          //     data: {
+          //       name: "<unknown>",
+          //       accountId: props.accountId,
+          //       contactWAId: contactWA.id,
+          //     },
+          //     select: { id: true },
+          //   });
+          //   return;
+          // }
 
           let flow:
             | { edges: any[]; nodes: any[]; businessIds: number[] }
@@ -506,12 +519,17 @@ export const Baileys = async ({
             cacheFlowsMap.set(msg.FlowState.flowId, flow);
           }
 
-          const reactionNodes = flow.nodes.find(
-            (n: any) =>
-              n.type === "reaction" && n.data?.flowStateId === msg.FlowState!.id
+          const reactionNodes = flow.nodes.filter(
+            (n: any) => n.type === "NodeListenReaction"
           ) as any[];
 
-          if (!reactionNodes.length) return;
+          if (!reactionNodes?.length) {
+            console.log("Nenhum nó de reação encontrado no fluxo.");
+            return;
+          }
+
+          const number =
+            msg.FlowState.ContactsWAOnAccount.ContactsWA.completeNumber;
 
           const keyMap = `${msg.FlowState.ConnectionWA.number}+${number}`;
           const reactionsList = cachePendingReactionsList.get(keyMap) || [];
@@ -557,10 +575,10 @@ export const Baileys = async ({
                 oldNodeId: reactionNode.id,
                 currentNodeId: reactionNode.id,
                 clientWA: bot,
-                isSavePositionLead: true,
+                isSavePositionLead: false,
                 flowStateId: msg!.FlowState!.id,
-                contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                lead: { number: number! },
+                contactsWAOnAccountId: msg!.FlowState!.ContactsWAOnAccount!.id,
+                lead: { number: number! + "@s.whatsapp.net" },
                 edges: flow!.edges,
                 nodes: flow!.nodes,
                 numberConnection:
@@ -605,7 +623,9 @@ export const Baileys = async ({
         if (
           !isGroup &&
           body.type === "notify" &&
-          !body.messages[0].key.fromMe
+          !body.messages[0].key.fromMe &&
+          !body.messages[0].message?.reactionMessage &&
+          !body.messages[0].reactions?.length
         ) {
           const number = body.messages[0].key.remoteJid?.split("@")[0];
           if (!number) {

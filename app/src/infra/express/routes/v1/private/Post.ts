@@ -14,8 +14,8 @@ import { createVariableValidation } from "../../../../../core/createVariable/Val
 import { resolve } from "path";
 import multer from "multer";
 import { storageMulter } from "../../../../../adapters/Multer/storage";
-import { createCampaignValidation } from "../../../../../core/createCampaign/Validation";
-import { createCampaignController } from "../../../../../core/createCampaign";
+import { createPaymentIntegrationValidation } from "../../../../../core/createPaymentIntegration/Validation";
+import { createPaymentIntegrationController } from "../../../../../core/createPaymentIntegration";
 import { createStorageFileValidation } from "../../../../../core/createStorageFile/Validation";
 import { createStorageFileController } from "../../../../../core/createStorageFile";
 import { createAgentAIValidation } from "../../../../../core/createAgentAI/Validation";
@@ -91,8 +91,8 @@ RouterV1Private_Post.post(
 
 RouterV1Private_Post.post(
   "/campaigns",
-  createCampaignValidation,
-  createCampaignController
+  createPaymentIntegrationValidation,
+  createPaymentIntegrationController
 );
 
 RouterV1Private_Post.post(
@@ -171,6 +171,12 @@ RouterV1Private_Post.post(
   "/fb-pixels/test",
   testFbPixelValidation,
   testFbPixelController
+);
+
+RouterV1Private_Post.post(
+  "/integration/payments",
+  createPaymentIntegrationValidation,
+  createPaymentIntegrationController
 );
 
 export default RouterV1Private_Post;

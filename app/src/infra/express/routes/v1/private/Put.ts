@@ -32,6 +32,8 @@ import { updateInboxDepartmentValidation } from "../../../../../core/updateInbox
 import { updateInboxDepartmentController } from "../../../../../core/updateInboxDepartment";
 import { updateFbPixelValidation } from "../../../../../core/updateFbPixel/Validation";
 import { updateFbPixelController } from "../../../../../core/updateFbPixel";
+import { updatePaymentIntegrationValidation } from "../../../../../core/updatePaymentIntegration/Validation";
+import { updatePaymentIntegrationController } from "../../../../../core/updatePaymentIntegration";
 
 const RouterV1Private_Put = Router();
 
@@ -129,6 +131,12 @@ RouterV1Private_Put.put(
   "/fb-pixels/:id",
   updateFbPixelValidation,
   updateFbPixelController
+);
+
+RouterV1Private_Put.put(
+  "/integration/payments/:id",
+  updatePaymentIntegrationValidation,
+  updatePaymentIntegrationController
 );
 
 export default RouterV1Private_Put;

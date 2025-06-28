@@ -1266,7 +1266,22 @@ export const NodeControler = ({
             if (props.actions?.onExecutedNode) {
               props.actions?.onExecutedNode(currentNode);
             }
-            if (!d.handleId) return res();
+            if (!d.handleId) {
+              const isNextNodeMain = nextEdgesIds.find((nh) =>
+                nh.sourceHandle?.includes("failed")
+              );
+              if (!isNextNodeMain) {
+                cacheFlowInExecution.delete(keyMap);
+                props.actions?.onFinish && props.actions?.onFinish("332");
+                return res();
+              }
+              return execute({
+                ...props,
+                type: "initial",
+                currentNodeId: isNextNodeMain.id,
+                oldNodeId: currentNode.id,
+              });
+            }
             const isNextNodeMain = nextEdgesIds.find(
               (nh) => nh.sourceHandle === d.handleId
             );

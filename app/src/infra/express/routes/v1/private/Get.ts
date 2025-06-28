@@ -97,6 +97,12 @@ import { getFbPixelsController } from "../../../../../core/getFbPixels";
 import { getFbPixelsValidation } from "../../../../../core/getFbPixels/Validation";
 import { getFbPixelsForSelectValidation } from "../../../../../core/getFbPixelsForSelect/Validation";
 import { getFbPixelsForSelectController } from "../../../../../core/getFbPixelsForSelect";
+import { getPaymentIntegrationsForSelectValidation } from "../../../../../core/getPaymentIntegrationsForSelect/Validation";
+import { getPaymentIntegrationsForSelectController } from "../../../../../core/getPaymentIntegrationsForSelect";
+import { getPaymentIntegrationsValidation } from "../../../../../core/getPaymentIntegrations/Validation";
+import { getPaymentIntegrationsController } from "../../../../../core/getPaymentIntegrations";
+import { getPaymentIntegrationValidation } from "../../../../../core/getPaymentIntegration/Validation";
+import { getPaymentIntegrationController } from "../../../../../core/getPaymentIntegration";
 
 const RouterV1Private_Get = Router();
 
@@ -368,6 +374,24 @@ RouterV1Private_Get.get(
   "/fb-pixels/:id",
   getFbPixelValidation,
   getFbPixelController
+);
+
+RouterV1Private_Get.get(
+  "/integration/payments",
+  getPaymentIntegrationsValidation,
+  getPaymentIntegrationsController
+);
+
+RouterV1Private_Get.get(
+  "/integration/payments/options",
+  getPaymentIntegrationsForSelectValidation,
+  getPaymentIntegrationsForSelectController
+);
+
+RouterV1Private_Get.get(
+  "/integration/payments/:id",
+  getPaymentIntegrationValidation,
+  getPaymentIntegrationController
 );
 
 export default RouterV1Private_Get;
