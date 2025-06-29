@@ -18,7 +18,12 @@ export const updatePaymentIntegrationValidation = (
     accountId: Joi.number().required(),
     id: Joi.number().required(),
     name: Joi.string().optional(),
-    description: Joi.string().allow("").optional(),
+    access_token: Joi.string().optional(),
+    status: Joi.boolean().optional(),
+    provider: Joi.string()
+      .valid("mercadopago")
+      .optional()
+      .default("mercadopago"),
   });
 
   const validation = schemaValidation.validate(

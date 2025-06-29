@@ -171,7 +171,7 @@ export type NodeChargeData = {
   paymentIntegrationId: number;
   total: number;
   currency?: string;
-  businessId: number; //
+  businessId?: number; //
   method_type: TypeMethodCharge; //
   varId_email?: number; //
   content?: string; //

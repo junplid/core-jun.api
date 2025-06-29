@@ -10,6 +10,7 @@ import { loginRootValidation } from "../../../../../core/loginRoot/Validation";
 import { loginRootController } from "../../../../../core/loginRoot";
 import { createRootValidation } from "../../../../../core/createRoot/Validation";
 import { createRootController } from "../../../../../core/createRoot";
+import { webhookMercadopago } from "../../../../../core/webhookMercadopago";
 
 const RouterV1Public_Post = Router();
 
@@ -39,10 +40,6 @@ RouterV1Public_Post.post(
   sendPasswordRecoveryEmailController
 );
 
-RouterV1Public_Post.post(
-  "/webhook/mercadopago",
-  sendPasswordRecoveryEmailValidation,
-  sendPasswordRecoveryEmailController
-);
+RouterV1Public_Post.post("/webhook/mercadopago", webhookMercadopago);
 
 export default RouterV1Public_Post;

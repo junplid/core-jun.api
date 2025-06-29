@@ -1928,12 +1928,17 @@ model Orders {
 // }
 
 enum PaymentStatus {
-  created
-  pending
-  approved
-  refused
-  refunded
-  cancelled
+  created // O pagamento foi criado, mas ainda não foi processado
+  pending // O usuário ainda não concluiu o processo de pagamento
+  approved // O pagamento foi aprovado e creditado com sucesso
+  authorized // autorizado mas ainda nao foi capturado.
+  in_process // em processo de pagamento
+  in_mediation // usuario iniciou uma disputa
+  rejected // pagamento recusado, mas o usuario pode tentar novamente
+  charged_back // Um chargeback foi aplicado no cartão de crédito do comprador
+  refunded // pagamento foi reembolsado
+  refused // O pagamento foi recusado, o usuário não pode tentar novamente 
+  cancelled // O pagamento foi cancelado por uma das partes ou expirou
 }
 
 enum TypeMethodCharge {
@@ -1955,7 +1960,7 @@ model Charges {
   metadata              Json?
   flowNodeId            String?
   contactsWAOnAccountId Int?
-  businessId            Int
+  businessId            Int?
   createAt              DateTime             @default(now())
   accountId             Int
   paymentIntegrationId  Int?
@@ -1968,7 +1973,7 @@ model Charges {
   ContactsWAOnAccount   ContactsWAOnAccount? @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   Ticket                Tickets?             @relation(fields: [ticketId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   InboxUser             InboxUsers?          @relation(fields: [inboxUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  Business              Business             @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Business              Business?            @relation(fields: [businessId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   Order                 Orders?              @relation(fields: [orderId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   PaymentIntegration    PaymentIntegrations? @relation(fields: [paymentIntegrationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   FlowState             FlowState?           @relation(fields: [flowStateId], references: [id], onDelete: SetNull, onUpdate: Cascade)

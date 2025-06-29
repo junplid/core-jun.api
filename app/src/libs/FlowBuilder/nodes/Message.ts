@@ -24,18 +24,9 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
     if (!props.data.messages?.length) return res();
 
     for await (const message of props.data.messages) {
-      const nextText = await resolveTextVariables({
-        accountId: props.accountId,
-        contactsWAOnAccountId: props.contactsWAOnAccountId,
-        text: message.text,
-        ticketProtocol: props.ticketProtocol,
-        numberLead: props.numberLead,
-        nodeId: props.nodeId,
-      });
-
       try {
         await TypingDelay({
-          delay: Number(message.interval),
+          delay: Number(message.interval || 0),
           toNumber: props.numberLead,
           connectionId: props.connectionWhatsId,
         });
@@ -45,6 +36,14 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
       }
 
       try {
+        const nextText = await resolveTextVariables({
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          text: message.text,
+          ticketProtocol: props.ticketProtocol,
+          numberLead: props.numberLead,
+          nodeId: props.nodeId,
+        });
         const msg = await SendMessageText({
           connectionId: props.connectionWhatsId,
           text: nextText,
@@ -60,7 +59,6 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
             flowStateId: props.flowStateId,
           },
         });
-        return res();
       } catch (error) {
         props.action.onErrorClient?.();
         console.log("error para enviar a mensagem", error);

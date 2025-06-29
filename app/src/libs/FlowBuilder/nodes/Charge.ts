@@ -1,6 +1,7 @@
 import { prisma } from "../../../adapters/Prisma/client";
 import { NodeChargeData } from "../Payload";
 import { MercadoPagoConfig, Payment } from "mercadopago";
+import { resolveTextVariables } from "../utils/ResolveTextVariables";
 
 interface PropsNodeCharge {
   data: NodeChargeData;
@@ -12,16 +13,14 @@ interface PropsNodeCharge {
 
 export const NodeCharge = async (
   props: PropsNodeCharge
-): Promise<"not_found" | "error" | "success"> => {
+): Promise<"error" | "success"> => {
   const getIntegration = await prisma.paymentIntegrations.findFirst({
-    where: {
-      id: props.data.paymentIntegrationId,
-    },
+    where: { id: props.data.paymentIntegrationId },
     select: { access_token: true, provider: true },
   });
   if (!getIntegration) {
     console.error("Payment integration not found.");
-    return "not_found";
+    return "error";
   }
 
   let email = "sousa20300@gmail.com";
@@ -40,16 +39,30 @@ export const NodeCharge = async (
   });
   const payment = new Payment(client);
   try {
+    const total = await resolveTextVariables({
+      accountId: props.accountId,
+      text: String(props.data.total),
+      contactsWAOnAccountId: props.contactsWAOnAccountId,
+    });
+    const description = await resolveTextVariables({
+      accountId: props.accountId,
+      text: props.data.content || "",
+      contactsWAOnAccountId: props.contactsWAOnAccountId,
+      nodeId: props.nodeId,
+    });
+    console.log(Number(total));
     const charge = await payment.create({
       body: {
-        transaction_amount: props.data.total,
-        description: props.data.content,
-        payment_method_id: props.data.method_type,
+        transaction_amount: Number(total),
+        description,
+        payment_method_id: props.data.method_type || "pix",
         payer: { email },
         notification_url:
-          "https://api.junplid.com/v1/public/webhook/mercadopago",
+          "https://4433-2804-3894-961-5600-73df-318-d2d8-db09.ngrok-free.app/v1/public/webhook/mercadopago",
       },
     });
+
+    //398cd68b75a12e5c452ef3754e0bdf2d088c488d0ab50f7855aa366730d60e4a
 
     if (charge.id) {
       await prisma.charges.create({
@@ -59,7 +72,7 @@ export const NodeCharge = async (
           net_total: charge.net_amount || props.data.total,
           currency: props.data.currency || "BRL",
           status: "pending",
-          method_type: props.data.method_type,
+          method_type: props.data.method_type || "pix",
           contactsWAOnAccountId: props.contactsWAOnAccountId,
           accountId: props.accountId,
           businessId: props.data.businessId,
@@ -83,7 +96,7 @@ export const NodeCharge = async (
     if (props.data.varId_save_transactionId) {
       const exist = await prisma.contactsWAOnAccountVariable.findFirst({
         where: {
-          id: props.contactsWAOnAccountId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
           variableId: props.data.varId_save_transactionId,
         },
         select: { id: true },
@@ -98,10 +111,7 @@ export const NodeCharge = async (
         });
       } else {
         await prisma.contactsWAOnAccountVariable.update({
-          where: {
-            id: props.contactsWAOnAccountId,
-            variableId: props.data.varId_save_transactionId,
-          },
+          where: { id: exist.id },
           data: { value: String(transactionId) },
         });
       }
@@ -109,7 +119,7 @@ export const NodeCharge = async (
     if (props.data.varId_save_qrCode && qrCodeString) {
       const exist = await prisma.contactsWAOnAccountVariable.findFirst({
         where: {
-          id: props.contactsWAOnAccountId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
           variableId: props.data.varId_save_qrCode,
         },
         select: { id: true },
@@ -124,10 +134,7 @@ export const NodeCharge = async (
         });
       } else {
         await prisma.contactsWAOnAccountVariable.update({
-          where: {
-            id: props.contactsWAOnAccountId,
-            variableId: props.data.varId_save_qrCode,
-          },
+          where: { id: exist.id },
           data: { value: qrCodeString },
         });
       }
@@ -135,7 +142,7 @@ export const NodeCharge = async (
     if (props.data.varId_save_linkPayment && qrLink) {
       const exist = await prisma.contactsWAOnAccountVariable.findFirst({
         where: {
-          id: props.contactsWAOnAccountId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
           variableId: props.data.varId_save_linkPayment,
         },
         select: { id: true },
@@ -150,10 +157,7 @@ export const NodeCharge = async (
         });
       } else {
         await prisma.contactsWAOnAccountVariable.update({
-          where: {
-            id: props.contactsWAOnAccountId,
-            variableId: props.data.varId_save_linkPayment,
-          },
+          where: { id: exist.id },
           data: { value: qrLink },
         });
       }

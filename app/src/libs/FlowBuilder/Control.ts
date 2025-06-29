@@ -1354,7 +1354,7 @@ export const NodeControler = ({
           data: currentNode.data,
           contactsWAOnAccountId: props.contactsWAOnAccountId,
           accountId: props.accountId,
-          nodeId: currentNodeId,
+          nodeId: currentNode.id,
           flowStateId: props.flowStateId,
         })
           .then(async (d) => {
