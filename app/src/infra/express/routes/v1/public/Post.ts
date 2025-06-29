@@ -39,4 +39,10 @@ RouterV1Public_Post.post(
   sendPasswordRecoveryEmailController
 );
 
+RouterV1Public_Post.post(
+  "/webhook/mercadopago",
+  sendPasswordRecoveryEmailValidation,
+  sendPasswordRecoveryEmailController
+);
+
 export default RouterV1Public_Post;

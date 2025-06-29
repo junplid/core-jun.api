@@ -12,7 +12,7 @@ export const createPaymentIntegrationValidation = (
     name: Joi.string().max(150).required(),
     provider: Joi.string().valid("mercadopago").default("mercadopago"),
     status: Joi.boolean().optional(),
-    access_token: Joi.string().max(240).optional(),
+    access_token: Joi.string().max(240).required(),
   });
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });

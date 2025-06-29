@@ -26,6 +26,7 @@
     "jsonwebtoken": "^9.0.1",
     "libphonenumber-js": "^1.10.44",
     "link-preview-js": "^3.0.5",
+    "mercadopago": "^2.8.0",
     "mime-types": "^2.1.35",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.44",

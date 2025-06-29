@@ -1,3 +1,5 @@
+import { TypeMethodCharge } from "@prisma/client";
+
 export type NodeMenuData = {
   interval?: number;
   header?: string;
@@ -165,6 +167,19 @@ export type NodeExtractVariableData = {
   var2Id: number;
 };
 
+export type NodeChargeData = {
+  paymentIntegrationId: number;
+  total: number;
+  currency?: string;
+  businessId: number; //
+  method_type: TypeMethodCharge; //
+  varId_email?: number; //
+  content?: string; //
+  varId_save_transactionId?: number; //
+  varId_save_qrCode?: number; //
+  varId_save_linkPayment?: number; //
+};
+
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeMessage"
@@ -189,7 +204,8 @@ export type TypeNodesPayload =
   | "NodeFbPixel"
   | "NodeListenReaction"
   | "NodeSwitchVariable"
-  | "NodeExtractVariable";
+  | "NodeExtractVariable"
+  | "NodeCharge";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -216,4 +232,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeListenReaction"; data: NodeListenReactionData }
   | { type: "NodeSwitchVariable"; data: NodeSwitchVariableData }
   | { type: "NodeExtractVariable"; data: NodeExtractVariableData }
+  | { type: "NodeCharge"; data: NodeChargeData }
 );

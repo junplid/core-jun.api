@@ -941,6 +941,7 @@ model FlowState {
   Tickets               Tickets[]
   Messages              Messages[]
   Orders                Orders[]
+  Charges               Charges[]
 
   @@index([id, flowId, campaignId, contactsWAOnAccountId, connectionWAId, audienceId, isSent, isFinish, createAt])
 }
@@ -1847,7 +1848,7 @@ model PaymentIntegrations {
   name         String              @db.VarChar(150)
   provider     TypeProviderPayment @default(mercadopago)
   status       Boolean             @default(true)
-  access_token String?             @db.VarChar(240)
+  access_token String              @db.VarChar(240)
   createAt     DateTime            @default(now())
   updateAt     DateTime            @default(now()) @updatedAt
   accountId    Int
@@ -1894,6 +1895,7 @@ model Orders {
   completedAt           DateTime?
   note                  String?              @db.Text
   total                 Decimal?             @db.Decimal(10, 2)
+  net_total             Decimal?             @db.Decimal(10, 2)
   createAt              DateTime             @default(now())
   updateAt              DateTime             @default(now()) @updatedAt
   flowNodeId            String?
@@ -1934,15 +1936,22 @@ enum PaymentStatus {
   cancelled
 }
 
+enum TypeMethodCharge {
+  pix
+}
+
 model Charges {
   id                    Int                  @id @default(autoincrement())
   hash                  String               @default(uuid()) // prevenir alterar status de pagamento pelo id ou transactionId, as atualizações devem ser feitas pelo hash
   provider              TypeProviderPayment  @default(mercadopago)
   transactionId         String
   total                 Decimal              @db.Decimal(10, 2)
+  net_total             Decimal              @db.Decimal(10, 2)
   currency              String               @db.VarChar(10)
   status                PaymentStatus        @default(created)
   deleted               Boolean              @default(false)
+  method_type           TypeMethodCharge
+  content               String?              @db.Text
   metadata              Json?
   flowNodeId            String?
   contactsWAOnAccountId Int?
@@ -1951,6 +1960,7 @@ model Charges {
   accountId             Int
   paymentIntegrationId  Int?
   orderId               Int?
+  flowStateId           Int?
   inboxUserId           Int?
   ticketId              Int?
   updatedAt             DateTime             @updatedAt
@@ -1961,6 +1971,7 @@ model Charges {
   Business              Business             @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Order                 Orders?              @relation(fields: [orderId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   PaymentIntegration    PaymentIntegrations? @relation(fields: [paymentIntegrationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  FlowState             FlowState?           @relation(fields: [flowStateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@index([provider, transactionId, ticketId, inboxUserId, status, deleted])
 }

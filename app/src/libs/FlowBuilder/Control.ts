@@ -1343,6 +1343,45 @@ export const NodeControler = ({
           });
         return;
       }
+      if (currentNode.type === "NodeCharge") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
+        await LibraryNodes.NodeCharge({
+          data: currentNode.data,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          accountId: props.accountId,
+          nodeId: currentNodeId,
+          flowStateId: props.flowStateId,
+        })
+          .then(async (d) => {
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode(currentNode);
+            }
+            const isNextNodeMain = nextEdgesIds.find((nh) =>
+              nh.sourceHandle?.includes(d)
+            );
+            if (!isNextNodeMain) {
+              cacheFlowInExecution.delete(keyMap);
+              props.actions?.onFinish && props.actions?.onFinish("332");
+              return res();
+            }
+            return execute({
+              ...props,
+              type: "initial",
+              currentNodeId: isNextNodeMain.id,
+              oldNodeId: currentNode.id,
+            });
+          })
+          .catch((error: any) => {
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+      }
 
       return res();
     };

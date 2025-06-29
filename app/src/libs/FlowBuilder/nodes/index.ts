@@ -1,6 +1,7 @@
 import { NodeAddTags } from "./AddTags";
 import { NodeAddVariables } from "./AddVariables";
 import { NodeAgentAI } from "./AgentAI";
+import { NodeCharge } from "./Charge";
 import { NodeExtractVariable } from "./ExtractVariable";
 import { NodeFbPixel } from "./FbPixel";
 import { NodeIf } from "./If";
@@ -44,4 +45,5 @@ export const LibraryNodes = {
   NodeListenReaction,
   NodeSwitchVariable,
   NodeExtractVariable,
+  NodeCharge,
 };
