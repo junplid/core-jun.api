@@ -244,6 +244,13 @@ export const NodeControler = ({
         if (props.actions?.onExecutedNode) {
           props.actions?.onExecutedNode(currentNode);
         }
+
+        if (props.forceFinish) {
+          await prisma.flowState.update({
+            where: { id: props.flowStateId },
+            data: { isFinish: true },
+          });
+        }
         props.actions?.onFinish?.();
         return;
       }
