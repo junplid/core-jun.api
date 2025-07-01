@@ -419,6 +419,7 @@ export const Baileys = async ({
               message: true,
               id: true,
               FlowState: {
+                where: { isFinish: false },
                 select: {
                   id: true,
                   flowId: true,
@@ -542,19 +543,23 @@ export const Baileys = async ({
           ]);
 
           const runningQueue = cacheRunningQueueReaction.get(keyMap);
+          console.log(runningQueue);
           if (runningQueue) return;
 
           cacheRunningQueueReaction.set(keyMap, true);
           async function runReaction() {
             const reactionFresh = cachePendingReactionsList.get(keyMap);
+            console.log("2 - reactionFresh", reactionFresh);
             if (!reactionFresh?.length) {
               cacheRunningQueueReaction.set(keyMap, false);
               return;
             }
             const reaction = reactionFresh.shift();
+            console.log("3 - reaction", reaction);
             cachePendingReactionsList.set(keyMap, reactionFresh);
             if (!reaction) await runReaction();
 
+            console.log("3 - reactionNodes", reactionNodes);
             for (const reactionNode of reactionNodes) {
               const businessInfo = await prisma.connectionWA.findFirst({
                 where: { id: props.connectionWhatsId },
@@ -566,6 +571,7 @@ export const Baileys = async ({
               }
 
               await NodeControler({
+                forceFinish: true,
                 businessName: businessInfo.Business.name,
                 flowId: msg!.FlowState!.flowId!,
                 flowBusinessIds: flow!.businessIds,
@@ -586,7 +592,10 @@ export const Baileys = async ({
                 ...reaction!,
                 accountId: props.accountId,
                 actions: {
-                  onFinish: async (vl) => runReaction(),
+                  onFinish: async (vl) => {
+                    console.log("Finalizou");
+                    runReaction();
+                  },
                   onErrorClient: async (err) => {
                     console.error("Erro no cliente", err);
                     cacheRunningQueueReaction.set(keyMap, false);
@@ -605,6 +614,7 @@ export const Baileys = async ({
               });
             }
           }
+          console.log("1 - CHAMOU O runReaction");
           await runReaction();
         }
       });

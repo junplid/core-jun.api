@@ -2,6 +2,7 @@ import { prisma } from "../../../adapters/Prisma/client";
 import { NodeChargeData } from "../Payload";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
+import moment from "moment-timezone";
 
 interface PropsNodeCharge {
   data: NodeChargeData;
@@ -50,19 +51,25 @@ export const NodeCharge = async (
       contactsWAOnAccountId: props.contactsWAOnAccountId,
       nodeId: props.nodeId,
     });
-    console.log(Number(total));
+
+    const date_of_expiration = moment()
+      .tz("America/Sao_Paulo")
+      .add(30, "minutes")
+      .format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+
+    console.log(date_of_expiration);
+
     const charge = await payment.create({
       body: {
         transaction_amount: Number(total),
         description,
         payment_method_id: props.data.method_type || "pix",
         payer: { email },
+        date_of_expiration,
         notification_url:
-          "https://4433-2804-3894-961-5600-73df-318-d2d8-db09.ngrok-free.app/v1/public/webhook/mercadopago",
+          "https://f842-2804-3894-961-5600-a6e1-fbe5-6d76-46ab.ngrok-free.app/v1/public/webhook/mercadopago",
       },
     });
-
-    //398cd68b75a12e5c452ef3754e0bdf2d088c488d0ab50f7855aa366730d60e4a
 
     if (charge.id) {
       await prisma.charges.create({

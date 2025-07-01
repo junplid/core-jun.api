@@ -180,8 +180,14 @@ export type NodeChargeData = {
   varId_save_linkPayment?: number; //
 };
 
+export type NodeRandomCodeData = {
+  count: number;
+  id: number;
+};
+
 export type TypeNodesPayload =
   | "NodeInitial"
+  | "NodeFinish"
   | "NodeMessage"
   | "NodeReply"
   | "NodeMenu"
@@ -205,10 +211,12 @@ export type TypeNodesPayload =
   | "NodeListenReaction"
   | "NodeSwitchVariable"
   | "NodeExtractVariable"
-  | "NodeCharge";
+  | "NodeCharge"
+  | "NodeRandomCode";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
+  | { type: "NodeFinish" }
   | { type: "NodeMessage"; data: NodeMessageData }
   | { type: "NodeReply"; data: NodeReplyData }
   | { type: "NodeAddTags"; data: NodeAddTagsData }
@@ -233,4 +241,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeSwitchVariable"; data: NodeSwitchVariableData }
   | { type: "NodeExtractVariable"; data: NodeExtractVariableData }
   | { type: "NodeCharge"; data: NodeChargeData }
+  | { type: "NodeRandomCode"; data: NodeRandomCodeData }
 );
