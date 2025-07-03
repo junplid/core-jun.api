@@ -57,8 +57,6 @@ export const NodeCharge = async (
       .add(30, "minutes")
       .format("YYYY-MM-DDTHH:mm:ss.SSSZ");
 
-    console.log(date_of_expiration);
-
     const charge = await payment.create({
       body: {
         transaction_amount: Number(total),
@@ -67,7 +65,7 @@ export const NodeCharge = async (
         payer: { email },
         date_of_expiration,
         notification_url:
-          "https://f842-2804-3894-961-5600-a6e1-fbe5-6d76-46ab.ngrok-free.app/v1/public/webhook/mercadopago",
+          "https://junplid.com.br/v1/public/webhook/mercadopago",
       },
     });
 

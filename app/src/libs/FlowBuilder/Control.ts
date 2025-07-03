@@ -47,6 +47,7 @@ export type IPropsControler = {
   | {
       type: "running";
       message: string;
+      audio?: any;
       reactionText?: string;
       isMidia?: boolean;
     }
@@ -148,9 +149,8 @@ export const NodeControler = ({
 
       if (!currentNode) {
         cacheFlowInExecution.delete(keyMap);
-        if (props.forceFinish) {
-          if (props.actions?.onFinish) await props.actions?.onFinish("110");
-        }
+        if (props.forceFinish) await props.actions?.onFinish?.("110");
+        props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
         return res();
       }
 
@@ -226,9 +226,8 @@ export const NodeControler = ({
         }
         if (!nextEdgesIds.length) {
           cacheFlowInExecution.delete(keyMap);
-          if (props.forceFinish) {
-            if (props.actions?.onFinish) await props.actions?.onFinish("110");
-          }
+          if (props.forceFinish) await props.actions?.onFinish?.("110");
+          props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
           return res();
         }
 
@@ -284,10 +283,8 @@ export const NodeControler = ({
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return;
             }
             if (props.actions?.onExecutedNode) {
@@ -332,10 +329,8 @@ export const NodeControler = ({
             );
             if (!nextNodeId) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return res();
             }
             if (props.actions?.onExecutedNode) {
@@ -359,10 +354,11 @@ export const NodeControler = ({
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
-                if (props.forceFinish) {
-                  if (props.actions?.onFinish)
-                    await props.actions?.onFinish("110");
-                }
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                props.actions?.onExecutedNode?.({
+                  id: "0",
+                  type: "NodeInitial",
+                });
                 return res();
               }
               if (isNextNodeMain.nodeNextType === "NodeAgentAI") {
@@ -419,10 +415,8 @@ export const NodeControler = ({
               nd.sourceHandle?.includes("timeout")
             );
             if (!nextNodeId) {
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               cacheFlowInExecution.delete(keyMap);
               return res();
             }
@@ -447,10 +441,11 @@ export const NodeControler = ({
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
-                if (props.forceFinish) {
-                  if (props.actions?.onFinish)
-                    await props.actions?.onFinish("110");
-                }
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                props.actions?.onExecutedNode?.({
+                  id: "0",
+                  type: "NodeInitial",
+                });
                 return res();
               }
               return execute({
@@ -474,10 +469,11 @@ export const NodeControler = ({
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
-                if (props.forceFinish) {
-                  if (props.actions?.onFinish)
-                    await props.actions?.onFinish("110");
-                }
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                props.actions?.onExecutedNode?.({
+                  id: "0",
+                  type: "NodeInitial",
+                });
                 return res();
               }
               return execute({
@@ -513,10 +509,8 @@ export const NodeControler = ({
             }
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return res();
             }
 
@@ -556,10 +550,8 @@ export const NodeControler = ({
             }
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return res();
             }
             return execute({
@@ -598,10 +590,8 @@ export const NodeControler = ({
             }
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return res();
             }
 
@@ -641,10 +631,8 @@ export const NodeControler = ({
             }
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return res();
             }
 
@@ -722,10 +710,8 @@ export const NodeControler = ({
             }
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return res();
             }
 
@@ -734,10 +720,8 @@ export const NodeControler = ({
             );
             if (!nextNodeId) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return res();
             }
             return execute({
@@ -771,10 +755,8 @@ export const NodeControler = ({
             }
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return res();
             }
 
@@ -817,10 +799,8 @@ export const NodeControler = ({
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return;
             }
             if (props.actions?.onExecutedNode) {
@@ -866,10 +846,8 @@ export const NodeControler = ({
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return;
             }
             if (props.actions?.onExecutedNode) {
@@ -914,10 +892,8 @@ export const NodeControler = ({
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return;
             }
             if (props.actions?.onExecutedNode) {
@@ -963,10 +939,8 @@ export const NodeControler = ({
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return;
             }
             if (props.actions?.onExecutedNode) {
@@ -1012,10 +986,8 @@ export const NodeControler = ({
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return;
             }
             if (props.actions?.onExecutedNode) {
@@ -1061,10 +1033,8 @@ export const NodeControler = ({
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return;
             }
             if (props.actions?.onExecutedNode) {
@@ -1113,10 +1083,11 @@ export const NodeControler = ({
                 nd.sourceHandle?.includes("timeout")
               );
               if (!nextNodeId) {
-                if (props.forceFinish) {
-                  if (props.actions?.onFinish)
-                    await props.actions?.onFinish("110");
-                }
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                props.actions?.onExecutedNode?.({
+                  id: "0",
+                  type: "NodeInitial",
+                });
                 cacheFlowInExecution.delete(keyMap);
                 return res();
               }
@@ -1140,10 +1111,11 @@ export const NodeControler = ({
               );
               if (!nextNodeId) {
                 cacheFlowInExecution.delete(keyMap);
-                if (props.forceFinish) {
-                  if (props.actions?.onFinish)
-                    await props.actions?.onFinish("110");
-                }
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                props.actions?.onExecutedNode?.({
+                  id: "0",
+                  type: "NodeInitial",
+                });
                 return res();
               }
               if (props.actions?.onExecutedNode) {
@@ -1172,10 +1144,11 @@ export const NodeControler = ({
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
-                if (props.forceFinish) {
-                  if (props.actions?.onFinish)
-                    await props.actions?.onFinish("110");
-                }
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                props.actions?.onExecutedNode?.({
+                  id: "0",
+                  type: "NodeInitial",
+                });
                 return res();
               }
               return execute({
@@ -1199,10 +1172,11 @@ export const NodeControler = ({
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
-                if (props.forceFinish) {
-                  if (props.actions?.onFinish)
-                    await props.actions?.onFinish("110");
-                }
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                props.actions?.onExecutedNode?.({
+                  id: "0",
+                  type: "NodeInitial",
+                });
                 return res();
               }
               return execute({
@@ -1238,10 +1212,11 @@ export const NodeControler = ({
             if (d === "OK") {
               if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
                 cacheFlowInExecution.delete(keyMap);
-                if (props.forceFinish) {
-                  if (props.actions?.onFinish)
-                    await props.actions?.onFinish("110");
-                }
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                props.actions?.onExecutedNode?.({
+                  id: "0",
+                  type: "NodeInitial",
+                });
                 return;
               }
               props.actions?.onExecutedNode?.({
@@ -1259,10 +1234,11 @@ export const NodeControler = ({
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
-                if (props.forceFinish) {
-                  if (props.actions?.onFinish)
-                    await props.actions?.onFinish("110");
-                }
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                props.actions?.onExecutedNode?.({
+                  id: "0",
+                  type: "NodeInitial",
+                });
                 return res();
               }
               return execute({
@@ -1303,10 +1279,8 @@ export const NodeControler = ({
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return;
             }
             if (props.actions?.onExecutedNode) {
@@ -1348,10 +1322,8 @@ export const NodeControler = ({
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return;
             }
             if (props.actions?.onExecutedNode) {
@@ -1384,6 +1356,8 @@ export const NodeControler = ({
         await LibraryNodes.NodeSwitchVariable({
           data: currentNode.data,
           contactsWAOnAccountId: props.contactsWAOnAccountId,
+          accountId: props.accountId,
+          numberLead: props.lead.number,
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
@@ -1395,10 +1369,11 @@ export const NodeControler = ({
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
-                if (props.forceFinish) {
-                  if (props.actions?.onFinish)
-                    await props.actions?.onFinish("110");
-                }
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                props.actions?.onExecutedNode?.({
+                  id: "0",
+                  type: "NodeInitial",
+                });
                 return res();
               }
               return execute({
@@ -1415,10 +1390,8 @@ export const NodeControler = ({
             );
             if (!isNextNodeMain) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return res();
             }
             return execute({
@@ -1451,10 +1424,8 @@ export const NodeControler = ({
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return;
             }
             if (props.actions?.onExecutedNode) {
@@ -1502,10 +1473,8 @@ export const NodeControler = ({
             );
             if (!isNextNodeMain) {
               cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) {
-                if (props.actions?.onFinish)
-                  await props.actions?.onFinish("110");
-              }
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return res();
             }
             return execute({
@@ -1538,6 +1507,8 @@ export const NodeControler = ({
             }
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
               return res();
             }
 

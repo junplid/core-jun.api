@@ -549,17 +549,14 @@ export const Baileys = async ({
           cacheRunningQueueReaction.set(keyMap, true);
           async function runReaction() {
             const reactionFresh = cachePendingReactionsList.get(keyMap);
-            console.log("2 - reactionFresh", reactionFresh);
             if (!reactionFresh?.length) {
               cacheRunningQueueReaction.set(keyMap, false);
               return;
             }
             const reaction = reactionFresh.shift();
-            console.log("3 - reaction", reaction);
             cachePendingReactionsList.set(keyMap, reactionFresh);
             if (!reaction) await runReaction();
 
-            console.log("3 - reactionNodes", reactionNodes);
             for (const reactionNode of reactionNodes) {
               const businessInfo = await prisma.connectionWA.findFirst({
                 where: { id: props.connectionWhatsId },
@@ -593,7 +590,6 @@ export const Baileys = async ({
                 accountId: props.accountId,
                 actions: {
                   onFinish: async (vl) => {
-                    console.log("Finalizou");
                     runReaction();
                   },
                   onErrorClient: async (err) => {
@@ -614,7 +610,6 @@ export const Baileys = async ({
               });
             }
           }
-          console.log("1 - CHAMOU O runReaction");
           await runReaction();
         }
       });
@@ -1073,30 +1068,29 @@ export const Baileys = async ({
             }
 
             if (chatbot.addToLeadTagsIds.length) {
-              const tagOnBusinessIds = await prisma.tag.findMany({
+              const tags = await prisma.tag.findMany({
                 where: { id: { in: chatbot.addToLeadTagsIds } },
                 select: { id: true },
               });
-              await Promise.all(
-                tagOnBusinessIds.map(async ({ id }) => {
+              for await (const { id } of tags) {
+                const isExist = await prisma.tagOnContactsWAOnAccount.findFirst(
+                  {
+                    where: {
+                      contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                      tagId: id,
+                    },
+                  }
+                );
+                if (!isExist) {
                   await prisma.tagOnContactsWAOnAccount.create({
                     data: {
                       contactsWAOnAccountId: ContactsWAOnAccount[0].id,
                       tagId: id,
                     },
                   });
-                })
-              );
+                }
+              }
             }
-
-            // if (chatbot.addLeadToAudiencesIds.length) {
-            //   prisma.contactsWAOnAccountOnAudience.create({
-            //     data: {
-            //       audienceId: insertNewLeadsOnAudienceId,
-            //       contactWAOnAccountId: ContactsWAOnAccount[0].id,
-            //     },
-            //   });
-            // }
 
             if (chatbot.status) {
               const validMsgChatbot = async () => {
@@ -1196,329 +1190,6 @@ export const Baileys = async ({
                 }
 
                 if (!flow) return console.log(`Flow não encontrado.`);
-                //   const {
-                //     typeActivation,
-                //     typeMessageWhatsApp,
-                //     ChatbotMessageActivationsFail,
-                //     ChatbotMessageActivations,
-                //     inputActivation,
-                //   } = chatbot;
-                //   let isValidM = false;
-                //   let flowIdSend = chatbot.flowId;
-                //   if (typeActivation) {
-                //     if (typeActivation === "message") {
-                //       if (typeMessageWhatsApp === "anyMessage") {
-                //         if (
-                //           ChatbotMessageActivationsFail?.text &&
-                //           isTextMessage
-                //         ) {
-                //           isValidM = true;
-                //         }
-                //         if (
-                //           ChatbotMessageActivationsFail?.audio &&
-                //           isAudioMessage
-                //         ) {
-                //           isValidM = true;
-                //         }
-                //         if (
-                //           ChatbotMessageActivationsFail?.image &&
-                //           isImageMessage
-                //         ) {
-                //           isValidM = true;
-                //         }
-                //       }
-                //       if (typeMessageWhatsApp === "textDetermined") {
-                //         const isValidMessage = ChatbotMessageActivations.some(
-                //           (activation) => {
-                //             const activationValues =
-                //               activation.ChatbotMessageActivationValues.map(
-                //                 (chbm) => chbm.value
-                //               );
-                //             if (activation.type === "contains") {
-                //               const regex = new RegExp(
-                //                 `(${activationValues.join("|")})`,
-                //                 `g${activation.caseSensitive ? "i" : ""}`
-                //               );
-                //               return regex.test(messageText ?? "");
-                //             }
-                //             if (activation.type === "different") {
-                //               const regex = new RegExp(
-                //                 `(${activationValues.join("|")})`,
-                //                 activation.caseSensitive ? "i" : undefined
-                //               );
-                //               return !regex.test(messageText ?? "");
-                //             }
-                //             if (activation.type === "equal") {
-                //               const regex = new RegExp(
-                //                 `^(${activationValues.join("|")})$`,
-                //                 activation.caseSensitive ? "i" : undefined
-                //               );
-                //               return regex.test(messageText ?? "");
-                //             }
-                //             if (activation.type === "startWith") {
-                //               const regex = new RegExp(
-                //                 `^(${activationValues.join("|")})`,
-                //                 activation.caseSensitive ? "i" : undefined
-                //               );
-                //               return regex.test(messageText ?? "");
-                //             }
-                //           }
-                //         );
-                //         if (!isValidMessage) {
-                //           const {
-                //             receivingAudioMessages,
-                //             receivingImageMessages,
-                //             receivingNonStandardMessages,
-                //             receivingVideoMessages,
-                //           } = chatbot.ChatbotAlternativeFlows!;
-                //           const isText =
-                //             receivingNonStandardMessages && isTextMessage;
-                //           if (isText) {
-                //             flowIdSend = receivingNonStandardMessages;
-                //             isValidM = true;
-                //           }
-                //           if (receivingAudioMessages && isAudioMessage) {
-                //             flowIdSend = receivingAudioMessages;
-                //             isValidM = true;
-                //           }
-                //           if (receivingImageMessages && isImageMessage) {
-                //             flowIdSend = receivingImageMessages;
-                //             isValidM = true;
-                //           }
-                //           if (receivingVideoMessages && isVideoMessage) {
-                //             flowIdSend = receivingVideoMessages;
-                //             isValidM = true;
-                //           }
-                //         }
-                //         isValidM = true;
-                //       }
-                //     } else {
-                //       if (messageText === inputActivation) {
-                //         isValidM = true;
-                //       } else {
-                //         const {
-                //           receivingAudioMessages,
-                //           receivingImageMessages,
-                //           receivingNonStandardMessages,
-                //           receivingVideoMessages,
-                //         } = chatbot.ChatbotAlternativeFlows!;
-                //         const isText =
-                //           receivingNonStandardMessages && isTextMessage;
-                //         if (isText) {
-                //           flowIdSend = receivingNonStandardMessages;
-                //           isValidM = true;
-                //         }
-                //         if (receivingAudioMessages && isAudioMessage) {
-                //           flowIdSend = receivingAudioMessages;
-                //           isValidM = true;
-                //         }
-                //         if (receivingImageMessages && isImageMessage) {
-                //           flowIdSend = receivingImageMessages;
-                //           isValidM = true;
-                //         }
-                //         if (receivingVideoMessages && isVideoMessage) {
-                //           flowIdSend = receivingVideoMessages;
-                //           isValidM = true;
-                //         }
-                //       }
-                //     }
-                //     if (isValidM) {
-                //       const { insertTagsLead, insertNewLeadsOnAudienceId } =
-                //         chatbot;
-                //       if (insertTagsLead) {
-                //         const listTagsIdsLead: number[] = insertTagsLead
-                //           .split("-")
-                //           .map((s) => JSON.parse(s));
-                //         // const tagOnBusinessIds =
-                //         //   await prisma.tagOnBusiness.findMany({
-                //         //     where: { tagId: { in: listTagsIdsLead } },
-                //         //     select: { id: true },
-                //         //   });
-                //         // tagOnBusinessIds.forEach(({ id }) => {
-                //         //   prisma.tagOnContactsWAOnAccount.create({
-                //         //     data: {
-                //         //       contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                //         //       tagOnBusinessId: id,
-                //         //     },
-                //         //   });
-                //         // });
-                //       }
-                //       // if (insertNewLeadsOnAudienceId) {
-                //       //   prisma.contactsWAOnAccountOnAudience.create({
-                //       //     data: {
-                //       //       audienceId: insertNewLeadsOnAudienceId,
-                //       //       contactWAOnAccountId: ContactsWAOnAccount[0].id,
-                //       //     },
-                //       //   });
-                //       // }
-                //       const flowFetch = await ModelFlows.aggregate([
-                //         {
-                //           $match: {
-                //             accountId: props.accountId,
-                //             _id: flowIdSend,
-                //           },
-                //         },
-                //         {
-                //           $project: {
-                //             businessIds: 1,
-                //             nodes: {
-                //               $map: {
-                //                 input: "$data.nodes",
-                //                 in: {
-                //                   id: "$$this.id",
-                //                   type: "$$this.type",
-                //                   data: "$$this.data",
-                //                 },
-                //               },
-                //             },
-                //             edges: {
-                //               $map: {
-                //                 input: "$data.edges",
-                //                 in: {
-                //                   id: "$$this.id",
-                //                   source: "$$this.source",
-                //                   target: "$$this.target",
-                //                   sourceHandle: "$$this.sourceHandle",
-                //                 },
-                //               },
-                //             },
-                //           },
-                //         },
-                //       ]);
-                //       if (!flowFetch?.length)
-                //         return console.log(`Flow not found.`);
-                //       const { edges, nodes, businessIds } = flowFetch[0];
-                //       let currentIndexNodeLead = await prisma.flowState.findFirst(
-                //         {
-                //           where: {
-                //             connectionWAId: props.connectionWhatsId,
-                //             contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                //             isFinish: false,
-                //           },
-                //           select: { indexNode: true, id: true },
-                //         }
-                //       );
-                //       if (!currentIndexNodeLead) {
-                //         currentIndexNodeLead = await prisma.flowState.create({
-                //           data: {
-                //             connectionWAId: props.connectionWhatsId,
-                //             contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                //             indexNode: "0",
-                //             flowId: flowIdSend,
-                //           },
-                //           select: { indexNode: true, id: true },
-                //         });
-                //       }
-                //       const businessInfo = await prisma.connectionWA.findFirst({
-                //         where: { id: props.connectionWhatsId },
-                //         select: { Business: { select: { name: true } } },
-                //       });
-                //       if (!businessInfo) {
-                //         console.log("Connection not found");
-                //         return;
-                //       }
-                //       await NodeControler({
-                //         businessName: businessInfo.Business.name,
-                //         flowId: flowIdSend,
-                //         flowBusinessIds: businessIds,
-                //         type: "running",
-                //         connectionWhatsId: props.connectionWhatsId,
-                //         chatbotId: chatbot.id,
-                //         clientWA: bot,
-                //         isSavePositionLead: true,
-                //         flowStateId: currentIndexNodeLead.id,
-                //         contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                //         lead: { number: body.messages[0].key.remoteJid! },
-                //         currentNodeId: currentIndexNodeLead?.indexNode ?? "0",
-                //         edges: edges,
-                //         nodes: nodes,
-                //         numberConnection: numberConnection + "@s.whatsapp.net",
-                //         message: messageText ?? "",
-                //         accountId: props.accountId,
-                //         onFinish: async (vl) => {
-                //           if (currentIndexNodeLead) {
-                //             const scheduleExecutionCache =
-                //               scheduleExecutionsReply.get(
-                //                 numberConnection +
-                //                   "@s.whatsapp.net" +
-                //                   body.messages[0].key.remoteJid!
-                //               );
-                //             if (scheduleExecutionCache) {
-                //               scheduleExecutionCache.cancel();
-                //             }
-                //             console.log("TA CAINDO AQUI, finalizando fluxo");
-                //             await prisma.flowState.update({
-                //               where: { id: currentIndexNodeLead.id },
-                //               data: { isFinish: true },
-                //             });
-                //           }
-                //         },
-                //         onExecutedNode: async (node) => {
-                //           console.log({ currentIndexNodeLead });
-                //           if (currentIndexNodeLead?.id) {
-                //             try {
-                //               await prisma.flowState
-                //                 .update({
-                //                   where: { id: currentIndexNodeLead.id },
-                //                   data: { indexNode: node.id },
-                //                 })
-                //                 .catch((err) => console.log(err));
-                //             } catch (error) {
-                //               console.log("Error ao atualizar flowState!");
-                //             }
-                //           }
-                //           // const indexCurrentAlreadyExist =
-                //           //   await prisma.flowState.findFirst({
-                //           //     where: {
-                //           //       connectionWAId: props.connectionWhatsId,
-                //           //       contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                //           //     },
-                //           //     select: { id: true },
-                //           //   });
-                //           // if (!indexCurrentAlreadyExist) {
-                //           //   await prisma.flowState.create({
-                //           //     data: {
-                //           //       indexNode: node.id,
-                //           //       connectionWAId: props.connectionWhatsId,
-                //           //       contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                //           //     },
-                //           //   });
-                //           // } else {
-                //           //   await prisma.flowState.update({
-                //           //     where: { id: indexCurrentAlreadyExist.id },
-                //           //     data: { indexNode: node.id },
-                //           //   });
-                //           // }
-                //         },
-                //         onEnterNode: async (nodeId) => {
-                //           const indexCurrentAlreadyExist =
-                //             await prisma.flowState.findFirst({
-                //               where: {
-                //                 connectionWAId: props.connectionWhatsId,
-                //                 contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                //               },
-                //               select: { id: true },
-                //             });
-                //           if (!indexCurrentAlreadyExist) {
-                //             await prisma.flowState.create({
-                //               data: {
-                //                 indexNode: nodeId,
-                //                 connectionWAId: props.connectionWhatsId,
-                //                 contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                //               },
-                //             });
-                //           } else {
-                //             await prisma.flowState.update({
-                //               where: { id: indexCurrentAlreadyExist.id },
-                //               data: { indexNode: nodeId },
-                //             });
-                //           }
-                //         },
-                //       }).finally(() => {
-                //         leadAwaiting.set(numberLead, false);
-                //       });
-                //     }
-                //   }
 
                 let currentIndexNodeLead = await prisma.flowState.findFirst({
                   where: {
@@ -1539,6 +1210,7 @@ export const Baileys = async ({
                       contactsWAOnAccountId: ContactsWAOnAccount[0].id,
                       indexNode: "0",
                       flowId: chatbot.flowId,
+                      chatbotId: chatbot.id,
                     },
                     select: {
                       indexNode: true,
@@ -1556,11 +1228,34 @@ export const Baileys = async ({
                   return;
                 }
 
+                let fileName = "";
+                if (messageAudio) {
+                  const ext = mime.extension(
+                    messageAudio.mimetype || "audio/mpeg"
+                  );
+                  fileName = `audio_inbox_${Date.now()}.${ext}`;
+                  try {
+                    const buffer = await downloadMediaMessage(
+                      body.messages[0],
+                      "buffer",
+                      {}
+                    );
+                    writeFileSync(
+                      pathStatic + `/${fileName}`,
+                      new Uint8Array(buffer)
+                    );
+                    leadAwaiting.set(numberLead, false);
+                  } catch (error) {
+                    console.log(error);
+                  }
+                }
+
                 await NodeControler({
                   businessName: chatbot.Business.name,
                   flowId: chatbot.flowId,
                   flowBusinessIds: flow.businessIds,
                   type: "running",
+                  audio: fileName,
                   connectionWhatsId: props.connectionWhatsId,
                   chatbotId: chatbot.id,
                   oldNodeId: currentIndexNodeLead?.indexNode || "0",
@@ -1676,16 +1371,6 @@ export const Baileys = async ({
               });
 
               if (!validTime) {
-                // não entendi pq tem isso aqui
-                // const nowTime = moment().tz("America/Sao_Paulo");
-                // const currentDayWeek = nowTime.get("weekday");
-                // const isDayOperation = chatbot.OperatingDays.find(
-                //   (o) => o.dayOfWeek === currentDayWeek
-                // );
-                // if (isDayOperation) {
-                // } else {
-                // }
-
                 if (chatbot.fallback) {
                   const flowState = await prisma.flowState.findFirst({
                     where: {
@@ -1755,21 +1440,6 @@ export const Baileys = async ({
                         .second(0);
                       if (next.isBefore(nowDate)) next = next.add(1, "week");
                       return next.diff(nowDate, "minutes");
-
-                      // const nextDayWeek = nowDate.set({
-                      //   weekday: day.dayOfWeek,
-                      //   hours: Number(time.start.slice(0, 2)),
-                      //   minutes: Number(time.start.slice(3, 5)),
-                      // });
-                      // const minutes = nextDayWeek.diff(
-                      //   moment().tz("America/Sao_Paulo"),
-                      //   "minutes"
-                      // );
-                      // if (minutes >= 0) {
-                      //   return minutes;
-                      // } else {
-                      //   // proxima semana.
-                      // }
                     });
 
                     console.log({ listNextWeeks });
@@ -1778,7 +1448,6 @@ export const Baileys = async ({
                   }).filter((s) => s >= 0)
                 );
 
-                console.log({ minutesToNextExecutionInQueue });
                 const dateNextExecution = moment()
                   .tz("America/Sao_paulo")
                   .add(minutesToNextExecutionInQueue, "minutes");

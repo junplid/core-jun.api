@@ -146,6 +146,7 @@ model Account {
   Orders              Orders[]
   PaymentIntegrations PaymentIntegrations[]
   Charges             Charges[]
+  LogSystem           LogSystem[]
 
   @@index([id, email, hash, status, available, isUsedFreeTrialTime])
 }
@@ -241,6 +242,8 @@ model Messages {
   longitude        String      @default("")
   address          String      @default("")
   name             String      @default("")
+  // definir linhas de tokens de entrada, saida e total, para mensurar quanto to tokens são usados por flowstate
+  // e tao sera usado para metricas sobre qual tipo/tamanho de empresa usa quantos tokens por mês
   fullName         String      @default("")
   number           String      @default("")
   org              String      @default("")
@@ -766,6 +769,7 @@ model ConnectionWA {
   FlowState            FlowState[]
   ConnectionOnCampaign ConnectionOnCampaign[]
   Tickets              Tickets[]
+  LogSystem            LogSystem[]
 
   @@index([id, name, type, number])
 }
@@ -1979,4 +1983,17 @@ model Charges {
   FlowState             FlowState?           @relation(fields: [flowStateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@index([provider, transactionId, ticketId, inboxUserId, status, deleted])
+}
+
+model LogSystem {
+  id             Int           @id @default(autoincrement())
+  name           String
+  description    String        @db.Text
+  accountId      Int?
+  connectionWAId Int?
+  createAt       DateTime      @default(now())
+  Account        Account?      @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ConnectionWA   ConnectionWA? @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([id, connectionWAId, accountId])
 }

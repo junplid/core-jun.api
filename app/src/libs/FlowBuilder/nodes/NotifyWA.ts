@@ -1,7 +1,6 @@
 import { WASocket } from "baileys";
 import { NodeNotifyWAData } from "../Payload";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
-import { TypingDelay } from "../../../adapters/Baileys/modules/typing";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { validatePhoneNumber } from "../../../helpers/validatePhoneNumber";
 import { prisma } from "../../../adapters/Prisma/client";
@@ -20,11 +19,10 @@ interface PropsNodeNotifyWA {
 }
 
 export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
-  console.log("NodeNotifyWA", props);
   const nextText = await resolveTextVariables({
     accountId: props.accountId,
     contactsWAOnAccountId: props.contactsWAOnAccountId,
-    text: props.data.text,
+    text: props.data.text || "",
     ticketProtocol: props.ticketProtocol,
     numberLead: props.numberLead,
     nodeId: props.nodeId,
@@ -34,12 +32,6 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
     const newNumber = validatePhoneNumber(number, { removeNine: true });
     if (newNumber) {
       try {
-        await TypingDelay({
-          delay: 4,
-          toNumber: newNumber + "@s.whatsapp.net",
-          connectionId: props.connectionWhatsId,
-        });
-
         const msg = await SendMessageText({
           connectionId: props.connectionWhatsId,
           text: nextText,

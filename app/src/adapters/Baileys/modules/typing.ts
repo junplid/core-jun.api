@@ -9,9 +9,10 @@ interface Props {
 
 export const TypingDelay = async ({
   connectionId,
-  delay = 2,
   ...props
 }: Props): Promise<void> => {
+  const delay = Math.max(props.delay || 0, 0);
+  if (!delay) return;
   const MAX_ATTEMPTS = 5;
   const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -20,7 +21,7 @@ export const TypingDelay = async ({
     if (!bot || !cacheConnectionsWAOnline.get(connectionId))
       throw new Error("CONEXÃO OFFLINE");
     await bot.sendPresenceUpdate("composing", props.toNumber);
-    await wait(Math.max(delay, 2) * 1_000);
+    await wait(delay * 1_000);
     await bot.sendPresenceUpdate("available", props.toNumber);
   };
 
