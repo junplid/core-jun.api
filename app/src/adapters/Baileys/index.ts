@@ -6,6 +6,7 @@ import makeWASocket, {
   downloadMediaMessage,
   fetchLatestBaileysVersion,
   useMultiFileAuthState,
+  makeCacheableSignalKeyStore,
 } from "baileys";
 import { writeFileSync } from "fs";
 import {
@@ -181,7 +182,7 @@ if (process.env.NODE_ENV === "production") {
 } else {
   pathChatbotQueue = resolve(__dirname, `../../../bin/chatbot-queue`);
 }
-const groupCache = new NodeCache({ stdTTL: 60 * 60 });
+const groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false });
 
 export const Baileys = async ({
   socket,
@@ -234,7 +235,10 @@ export const Baileys = async ({
       }
 
       const bot = makeWASocket({
-        auth: state,
+        auth: {
+          creds: state.creds,
+          keys: makeCacheableSignalKeyStore(state.keys), // <- evita perder chave
+        },
         version: baileysVersion.version,
         defaultQueryTimeoutMs: undefined,
         qrTimeout: 40000,
@@ -245,72 +249,93 @@ export const Baileys = async ({
 
       sessionsBaileysWA.set(props.connectionWhatsId, bot);
 
-      bot.ev.on("group-participants.update", async (updates) => {
-        console.log("updates", updates);
-        const { id: groupJid, participants, action } = updates;
-        const me = bot.user?.id.split(":")[0];
+      // bot.ev.on("group-participants.update", async (updates) => {
+      //   const { id: groupJid, participants, action } = updates;
+      //   const me = bot.user?.id.split(":")[0];
 
-        switch (action) {
-          case "demote":
-          case "promote":
-          case "add":
-            break;
+      //   switch (action) {
+      //     case "demote":
+      //     case "promote":
+      //     case "add":
+      //       break;
 
-          case "remove":
-            if (me && participants.includes(me)) {
-              const getgroup = await prisma.connectionWAOnGroups.findFirst({
-                where: { jid: groupJid },
-                select: { id: true },
-              });
-              if (getgroup?.id) {
-                await prisma.connectionWAOnGroups.delete({
-                  where: { id: getgroup.id },
-                });
-              }
-              groupCache.del(groupJid);
-            }
-            break;
-        }
+      //     case "remove":
+      //       if (me && participants.includes(me)) {
+      //         const getgroup = await prisma.connectionWAOnGroups.findFirst({
+      //           where: { jid: groupJid },
+      //           select: { id: true },
+      //         });
+      //         if (getgroup?.id) {
+      //           await prisma.connectionWAOnGroups.delete({
+      //             where: { id: getgroup.id },
+      //           });
+      //         }
+      //         groupCache.del(groupJid);
+      //       }
+      //       break;
+      //   }
+      // });
+
+      // bot.ev.on("groups.upsert", (metas) => {
+      //   metas.forEach(async (g) => {
+      //     const exist = await prisma.connectionWAOnGroups.findFirst({
+      //       where: { connectionWAId: props.connectionWhatsId, jid: g.id },
+      //       select: { id: true },
+      //     });
+      //     if (!exist) {
+      //       await prisma.connectionWAOnGroups.create({
+      //         data: {
+      //           jid: g.id,
+      //           name: g.subject,
+      //           connectionWAId: props.connectionWhatsId,
+      //         },
+      //       });
+      //     } else {
+      //       await prisma.connectionWAOnGroups.update({
+      //         where: { id: exist.id },
+      //         data: { name: g.subject },
+      //       });
+      //     }
+      //     groupCache.set(g.id, g);
+      //   });
+      // });
+
+      // bot.ev.on("groups.update", async (updates) => {
+      //   updates.forEach(async (u) => {
+      //     if (u.subject && u.id) {
+      //       const getGroup = await prisma.connectionWAOnGroups.findFirst({
+      //         where: { jid: u.id },
+      //         select: { id: true },
+      //       });
+      //       if (!getGroup?.id) {
+      //         await prisma.connectionWAOnGroups.create({
+      //           data: {
+      //             jid: u.id,
+      //             name: u.subject,
+      //             connectionWAId: props.connectionWhatsId,
+      //           },
+      //         });
+      //       } else {
+      //         await prisma.connectionWAOnGroups.update({
+      //           where: { id: getGroup.id },
+      //           data: { name: u.subject },
+      //         });
+      //       }
+      //     }
+      //     if (u.id) groupCache.set(u.id, u);
+      //   });
+      // });
+
+      bot.ev.on("groups.update", async ([event]) => {
+        // @ts-expect-error
+        const metadata = await bot.groupMetadata(event.id);
+        // @ts-expect-error
+        groupCache.set(event.id, metadata);
       });
 
-      bot.ev.on("groups.upsert", (metas) => {
-        metas.forEach(async (g) => {
-          if (g.memberAddMode) {
-            await prisma.connectionWAOnGroups.create({
-              data: {
-                jid: g.id,
-                name: g.subject,
-                connectionWAId: props.connectionWhatsId,
-              },
-            });
-          }
-        });
-      });
-
-      bot.ev.on("groups.update", async (updates) => {
-        updates.forEach(async (u) => {
-          if (u.subject && u.id) {
-            const getGroup = await prisma.connectionWAOnGroups.findFirst({
-              where: { jid: u.id },
-              select: { id: true },
-            });
-            if (!getGroup?.id) {
-              await prisma.connectionWAOnGroups.create({
-                data: {
-                  jid: u.id,
-                  name: u.subject,
-                  connectionWAId: props.connectionWhatsId,
-                },
-              });
-            } else {
-              await prisma.connectionWAOnGroups.update({
-                where: { id: getGroup.id },
-                data: { name: u.subject },
-              });
-            }
-          }
-          if (u.id) groupCache.set(u.id, u);
-        });
+      bot.ev.on("group-participants.update", async (event) => {
+        const metadata = await bot.groupMetadata(event.id);
+        groupCache.set(event.id, metadata);
       });
 
       bot.ev.on(
@@ -468,10 +493,11 @@ export const Baileys = async ({
                 }
                 await Promise.allSettled(tasks);
               }
-              await prisma.connectionWAOnGroups.deleteMany({
-                where: { connectionWAId: props.connectionWhatsId },
-              });
-              await bot.groupFetchAllParticipating();
+              // await prisma.connectionWAOnGroups.deleteMany({
+              //   where: { connectionWAId: props.connectionWhatsId },
+              // });
+              // const allGroups = await bot.groupFetchAllParticipating();
+              // Object.values(allGroups).forEach((g) => groupCache.set(g.id, g));
               props.onConnection && props.onConnection(connection);
             } catch (error) {
               console.error("OPEN-handler error:", error);

@@ -1,13 +1,18 @@
 import { proto } from "baileys";
 import { cacheConnectionsWAOnline } from "../Cache";
 import { sessionsBaileysWA } from "..";
-import { prisma } from "../../Prisma/client";
 
 interface Props {
   connectionId: number;
   text: string;
   groupName: string;
 }
+
+// a melhor opção é fazer cache
+// const cacheGroupsConnection = new Map<number, {
+//   subject: string;
+//   id: string;
+// }[]>();
 
 export const SendTextGroup = async ({
   connectionId,
@@ -20,12 +25,12 @@ export const SendTextGroup = async ({
     if (!bot || !cacheConnectionsWAOnline.get(connectionId)) {
       throw new Error("CONEXÃO OFFLINE");
     }
-    const getGroup = await prisma.connectionWAOnGroups.findFirst({
-      where: { name: props.groupName },
-      select: { jid: true },
-    });
-    if (!getGroup?.jid) return;
-    return bot.sendMessage(getGroup.jid, { text: props.text });
+    const allGroups = await bot.groupFetchAllParticipating();
+    const group = Object.values(allGroups).find(
+      (g) => g.subject === props.groupName
+    );
+    if (!group?.id) return;
+    return bot.sendMessage(group.id, { text: props.text });
   };
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
