@@ -18,6 +18,7 @@ import { NodeSendAudiosLive } from "./SendAudiosLive";
 import { NodeSendFiles } from "./SendFiles";
 import { NodeSendFlow } from "./SendFlow";
 import { NodeSendImages } from "./SendImages";
+import { NodeSendTextGroup } from "./SendTextGroup";
 import { NodeSendVideos } from "./SendVideos";
 import { NodeSwitchVariable } from "./Switch";
 import { NodeTimer } from "./Timer";
@@ -48,4 +49,5 @@ export const LibraryNodes = {
   NodeExtractVariable,
   NodeCharge,
   NodeRandomCode,
+  NodeSendTextGroup,
 };

@@ -495,7 +495,9 @@ export const NodeAgentAI = async ({
 
   // cria um novo debounce
   const debounceJob = scheduleJob(
-    moment().add(agentAIf.debounce, "seconds").toDate(),
+    moment()
+      .add(agentAIf.debounce || 1, "seconds")
+      .toDate(),
     async () => {
       async function runDebounceAgentAI() {
         return new Promise<void>(async (resolve) => {
@@ -582,6 +584,7 @@ export const NodeAgentAI = async ({
                               "Saiu do node, não foi possível enviar a mensagem. Mas essa ação é esperada, não é um ERROR.",
                           };
                         }
+                        console.log("VEIO AQUI", args.value);
                         try {
                           await TypingDelay({
                             delay: Number(args.typing) || 2,

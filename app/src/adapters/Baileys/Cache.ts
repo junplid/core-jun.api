@@ -50,3 +50,5 @@ export const cachePendingReactionsList = new Map<
     reactionText: string;
   }[]
 >();
+
+export const cacheKnownGroups = new Map<string, string | undefined>();

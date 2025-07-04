@@ -185,6 +185,15 @@ export type NodeRandomCodeData = {
   id: number;
 };
 
+export type NodeSendTextGroupData = {
+  groupName: string;
+  messages?: {
+    text: string;
+    interval?: number;
+    key: string;
+  }[];
+};
+
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeFinish"
@@ -212,7 +221,8 @@ export type TypeNodesPayload =
   | "NodeSwitchVariable"
   | "NodeExtractVariable"
   | "NodeCharge"
-  | "NodeRandomCode";
+  | "NodeRandomCode"
+  | "NodeSendTextGroup";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -242,4 +252,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeExtractVariable"; data: NodeExtractVariableData }
   | { type: "NodeCharge"; data: NodeChargeData }
   | { type: "NodeRandomCode"; data: NodeRandomCodeData }
+  | { type: "NodeSendTextGroup"; data: NodeSendTextGroupData }
 );

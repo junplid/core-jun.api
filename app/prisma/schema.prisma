@@ -770,8 +770,19 @@ model ConnectionWA {
   ConnectionOnCampaign ConnectionOnCampaign[]
   Tickets              Tickets[]
   LogSystem            LogSystem[]
+  ConnectionWAOnGroups ConnectionWAOnGroups[]
 
   @@index([id, name, type, number])
+}
+
+model ConnectionWAOnGroups {
+  id             Int          @id @default(autoincrement())
+  name           String
+  jid            String
+  connectionWAId Int
+  ConnectionWA   ConnectionWA @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([name, connectionWAId, id])
 }
 
 enum WAPrivacyValue {
