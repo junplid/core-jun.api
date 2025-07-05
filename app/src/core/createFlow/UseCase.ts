@@ -8,11 +8,17 @@ export class CreateFlowUseCase {
   constructor() {}
 
   async run({ businessIds, ...dto }: CreateFlowDTO_I) {
+    const getAccount = await prisma.account.findFirst({
+      where: { id: dto.accountId },
+      select: { isPremium: true },
+    });
+    if (!getAccount) throw new ErrorResponse(40).container("Não autorizado.");
+
     const countResource = await ModelFlows.count({
       accountId: dto.accountId,
     });
 
-    if (countResource > 1) {
+    if (!getAccount.isPremium && countResource > 1) {
       throw new ErrorResponse(400).input({
         path: "name",
         text: "Limite de construtores de fluxo atingido.",

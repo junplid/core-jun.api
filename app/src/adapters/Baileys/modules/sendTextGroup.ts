@@ -26,9 +26,10 @@ export const SendTextGroup = async ({
       throw new Error("CONEXÃO OFFLINE");
     }
     const allGroups = await bot.groupFetchAllParticipating();
-    const group = Object.values(allGroups).find(
-      (g) => g.subject === props.groupName
-    );
+    const group = Object.values(allGroups).find((g) => {
+      console.log(g.subject, props.groupName);
+      return g.subject === props.groupName;
+    });
     if (!group?.id) return;
     return bot.sendMessage(group.id, { text: props.text });
   };
