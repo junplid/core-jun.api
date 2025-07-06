@@ -22,7 +22,7 @@ export class RegisterIntentUseCase {
     }));
 
     const found = await stripe.customers.search({
-      query: `email:"${dto.email}" AND deleted:'false'`,
+      query: `email:"${dto.email}"`,
       limit: 1,
     });
 
