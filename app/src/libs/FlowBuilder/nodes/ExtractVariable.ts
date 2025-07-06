@@ -15,6 +15,7 @@ export const NodeExtractVariable = async ({
   ...props
 }: PropsNodeExtractVariable): Promise<void> => {
   try {
+    console.log("1");
     const target = await prisma.variable.findUnique({
       where: { id: data.var1Id },
       select: {
@@ -25,6 +26,7 @@ export const NodeExtractVariable = async ({
         },
       },
     });
+    console.log("2");
     const source = await prisma.variable.findFirst({
       where: { id: data.var2Id, accountId: props.accountId },
       select: {
@@ -34,10 +36,12 @@ export const NodeExtractVariable = async ({
         },
       },
     });
-
+    console.log("3");
     if (!target || !source) return;
+    console.log("4");
 
     let targetValue: string = "";
+    console.log("5");
 
     if (target.name) {
       targetValue = await resolveTextVariables({
@@ -57,6 +61,8 @@ export const NodeExtractVariable = async ({
       });
     } else return;
 
+    console.log("6");
+
     const flags = data.flags?.length ? data.flags.join("") : undefined;
     const regex = new RegExp(`${data.regex}`, flags);
     const valueResolved = await resolveTextVariables({
@@ -66,7 +72,10 @@ export const NodeExtractVariable = async ({
       numberLead: props.numberLead,
       nodeId: props.nodeId,
     });
+    console.log("7", { regex, valueResolved, targetValue });
+
     const nextValue = targetValue.replace(regex, valueResolved);
+    console.log("8");
 
     if (!source.ContactsWAOnAccountVariable.length) {
       await prisma.contactsWAOnAccountVariable.create({
@@ -83,6 +92,8 @@ export const NodeExtractVariable = async ({
         data: { value: nextValue },
       });
     }
+    console.log("9");
+
     return;
   } catch (e) {
     console.error("Error in NodeExtractVariable:", e);

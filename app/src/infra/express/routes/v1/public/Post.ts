@@ -11,11 +11,19 @@ import { loginRootController } from "../../../../../core/loginRoot";
 import { createRootValidation } from "../../../../../core/createRoot/Validation";
 import { createRootController } from "../../../../../core/createRoot";
 import { webhookMercadopago } from "../../../../../core/webhookMercadopago";
+import { registerIntentValidation } from "../../../../../core/registerIntent/Validation";
+import { registerIntentController } from "../../../../../core/registerIntent";
 
 const RouterV1Public_Post = Router();
 
 RouterV1Public_Post.post(
-  "/register-account",
+  "/register/intent",
+  registerIntentValidation,
+  registerIntentController
+);
+
+RouterV1Public_Post.post(
+  "/register/account",
   createAccountValidation,
   createAccountController
 );

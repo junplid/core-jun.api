@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import { Joi } from "express-validation";
 import { validatePhoneNumber } from "../../helpers/validatePhoneNumber";
-import { CreateAccountDTO_I } from "./DTO";
+import { RegisterIntentDTO_I } from "./DTO";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
-export const createAccountValidation = (
-  req: Request<any, any, CreateAccountDTO_I>,
+export const registerIntentValidation = (
+  req: Request<any, any, RegisterIntentDTO_I>,
   res: Response,
   next: NextFunction
 ) => {
@@ -13,10 +13,8 @@ export const createAccountValidation = (
     email: Joi.string().email().required(),
     name: Joi.string().required(),
     cpfCnpj: Joi.string(),
-    password: Joi.string().required(),
     number: Joi.string().required(),
     affiliate: Joi.string().optional(),
-    paymentMethodId: Joi.string().required(),
   });
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });

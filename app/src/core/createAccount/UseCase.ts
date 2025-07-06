@@ -1,34 +1,14 @@
 import { CreateAccountDTO_I } from "./DTO";
-
 import { genSalt, hash as hashBcrypt } from "bcrypt";
 import { createTokenAuth } from "../../helpers/authToken";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { stripe } from "../../services/Stripe";
 
 export class CreateAccountUseCase {
   constructor() {}
 
   async run({ number, affiliate, ...dto }: CreateAccountDTO_I) {
-    // const planFree = await prisma.plan.findFirst({
-    //   where: {
-    //     type: "free",
-    //     isDefault: true,
-    //     acceptsNewUsers: true,
-    //     activeFoSubscribers: true,
-    //   },
-    //   select: { id: true },
-    // });
-
-    // if (!planFree) {
-    //   throw new ErrorResponse(400).toast({
-    //     title: "Plano free padrão não encontrado",
-    //     type: "error",
-    //   });
-    // }
-
-    const salt = await genSalt(8);
-    const nextPassword = await hashBcrypt(dto.password, salt);
-
     const { id: contactWAId } = await prisma.contactsWA.upsert({
       where: { completeNumber: number },
       create: { completeNumber: number },
@@ -54,6 +34,28 @@ export class CreateAccountUseCase {
         });
     }
 
+    const found = await stripe.customers.search({
+      query: `email:"${dto.email}" AND deleted:'false'`,
+      limit: 1,
+    });
+
+    if (!found.total_count) {
+      throw new ErrorResponse(400).input({
+        path: "email",
+        text: "Não foi possivel encontrar a conta. Contate o nosso suporte.",
+      });
+    }
+
+    // await stripe.paymentMethods.attach(dto.paymentMethodId, {
+    //   customer: dto.customerId,
+    // });
+    // await stripe.customers.update(dto.customerId, {
+    //   invoice_settings: { default_payment_method: dto.paymentMethodId },
+    // });
+
+    const salt = await genSalt(8);
+    const nextPassword = await hashBcrypt(dto.password, salt);
+
     const assetsUsedId = await prisma.accountAssetsUsed.create({
       data: { chatbots: 0 },
     });
@@ -64,6 +66,7 @@ export class CreateAccountUseCase {
         password: nextPassword,
         contactWAId,
         assetsUsedId: assetsUsedId.id,
+        // customerId: dto.customerId,
       },
       select: { id: true, hash: true },
     });
