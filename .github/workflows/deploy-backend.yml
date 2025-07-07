@@ -104,12 +104,14 @@ jobs:
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
             "mkdir -p ${{ secrets.VPS_DEST }}/app"
 
-      - name: Enviar env para o APP VPS
+      - name: Enviar configs para a VPS
         run: |
           rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             docker-compose.prod.yml \
-            ./app/.env \ 
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/app
+            app/.env \
+            .env.pg \
+            .env.mongo \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/
 
       - name: Deploy na VPS via SSH
         uses: appleboy/ssh-action@v0.1.7
