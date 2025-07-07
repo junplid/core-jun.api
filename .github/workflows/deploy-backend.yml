@@ -90,6 +90,15 @@ jobs:
           docker tag junplid-core:latest $IMAGE
           docker push $IMAGE
 
+      - name: Enviar config para a VPS
+        run: |
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            docker-compose.prod.yml \
+            .env.mongo \
+            .env.pg \
+            app/.env \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/
+
       - name: Deploy na VPS via SSH
         uses: appleboy/ssh-action@v0.1.7
         with:
@@ -97,5 +106,9 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
           script: |
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io \
+              --username ${{ secrets.GITHUB_ACTOR }} \
+              --password-stdin
+
             docker pull ghcr.io/${{ github.repository }}:latest
             docker-compose -f ${{ secrets.VPS_DEST }}/docker-compose.prod.yml up -d
