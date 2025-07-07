@@ -94,8 +94,8 @@ jobs:
         run: |
           rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             docker-compose.prod.yml \ 
-            ./env.pg \
-            ./env.mongo \
+            ./.env.pg \
+            ./.env.mongo \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/
 
       - name: Preparar pasta app na VPS
