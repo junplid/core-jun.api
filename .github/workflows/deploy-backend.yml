@@ -93,11 +93,22 @@ jobs:
       - name: Enviar configs para a VPS
         run: |
           rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            docker-compose.prod.yml \
-            app/.env \
+            docker-compose.prod.yml \ 
             .env.pg \
             .env.mongo \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/
+
+      - name: Preparar pasta app na VPS
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "mkdir -p ${{ secrets.VPS_DEST }}/app"
+
+      - name: Enviar config para a VPS
+        run: |
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            ./app/.env
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/app/
 
       - name: Deploy na VPS via SSH
         uses: appleboy/ssh-action@v0.1.7
