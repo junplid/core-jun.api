@@ -104,10 +104,10 @@ jobs:
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
             "mkdir -p ${{ secrets.VPS_DEST }}/app"
 
-      - name: Enviar config para a VPS
+      - name: Enviar .env para o app na VPS
         run: |
           rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            ./app/.env
+            ./app/.env \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/app/
 
       - name: Deploy na VPS via SSH
