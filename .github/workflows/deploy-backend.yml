@@ -47,7 +47,6 @@ jobs:
 
       - name: Instalar dependências do NPM
         working-directory: ./app
-        if: steps.check_pkg_changes.outputs.has_changes == 'true'
         run: yarn install --frozen-lockfile
 
       - name: Gerar Prisma Client
