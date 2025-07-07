@@ -1,4 +1,4 @@
-name: Backend Deploy
+name: CI/CD
 
 on:
   push:
@@ -9,125 +9,97 @@ permissions:
   packages: write
 
 jobs:
-  deploy:
+  check:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Verificar mudanças em arquivos Prisma
-        id: check_prisma_changes
+      - name: Verificar mudanças em Prisma
+        id: check_prisma
         run: |
           if git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
-             | grep -E 'app/prisma/'; then
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            | grep -E 'app/prisma/'; then
+            echo "has_prisma=true" >> "$GITHUB_OUTPUT"
           else
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "has_prisma=false" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Verificar mudanças em package.json
-        id: check_pkg_changes
+      - name: Verificar package.json
+        id: check_pkg
         run: |
           if git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
-             | grep -x 'app/package.json'; then
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            | grep -x 'app/package.json'; then
+            echo "has_pkg=true" >> "$GITHUB_OUTPUT"
           else
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "has_pkg=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Instala o Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Criar arquivos .env
+  build:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Criar .env
         run: |
-          echo "${{ secrets.ENV_APP_FILE }}"   > ./app/.env
+          echo "${{ secrets.ENV_APP_FILE }}" > ./app/.env
           echo "${{ secrets.ENV_MONGO_FILE }}" > .env.mongo
           echo "${{ secrets.ENV_PG_FILE }}"    > .env.pg
-
-      - name: Instalar Yarn
-        run: npm install -g yarn
-
-      - name: Instalar dependências
+      - run: npm install -g yarn
+      - run: yarn install --frozen-lockfile
         working-directory: ./app
-        run: yarn install --frozen-lockfile
-
-      - name: Gerar Prisma Client
-        working-directory: ./app
-        if: steps.check_prisma_changes.outputs.has_changes == 'true'
+      - name: Prisma Generate
+        if: needs.check.outputs.has_prisma == 'true'
         run: npx prisma generate
-
-      - name: Buildar app
         working-directory: ./app
+      - name: Build App
         run: yarn build
-
-      - name: Preparar chave SSH
+        working-directory: ./app
+      - name: Build Docker Image
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+          docker build -f app/Dockerfile.prod \
+            -t junplid-core:latest app
 
-      - name: Build da imagem Docker
-        run: |
-          docker build \
-            -f app/Dockerfile.prod \
-            -t junplid-core:latest \
-            app
-
-      - name: Login no GHCR
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: GHCR Login
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Tag e Push pro GHCR
+      - name: Tag & Push
         run: |
           IMAGE=ghcr.io/${{ github.repository }}:latest
           docker tag junplid-core:latest $IMAGE
           docker push $IMAGE
 
-      - name: Enviar configs para a VPS
+  deploy:
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Preparar SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+      - name: Enviar configs e .env
         run: |
           rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            docker-compose.prod.yml \ 
-            ./env.pg \
-            ./env.mongo \
+            docker-compose.prod.yml env.pg env.mongo app/.env \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/
-
-      - name: Preparar pasta app na VPS
-        run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "mkdir -p ${{ secrets.VPS_DEST }}/app"
-
-      - name: Enviar .env para o app na VPS
-        run: |
-          rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            ./app/.env \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/app/
-
-      - name: Deploy na VPS via SSH
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
           script: |
-            # 1) Autentica no GHCR com o PAT (crie o secret GHCR_PAT)
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io \
-              --username "${{ github.actor }}" \
-              --password-stdin
-
-            # 2) Puxa a imagem
+              --username "${{ github.actor }}" --password-stdin
             docker pull ghcr.io/${{ github.repository }}:latest
-
-            # 3) Sobe/recria os containers
             cd ${{ secrets.VPS_DEST }}
             docker compose -f docker-compose.prod.yml up -d
-
-            # 4) (Opcional) Migrações Prisma
             docker compose exec -T junplid npx prisma migrate deploy
