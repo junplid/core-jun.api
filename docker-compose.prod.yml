@@ -1,7 +1,6 @@
 version: "3.9"
 
-services:  
-  # ------------- Mongo -----------------
+services:   
   mongo_junplid:
     image: mongo:6.0 
     restart: unless-stopped
@@ -32,13 +31,14 @@ services:
     networks: [rede_junplid]
 
   junplid:
-    image: junplid-core:latest
+    image: ghcr.io/junplid/junplid:latest
     container_name: junplid
-    build:
-      context: ./app
-      dockerfile: Dockerfile.prod
     pull_policy: never
     restart: unless-stopped
+    env_file:
+      - ./app/.env
+      - ./.env.pg
+      - ./.env.mongo
     depends_on:
       postgres_junplid:
         condition: service_healthy
@@ -47,8 +47,8 @@ services:
     ports:
       - 4000:4000 
     volumes:
-      - ./app:/app 
-      - /app/node_modules    
+      - ./data/bin:/app/bin
+      - ./data/static:/app/static
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:4000/v1/public/health"]
       interval: 30s
