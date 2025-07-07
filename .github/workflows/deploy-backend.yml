@@ -47,6 +47,7 @@ jobs:
           echo "${{ secrets.ENV_APP_FILE }}"   > ./app/.env
           echo "${{ secrets.ENV_MONGO_FILE }}" > .env.mongo
           echo "${{ secrets.ENV_PG_FILE }}"    > .env.pg
+          chmod 600 .env.pg .env.mongo ./app/.env
 
       - name: Instalar Yarn
         run: npm install -g yarn
