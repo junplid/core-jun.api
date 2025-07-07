@@ -42,6 +42,9 @@ jobs:
           echo "${{ secrets.ENV_MONGO_FILE }}" > .env.mongo
           echo "${{ secrets.ENV_PG_FILE }}" > .env.pg
 
+      - name: Instalar Yarn
+        run: npm install -g yarn
+
       - name: Instalar dependências do NPM
         working-directory: ./app
         if: steps.check_pkg_changes.outputs.has_changes == 'true'
