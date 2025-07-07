@@ -108,7 +108,7 @@ jobs:
         run: |
           rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             docker-compose.prod.yml \
-            app/.env \ 
+            ./app/.env \ 
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/app
 
       - name: Deploy na VPS via SSH
