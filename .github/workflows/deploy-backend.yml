@@ -47,7 +47,6 @@ jobs:
           echo "${{ secrets.ENV_APP_FILE }}"   > ./app/.env
           echo "${{ secrets.ENV_MONGO_FILE }}" > .env.mongo
           echo "${{ secrets.ENV_PG_FILE }}"    > .env.pg
-          chmod 600 .env.pg .env.mongo ./app/.env
 
       - name: Instalar Yarn
         run: npm install -g yarn
@@ -94,7 +93,7 @@ jobs:
       - name: Enviar configs para a VPS
         run: |
           rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            docker-compose.prod.yml \ 
+            docker-compose.prod.yml \
             ./.env.pg \
             ./.env.mongo \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/
