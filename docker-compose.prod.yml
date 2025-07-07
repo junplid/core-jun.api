@@ -34,7 +34,7 @@ services:
     image: ghcr.io/junplid/core-jun.api:latest
     container_name: junplid
     pull_policy: never
-    restart: unless-stopped
+    # restart: unless-stopped
     env_file:
       - ./app/.env
       - ./.env.pg
