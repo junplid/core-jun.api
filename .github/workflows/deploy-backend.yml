@@ -106,9 +106,17 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
           script: |
+            # 1) Autentica no GHCR com o PAT (crie o secret GHCR_PAT)
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io \
-              --username ${{ secrets.GITHUB_ACTOR }} \
+              --username "${{ github.actor }}" \
               --password-stdin
 
+            # 2) Puxa a imagem
             docker pull ghcr.io/${{ github.repository }}:latest
-            docker-compose -f ${{ secrets.VPS_DEST }}/docker-compose.prod.yml up -d
+
+            # 3) Sobe/recria os containers
+            cd ${{ secrets.VPS_DEST }}
+            docker compose -f docker-compose.prod.yml up -d
+
+            # 4) (Opcional) Migrações Prisma
+            docker compose exec -T junplid npx prisma migrate deploy
