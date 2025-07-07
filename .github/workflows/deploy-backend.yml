@@ -90,20 +90,6 @@ jobs:
           docker tag junplid-core:latest $IMAGE
           docker push $IMAGE
 
-      - name: Enviar config para a VPS
-        run: |
-          rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            docker-compose.prod.yml \
-            .env.mongo \
-            .env.pg \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEST }}/
-
-      - name: Preparar pasta app na VPS
-        run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "mkdir -p ${{ secrets.VPS_DEST }}/app"
-
       - name: Enviar configs para a VPS
         run: |
           rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
