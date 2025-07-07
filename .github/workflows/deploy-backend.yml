@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -16,7 +20,8 @@ jobs:
       - name: Verificar mudanças em arquivos Prisma
         id: check_prisma_changes
         run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E 'app/prisma/'; then
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
+             | grep -E 'app/prisma/'; then
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
@@ -25,7 +30,8 @@ jobs:
       - name: Verificar mudanças em package.json
         id: check_pkg_changes
         run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -x 'app/package.json'; then
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
+             | grep -x 'app/package.json'; then
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
@@ -38,14 +44,14 @@ jobs:
 
       - name: Criar arquivos .env
         run: |
-          echo "${{ secrets.ENV_APP_FILE }}" > ./app/.env
+          echo "${{ secrets.ENV_APP_FILE }}"   > ./app/.env
           echo "${{ secrets.ENV_MONGO_FILE }}" > .env.mongo
-          echo "${{ secrets.ENV_PG_FILE }}" > .env.pg
+          echo "${{ secrets.ENV_PG_FILE }}"    > .env.pg
 
       - name: Instalar Yarn
         run: npm install -g yarn
 
-      - name: Instalar dependências do NPM
+      - name: Instalar dependências
         working-directory: ./app
         run: yarn install --frozen-lockfile
 
@@ -80,7 +86,7 @@ jobs:
 
       - name: Tag e Push pro GHCR
         run: |
-          IMAGE=ghcr.io/${{ github.repository_owner }}/junplid:latest
+          IMAGE=ghcr.io/${{ github.repository }}:latest
           docker tag junplid-core:latest $IMAGE
           docker push $IMAGE
 
@@ -91,5 +97,5 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
           script: |
-            docker pull ghcr.io/${{ github.repository_owner }}/junplid:latest
+            docker pull ghcr.io/${{ github.repository }}:latest
             docker-compose -f ${{ secrets.VPS_DEST }}/docker-compose.prod.yml up -d

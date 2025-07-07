@@ -31,7 +31,7 @@ services:
     networks: [rede_junplid]
 
   junplid:
-    image: ghcr.io/junplid/junplid:latest
+    image: ghcr.io/junplid/core-jun.api:latest
     container_name: junplid
     pull_policy: never
     restart: unless-stopped
