@@ -644,8 +644,7 @@ export const Baileys = async ({
             },
           ]);
 
-          const runningQueue = cacheRunningQueueReaction.get(keyMap);
-          console.log(runningQueue);
+          const runningQueue = cacheRunningQueueReaction.get(keyMap); 
           if (runningQueue) return;
 
           cacheRunningQueueReaction.set(keyMap, true);

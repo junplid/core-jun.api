@@ -40,6 +40,8 @@ import { createFbPixelsValidation } from "../../../../../core/createFbPixels/Val
 import { createFbPixelsController } from "../../../../../core/createFbPixels";
 import { testFbPixelValidation } from "../../../../../core/testFbPixel/Validation";
 import { testFbPixelController } from "../../../../../core/testFbPixel";
+import { runActionChannelOrderValidation } from "../../../../../core/runActionChannelOrder/Validation";
+import { runActionChannelOrderController } from "../../../../../core/runActionChannelOrder";
 
 const RouterV1Private_Post = Router();
 
@@ -177,6 +179,12 @@ RouterV1Private_Post.post(
   "/integration/payments",
   createPaymentIntegrationValidation,
   createPaymentIntegrationController
+);
+
+RouterV1Private_Post.post(
+  "/orders/action/:id/:action",
+  runActionChannelOrderValidation,
+  runActionChannelOrderController
 );
 
 export default RouterV1Private_Post;

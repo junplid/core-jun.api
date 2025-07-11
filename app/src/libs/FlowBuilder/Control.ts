@@ -1583,6 +1583,147 @@ export const NodeControler = ({
           });
         return;
       }
+      if (currentNode.type === "NodeCreateOrder") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
+        await LibraryNodes.NodeCreateOrder({
+          numberLead: props.lead.number,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          data: currentNode.data,
+          accountId: props.accountId,
+          businessName: props.businessName,
+          connectionWhatsId: props.connectionWhatsId,
+          nodeId: currentNode.id,
+          flowStateId: props.flowStateId,
+          flowId: props.flowId,
+          ...(props.type === "running" && { action: props.message }),
+        })
+          .then(async (action) => {
+            if (!action) {
+              if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+                cacheFlowInExecution.delete(keyMap);
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                props.actions?.onExecutedNode?.({
+                  id: "0",
+                  type: "NodeInitial",
+                });
+                return;
+              }
+              if (props.actions?.onExecutedNode) {
+                props.actions?.onExecutedNode(currentNode);
+              }
+
+              execute({
+                ...props,
+                type: "initial",
+                currentNodeId: nextEdgesIds[0].id,
+                oldNodeId: currentNode.id,
+              });
+            } else {
+              const isNextNodeMain = nextEdgesIds.find((nh) =>
+                nh.sourceHandle?.includes("action")
+              );
+              if (!isNextNodeMain) {
+                cacheFlowInExecution.delete(keyMap);
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                props.actions?.onExecutedNode?.({
+                  id: "0",
+                  type: "NodeInitial",
+                });
+                return res();
+              }
+              return execute({
+                ...props,
+                type: "running",
+                message: action,
+                currentNodeId: isNextNodeMain.id,
+                oldNodeId: currentNode.id,
+                isSavePositionLead: false,
+              });
+            }
+            return;
+          })
+          .catch((error) => {
+            console.log("ERROR NO MENSAGEM", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+      if (currentNode.type === "NodeUpdateOrder") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            type: currentNode.type,
+          });
+        }
+        await LibraryNodes.NodeUpdateOrder({
+          numberLead: props.lead.number,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          data: currentNode.data,
+          accountId: props.accountId,
+          businessName: props.businessName,
+          nodeId: currentNode.id,
+          flowStateId: props.flowStateId,
+        })
+          .then(async (action) => {
+            if (!action) {
+              if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+                cacheFlowInExecution.delete(keyMap);
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                props.actions?.onExecutedNode?.({
+                  id: "0",
+                  type: "NodeInitial",
+                });
+                return;
+              }
+              if (props.actions?.onExecutedNode) {
+                props.actions?.onExecutedNode(currentNode);
+              }
+
+              execute({
+                ...props,
+                type: "initial",
+                currentNodeId: nextEdgesIds[0].id,
+                oldNodeId: currentNode.id,
+              });
+            } else {
+              const isNextNodeMain = nextEdgesIds.find((nh) =>
+                nh.sourceHandle?.includes("action")
+              );
+              if (!isNextNodeMain) {
+                cacheFlowInExecution.delete(keyMap);
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                props.actions?.onExecutedNode?.({
+                  id: "0",
+                  type: "NodeInitial",
+                });
+                return res();
+              }
+              return execute({
+                ...props,
+                type: "running",
+                message: action,
+                currentNodeId: isNextNodeMain.id,
+                oldNodeId: currentNode.id,
+                isSavePositionLead: false,
+              });
+            }
+            return;
+          })
+          .catch((error) => {
+            console.log("ERROR NO MENSAGEM", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
 
       return res();
     };

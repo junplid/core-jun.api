@@ -47,6 +47,7 @@ services:
     ports:
       - 4000:4000 
     volumes:
+      - ./app/database-whatsapp:/app/database-whatsapp
       - ./app/bin:/app/bin
       - ./app/static:/app/static
     healthcheck:

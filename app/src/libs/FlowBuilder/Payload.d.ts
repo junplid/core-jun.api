@@ -1,4 +1,8 @@
-import { TypeMethodCharge } from "@prisma/client";
+import {
+  TypeMethodCharge,
+  TypePriorityOrder,
+  TypeStatusOrder,
+} from "@prisma/client";
 
 export type NodeMenuData = {
   interval?: number;
@@ -194,6 +198,56 @@ export type NodeSendTextGroupData = {
   }[];
 };
 
+export type NodeCreateOrderData = {
+  businessId: number; //
+  data?: string; //
+  total?: string; //
+  name?: string; //
+  description?: string; //
+  status?: TypeStatusOrder; //
+  priority?: TypePriorityOrder; //
+  origin?: string; //
+  delivery_address?: string; //
+  charge_transactionId?: string; //
+  varId_save_nOrder?: number; //
+  notify?: boolean; //
+  actionChannels: { key: string; text: string }[];
+  delivery_method?: string; // não sei o pq disso já tem o delivery_address
+  itens_count?: number;
+};
+
+export type NodeUpdateOrderData = {
+  nOrder: string;
+  data?: string;
+  total?: string;
+  name?: string;
+  description?: string;
+  status?: TypeStatusOrder;
+  priority?: TypePriorityOrder;
+  origin?: string;
+  delivery_address?: string;
+  tracking_code?: string;
+  itens_count?: number;
+  charge_transactionId?: string;
+  delivery_method?: string;
+  actionChannels: { key: string; text: string }[];
+  notify?: boolean;
+  fields?: string[];
+};
+
+export type NodeGetOrdersData = {
+  filter: "contact" | "project";
+  status?: TypeStatusOrder;
+  businessId?: number;
+  count?: boolean; // contagem?
+  priority?: TypePriorityOrder;
+  origin?: string;
+  daysAgo?: number; // dias atras contando do dia atual
+  varId_save?: number;
+  model_save?: string;
+  ofContact?: boolean;
+};
+
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeFinish"
@@ -222,7 +276,9 @@ export type TypeNodesPayload =
   | "NodeExtractVariable"
   | "NodeCharge"
   | "NodeRandomCode"
-  | "NodeSendTextGroup";
+  | "NodeSendTextGroup"
+  | "NodeCreateOrder"
+  | "NodeUpdateOrder";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -253,4 +309,6 @@ export type NodePayload = { id: string } & (
   | { type: "NodeCharge"; data: NodeChargeData }
   | { type: "NodeRandomCode"; data: NodeRandomCodeData }
   | { type: "NodeSendTextGroup"; data: NodeSendTextGroupData }
+  | { type: "NodeCreateOrder"; data: NodeCreateOrderData }
+  | { type: "NodeUpdateOrder"; data: NodeUpdateOrderData }
 );

@@ -771,6 +771,7 @@ model ConnectionWA {
   Tickets              Tickets[]
   LogSystem            LogSystem[]
   ConnectionWAOnGroups ConnectionWAOnGroups[]
+  Orders               Orders[]
 
   @@index([id, name, type, number])
 }
@@ -1878,6 +1879,7 @@ enum TypeStatusOrder {
   pending
   processing
   confirmed
+  completed
   shipped
   delivered
   cancelled
@@ -1898,31 +1900,37 @@ enum TypePriorityOrder {
 model Orders {
   id                    Int                  @id @default(autoincrement())
   n_order               String
-  name                  String               @db.VarChar(150)
+  name                  String?              @db.VarChar(150)
   description           String?              @db.Text
+  delivery_method       String?
   deleted               Boolean              @default(false)
   status                TypeStatusOrder      @default(draft)
   priority              TypePriorityOrder?
   origin                String?              @db.VarChar(150)
   delivery_address      String?              @db.Text
   tracking_code         String?              @db.VarChar(150)
+  delivery_code         String?              @db.VarChar(12)
   itens_count           Int?                 @default(0)
   completedAt           DateTime?
-  note                  String?              @db.Text
+  data                  String?              @db.Text
   total                 Decimal?             @db.Decimal(10, 2)
   net_total             Decimal?             @db.Decimal(10, 2)
   createAt              DateTime             @default(now())
   updateAt              DateTime             @default(now()) @updatedAt
+  connectionWAId        Int?
+  actionChannels        String[] // são listas de botão que aparece no pedido, e quando clica dispara uma ação no node que criou o pedido e a saida é com o valor clicado > e pode ser recuperado pelo proximo node REPLY ou SWFTH, 
   flowNodeId            String?
+  flowId                String?
+  flowStateId           Int? // flow onde esse node foi executado
   // qual ticket gerou o pedido
   // qual atendente gerou o pedido
-  flowStateId           Int?
   contactsWAOnAccountId Int?
   accountId             Int
   businessId            Int
   Business              Business             @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   FlowState             FlowState?           @relation(fields: [flowStateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   ContactsWAOnAccount   ContactsWAOnAccount? @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  ConnectionWA          ConnectionWA?        @relation(fields: [connectionWAId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   Account               Account              @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Charges               Charges[]
 

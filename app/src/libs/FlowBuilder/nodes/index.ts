@@ -2,6 +2,7 @@ import { NodeAddTags } from "./AddTags";
 import { NodeAddVariables } from "./AddVariables";
 import { NodeAgentAI } from "./AgentAI";
 import { NodeCharge } from "./Charge";
+import { NodeCreateOrder } from "./CreateOrder";
 import { NodeExtractVariable } from "./ExtractVariable";
 import { NodeFbPixel } from "./FbPixel";
 import { NodeIf } from "./If";
@@ -23,6 +24,7 @@ import { NodeSendVideos } from "./SendVideos";
 import { NodeSwitchVariable } from "./Switch";
 import { NodeTimer } from "./Timer";
 import { NodeTransferDepartment } from "./TransferDepartment";
+import { NodeUpdateOrder } from "./UpdateOrder";
 
 export const LibraryNodes = {
   NodeReply,
@@ -50,4 +52,6 @@ export const LibraryNodes = {
   NodeCharge,
   NodeRandomCode,
   NodeSendTextGroup,
+  NodeCreateOrder,
+  NodeUpdateOrder,
 };

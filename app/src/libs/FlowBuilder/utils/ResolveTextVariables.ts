@@ -10,7 +10,10 @@ interface IProps {
   nodeId?: string;
 }
 
-export async function resolveTextVariables(props: IProps): Promise<string> {
+export async function resolveTextVariables(
+  props: IProps,
+  options?: { name: string; value: string | null }[]
+): Promise<string> {
   const hasVariable = props.text.match(/{{\w+}}/g);
   if (!hasVariable) return props.text;
 
@@ -65,6 +68,8 @@ export async function resolveTextVariables(props: IProps): Promise<string> {
   });
 
   let newMessage = structuredClone(props.text);
+  if (options?.length) vSysAndCnt.push(...options);
+
   for await (const variable of vSysAndCnt) {
     const regex = new RegExp(`({{${variable.name}}})`, "g");
     if (variable.value) newMessage = newMessage.replace(regex, variable.value);
