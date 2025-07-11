@@ -1,18 +1,13 @@
 import { proto } from "baileys";
 import { cacheConnectionsWAOnline } from "../Cache";
-import { sessionsBaileysWA } from "..";
+import { messageCache, sessionsBaileysWA } from "..";
+import { safeSendMessage } from "./safeSend";
 
 interface Props {
   connectionId: number;
   text: string;
   groupName: string;
 }
-
-// a melhor opção é fazer cache
-// const cacheGroupsConnection = new Map<number, {
-//   subject: string;
-//   id: string;
-// }[]>();
 
 export const SendTextGroup = async ({
   connectionId,
@@ -27,11 +22,11 @@ export const SendTextGroup = async ({
     }
     const allGroups = await bot.groupFetchAllParticipating();
     const group = Object.values(allGroups).find((g) => {
-      console.log(g.subject, props.groupName);
       return g.subject === props.groupName;
     });
     if (!group?.id) return;
-    return bot.sendMessage(group.id, { text: props.text });
+
+    return await safeSendMessage(bot, group.id, { text: props.text });
   };
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {

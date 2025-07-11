@@ -406,6 +406,7 @@ export const NodeAgentAI = async ({
   message = "",
   ...props
 }: PropsNodeAgentAI): Promise<ResultPromise> => {
+  console.log({ message });
   const keyMap = props.numberConnection + props.numberLead;
 
   function createTimeoutJob(timeout: number) {
@@ -549,6 +550,10 @@ export const NodeAgentAI = async ({
           async function executeProcess(msgs: string[]) {
             cacheNewMessageOnDebouceAgentAI.set(keyMap, false);
             cacheMessagesDebouceAgentAI.delete(keyMap);
+            console.log({
+              previus: props.previous_response_id,
+              input: msgs.join("\n"),
+            });
             let response = await openai.responses.create({
               model: agentAI!.model,
               temperature: agentAI!.temperature.toNumber() || 1.0,
@@ -579,12 +584,6 @@ export const NodeAgentAI = async ({
                       const isNewMsg =
                         !!cacheNewMessageOnDebouceAgentAI.get(keyMap);
                       if (isNewMsg) {
-                        const messages =
-                          cacheMessagesDebouceAgentAI.get(keyMap) || [];
-                        console.log("======= NEW MESSAGE 1");
-                        console.log(messages);
-                        console.log("======= NEW MESSAGE 1");
-
                         return {
                           type: "function_call_output",
                           call_id: c.call_id,
@@ -605,19 +604,9 @@ export const NodeAgentAI = async ({
                             };
                           }
                           try {
-                            // await TypingDelay({
-                            //   delay: Number(args.typing) || 2,
-                            //   toNumber: props.numberLead,
-                            //   connectionId: props.connectionWhatsId,
-                            // });
                             const isNewMsg =
                               !!cacheNewMessageOnDebouceAgentAI.get(keyMap);
                             if (isNewMsg) {
-                              const messages =
-                                cacheMessagesDebouceAgentAI.get(keyMap) || [];
-                              console.log("======= NEW MESSAGE 2");
-                              console.log(messages);
-                              console.log("======= NEW MESSAGE 2");
                               return {
                                 type: "function_call_output",
                                 call_id: c.call_id,

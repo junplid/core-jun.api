@@ -27,7 +27,8 @@ export const NodeSendImages = (props: PropsNodeSendImages): Promise<void> => {
       path = resolve(__dirname, "../../../../static/storage");
     }
 
-    const firstFile = props.data.files.shift();
+    const files = structuredClone(props.data.files);
+    const firstFile = files.shift();
     if (firstFile) {
       const e = await prisma.storagePaths.findFirst({
         where: { id: firstFile.id, accountId: props.accountId },
@@ -75,7 +76,7 @@ export const NodeSendImages = (props: PropsNodeSendImages): Promise<void> => {
       }
     }
 
-    for await (const file of props.data.files) {
+    for await (const file of files) {
       const e = await prisma.storagePaths.findFirst({
         where: { id: file.id, accountId: props.accountId },
         select: { fileName: true },

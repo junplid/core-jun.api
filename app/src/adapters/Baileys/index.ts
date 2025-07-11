@@ -33,7 +33,6 @@ import {
   chatbotRestartInDate,
   cachePendingReactionsList,
   cacheRunningQueueReaction,
-  cacheKnownGroups,
 } from "./Cache";
 import { startChatbotQueue } from "../../utils/startChatbotQueue";
 import { validatePhoneNumber } from "../../helpers/validatePhoneNumber";
@@ -183,6 +182,7 @@ if (process.env.NODE_ENV === "production") {
   pathChatbotQueue = resolve(__dirname, `../../../bin/chatbot-queue`);
 }
 const groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false });
+export const messageCache = new NodeCache({ stdTTL: 0, useClones: false });
 
 export const Baileys = async ({
   socket,
@@ -235,16 +235,22 @@ export const Baileys = async ({
       }
 
       const bot = makeWASocket({
-        auth: {
-          creds: state.creds,
-          keys: makeCacheableSignalKeyStore(state.keys), // <- evita perder chave
-        },
+        auth: state,
         version: baileysVersion.version,
         defaultQueryTimeoutMs: undefined,
         qrTimeout: 40000,
         browser: [`Junplid - ${nameCon.name}`, "Chrome", "114.0.5735.198"],
         markOnlineOnConnect: true,
         cachedGroupMetadata: async (jid) => groupCache.get(jid),
+        getMessage: async (key) => {
+          const cacheKey = `${key.remoteJid}|${key.id}`;
+          const env = messageCache.get<{ message: any }>(cacheKey);
+          return env?.message;
+        },
+        patchMessageBeforeSending: async (msg, recipientJids) => {
+          await bot.uploadPreKeysToServerIfRequired();
+          return msg;
+        },
       });
 
       sessionsBaileysWA.set(props.connectionWhatsId, bot);
@@ -441,6 +447,10 @@ export const Baileys = async ({
             return;
           }
           if (connection === "open") {
+            const all = await bot.groupFetchAllParticipating();
+            await Promise.all(
+              Object.values(all).map((g) => bot.groupMetadata(g.id))
+            );
             attempts = 0;
             try {
               emitStatus(props.connectionWhatsId, "open");
@@ -644,7 +654,7 @@ export const Baileys = async ({
             },
           ]);
 
-          const runningQueue = cacheRunningQueueReaction.get(keyMap); 
+          const runningQueue = cacheRunningQueueReaction.get(keyMap);
           if (runningQueue) return;
 
           cacheRunningQueueReaction.set(keyMap, true);

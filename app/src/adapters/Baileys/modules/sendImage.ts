@@ -3,7 +3,10 @@ import { sessionsBaileysWA } from "..";
 import { proto } from "baileys";
 import { lookup } from "mime-types";
 import path from "path";
-import { Jimp } from "jimp";
+import Jimp from "jimp";
+import sharp from "sharp";
+import { promises as fs } from "fs";
+import { safeSendMessage } from "./safeSend";
 
 interface Props {
   connectionId: number;
@@ -24,12 +27,17 @@ export const SendImage = async ({
     const mimetype = lookup(props.url) || "image/jpeg";
     const fileName = path.basename(props.url);
 
-    const img = await Jimp.read(props.url);
-    const buffer = await img.getBuffer(mimetype as any);
+    const buffer = await fs.readFile(props.url);
 
-    return await bot.sendMessage(props.toNumber, {
+    const thumbnail = await sharp(buffer)
+      .rotate()
+      .resize({ width: 200 })
+      .jpeg({ quality: 30 })
+      .toBuffer();
+
+    return await safeSendMessage(bot, props.toNumber, {
       image: buffer,
-      //  jpegThumbnail: props.url,
+      jpegThumbnail: thumbnail,
       mimetype,
       caption: props.caption,
       fileName,

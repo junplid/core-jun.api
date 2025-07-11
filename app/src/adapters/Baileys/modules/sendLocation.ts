@@ -1,6 +1,7 @@
 import { proto } from "baileys";
 import { cacheConnectionsWAOnline } from "../Cache";
 import { sessionsBaileysWA } from "..";
+import { safeSendMessage } from "./safeSend";
 
 interface Props {
   connectionId: number;
@@ -24,7 +25,7 @@ export const SendLocation = async ({
     if (!bot || !cacheConnectionsWAOnline.get(connectionId))
       throw new Error("CONEXÃO OFFLINE");
     const { address, name, ...rest } = props.location;
-    return await bot?.sendMessage(props.toNumber, {
+    return await safeSendMessage(bot, props.toNumber, {
       location: {
         address: address || undefined,
         name,

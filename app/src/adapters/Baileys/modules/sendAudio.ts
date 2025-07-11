@@ -1,6 +1,7 @@
 import { proto } from "baileys";
 import { cacheConnectionsWAOnline } from "../Cache";
 import { sessionsBaileysWA } from "..";
+import { safeSendMessage } from "./safeSend";
 
 interface Props {
   connectionId: number;
@@ -21,7 +22,8 @@ export const SendAudio = async ({
     const bot = sessionsBaileysWA.get(connectionId);
     if (!bot || !cacheConnectionsWAOnline.get(connectionId))
       throw new Error("CONEXÃO OFFLINE");
-    return await bot.sendMessage(props.toNumber, {
+
+    return await safeSendMessage(bot, props.toNumber, {
       audio: { url: props.urlStatic },
       ptt,
       mimetype: props.mimetype,

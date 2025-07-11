@@ -169,6 +169,7 @@ export type NodeExtractVariableData = {
   flags: string[];
   value: string;
   var2Id: number;
+  tools?: "match" | "replace";
 };
 
 export type NodeChargeData = {

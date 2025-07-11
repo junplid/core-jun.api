@@ -67,7 +67,7 @@ export const NodeCharge = async (
         // notification_url:
         //   "https://junplid.com.br/v1/public/webhook/mercadopago",
         notification_url:
-          "https://0caa-2804-3894-961-5600-46d3-1888-8248-67cc.ngrok-free.app/v1/public/webhook/mercadopago",
+          "https://810367d51941.ngrok-free.app/v1/public/webhook/mercadopago",
       },
     });
 

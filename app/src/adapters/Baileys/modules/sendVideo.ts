@@ -1,6 +1,7 @@
 import { cacheConnectionsWAOnline } from "../Cache";
 import { sessionsBaileysWA } from "..";
 import { proto } from "baileys";
+import { safeSendMessage } from "./safeSend";
 
 interface Props {
   connectionId: number;
@@ -20,7 +21,7 @@ export const SendVideo = async ({
     const bot = sessionsBaileysWA.get(connectionId);
     if (!bot || !cacheConnectionsWAOnline.get(connectionId))
       throw new Error("CONEXÃO OFFLINE");
-    return await bot?.sendMessage(props.toNumber, {
+    return await safeSendMessage(bot, props.toNumber, {
       video: props.video,
       mimetype: props.mimetype,
       caption: props.caption,

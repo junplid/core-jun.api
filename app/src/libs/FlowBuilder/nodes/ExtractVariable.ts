@@ -1,6 +1,7 @@
 import { prisma } from "../../../adapters/Prisma/client";
 import { NodeExtractVariableData } from "../Payload";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
+import RE2 from "re2";
 
 interface PropsNodeExtractVariable {
   data: NodeExtractVariableData;
@@ -15,7 +16,6 @@ export const NodeExtractVariable = async ({
   ...props
 }: PropsNodeExtractVariable): Promise<void> => {
   try {
-    console.log("1");
     const target = await prisma.variable.findUnique({
       where: { id: data.var1Id },
       select: {
@@ -26,7 +26,6 @@ export const NodeExtractVariable = async ({
         },
       },
     });
-    console.log("2");
     const source = await prisma.variable.findFirst({
       where: { id: data.var2Id, accountId: props.accountId },
       select: {
@@ -36,12 +35,9 @@ export const NodeExtractVariable = async ({
         },
       },
     });
-    console.log("3");
     if (!target || !source) return;
-    console.log("4");
 
     let targetValue: string = "";
-    console.log("5");
 
     if (target.name) {
       targetValue = await resolveTextVariables({
@@ -61,10 +57,15 @@ export const NodeExtractVariable = async ({
       });
     } else return;
 
-    console.log("6");
-
     const flags = data.flags?.length ? data.flags.join("") : undefined;
-    const regex = new RegExp(`${data.regex}`, flags);
+    let regex: RE2;
+
+    try {
+      regex = new RE2(data.regex, flags);
+    } catch (err) {
+      return;
+    }
+
     const valueResolved = await resolveTextVariables({
       accountId: props.accountId,
       contactsWAOnAccountId: props.contactsWAOnAccountId,
@@ -72,10 +73,25 @@ export const NodeExtractVariable = async ({
       numberLead: props.numberLead,
       nodeId: props.nodeId,
     });
-    console.log("7", { regex, valueResolved, targetValue });
 
-    const nextValue = targetValue.replace(regex, valueResolved);
-    console.log("8");
+    let nextValue = "";
+
+    if (!data.tools || data.tools === "match") {
+      const match = targetValue.match(regex);
+      function resolveMatch(model: string) {
+        if (!match) return "";
+        return model.replace(/\$\[(\d+)\]/g, (_, idx) => {
+          const i = parseInt(idx, 10);
+          return match[i] ?? "";
+        });
+      }
+
+      nextValue = resolveMatch(valueResolved);
+    } else {
+      nextValue = targetValue.replace(regex, valueResolved);
+    }
+
+    if (!nextValue) return;
 
     if (!source.ContactsWAOnAccountVariable.length) {
       await prisma.contactsWAOnAccountVariable.create({
@@ -92,7 +108,6 @@ export const NodeExtractVariable = async ({
         data: { value: nextValue },
       });
     }
-    console.log("9");
 
     return;
   } catch (e) {

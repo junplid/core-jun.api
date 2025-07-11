@@ -293,7 +293,7 @@ export const NodeControler = ({
 
             execute({
               ...props,
-              type: "initial",
+              ...(props.type === "running" && { message: props.message }),
               currentNodeId: nextEdgesIds[0].id,
               oldNodeId: currentNode.id,
             });
@@ -1479,7 +1479,9 @@ export const NodeControler = ({
             }
             return execute({
               ...props,
-              type: "initial",
+              ...(props.type === "running"
+                ? { message: props.message, type: "running" }
+                : { type: "initial" }),
               currentNodeId: isNextNodeMain.id,
               oldNodeId: currentNode.id,
             });
@@ -1569,7 +1571,9 @@ export const NodeControler = ({
 
             execute({
               ...props,
-              type: "initial",
+              ...(props.type === "running"
+                ? { message: props.message, type: "running" }
+                : { type: "initial" }),
               currentNodeId: nextEdgesIds[0].id,
               oldNodeId: currentNode.id,
             });
@@ -1619,7 +1623,9 @@ export const NodeControler = ({
 
               execute({
                 ...props,
-                type: "initial",
+                ...(props.type === "running"
+                  ? { message: props.message, type: "running" }
+                  : { type: "initial" }),
                 currentNodeId: nextEdgesIds[0].id,
                 oldNodeId: currentNode.id,
               });
@@ -1688,7 +1694,9 @@ export const NodeControler = ({
 
               execute({
                 ...props,
-                type: "initial",
+                ...(props.type === "running"
+                  ? { message: props.message, type: "running" }
+                  : { type: "initial" }),
                 currentNodeId: nextEdgesIds[0].id,
                 oldNodeId: currentNode.id,
               });

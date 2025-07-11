@@ -3,6 +3,7 @@ import { cacheConnectionsWAOnline } from "../Cache";
 import phone from "libphonenumber-js";
 import { sessionsBaileysWA } from "..";
 import { validatePhoneNumber } from "../../../helpers/validatePhoneNumber";
+import { safeSendMessage } from "./safeSend";
 
 interface Props {
   connectionId: number;
@@ -47,7 +48,7 @@ export const SendContact = async ({
       `TEL;type=CELL;type=VOICE;waid=${waId}:${prevP}\n` +
       `END:VCARD`;
 
-    return await bot?.sendMessage(props.toNumber + "@s.whatsapp.net", {
+    return await safeSendMessage(bot, props.toNumber + "@s.whatsapp.net", {
       contacts: {
         displayName: props.fullName.split(" ")[0],
         contacts: [{ vcard }],
