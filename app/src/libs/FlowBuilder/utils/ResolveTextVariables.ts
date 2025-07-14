@@ -61,6 +61,9 @@ export async function resolveTextVariables(
     if (s.name === "JUN_LINK_LEAD_WHATSAPP") {
       s.value = `https://wa.me/${props.numberLead}/`;
     }
+    if (s.name === "JUN_NUMERO_LEAD_WHATSAPP" && props.numberLead) {
+      s.value = props.numberLead.split("@")[0].replace(/^55/, "");
+    }
     // if (s.name === "JUN_NOME_LEAD_WHATSAPP") {
     // }
 

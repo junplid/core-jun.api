@@ -22,6 +22,7 @@ import { NodeSendImages } from "./SendImages";
 import { NodeSendTextGroup } from "./SendTextGroup";
 import { NodeSendVideos } from "./SendVideos";
 import { NodeSwitchVariable } from "./Switch";
+import { NodeTimedQueue } from "./TimedQueue";
 import { NodeTimer } from "./Timer";
 import { NodeTransferDepartment } from "./TransferDepartment";
 import { NodeUpdateOrder } from "./UpdateOrder";
@@ -54,4 +55,5 @@ export const LibraryNodes = {
   NodeSendTextGroup,
   NodeCreateOrder,
   NodeUpdateOrder,
+  NodeTimedQueue,
 };

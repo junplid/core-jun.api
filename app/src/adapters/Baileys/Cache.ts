@@ -52,3 +52,5 @@ export const cachePendingReactionsList = new Map<
 >();
 
 export const cacheKnownGroups = new Map<string, string | undefined>();
+
+export const cacheDebounceTimedQueue = new Map<string, Job | null>();

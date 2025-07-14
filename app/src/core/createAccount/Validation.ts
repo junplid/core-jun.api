@@ -16,7 +16,7 @@ export const createAccountValidation = (
     password: Joi.string().required(),
     number: Joi.string().required(),
     affiliate: Joi.string().optional(),
-    paymentMethodId: Joi.string().required(),
+    // paymentMethodId: Joi.string().required(),
   });
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });

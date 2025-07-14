@@ -5,5 +5,5 @@ export interface CreateAccountDTO_I {
   name: string;
   number: string;
   affiliate?: string;
-  paymentMethodId: string;
+  // paymentMethodId: string;
 }

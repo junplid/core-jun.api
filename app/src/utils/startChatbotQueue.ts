@@ -281,6 +281,7 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
                     await prisma.flowState.create({
                       data: {
                         indexNode: node.id,
+                        flowId: node.flowId,
                         connectionWAId: infoChatbot.ConnectionWA!.id,
                         contactsWAOnAccountId: ContactsWAOnAccount[0].id,
                       },
@@ -288,7 +289,7 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
                   } else {
                     await prisma.flowState.update({
                       where: { id: indexCurrentAlreadyExist.id },
-                      data: { indexNode: node.id },
+                      data: { indexNode: node.id, flowId: node.flowId },
                     });
                   }
                 },

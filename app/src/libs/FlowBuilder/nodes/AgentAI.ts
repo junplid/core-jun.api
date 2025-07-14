@@ -404,7 +404,6 @@ export const NodeAgentAI = async ({
   message = "",
   ...props
 }: PropsNodeAgentAI): Promise<ResultPromise> => {
-  console.log({ message });
   const keyMap = props.numberConnection + props.numberLead;
 
   function createTimeoutJob(timeout: number) {

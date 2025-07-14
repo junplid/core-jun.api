@@ -6,6 +6,7 @@ interface PropsNodeListenReaction {
   message: string;
   reactionText: string;
   contactsWAOnAccountId: number;
+  contactsWAOnAccountReactionId?: number;
 }
 
 export const NodeListenReaction = async (
@@ -42,6 +43,33 @@ export const NodeListenReaction = async (
           },
         });
       }
+      if (props.contactsWAOnAccountReactionId) {
+        const picked = await prisma.contactsWAOnAccountVariable.findFirst({
+          where: {
+            contactsWAOnAccountId: props.contactsWAOnAccountReactionId,
+            variableId: props.data.varIdToReaction,
+          },
+          select: { id: true },
+        });
+        if (!picked) {
+          await prisma.contactsWAOnAccountVariable.create({
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountReactionId,
+              variableId: props.data.varIdToReaction,
+              value: props.reactionText,
+            },
+          });
+        } else {
+          await prisma.contactsWAOnAccountVariable.update({
+            where: { id: picked.id },
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountReactionId,
+              variableId: props.data.varIdToReaction,
+              value: props.reactionText,
+            },
+          });
+        }
+      }
     }
   }
   if (props.data.varIdToMessage) {
@@ -74,6 +102,33 @@ export const NodeListenReaction = async (
             value: props.message,
           },
         });
+      }
+      if (props.contactsWAOnAccountReactionId) {
+        const picked = await prisma.contactsWAOnAccountVariable.findFirst({
+          where: {
+            contactsWAOnAccountId: props.contactsWAOnAccountReactionId,
+            variableId: props.data.varIdToMessage,
+          },
+          select: { id: true },
+        });
+        if (!picked) {
+          await prisma.contactsWAOnAccountVariable.create({
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountReactionId,
+              variableId: props.data.varIdToMessage,
+              value: props.message,
+            },
+          });
+        } else {
+          await prisma.contactsWAOnAccountVariable.update({
+            where: { id: picked.id },
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountReactionId,
+              variableId: props.data.varIdToMessage,
+              value: props.message,
+            },
+          });
+        }
       }
     }
   }

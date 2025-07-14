@@ -8,7 +8,6 @@ import { NodeControler } from "../libs/FlowBuilder/Control";
 import { sessionsBaileysWA } from "../adapters/Baileys";
 import { cacheFlowsMap } from "../adapters/Baileys/Cache";
 import { cacheAccountSocket } from "../infra/websocket/cache";
-import { remove } from "fs-extra";
 
 interface PropsStartCampaign {
   id: number;
@@ -420,7 +419,7 @@ export const startCampaign = async ({
               await prisma.flowState
                 .update({
                   where: { id: stateFlow.id },
-                  data: { indexNode: data.id },
+                  data: { indexNode: data.id, flowId: data.flowId },
                 })
                 .catch((err) => console.log(err));
             },
@@ -451,7 +450,7 @@ export const startCampaign = async ({
               await prisma.flowState
                 .update({
                   where: { id: stateFlow.id },
-                  data: { indexNode: data.id },
+                  data: { indexNode: data.id, flowId: data.flowId },
                 })
                 .catch((err) => console.log(err));
             },

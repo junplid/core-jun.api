@@ -61,6 +61,13 @@ export const NodeExtractVariable = async ({
     let regex: RE2;
 
     try {
+      data.regex = await resolveTextVariables({
+        accountId: props.accountId,
+        contactsWAOnAccountId: props.contactsWAOnAccountId,
+        text: data.regex,
+        numberLead: props.numberLead,
+        nodeId: props.nodeId,
+      });
       regex = new RE2(data.regex, flags);
     } catch (err) {
       return;
@@ -91,21 +98,28 @@ export const NodeExtractVariable = async ({
       nextValue = targetValue.replace(regex, valueResolved);
     }
 
-    if (!nextValue) return;
+    const nextValueResolved = await resolveTextVariables({
+      accountId: props.accountId,
+      contactsWAOnAccountId: props.contactsWAOnAccountId,
+      text: nextValue,
+      numberLead: props.numberLead,
+      nodeId: props.nodeId,
+    });
 
     if (!source.ContactsWAOnAccountVariable.length) {
       await prisma.contactsWAOnAccountVariable.create({
         data: {
           contactsWAOnAccountId: props.contactsWAOnAccountId,
           variableId: data.var2Id,
-          value: nextValue,
+          value: nextValueResolved,
         },
       });
     } else {
-      if (source.ContactsWAOnAccountVariable[0].value === nextValue) return;
+      if (source.ContactsWAOnAccountVariable[0].value === nextValueResolved)
+        return;
       await prisma.contactsWAOnAccountVariable.update({
         where: { id: source.ContactsWAOnAccountVariable[0].id },
-        data: { value: nextValue },
+        data: { value: nextValueResolved },
       });
     }
 

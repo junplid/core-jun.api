@@ -89,6 +89,7 @@ export type NodeTimerData = {
 export type NodeNotifyWAData = {
   numbers: { key: string; number: string }[];
   text: string;
+  tagIds: number[];
 };
 
 export type NodeSendFilesData = {
@@ -249,6 +250,10 @@ export type NodeGetOrdersData = {
   ofContact?: boolean;
 };
 
+export type NodeTimedQueueData = {
+  value: number;
+};
+
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeFinish"
@@ -279,7 +284,8 @@ export type TypeNodesPayload =
   | "NodeRandomCode"
   | "NodeSendTextGroup"
   | "NodeCreateOrder"
-  | "NodeUpdateOrder";
+  | "NodeUpdateOrder"
+  | "NodeTimedQueue";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -312,4 +318,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeSendTextGroup"; data: NodeSendTextGroupData }
   | { type: "NodeCreateOrder"; data: NodeCreateOrderData }
   | { type: "NodeUpdateOrder"; data: NodeUpdateOrderData }
+  | { type: "NodeTimedQueue"; data: NodeTimedQueueData }
 );

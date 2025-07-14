@@ -13,9 +13,9 @@ interface Edges {
 
 export type IPropsControler = {
   actions?: {
-    onEnterNode?(props: { id: string; type: TypeNodesPayload }): Promise<void>;
+    onEnterNode?(props: { id: string; flowId: string }): Promise<void>;
     onExecutedNode?(
-      props: { id: string; type: TypeNodesPayload },
+      props: { id: string; flowId: string },
       isShots?: boolean
     ): void;
     onFinish?(vl?: string): Promise<void>;
@@ -50,6 +50,7 @@ export type IPropsControler = {
       audio?: any;
       reactionText?: string;
       isMidia?: boolean;
+      contactsWAOnAccountReactionId?: number;
     }
 );
 
@@ -150,7 +151,7 @@ export const NodeControler = ({
       if (!currentNode) {
         cacheFlowInExecution.delete(keyMap);
         if (props.forceFinish) await props.actions?.onFinish?.("110");
-        props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+        props.actions?.onExecutedNode?.({ id: "0", flowId: props.flowId });
         return res();
       }
 
@@ -166,7 +167,7 @@ export const NodeControler = ({
       //   })
       //     .then(async ({ handleId }) => {
       //       if (handleId) {
-      //         if (props.onExecutedNode) props.onExecutedNode(currentNode);
+      //         if (props.onExecutedNode) props.onExecutedNode({id: currentNode.id, flowId: props.flowId});
       //         if (!handleId) return;
 
       //         if (!nextEdgesIds.length) {
@@ -222,12 +223,15 @@ export const NodeControler = ({
       console.log(currentNode.type);
       if (currentNode.type === "NodeInitial") {
         if (props.actions?.onExecutedNode) {
-          props.actions?.onExecutedNode(currentNode);
+          props.actions?.onExecutedNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
         }
         if (!nextEdgesIds.length) {
           cacheFlowInExecution.delete(keyMap);
           if (props.forceFinish) await props.actions?.onFinish?.("110");
-          props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+          props.actions?.onExecutedNode?.({ id: "0", flowId: props.flowId });
           return res();
         }
 
@@ -241,7 +245,10 @@ export const NodeControler = ({
       }
       if (currentNode.type === "NodeFinish") {
         if (props.actions?.onExecutedNode) {
-          props.actions?.onExecutedNode(currentNode);
+          props.actions?.onExecutedNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
         }
 
         if (props.forceFinish) {
@@ -257,7 +264,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeMessage({
@@ -284,11 +291,17 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
 
             execute({
@@ -311,7 +324,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeReply({
@@ -330,11 +343,17 @@ export const NodeControler = ({
             if (!nextNodeId) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return res();
             }
             if (props.actions?.onExecutedNode) {
-              props.actions.onExecutedNode(currentNode);
+              props.actions.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
             return execute({
               ...props,
@@ -346,7 +365,10 @@ export const NodeControler = ({
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
             if (d.action === "NEXT") {
               const isNextNodeMain = nextEdgesIds.find(
@@ -357,7 +379,7 @@ export const NodeControler = ({
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 props.actions?.onExecutedNode?.({
                   id: "0",
-                  type: "NodeInitial",
+                  flowId: props.flowId,
                 });
                 return res();
               }
@@ -392,7 +414,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeMenu({
@@ -416,12 +438,18 @@ export const NodeControler = ({
             );
             if (!nextNodeId) {
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               cacheFlowInExecution.delete(keyMap);
               return res();
             }
             if (props.actions?.onExecutedNode) {
-              props.actions.onExecutedNode(currentNode);
+              props.actions.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
             return execute({
               ...props,
@@ -433,7 +461,10 @@ export const NodeControler = ({
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
             if (d.action === "sucess") {
               const isNextNodeMain = nextEdgesIds.find(
@@ -444,7 +475,7 @@ export const NodeControler = ({
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 props.actions?.onExecutedNode?.({
                   id: "0",
-                  type: "NodeInitial",
+                  flowId: props.flowId,
                 });
                 return res();
               }
@@ -472,7 +503,7 @@ export const NodeControler = ({
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 props.actions?.onExecutedNode?.({
                   id: "0",
-                  type: "NodeInitial",
+                  flowId: props.flowId,
                 });
                 return res();
               }
@@ -494,7 +525,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeAddTags({
@@ -505,12 +536,18 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return res();
             }
 
@@ -535,7 +572,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeRemoveTags({
@@ -546,12 +583,18 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return res();
             }
             return execute({
@@ -575,7 +618,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeAddVariables({
@@ -586,12 +629,18 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return res();
             }
 
@@ -616,7 +665,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeRemoveVariables({
@@ -627,12 +676,18 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return res();
             }
 
@@ -657,7 +712,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeSendFlow({
@@ -668,7 +723,10 @@ export const NodeControler = ({
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
             return execute({
               ...props,
@@ -693,7 +751,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeIf({
@@ -706,12 +764,18 @@ export const NodeControler = ({
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return res();
             }
 
@@ -721,7 +785,10 @@ export const NodeControler = ({
             if (!nextNodeId) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return res();
             }
             return execute({
@@ -743,7 +810,10 @@ export const NodeControler = ({
       }
       if (currentNode.type === "NodeTimer") {
         if (props.actions?.onEnterNode) {
-          await props.actions?.onEnterNode(currentNode);
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
         }
         await LibraryNodes.NodeTimer({
           data: currentNode.data,
@@ -751,12 +821,18 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return res();
             }
 
@@ -781,7 +857,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeNotifyWA({
@@ -800,11 +876,17 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
 
             execute({
@@ -828,7 +910,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeSendFiles({
@@ -847,11 +929,17 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
 
             execute({
@@ -875,7 +963,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeSendVideos({
@@ -893,11 +981,17 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
 
             execute({
@@ -921,7 +1015,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeSendImages({
@@ -940,11 +1034,17 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
 
             execute({
@@ -968,7 +1068,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeSendAudiosLive({
@@ -987,11 +1087,17 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
 
             execute({
@@ -1015,7 +1121,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeSendAudios({
@@ -1034,11 +1140,17 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
 
             execute({
@@ -1062,7 +1174,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeAgentAI({
@@ -1086,13 +1198,16 @@ export const NodeControler = ({
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 props.actions?.onExecutedNode?.({
                   id: "0",
-                  type: "NodeInitial",
+                  flowId: props.flowId,
                 });
                 cacheFlowInExecution.delete(keyMap);
                 return res();
               }
               if (props.actions?.onExecutedNode) {
-                props.actions.onExecutedNode(currentNode);
+                props.actions.onExecutedNode({
+                  id: currentNode.id,
+                  flowId: props.flowId,
+                });
               }
               return execute({
                 ...props,
@@ -1114,12 +1229,15 @@ export const NodeControler = ({
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 props.actions?.onExecutedNode?.({
                   id: "0",
-                  type: "NodeInitial",
+                  flowId: props.flowId,
                 });
                 return res();
               }
               if (props.actions?.onExecutedNode) {
-                props.actions.onExecutedNode(currentNode);
+                props.actions.onExecutedNode({
+                  id: currentNode.id,
+                  flowId: props.flowId,
+                });
               }
               return execute({
                 ...props,
@@ -1136,7 +1254,10 @@ export const NodeControler = ({
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
             if (d.action === "sucess") {
               const isNextNodeMain = nextEdgesIds.find(
@@ -1147,7 +1268,7 @@ export const NodeControler = ({
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 props.actions?.onExecutedNode?.({
                   id: "0",
-                  type: "NodeInitial",
+                  flowId: props.flowId,
                 });
                 return res();
               }
@@ -1175,7 +1296,7 @@ export const NodeControler = ({
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 props.actions?.onExecutedNode?.({
                   id: "0",
-                  type: "NodeInitial",
+                  flowId: props.flowId,
                 });
                 return res();
               }
@@ -1197,7 +1318,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeTransferDepartment({
@@ -1215,19 +1336,22 @@ export const NodeControler = ({
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 props.actions?.onExecutedNode?.({
                   id: "0",
-                  type: "NodeInitial",
+                  flowId: props.flowId,
                 });
                 return;
               }
               props.actions?.onExecutedNode?.({
                 id: nextEdgesIds[0].id,
-                type: "NodeTransferDepartment",
+                flowId: props.flowId,
               });
               return res();
             }
             if (d === "ERROR") {
               if (props.actions?.onExecutedNode) {
-                props.actions?.onExecutedNode(currentNode);
+                props.actions?.onExecutedNode({
+                  id: currentNode.id,
+                  flowId: props.flowId,
+                });
               }
               const isNextNodeMain = nextEdgesIds.find((nh) =>
                 nh.sourceHandle?.includes("failed")
@@ -1237,7 +1361,7 @@ export const NodeControler = ({
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 props.actions?.onExecutedNode?.({
                   id: "0",
-                  type: "NodeInitial",
+                  flowId: props.flowId,
                 });
                 return res();
               }
@@ -1261,7 +1385,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeFbPixel({
@@ -1280,11 +1404,17 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
 
             execute({
@@ -1309,7 +1439,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         if (props.type !== "running") return res();
@@ -1318,24 +1448,51 @@ export const NodeControler = ({
           data: currentNode.data,
           message: props.message,
           reactionText: props.reactionText || "",
+          contactsWAOnAccountReactionId: props.contactsWAOnAccountReactionId,
         })
           .then(async () => {
-            if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+            // a saida vai ser 2 então.
+            // uma saida para o contato que reagiu - parallel
+
+            if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
+            const nextNodeIdMain = nextEdgesIds.find(
+              (nd) => nd.sourceHandle === "main"
+            );
+            if (nextNodeIdMain?.id) {
+              execute({
+                ...props,
+                type: "initial",
+                currentNodeId: nextNodeIdMain.id,
+                oldNodeId: currentNode.id,
+              });
+            }
+            const nextNodeIdParallel = nextEdgesIds.find(
+              (nd) => nd.sourceHandle === "parallel"
+            );
 
-            execute({
-              ...props,
-              type: "initial",
-              currentNodeId: nextEdgesIds[0].id,
-              oldNodeId: currentNode.id,
-            });
+            if (nextNodeIdParallel?.id && props.contactsWAOnAccountReactionId) {
+              execute({
+                ...props,
+                contactsWAOnAccountId: props.contactsWAOnAccountReactionId,
+                type: "initial",
+                currentNodeId: nextNodeIdParallel.id,
+                oldNodeId: currentNode.id,
+              });
+            }
             return;
           })
           .catch((error) => {
@@ -1350,7 +1507,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeSwitchVariable({
@@ -1361,7 +1518,10 @@ export const NodeControler = ({
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
             if (!d.handleId) {
               const isNextNodeMain = nextEdgesIds.find((nh) =>
@@ -1372,7 +1532,7 @@ export const NodeControler = ({
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 props.actions?.onExecutedNode?.({
                   id: "0",
-                  type: "NodeInitial",
+                  flowId: props.flowId,
                 });
                 return res();
               }
@@ -1391,7 +1551,10 @@ export const NodeControler = ({
             if (!isNextNodeMain) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return res();
             }
             return execute({
@@ -1411,7 +1574,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeExtractVariable({
@@ -1425,11 +1588,17 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
 
             execute({
@@ -1454,7 +1623,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeCharge({
@@ -1466,7 +1635,10 @@ export const NodeControler = ({
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
             const isNextNodeMain = nextEdgesIds.find((nh) =>
               nh.sourceHandle?.includes(d)
@@ -1474,7 +1646,10 @@ export const NodeControler = ({
             if (!isNextNodeMain) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return res();
             }
             return execute({
@@ -1496,7 +1671,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeRandomCode({
@@ -1505,12 +1680,18 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return res();
             }
 
@@ -1535,7 +1716,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeSendTextGroup({
@@ -1562,11 +1743,17 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({ id: "0", type: "NodeInitial" });
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode(currentNode);
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
             }
 
             execute({
@@ -1591,7 +1778,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeCreateOrder({
@@ -1613,12 +1800,15 @@ export const NodeControler = ({
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 props.actions?.onExecutedNode?.({
                   id: "0",
-                  type: "NodeInitial",
+                  flowId: props.flowId,
                 });
                 return;
               }
               if (props.actions?.onExecutedNode) {
-                props.actions?.onExecutedNode(currentNode);
+                props.actions?.onExecutedNode({
+                  id: currentNode.id,
+                  flowId: props.flowId,
+                });
               }
 
               execute({
@@ -1638,7 +1828,7 @@ export const NodeControler = ({
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 props.actions?.onExecutedNode?.({
                   id: "0",
-                  type: "NodeInitial",
+                  flowId: props.flowId,
                 });
                 return res();
               }
@@ -1665,7 +1855,7 @@ export const NodeControler = ({
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
             id: currentNode.id,
-            type: currentNode.type,
+            flowId: props.flowId,
           });
         }
         await LibraryNodes.NodeUpdateOrder({
@@ -1684,12 +1874,15 @@ export const NodeControler = ({
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 props.actions?.onExecutedNode?.({
                   id: "0",
-                  type: "NodeInitial",
+                  flowId: props.flowId,
                 });
                 return;
               }
               if (props.actions?.onExecutedNode) {
-                props.actions?.onExecutedNode(currentNode);
+                props.actions?.onExecutedNode({
+                  id: currentNode.id,
+                  flowId: props.flowId,
+                });
               }
 
               execute({
@@ -1709,7 +1902,7 @@ export const NodeControler = ({
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 props.actions?.onExecutedNode?.({
                   id: "0",
-                  type: "NodeInitial",
+                  flowId: props.flowId,
                 });
                 return res();
               }
@@ -1731,6 +1924,71 @@ export const NodeControler = ({
             return res();
           });
         return;
+      }
+      if (currentNode.type === "NodeTimedQueue") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        console.log("Esta entrando aqui");
+        LibraryNodes.NodeTimedQueue({
+          numberLead: props.lead.number,
+          numberConnection: props.numberConnection,
+          data: currentNode.data,
+          nodeId: currentNode.id,
+          executeDebounce: async () => {
+            const nextNodeId = nextEdgesIds?.find(
+              (nd) => nd.sourceHandle === "debounce"
+            );
+            if (!nextNodeId) {
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              cacheFlowInExecution.delete(keyMap);
+              return res();
+            }
+            if (props.actions?.onExecutedNode) {
+              props.actions.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
+            }
+            return execute({
+              ...props,
+              type: "initial",
+              currentNodeId: nextNodeId.id,
+              oldNodeId: currentNode.id,
+            });
+          },
+        });
+        const nextNodeId = nextEdgesIds?.find(
+          (nd) => nd.sourceHandle === "main"
+        );
+        if (!nextNodeId) {
+          if (props.forceFinish) await props.actions?.onFinish?.("110");
+          props.actions?.onExecutedNode?.({
+            id: "0",
+            flowId: props.flowId,
+          });
+          cacheFlowInExecution.delete(keyMap);
+          return res();
+        }
+        if (props.actions?.onExecutedNode) {
+          props.actions.onExecutedNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        return execute({
+          ...props,
+          type: "initial",
+          currentNodeId: nextNodeId.id,
+          oldNodeId: currentNode.id,
+        });
       }
 
       return res();

@@ -447,10 +447,13 @@ export const Baileys = async ({
             return;
           }
           if (connection === "open") {
+            console.log("1");
             const all = await bot.groupFetchAllParticipating();
+            console.log("2");
             await Promise.all(
               Object.values(all).map((g) => bot.groupMetadata(g.id))
             );
+            console.log("3");
             attempts = 0;
             try {
               emitStatus(props.connectionWhatsId, "open");
@@ -501,7 +504,10 @@ export const Baileys = async ({
                     bot.updateProfilePicturePrivacy(cfg.imgPerfilPrivacy)
                   );
                 }
+                console.log("4");
+
                 await Promise.allSettled(tasks);
+                console.log("5");
               }
               // await prisma.connectionWAOnGroups.deleteMany({
               //   where: { connectionWAId: props.connectionWhatsId },
@@ -556,36 +562,36 @@ export const Baileys = async ({
             return;
           }
 
-          // const number = body[0].key.remoteJid?.split("@")[0];
-          // if (!number) {
-          //   console.log("Deu erro para recuperar número do lead");
-          //   return;
-          // }
-          // const { ContactsWAOnAccount, ...contactWA } =
-          //   await prisma.contactsWA.upsert({
-          //     where: { completeNumber: number },
-          //     create: { completeNumber: number },
-          //     update: {},
-          //     select: {
-          //       id: true,
-          //       ContactsWAOnAccount: {
-          //         where: { accountId: props.accountId },
-          //         select: { id: true },
-          //       },
-          //     },
-          //   });
+          const number = body[0].key.remoteJid?.split("@")[0];
+          if (!number) {
+            console.log("Deu erro para recuperar número do lead");
+            return;
+          }
+          const { ContactsWAOnAccount, ...contactWA } =
+            await prisma.contactsWA.upsert({
+              where: { completeNumber: number },
+              create: { completeNumber: number },
+              update: {},
+              select: {
+                id: true,
+                ContactsWAOnAccount: {
+                  where: { accountId: props.accountId },
+                  select: { id: true },
+                },
+              },
+            });
 
-          // if (!ContactsWAOnAccount.length) {
-          //   await prisma.contactsWAOnAccount.create({
-          //     data: {
-          //       name: "<unknown>",
-          //       accountId: props.accountId,
-          //       contactWAId: contactWA.id,
-          //     },
-          //     select: { id: true },
-          //   });
-          //   return;
-          // }
+          if (!ContactsWAOnAccount.length) {
+            const { id: newContact } = await prisma.contactsWAOnAccount.create({
+              data: {
+                name: "<unknown>",
+                accountId: props.accountId,
+                contactWAId: contactWA.id,
+              },
+              select: { id: true },
+            });
+            ContactsWAOnAccount.push({ id: newContact });
+          }
 
           let flow:
             | { edges: any[]; nodes: any[]; businessIds: number[] }
@@ -641,10 +647,10 @@ export const Baileys = async ({
             return;
           }
 
-          const number =
+          const numberLead =
             msg.FlowState.ContactsWAOnAccount.ContactsWA.completeNumber;
 
-          const keyMap = `${msg.FlowState.ConnectionWA.number}+${number}`;
+          const keyMap = `${msg.FlowState.ConnectionWA.number}+${numberLead}`;
           const reactionsList = cachePendingReactionsList.get(keyMap) || [];
           cachePendingReactionsList.set(keyMap, [
             ...reactionsList,
@@ -692,9 +698,10 @@ export const Baileys = async ({
                 isSavePositionLead: false,
                 flowStateId: msg!.FlowState!.id,
                 contactsWAOnAccountId: msg!.FlowState!.ContactsWAOnAccount!.id,
-                lead: { number: number! + "@s.whatsapp.net" },
+                lead: { number: numberLead! + "@s.whatsapp.net" },
                 edges: flow!.edges,
                 nodes: flow!.nodes,
+                contactsWAOnAccountReactionId: ContactsWAOnAccount[0].id,
                 numberConnection:
                   msg!.FlowState!.ConnectionWA!.number + "@s.whatsapp.net",
                 ...reaction!,
@@ -1442,6 +1449,7 @@ export const Baileys = async ({
                         await prisma.flowState.create({
                           data: {
                             indexNode: node.id,
+                            flowId: node.flowId,
                             connectionWAId: props.connectionWhatsId,
                             contactsWAOnAccountId: ContactsWAOnAccount[0].id,
                           },
@@ -1449,7 +1457,7 @@ export const Baileys = async ({
                       } else {
                         await prisma.flowState.update({
                           where: { id: indexCurrentAlreadyExist.id },
-                          data: { indexNode: node.id },
+                          data: { indexNode: node.id, flowId: node.flowId },
                         });
                       }
                     },
@@ -1831,7 +1839,7 @@ export const Baileys = async ({
                   await prisma.flowState
                     .update({
                       where: { id: flowState.id },
-                      data: { indexNode: nodeId.id },
+                      data: { indexNode: nodeId.id, flowId: nodeId.flowId },
                     })
                     .catch((err) => console.log(err));
                 },
@@ -1851,6 +1859,7 @@ export const Baileys = async ({
                       where: { id: flowState.id },
                       data: {
                         indexNode: node.id,
+                        flowId: node.flowId,
                         ...(isShots && { isSent: isShots }),
                       },
                     })

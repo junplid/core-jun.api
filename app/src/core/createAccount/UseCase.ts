@@ -2,8 +2,8 @@ import { CreateAccountDTO_I } from "./DTO";
 import { genSalt, hash as hashBcrypt } from "bcrypt";
 import { createTokenAuth } from "../../helpers/authToken";
 import { prisma } from "../../adapters/Prisma/client";
-import { ErrorResponse } from "../../utils/ErrorResponse";
-import { stripe } from "../../services/Stripe";
+// import { ErrorResponse } from "../../utils/ErrorResponse";
+// import { stripe } from "../../services/Stripe";
 
 export class CreateAccountUseCase {
   constructor() {}
@@ -11,7 +11,7 @@ export class CreateAccountUseCase {
   async run({
     number,
     affiliate,
-    paymentMethodId,
+    // paymentMethodId,
     ...dto
   }: CreateAccountDTO_I) {
     try {
@@ -31,51 +31,51 @@ export class CreateAccountUseCase {
         },
       }));
 
-      const found = await stripe.customers.search({
-        query: `email:"${dto.email}"`,
-        limit: 1,
-      });
+      // const found = await stripe.customers.search({
+      //   query: `email:"${dto.email}"`,
+      //   limit: 1,
+      // });
 
-      if (found.total_count || exist) {
-        throw new ErrorResponse(400)
-          .input({
-            path: "email",
-            text: "Este campo pode está vinculado a outra conta. Faça o login.",
-          })
-          .input({
-            path: "number",
-            text: "Este campo pode está vinculado a outra conta. Faça o login.",
-          });
-      }
+      // if (found.total_count || exist) {
+      //   throw new ErrorResponse(400)
+      //     .input({
+      //       path: "email",
+      //       text: "Este campo pode está vinculado a outra conta. Faça o login.",
+      //     })
+      //     .input({
+      //       path: "number",
+      //       text: "Este campo pode está vinculado a outra conta. Faça o login.",
+      //     });
+      // }
 
-      const customer = await stripe.customers.create({
-        email: dto.email,
-        name: dto.name,
-        phone: number,
-      });
-      await stripe.paymentMethods.attach(paymentMethodId, {
-        customer: customer.id,
-      });
-      const si = await stripe.setupIntents.create({
-        customer: customer.id,
-        payment_method: paymentMethodId,
-        confirm: true,
-        usage: "off_session",
-        payment_method_types: ["card"],
-      });
+      // const customer = await stripe.customers.create({
+      //   email: dto.email,
+      //   name: dto.name,
+      //   phone: number,
+      // });
+      // await stripe.paymentMethods.attach(paymentMethodId, {
+      //   customer: customer.id,
+      // });
+      // const si = await stripe.setupIntents.create({
+      //   customer: customer.id,
+      //   payment_method: paymentMethodId,
+      //   confirm: true,
+      //   usage: "off_session",
+      //   payment_method_types: ["card"],
+      // });
 
-      if (si.status !== "succeeded") {
-        await stripe.paymentMethods.detach(paymentMethodId);
-        await stripe.customers.del(customer.id);
-        throw new ErrorResponse(400).input({
-          path: "email",
-          text: "Não foi possível confirmar sua identidade. Cartão não autorizado.",
-        });
-      }
+      // if (si.status !== "succeeded") {
+      //   await stripe.paymentMethods.detach(paymentMethodId);
+      //   await stripe.customers.del(customer.id);
+      //   throw new ErrorResponse(400).input({
+      //     path: "email",
+      //     text: "Não foi possível confirmar sua identidade. Cartão não autorizado.",
+      //   });
+      // }
 
-      await stripe.customers.update(customer.id, {
-        invoice_settings: { default_payment_method: paymentMethodId },
-      });
+      // await stripe.customers.update(customer.id, {
+      //   invoice_settings: { default_payment_method: paymentMethodId },
+      // });
 
       const salt = await genSalt(8);
       const nextPassword = await hashBcrypt(dto.password, salt);
@@ -90,7 +90,7 @@ export class CreateAccountUseCase {
           password: nextPassword,
           contactWAId,
           assetsUsedId: assetsUsedId.id,
-          customerId: customer.id,
+          // customerId: customer.id,
         },
         select: { id: true, hash: true },
       });
