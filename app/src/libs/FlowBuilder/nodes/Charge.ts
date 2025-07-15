@@ -64,10 +64,10 @@ export const NodeCharge = async (
         payment_method_id: props.data.method_type || "pix",
         payer: { email },
         date_of_expiration,
-        // notification_url:
-        //   "https://junplid.com.br/v1/public/webhook/mercadopago",
         notification_url:
-          "https://810367d51941.ngrok-free.app/v1/public/webhook/mercadopago",
+          "https://junplid.com.br/v1/public/webhook/mercadopago",
+        // notification_url:
+        //   "https://810367d51941.ngrok-free.app/v1/public/webhook/mercadopago",
       },
     });
 
