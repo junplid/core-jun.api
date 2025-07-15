@@ -20,7 +20,7 @@ export class DeleteStorageFileUseCase {
 
     let path = "";
     if (process.env.NODE_ENV === "production") {
-      path = `./static/storage/${exist.originalName}`;
+      path = `../static/storage/${exist.originalName}`;
     } else {
       path = `../../../static/storage/${exist.originalName}`;
     }

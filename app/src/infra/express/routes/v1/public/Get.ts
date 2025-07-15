@@ -15,7 +15,7 @@ const RouterV1Public_Get = Router();
 
 let path = "";
 if (process.env.NODE_ENV === "production") {
-  path = resolve(__dirname, `./static`);
+  path = resolve(__dirname, `../static`);
 } else {
   path = resolve(__dirname, `../../../../../../static`);
 }
