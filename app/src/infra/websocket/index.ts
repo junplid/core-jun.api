@@ -12,7 +12,7 @@ import {
   CacheSessionsBaileysWA,
   killConnectionWA,
 } from "../../adapters/Baileys";
-import { cacheAccountSocket } from "./cache";
+import { cacheAccountSocket, cacheRootSocket } from "./cache";
 import {
   cacheConnectionsWAOnline,
   cacheTestAgentAI,
@@ -44,15 +44,21 @@ export const WebSocketIo = (io: Server) => {
   io.on("connection", async (socket) => {
     const { auth } = socket.handshake;
 
-    const stateUser = cacheAccountSocket.get(auth.accountId);
-
-    if (!stateUser) {
-      cacheAccountSocket.set(auth.accountId, {
-        listSocket: [socket.id],
-      });
-    } else {
-      stateUser.listSocket.push(socket.id);
+    if (auth.accountId) {
+      const stateUser = cacheAccountSocket.get(auth.accountId);
+      if (!stateUser) {
+        cacheAccountSocket.set(auth.accountId, {
+          listSocket: [socket.id],
+        });
+      } else {
+        stateUser.listSocket.push(socket.id);
+      }
     }
+    if (auth.rootId) {
+      cacheRootSocket.push(socket.id);
+    }
+
+    if (!auth.accountId && !auth.rootId) return socket.disconnect(true);
 
     socket.on("create-session", async (data: PropsCreateSessionWA_I) => {
       const connectionDB = await prisma.connectionWA.findFirst({

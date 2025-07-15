@@ -29,9 +29,7 @@ export const SendContact = async ({
       extract: true,
       defaultCallingCode: "55",
     });
-    const waId = validatePhoneNumber(props.numberSend, {
-      removeNine: true,
-    });
+    const waId = validatePhoneNumber(props.numberSend);
 
     if (!verifiedNumber || !waId) {
       throw new Error("Error ao tentar recuperar número do lead");

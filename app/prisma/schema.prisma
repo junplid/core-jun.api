@@ -1772,13 +1772,20 @@ model AccountLogDate {
 }
 
 enum GeralLogDateType {
-  NEW_ACCOUNT
-  NEW_CONTACT
+  TRACE //  log mais verboso, passo-a-passo
+  DEBUG //  infos de depuração
+  INFO //   eventos normais de runtime
+  WARN //   algo fora do esperado, mas não quebrei
+  ERROR //  falha recuperável
+  FATAL //  falha crítica, vai derrubar o app
 }
 
 model GeralLogDate {
   id       Int              @id @default(autoincrement())
+  hash     String
   type     GeralLogDateType
+  entity   String
+  value    String           @db.Text
   createAt DateTime         @default(now())
 
   @@index([createAt, type])

@@ -3,6 +3,8 @@ import { getShootingSpeedsValidation } from "../../../../../core/getShootingSpee
 import { getShootingSpeedsController } from "../../../../../core/getShootingSpeeds";
 import { getShootingSpeedValidation } from "../../../../../core/getShootingSpeed/Validation";
 import { getShootingSpeedController } from "../../../../../core/getShootingSpeed";
+import { getGeralLogsValidation } from "../../../../../core/getGeralLogs/Validation";
+import { getGeralLogsController } from "../../../../../core/getGeralLogs";
 
 const RouterV1Root_Get = Router();
 
@@ -20,6 +22,12 @@ RouterV1Root_Get.get(
   "/shooting-speeds/:id",
   getShootingSpeedValidation,
   getShootingSpeedController
+);
+
+RouterV1Root_Get.get(
+  "/geral-logs",
+  getGeralLogsValidation,
+  getGeralLogsController
 );
 
 export default RouterV1Root_Get;

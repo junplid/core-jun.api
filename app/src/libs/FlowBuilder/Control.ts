@@ -1990,6 +1990,46 @@ export const NodeControler = ({
           oldNodeId: currentNode.id,
         });
       }
+      if (currentNode.type === "NodeCalculator") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeCalculator({
+          data: currentNode.data,
+          nodeId: currentNode.id,
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+        });
+        const nextNodeId = nextEdgesIds?.find(
+          (nd) => nd.sourceHandle === "main"
+        );
+        if (!nextNodeId) {
+          if (props.forceFinish) await props.actions?.onFinish?.("110");
+          props.actions?.onExecutedNode?.({
+            id: "0",
+            flowId: props.flowId,
+          });
+          cacheFlowInExecution.delete(keyMap);
+          return res();
+        }
+        if (props.actions?.onExecutedNode) {
+          props.actions.onExecutedNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        return execute({
+          ...props,
+          ...(props.type === "running"
+            ? { message: props.message, type: "running" }
+            : { type: "initial" }),
+          currentNodeId: nextNodeId.id,
+          oldNodeId: currentNode.id,
+        });
+      }
 
       return res();
     };

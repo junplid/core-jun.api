@@ -254,6 +254,11 @@ export type NodeTimedQueueData = {
   value: number;
 };
 
+export type NodeCalculatorData = {
+  formula: string;
+  variableId: number;
+};
+
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeFinish"
@@ -285,7 +290,8 @@ export type TypeNodesPayload =
   | "NodeSendTextGroup"
   | "NodeCreateOrder"
   | "NodeUpdateOrder"
-  | "NodeTimedQueue";
+  | "NodeTimedQueue"
+  | "NodeCalculator";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -319,4 +325,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeCreateOrder"; data: NodeCreateOrderData }
   | { type: "NodeUpdateOrder"; data: NodeUpdateOrderData }
   | { type: "NodeTimedQueue"; data: NodeTimedQueueData }
+  | { type: "NodeCalculator"; data: NodeCalculatorData }
 );

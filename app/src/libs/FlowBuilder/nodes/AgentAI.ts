@@ -811,9 +811,7 @@ export const NodeAgentAI = async ({
                               output:
                                 "Saiu do node, não foi possível atribuir a variável. Mas essa ação é esperada, não é um ERROR.",
                             };
-                          const newNumber = validatePhoneNumber(args.number, {
-                            removeNine: true,
-                          });
+                          const newNumber = validatePhoneNumber(args.number);
                           if (newNumber) {
                             try {
                               await TypingDelay({

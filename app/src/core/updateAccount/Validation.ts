@@ -33,7 +33,7 @@ export const updateAccountValidation = (
   const { number: numberBody, ...rest } = validation.value;
 
   if (numberBody) {
-    const number = validatePhoneNumber(numberBody, { removeNine: true });
+    const number = validatePhoneNumber(numberBody);
 
     const { statusCode, ...err } = new ErrorResponse(400)
       .input({

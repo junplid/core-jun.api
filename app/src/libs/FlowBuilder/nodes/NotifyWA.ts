@@ -4,6 +4,7 @@ import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { validatePhoneNumber } from "../../../helpers/validatePhoneNumber";
 import { prisma } from "../../../adapters/Prisma/client";
+import { resolveJid } from "../../../utils/resolveJid";
 
 interface PropsNodeNotifyWA {
   numberLead: string;
@@ -29,41 +30,41 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
   });
 
   for await (const { number } of props.data.numbers) {
-    const newNumber = validatePhoneNumber(number, { removeNine: true });
-    if (newNumber) {
-      const { ContactsWAOnAccount, ...contactWA } =
-        await prisma.contactsWA.upsert({
-          where: { completeNumber: newNumber },
-          create: { completeNumber: newNumber },
-          update: {},
-          select: {
-            id: true,
-            ContactsWAOnAccount: {
-              where: { accountId: props.accountId },
-              select: { id: true },
-            },
-          },
-        });
+    const newNumber = validatePhoneNumber(number);
+    let contactsWAOnAccountId: number | null = null;
 
-      if (!ContactsWAOnAccount.length) {
-        const { id: newContact } = await prisma.contactsWAOnAccount.create({
-          data: {
-            name: "<unknown>",
-            accountId: props.accountId,
-            contactWAId: contactWA.id,
-          },
+    if (newNumber) {
+      const valid = await resolveJid(props.botWA, newNumber, true);
+      if (!valid.jid) continue;
+
+      if (valid.contactId) {
+        const contactAccount = await prisma.contactsWAOnAccount.findFirst({
+          where: { accountId: props.accountId, contactWAId: valid.contactId },
           select: { id: true },
         });
-        ContactsWAOnAccount.push({ id: newContact });
+        if (!contactAccount?.id) {
+          const { id } = await prisma.contactsWAOnAccount.create({
+            data: {
+              name: "<unknown>",
+              accountId: props.accountId,
+              contactWAId: valid.contactId,
+            },
+            select: { id: true },
+          });
+          contactsWAOnAccountId = id;
+        } else {
+          contactsWAOnAccountId = contactAccount.id;
+        }
       }
 
+      if (!contactsWAOnAccountId) continue;
       for await (const tagId of props.data.tagIds || []) {
         const isExist = await prisma.tagOnContactsWAOnAccount.findFirst({
-          where: { contactsWAOnAccountId: ContactsWAOnAccount[0].id, tagId },
+          where: { contactsWAOnAccountId: contactsWAOnAccountId, tagId },
         });
         if (!isExist) {
           await prisma.tagOnContactsWAOnAccount.create({
-            data: { contactsWAOnAccountId: ContactsWAOnAccount[0].id, tagId },
+            data: { contactsWAOnAccountId: contactsWAOnAccountId, tagId },
           });
         }
       }
@@ -72,7 +73,7 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
         const msg = await SendMessageText({
           connectionId: props.connectionWhatsId,
           text: nextText,
-          toNumber: newNumber + "@s.whatsapp.net",
+          toNumber: valid.jid,
         });
         if (!msg) continue;
         await prisma.messages.create({

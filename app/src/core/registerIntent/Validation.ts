@@ -28,7 +28,7 @@ export const registerIntentValidation = (
     return res.status(400).json({ errors });
   }
 
-  const number = validatePhoneNumber(req.body.number, { removeNine: true });
+  const number = validatePhoneNumber(req.body.number);
 
   if (!number) {
     const { statusCode, ...resp } = new ErrorResponse(400)

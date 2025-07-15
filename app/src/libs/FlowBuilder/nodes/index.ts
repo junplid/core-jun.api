@@ -1,6 +1,7 @@
 import { NodeAddTags } from "./AddTags";
 import { NodeAddVariables } from "./AddVariables";
 import { NodeAgentAI } from "./AgentAI";
+import { NodeCalculator } from "./Calculator";
 import { NodeCharge } from "./Charge";
 import { NodeCreateOrder } from "./CreateOrder";
 import { NodeExtractVariable } from "./ExtractVariable";
@@ -56,4 +57,5 @@ export const LibraryNodes = {
   NodeCreateOrder,
   NodeUpdateOrder,
   NodeTimedQueue,
+  NodeCalculator,
 };
