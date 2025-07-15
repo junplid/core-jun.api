@@ -65,7 +65,10 @@ export const NodeControler = ({
   return new Promise((res, rej) => {
     if (cacheFlowInExecution.has(keyMap)) {
       console.log("Já existe uma execução em andamento para este lead");
-      return res();
+      // @ts-expect-error
+      if (!propsC.contactsWAOnAccountReactionId) {
+        return res();
+      }
     }
     cacheFlowInExecution.set(keyMap, true);
     const execute = async (props: IPropsControler): Promise<void> => {
