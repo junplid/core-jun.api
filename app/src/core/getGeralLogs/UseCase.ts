@@ -8,7 +8,13 @@ export class GetGeralLogsUseCase {
     const logs = await prisma.geralLogDate.findMany({
       take: 20,
       orderBy: { createAt: "asc" },
-      select: { id: true, type: true, value: true, entity: true, hash: true },
+      select: {
+        type: true,
+        value: true,
+        entity: true,
+        hash: true,
+        createAt: true,
+      },
     });
 
     return { message: "OK!", status: 200, logs };

@@ -4,6 +4,7 @@ import { ErrorResponse } from "../../utils/ErrorResponse";
 import OpenAI from "openai";
 import { resolve } from "path";
 import { createReadStream } from "fs-extra";
+import { AssistantTool } from "openai/resources/beta/assistants";
 
 let path = "";
 if (process.env.NODE_ENV === "production") {
@@ -131,6 +132,7 @@ export class CreateAgentAIUseCase {
           text: `Já existe um agente IA com esse provedor e nome: "${dto.name}"`,
         });
     }
+    const client = new OpenAI({ apiKey });
 
     try {
       const { AgentAIOnBusiness, id, ...agent } = await prisma.agentAI.create({
@@ -162,8 +164,6 @@ export class CreateAgentAIUseCase {
       });
 
       if (dto.files?.length) {
-        const openai = new OpenAI({ apiKey });
-
         const filesIds = await Promise.all(
           dto.files.map(async (fileLocalId) => {
             const existFile = await prisma.storagePaths.findFirst({
@@ -172,7 +172,7 @@ export class CreateAgentAIUseCase {
             });
             if (existFile?.id) {
               const fileId = await ensureFileByName(
-                openai,
+                client,
                 existFile.fileName,
                 resolve(path, existFile.fileName)
               );
@@ -185,7 +185,7 @@ export class CreateAgentAIUseCase {
           })
         );
         const filterFiles = filesIds.filter((id) => id) as string[];
-        const { id: vsId } = await openai.vectorStores.create({
+        const { id: vsId } = await client.vectorStores.create({
           name: `knowledge-base-${id}`,
           file_ids: filterFiles,
         });

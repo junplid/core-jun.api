@@ -1,5 +1,6 @@
 import { TypeEmojiLevel } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
+import NodeCache from "node-cache";
 import { Job } from "node-schedule";
 
 export const cacheFlowsMap = new Map<
@@ -17,7 +18,7 @@ export const cacheTestAgentAI = new Map<string, string>();
 
 export const cacheDebounceAgentAI = new Map<string, Job | null>();
 export const cacheMessagesDebouceAgentAI = new Map<string, string[]>();
-export const cacheNewMessageOnDebouceAgentAI = new Map<string, boolean>();
+export const cacheNewMessageWhileDebouceAgentAIRun = new Map<string, boolean>();
 /**
  * key = `{numero da conexão}+{numero do contato}`
  */
@@ -38,7 +39,7 @@ export const cacheInfoAgentAI: Map<
     model: string;
     temperature: Decimal;
     debounce: number;
-    ProviderCredential: { apiKey: string };
+    apiKey: string;
   }
 > = new Map();
 
@@ -54,3 +55,9 @@ export const cachePendingReactionsList = new Map<
 export const cacheKnownGroups = new Map<string, string | undefined>();
 
 export const cacheDebounceTimedQueue = new Map<string, Job | null>();
+
+/**
+ * key = `{numero da conexão}+{numero do contato}`
+ * Retorna uma lista de nodes agent que foram executados;
+ */
+export const cacheAgentsSentPromptInstruction = new Map<string, string[]>();

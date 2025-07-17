@@ -2044,6 +2044,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   indexNode: true,
                   flowId: true,
                   ContactsWAOnAccount: { select: { id: true } },
+                  previous_response_id: true,
                 },
               });
 
@@ -2199,6 +2200,8 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   !!contactMessage ||
                   !!locationMessage,
                 type: "running",
+                previous_response_id:
+                  flowState.previous_response_id || undefined,
                 connectionWhatsId: props.connectionWhatsId,
                 clientWA: bot,
                 campaignId: id,

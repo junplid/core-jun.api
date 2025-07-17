@@ -941,6 +941,7 @@ model FlowState {
   ip                    String?
   flowId                String?
   previous_response_id  String?
+  totalTokens           Int                  @default(0)
   fallbackSent          Boolean              @default(false)
   createAt              DateTime             @default(now())
   updateAt              DateTime             @default(now()) @updatedAt

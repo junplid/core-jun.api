@@ -1184,6 +1184,7 @@ export const NodeControler = ({
           numberLead: props.lead.number,
           numberConnection: props.numberConnection,
           data: currentNode.data,
+          nodeId: currentNode.id,
           message: props.type === "initial" ? undefined : props.message,
           connectionWhatsId: props.connectionWhatsId,
           action: {
@@ -1219,7 +1220,7 @@ export const NodeControler = ({
                 oldNodeId: currentNode.id,
               });
             },
-            onExitNode: async (NAME_HANDLE) => {
+            onExitNode: async (NAME_HANDLE, previous_response_id) => {
               // await prisma.flowState.update({
               //   where: { id: props.flowStateId },
               //   data: { previous_response_id: null },
@@ -1244,6 +1245,7 @@ export const NodeControler = ({
               }
               return execute({
                 ...props,
+                previous_response_id: previous_response_id || undefined,
                 type: "initial",
                 currentNodeId: nextNodeId.id,
                 oldNodeId: currentNode.id,
