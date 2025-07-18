@@ -34,6 +34,8 @@ import { updateFbPixelValidation } from "../../../../../core/updateFbPixel/Valid
 import { updateFbPixelController } from "../../../../../core/updateFbPixel";
 import { updatePaymentIntegrationValidation } from "../../../../../core/updatePaymentIntegration/Validation";
 import { updatePaymentIntegrationController } from "../../../../../core/updatePaymentIntegration";
+import { updateTrelloIntegrationValidation } from "../../../../../core/updateTrelloIntegration/Validation";
+import { updateTrelloIntegrationController } from "../../../../../core/updateTrelloIntegration";
 
 const RouterV1Private_Put = Router();
 
@@ -137,6 +139,12 @@ RouterV1Private_Put.put(
   "/integration/payments/:id",
   updatePaymentIntegrationValidation,
   updatePaymentIntegrationController
+);
+
+RouterV1Private_Put.put(
+  "/integration/trello/:id",
+  updateTrelloIntegrationValidation,
+  updateTrelloIntegrationController
 );
 
 export default RouterV1Private_Put;

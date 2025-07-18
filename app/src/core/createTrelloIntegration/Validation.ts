@@ -10,9 +10,9 @@ export const createTrelloIntegrationValidation = (
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
     name: Joi.string().max(150).required(),
-    provider: Joi.string().valid("mercadopago").default("mercadopago"),
     status: Joi.boolean().optional(),
-    access_token: Joi.string().max(240).required(),
+    token: Joi.string().max(240).required(),
+    key: Joi.string().max(240).required(),
   });
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });
