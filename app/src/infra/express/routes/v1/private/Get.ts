@@ -107,6 +107,8 @@ import { getChargesValidation } from "../../../../../core/getCharges/Validation"
 import { getChargesController } from "../../../../../core/getCharges";
 import { getOrdersValidation } from "../../../../../core/getOrders/Validation";
 import { getOrdersController } from "../../../../../core/getOrders";
+import { getTrelloIntegrationValidation } from "../../../../../core/getTrelloIntegration/Validation";
+import { getTrelloIntegrationController } from "../../../../../core/getTrelloIntegration";
 
 const RouterV1Private_Get = Router();
 
@@ -396,6 +398,12 @@ RouterV1Private_Get.get(
   "/integration/payments/:id",
   getPaymentIntegrationValidation,
   getPaymentIntegrationController
+);
+
+RouterV1Private_Get.get(
+  "/integration/trello/:id",
+  getTrelloIntegrationValidation,
+  getTrelloIntegrationController
 );
 
 RouterV1Private_Get.get("/charges", getChargesValidation, getChargesController);
