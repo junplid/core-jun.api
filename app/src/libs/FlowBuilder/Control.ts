@@ -1988,8 +1988,13 @@ export const NodeControler = ({
             flowId: props.flowId,
           });
         }
+
         return execute({
           ...props,
+          actions: {
+            onErrorClient: props.actions?.onErrorClient,
+            onErrorNumber: props.actions?.onErrorNumber,
+          },
           type: "initial",
           currentNodeId: nextNodeId.id,
           oldNodeId: currentNode.id,
