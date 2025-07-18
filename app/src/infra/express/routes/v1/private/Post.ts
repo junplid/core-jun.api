@@ -42,6 +42,8 @@ import { testFbPixelValidation } from "../../../../../core/testFbPixel/Validatio
 import { testFbPixelController } from "../../../../../core/testFbPixel";
 import { runActionChannelOrderValidation } from "../../../../../core/runActionChannelOrder/Validation";
 import { runActionChannelOrderController } from "../../../../../core/runActionChannelOrder";
+import { createTrelloIntegrationValidation } from "../../../../../core/createTrelloIntegration/Validation";
+import { createTrelloIntegrationController } from "../../../../../core/createTrelloIntegration";
 
 const RouterV1Private_Post = Router();
 
@@ -185,6 +187,12 @@ RouterV1Private_Post.post(
   "/orders/action/:id/:action",
   runActionChannelOrderValidation,
   runActionChannelOrderController
+);
+
+RouterV1Private_Post.post(
+  "/integration/trello",
+  createTrelloIntegrationValidation,
+  createTrelloIntegrationController
 );
 
 export default RouterV1Private_Post;
