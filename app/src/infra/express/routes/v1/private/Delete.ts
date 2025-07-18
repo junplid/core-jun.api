@@ -27,6 +27,8 @@ import { deleteFbPixelValidation } from "../../../../../core/deleteFbPixel/Valid
 import { deleteFbPixelController } from "../../../../../core/deleteFbPixel";
 import { deletePaymentIntegrationValidation } from "../../../../../core/deletePaymentIntegration/Validation";
 import { deletePaymentIntegrationController } from "../../../../../core/deletePaymentIntegration";
+import { deleteTrelloIntegrationValidation } from "../../../../../core/deleteTrelloIntegration/Validation";
+import { deleteTrelloIntegrationController } from "../../../../../core/deleteTrelloIntegration";
 
 const RouterV1Private_Delete = Router();
 
@@ -112,6 +114,12 @@ RouterV1Private_Delete.delete(
   "/integration/payments/:id",
   deletePaymentIntegrationValidation,
   deletePaymentIntegrationController
+);
+
+RouterV1Private_Delete.delete(
+  "/integration/trello/:id",
+  deleteTrelloIntegrationValidation,
+  deleteTrelloIntegrationController
 );
 
 export default RouterV1Private_Delete;
