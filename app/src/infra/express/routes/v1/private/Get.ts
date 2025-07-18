@@ -111,6 +111,8 @@ import { getTrelloIntegrationValidation } from "../../../../../core/getTrelloInt
 import { getTrelloIntegrationController } from "../../../../../core/getTrelloIntegration";
 import { getTrelloIntegrationsValidation } from "../../../../../core/getTrelloIntegrations/Validation";
 import { getTrelloIntegrationsController } from "../../../../../core/getTrelloIntegrations";
+import { getTrelloIntegrationsForSelectValidation } from "../../../../../core/getTrelloIntegrationsForSelect/Validation";
+import { getTrelloIntegrationsForSelectController } from "../../../../../core/getTrelloIntegrationsForSelect";
 
 const RouterV1Private_Get = Router();
 
@@ -400,6 +402,12 @@ RouterV1Private_Get.get(
   "/integration/payments/options",
   getPaymentIntegrationsForSelectValidation,
   getPaymentIntegrationsForSelectController
+);
+
+RouterV1Private_Get.get(
+  "/integration/trello/options",
+  getTrelloIntegrationsForSelectValidation,
+  getTrelloIntegrationsForSelectController
 );
 
 RouterV1Private_Get.get(
