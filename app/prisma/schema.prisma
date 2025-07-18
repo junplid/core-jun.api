@@ -147,6 +147,7 @@ model Account {
   PaymentIntegrations PaymentIntegrations[]
   Charges             Charges[]
   LogSystem           LogSystem[]
+  TrelloIntegration   TrelloIntegration[]
 
   @@index([id, email, hash, status, available, isUsedFreeTrialTime])
 }
@@ -1878,6 +1879,20 @@ model PaymentIntegrations {
   accountId    Int
   Account      Account             @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Charges      Charges[]
+
+  @@index([id, name, accountId, status])
+}
+
+model TrelloIntegration {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(150)
+  status    Boolean  @default(true)
+  key       String   @db.VarChar(240)
+  token     String   @db.VarChar(240)
+  createAt  DateTime @default(now())
+  updateAt  DateTime @default(now()) @updatedAt
+  accountId Int
+  Account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([id, name, accountId, status])
 }
