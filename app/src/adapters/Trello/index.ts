@@ -1,6 +1,3 @@
-// Trello.ts
-// Classe para integração com API do Trello usando axios
-
 import axios, { AxiosResponse } from "axios";
 
 interface AuthParams {
@@ -11,7 +8,7 @@ interface AuthParams {
 export interface Card {
   id: string;
   name: string;
-  desc: string;
+  desc?: string;
   idList: string;
   [key: string]: any;
 }
@@ -22,10 +19,23 @@ export interface List {
   [key: string]: any;
 }
 
+export interface Label {
+  id: string;
+  name: string;
+  color: string;
+  idBoard: string;
+  [key: string]: any;
+}
+
+export interface Board {
+  id: string;
+  name: string;
+}
+
 export class Trello {
   private key: string;
   private token: string;
-  private baseURL: string = "https://api.trello.com/1";
+  private baseURL = "https://api.trello.com/1";
 
   constructor(key: string, token: string) {
     this.key = key;
@@ -37,15 +47,17 @@ export class Trello {
   }
 
   public async adicionarCard(
-    name: string,
-    desc: string,
     idList: string,
-    pos: "top" | "bottom" | number = "bottom"
+    data: {
+      name: string;
+      pos: "top" | "bottom" | number;
+      desc?: string;
+    }
   ): Promise<Card> {
     const response: AxiosResponse<Card> = await axios.post(
       `${this.baseURL}/cards`,
       null,
-      { params: { name, desc, idList, pos, ...this.authParams } }
+      { params: { idList, ...this.authParams, ...data } }
     );
     return response.data;
   }
@@ -65,22 +77,23 @@ export class Trello {
     const response: AxiosResponse<Card> = await axios.put(
       `${this.baseURL}/cards/${idCard}`,
       null,
-      {
-        params: {
-          ...(data.name && { name: data.name }),
-          ...(data.desc && { desc: data.desc }),
-          ...this.authParams,
-        },
-      }
+      { params: { ...this.authParams, ...data } }
     );
     return response.data;
   }
 
-  public async moverCard(idCard: string, idList: string): Promise<Card> {
+  public async moverCard({
+    idCard,
+    ...props
+  }: {
+    idCard: string;
+    idList: string;
+    idBoard?: string;
+  }): Promise<Card> {
     const response: AxiosResponse<Card> = await axios.put(
       `${this.baseURL}/cards/${idCard}`,
       null,
-      { params: { idList, ...this.authParams } }
+      { params: { ...props, ...this.authParams } }
     );
     return response.data;
   }
@@ -126,6 +139,35 @@ export class Trello {
     return response.data;
   }
 
+  public async criarEtiqueta(
+    name: string,
+    color: string,
+    idBoard: string
+  ): Promise<Label> {
+    const response: AxiosResponse<Label> = await axios.post(
+      `${this.baseURL}/labels`,
+      null,
+      { params: { name, color, idBoard, ...this.authParams } }
+    );
+    return response.data;
+  }
+
+  public async listarEtiquetas(idBoard: string): Promise<Label[]> {
+    const response: AxiosResponse<Label[]> = await axios.get(
+      `${this.baseURL}/boards/${idBoard}/labels`,
+      { params: this.authParams }
+    );
+    return response.data;
+  }
+
+  public async listarEtiquetasDoCard(idCard: string): Promise<Label[]> {
+    const response: AxiosResponse<Label[]> = await axios.get(
+      `${this.baseURL}/cards/${idCard}/labels`,
+      { params: this.authParams }
+    );
+    return response.data;
+  }
+
   public async comentarCard(idCard: string, text: string): Promise<any> {
     const response: AxiosResponse = await axios.post(
       `${this.baseURL}/cards/${idCard}/actions/comments`,
@@ -140,6 +182,22 @@ export class Trello {
       `${this.baseURL}/cards/${idCard}/idMembers`,
       null,
       { params: { value: memberId, ...this.authParams } }
+    );
+    return response.data;
+  }
+
+  public async listarQuadros(): Promise<Board[]> {
+    const response: AxiosResponse<Board[]> = await axios.get(
+      `${this.baseURL}/members/me/boards`,
+      { params: { ...this.authParams, fields: "id,name" } }
+    );
+    return response.data;
+  }
+
+  public async listarListasPorQuadro(idBoard: string): Promise<List[]> {
+    const response: AxiosResponse<List[]> = await axios.get(
+      `${this.baseURL}/boards/${idBoard}/lists`,
+      { params: this.authParams }
     );
     return response.data;
   }

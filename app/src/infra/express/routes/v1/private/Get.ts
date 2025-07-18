@@ -113,6 +113,10 @@ import { getTrelloIntegrationsValidation } from "../../../../../core/getTrelloIn
 import { getTrelloIntegrationsController } from "../../../../../core/getTrelloIntegrations";
 import { getTrelloIntegrationsForSelectValidation } from "../../../../../core/getTrelloIntegrationsForSelect/Validation";
 import { getTrelloIntegrationsForSelectController } from "../../../../../core/getTrelloIntegrationsForSelect";
+import { getBoardsTrelloForSelectValidation } from "../../../../../core/getBoardsTrelloForSelect/Validation";
+import { getBoardsTrelloForSelectController } from "../../../../../core/getBoardsTrelloForSelect";
+import { getListsOnBoardTrelloForSelectValidation } from "../../../../../core/getListsOnBoardTrelloForSelect/Validation";
+import { getListsOnBoardTrelloForSelectController } from "../../../../../core/getListsOnBoardTrelloForSelect";
 
 const RouterV1Private_Get = Router();
 
@@ -425,5 +429,17 @@ RouterV1Private_Get.get(
 RouterV1Private_Get.get("/charges", getChargesValidation, getChargesController);
 
 RouterV1Private_Get.get("/orders", getOrdersValidation, getOrdersController);
+
+RouterV1Private_Get.get(
+  "/integration/trello/:id/boards/options",
+  getBoardsTrelloForSelectValidation,
+  getBoardsTrelloForSelectController
+);
+
+RouterV1Private_Get.get(
+  "/integration/trello/:id/lists/:boardId/options",
+  getListsOnBoardTrelloForSelectValidation,
+  getListsOnBoardTrelloForSelectController
+);
 
 export default RouterV1Private_Get;
