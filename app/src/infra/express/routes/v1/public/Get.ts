@@ -97,7 +97,6 @@ const mkCookie = (seed: string) =>
   `fb.1.${Math.floor(Date.now() / 1000)}.${seed}`;
 
 RouterV1Public_Get.get("/fb/:cbj", async (req, res) => {
-  console.log("entrou aqui");
   try {
     const cbot = await prisma.chatbot.findFirst({
       where: { cbj: req.params.cbj },

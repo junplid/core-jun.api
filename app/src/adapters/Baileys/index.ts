@@ -683,6 +683,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     id: true,
                     flowId: true,
                     chatbotId: true,
+                    campaignId: true,
                     ConnectionWA: { select: { number: true } },
                     ContactsWAOnAccount: {
                       select: {
@@ -834,6 +835,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   type: "running",
                   connectionWhatsId: props.connectionWhatsId,
                   chatbotId: msg!.FlowState!.chatbotId || undefined,
+                  campaignId: msg!.FlowState!.campaignId || undefined,
                   oldNodeId: reactionNode.id,
                   currentNodeId: reactionNode.id,
                   clientWA: bot,

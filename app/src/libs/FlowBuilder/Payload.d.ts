@@ -259,6 +259,43 @@ export type NodeCalculatorData = {
   variableId: number;
 };
 
+export type NodeAddTrelloCardData = {
+  trelloIntegrationId: number;
+  boardId: string;
+  listId: string;
+  name: string;
+  desc?: string;
+  // labels: { name: string; color: string }[];
+  varId_save_cardId?: number;
+};
+
+export type NodeRemoveTrelloCardData = {
+  trelloIntegrationId: number;
+  varId_cardId?: number;
+};
+
+export type NodeMoveTrelloCardData = {
+  trelloIntegrationId: number;
+  varId_cardId: number;
+  boardId: string;
+  listId: string;
+};
+
+export type NodeUpdateTrelloCardData = {
+  trelloIntegrationId: number;
+  varId_cardId: number;
+  name?: string;
+  desc?: string;
+  fields?: string[];
+  // labels: { name: string; color: string }[];
+};
+
+export type NodeWebhookTrelloCardData = {
+  varId_cardId?: number;
+  varId_save_listBeforeId?: number;
+  varId_save_listAfterId?: number;
+};
+
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeFinish"
@@ -291,7 +328,12 @@ export type TypeNodesPayload =
   | "NodeCreateOrder"
   | "NodeUpdateOrder"
   | "NodeTimedQueue"
-  | "NodeCalculator";
+  | "NodeCalculator"
+  | "NodeAddTrelloCard"
+  | "NodeUpdateTrelloCard"
+  | "NodeRemoveTrelloCard"
+  | "NodeMoveTrelloCard"
+  | "NodeWebhookTrelloCard";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -326,4 +368,9 @@ export type NodePayload = { id: string } & (
   | { type: "NodeUpdateOrder"; data: NodeUpdateOrderData }
   | { type: "NodeTimedQueue"; data: NodeTimedQueueData }
   | { type: "NodeCalculator"; data: NodeCalculatorData }
+  | { type: "NodeAddTrelloCard"; data: NodeAddTrelloCardData }
+  | { type: "NodeUpdateTrelloCard"; data: NodeUpdateTrelloCardData }
+  | { type: "NodeRemoveTrelloCard"; data: NodeRemoveTrelloCardData }
+  | { type: "NodeMoveTrelloCard"; data: NodeMoveTrelloCardData }
+  | { type: "NodeWebhookTrelloCard"; data: NodeWebhookTrelloCardData }
 );

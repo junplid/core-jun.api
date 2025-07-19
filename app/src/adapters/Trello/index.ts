@@ -32,6 +32,14 @@ export interface Board {
   name: string;
 }
 
+export interface Webhook {
+  id: string;
+  description: string;
+  idModel: string;
+  callbackURL: string;
+  [key: string]: any;
+}
+
 export class Trello {
   private key: string;
   private token: string;
@@ -198,6 +206,27 @@ export class Trello {
     const response: AxiosResponse<List[]> = await axios.get(
       `${this.baseURL}/boards/${idBoard}/lists`,
       { params: this.authParams }
+    );
+    return response.data;
+  }
+
+  public async listarWebhooks(): Promise<Webhook[]> {
+    const response: AxiosResponse<Webhook[]> = await axios.get(
+      `${this.baseURL}/tokens/${this.token}/webhooks`,
+      { params: this.authParams }
+    );
+    return response.data;
+  }
+
+  public async criarWebhook(
+    description: string,
+    callbackURL: string,
+    idModel: string
+  ): Promise<Webhook> {
+    const response: AxiosResponse<Webhook> = await axios.post(
+      `${this.baseURL}/webhooks`,
+      null,
+      { params: { description, callbackURL, idModel, ...this.authParams } }
     );
     return response.data;
   }

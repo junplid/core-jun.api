@@ -51,6 +51,9 @@ export type IPropsControler = {
       reactionText?: string;
       isMidia?: boolean;
       contactsWAOnAccountReactionId?: number;
+      beforeName?: string;
+      afterName?: string;
+      cardId?: string;
     }
 );
 
@@ -2039,6 +2042,252 @@ export const NodeControler = ({
           currentNodeId: nextNodeId.id,
           oldNodeId: currentNode.id,
         });
+      }
+      if (currentNode.type === "NodeAddTrelloCard") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeAddTrelloCard({
+          data: currentNode.data,
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          nodeId: currentNode.id,
+          numberLead: props.lead.number,
+          flowStateId: props.flowStateId,
+        })
+          .then(async () => {
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
+            }
+            if (!nextEdgesIds.length) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return res();
+            }
+
+            return execute({
+              ...props,
+              currentNodeId: nextEdgesIds[0].id,
+              ...(props.type === "running"
+                ? { message: props.message, type: "running" }
+                : { type: "initial" }),
+              oldNodeId: currentNode.id,
+            });
+          })
+          .catch((error) => {
+            console.log("error ao executar nodeAddTags", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return res();
+      }
+      if (currentNode.type === "NodeRemoveTrelloCard") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeRemoveTrelloCard({
+          data: currentNode.data,
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+        })
+          .then(async () => {
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
+            }
+            if (!nextEdgesIds.length) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return res();
+            }
+
+            return execute({
+              ...props,
+              currentNodeId: nextEdgesIds[0].id,
+              ...(props.type === "running"
+                ? { message: props.message, type: "running" }
+                : { type: "initial" }),
+              oldNodeId: currentNode.id,
+            });
+          })
+          .catch((error) => {
+            console.log("error ao executar nodeAddTags", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return res();
+      }
+      if (currentNode.type === "NodeMoveTrelloCard") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeMoveTrelloCard({
+          data: currentNode.data,
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+        })
+          .then(async () => {
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
+            }
+            if (!nextEdgesIds.length) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return res();
+            }
+
+            return execute({
+              ...props,
+              currentNodeId: nextEdgesIds[0].id,
+              ...(props.type === "running"
+                ? { message: props.message, type: "running" }
+                : { type: "initial" }),
+              oldNodeId: currentNode.id,
+            });
+          })
+          .catch((error) => {
+            console.log("error ao executar nodeAddTags", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return res();
+      }
+      if (currentNode.type === "NodeUpdateTrelloCard") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeUpdateTrelloCard({
+          data: currentNode.data,
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          nodeId: currentNode.id,
+          numberLead: props.lead.number,
+        })
+          .then(async () => {
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
+            }
+            if (!nextEdgesIds.length) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return res();
+            }
+
+            return execute({
+              ...props,
+              currentNodeId: nextEdgesIds[0].id,
+              ...(props.type === "running"
+                ? { message: props.message, type: "running" }
+                : { type: "initial" }),
+              oldNodeId: currentNode.id,
+            });
+          })
+          .catch((error) => {
+            console.log("error ao executar nodeAddTags", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return res();
+      }
+      if (currentNode.type === "NodeWebhookTrelloCard") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        if (
+          props.type === "running" &&
+          props.afterName &&
+          props.beforeName &&
+          props.cardId
+        ) {
+          await LibraryNodes.NodeWebhookTrelloCard({
+            data: currentNode.data,
+            accountId: props.accountId,
+            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            beforeName: props.beforeName,
+            afterName: props.afterName,
+            cardId: props.cardId,
+          })
+            .then(async (ac) => {
+              if (ac === "return") return res();
+              if (props.actions?.onExecutedNode) {
+                props.actions?.onExecutedNode({
+                  id: currentNode.id,
+                  flowId: props.flowId,
+                });
+              }
+              if (!nextEdgesIds.length) {
+                cacheFlowInExecution.delete(keyMap);
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                props.actions?.onExecutedNode?.({
+                  id: "0",
+                  flowId: props.flowId,
+                });
+                return res();
+              }
+
+              return execute({
+                ...props,
+                currentNodeId: nextEdgesIds[0].id,
+                ...(props.type === "running"
+                  ? { message: props.message, type: "running" }
+                  : { type: "initial" }),
+                oldNodeId: currentNode.id,
+              });
+            })
+            .catch((error) => {
+              console.log("error ao executar nodeAddTags", error);
+              cacheFlowInExecution.delete(keyMap);
+              props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+              return res();
+            });
+        }
+        return res();
       }
 
       return res();

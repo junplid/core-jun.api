@@ -1,4 +1,5 @@
 import { NodeAddTags } from "./AddTags";
+import { NodeAddTrelloCard } from "./AddTrelloCard";
 import { NodeAddVariables } from "./AddVariables";
 import { NodeAgentAI } from "./AgentAI";
 import { NodeCalculator } from "./Calculator";
@@ -10,9 +11,11 @@ import { NodeIf } from "./If";
 import { NodeListenReaction } from "./ListenReaction";
 import { NodeMenu } from "./Menu";
 import { NodeMessage } from "./Message";
+import { NodeMoveTrelloCard } from "./MoveTrelloCard";
 import { NodeNotifyWA } from "./NotifyWA";
 import { NodeRandomCode } from "./RandomCode";
 import { NodeRemoveTags } from "./RemoveTags";
+import { NodeRemoveTrelloCard } from "./RemoveTrelloCard";
 import { NodeRemoveVariables } from "./RemoveVariables";
 import { NodeReply } from "./Reply";
 import { NodeSendAudios } from "./SendAudios";
@@ -27,6 +30,8 @@ import { NodeTimedQueue } from "./TimedQueue";
 import { NodeTimer } from "./Timer";
 import { NodeTransferDepartment } from "./TransferDepartment";
 import { NodeUpdateOrder } from "./UpdateOrder";
+import { NodeUpdateTrelloCard } from "./UpdateTrelloCard";
+import { NodeWebhookTrelloCard } from "./WebhookTrelloCard";
 
 export const LibraryNodes = {
   NodeReply,
@@ -58,4 +63,9 @@ export const LibraryNodes = {
   NodeUpdateOrder,
   NodeTimedQueue,
   NodeCalculator,
+  NodeAddTrelloCard,
+  NodeRemoveTrelloCard,
+  NodeMoveTrelloCard,
+  NodeUpdateTrelloCard,
+  NodeWebhookTrelloCard,
 };
