@@ -7,9 +7,15 @@ import {
   decodeTokenAuth,
 } from "../../../../../helpers/authToken";
 import cookieParser from "cookie-parser";
-import { cacheConnectionsWAOnline } from "../../../../../adapters/Baileys/Cache";
+import {
+  cacheConnectionsWAOnline,
+  cacheFlowsMap,
+} from "../../../../../adapters/Baileys/Cache";
 import crypto from "crypto";
 import { listFbChatbot } from "../../../../../utils/cachesMap";
+import { sessionsBaileysWA } from "../../../../../adapters/Baileys";
+import { ModelFlows } from "../../../../../adapters/mongo/models/flows";
+import { NodeControler } from "../../../../../libs/FlowBuilder/Control";
 
 const RouterV1Public_Get = Router();
 
@@ -167,6 +173,14 @@ RouterV1Public_Get.get("/fb/:cbj", async (req, res) => {
   } catch (error) {
     res.status(200).send("Ops, algo deu errado.");
   }
+});
+
+RouterV1Public_Get.get("/webhook/trello", (req: Request, res: Response) => {
+  res.sendStatus(200);
+});
+
+RouterV1Public_Get.head("/webhook/trello", (req: Request, res: Response) => {
+  res.sendStatus(200);
 });
 
 export default RouterV1Public_Get;

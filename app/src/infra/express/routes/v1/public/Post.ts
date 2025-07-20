@@ -61,6 +61,7 @@ RouterV1Public_Post.post("/webhook/trello", (req: Request, res: Response) => {
   }
 
   const data = action.data;
+
   const cardId: string = data.card?.id;
   let beforeName: string | undefined;
   let afterName: string | undefined;

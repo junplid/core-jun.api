@@ -93,6 +93,8 @@ export const NodeReply = async (
       }
     }
 
+    await new Promise((s) => setTimeout(s, 3000));
+
     return { action: "NEXT", line: "68" };
   }
 

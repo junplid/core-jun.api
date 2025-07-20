@@ -312,7 +312,8 @@ export const NodeControler = ({
 
             execute({
               ...props,
-              ...(props.type === "running" && { message: props.message }),
+              type: "initial",
+              // ...(props.type === "running" && { message: props.message }),
               currentNodeId: nextEdgesIds[0].id,
               oldNodeId: currentNode.id,
             });
