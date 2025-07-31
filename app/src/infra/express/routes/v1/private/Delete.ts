@@ -29,6 +29,10 @@ import { deletePaymentIntegrationValidation } from "../../../../../core/deletePa
 import { deletePaymentIntegrationController } from "../../../../../core/deletePaymentIntegration";
 import { deleteTrelloIntegrationValidation } from "../../../../../core/deleteTrelloIntegration/Validation";
 import { deleteTrelloIntegrationController } from "../../../../../core/deleteTrelloIntegration";
+import { deleteMenuOnlineValidation } from "../../../../../core/deleteMenuOnline/Validation";
+import { deleteMenuOnlineController } from "../../../../../core/deleteMenuOnline";
+import { deleteMenuOnlineItemValidation } from "../../../../../core/deleteMenuOnlineItem/Validation";
+import { deleteMenuOnlineItemController } from "../../../../../core/deleteMenuOnlineItem";
 
 const RouterV1Private_Delete = Router();
 
@@ -120,6 +124,18 @@ RouterV1Private_Delete.delete(
   "/integration/trello/:id",
   deleteTrelloIntegrationValidation,
   deleteTrelloIntegrationController
+);
+
+RouterV1Private_Delete.delete(
+  "/menus-online/:uuid",
+  deleteMenuOnlineValidation,
+  deleteMenuOnlineController
+);
+
+RouterV1Private_Delete.delete(
+  "/menus-online/item/:uuid",
+  deleteMenuOnlineItemValidation,
+  deleteMenuOnlineItemController
 );
 
 export default RouterV1Private_Delete;

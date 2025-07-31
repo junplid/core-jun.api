@@ -44,6 +44,7 @@ export const NodeReply = async (
   props: PropsNodeReply
 ): Promise<ResultPromise> => {
   const { message, data } = props;
+  console.log({ message, time: data?.timeout });
   const keyMap = props.numberConnection + props.numberLead;
 
   const scheduleExecution = scheduleExecutionsReply.get(keyMap);

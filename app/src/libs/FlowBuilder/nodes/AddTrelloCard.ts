@@ -86,8 +86,8 @@ export const NodeAddTrelloCard = async (
       }
 
       // adicionar webhook
-      const callback = `https://api.junplid.com.br/v1/public/webhook/trello?flowStateId=${props.flowStateId}&nodeId=${props.nodeId}&ac=${props.accountId}`;
-      // const callback = `https://fb339e8b3eec.ngrok-free.app/v1/public/webhook/trello?flowStateId=${props.flowStateId}&nodeId=${props.nodeId}&ac=${props.accountId}`;
+      // const callback = `https://api.junplid.com.br/v1/public/webhook/trello?flowStateId=${props.flowStateId}&nodeId=${props.nodeId}&ac=${props.accountId}`;
+      const callback = `https://629fb2ec234b.ngrok-free.app/v1/public/webhook/trello?flowStateId=${props.flowStateId}&nodeId=${props.nodeId}&ac=${props.accountId}`;
       await trello.criarWebhook(
         `Webhook-card Junplid p/ node:${props.nodeId}`,
         callback,

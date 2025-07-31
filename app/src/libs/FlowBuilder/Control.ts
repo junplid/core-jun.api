@@ -226,7 +226,7 @@ export const NodeControler = ({
       //       return res();
       //     });
       // }
-      console.log(currentNode.type);
+      console.log(currentNode.type, props.type);
       if (currentNode.type === "NodeInitial") {
         if (props.actions?.onExecutedNode) {
           props.actions?.onExecutedNode({
@@ -371,6 +371,7 @@ export const NodeControler = ({
           },
         })
           .then(async (d) => {
+            console.log({ d });
             if (props.actions?.onExecutedNode) {
               props.actions?.onExecutedNode({
                 id: currentNode.id,

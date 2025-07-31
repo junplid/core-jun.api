@@ -117,6 +117,12 @@ import { getBoardsTrelloForSelectValidation } from "../../../../../core/getBoard
 import { getBoardsTrelloForSelectController } from "../../../../../core/getBoardsTrelloForSelect";
 import { getListsOnBoardTrelloForSelectValidation } from "../../../../../core/getListsOnBoardTrelloForSelect/Validation";
 import { getListsOnBoardTrelloForSelectController } from "../../../../../core/getListsOnBoardTrelloForSelect";
+import { getMenusOnlineValidation } from "../../../../../core/getMenusOnline/Validation";
+import { getMenusOnlineController } from "../../../../../core/getMenusOnline";
+import { getMenuOnlineValidation } from "../../../../../core/getMenuOnline/Validation";
+import { getMenuOnlineController } from "../../../../../core/getMenuOnline";
+import { getMenuOnlineItemsValidation } from "../../../../../core/getMenuOnlineItems/Validation";
+import { getMenuOnlineItemsController } from "../../../../../core/getMenuOnlineItems";
 
 const RouterV1Private_Get = Router();
 
@@ -440,6 +446,24 @@ RouterV1Private_Get.get(
   "/integration/trello/:id/lists/:boardId/options",
   getListsOnBoardTrelloForSelectValidation,
   getListsOnBoardTrelloForSelectController
+);
+
+RouterV1Private_Get.get(
+  "/menus-online",
+  getMenusOnlineValidation,
+  getMenusOnlineController
+);
+
+RouterV1Private_Get.get(
+  "/menus-online/:uuid",
+  getMenuOnlineValidation,
+  getMenuOnlineController
+);
+
+RouterV1Private_Get.get(
+  "/menus-online/:uuid/items",
+  getMenuOnlineItemsValidation,
+  getMenuOnlineItemsController
 );
 
 export default RouterV1Private_Get;

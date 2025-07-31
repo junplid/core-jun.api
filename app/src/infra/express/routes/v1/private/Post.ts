@@ -44,6 +44,10 @@ import { runActionChannelOrderValidation } from "../../../../../core/runActionCh
 import { runActionChannelOrderController } from "../../../../../core/runActionChannelOrder";
 import { createTrelloIntegrationValidation } from "../../../../../core/createTrelloIntegration/Validation";
 import { createTrelloIntegrationController } from "../../../../../core/createTrelloIntegration";
+import { createMenuOnlineValidation } from "../../../../../core/createMenuOnline/Validation";
+import { createMenuOnlineController } from "../../../../../core/createMenuOnline";
+import { createMenuOnlineItemValidation } from "../../../../../core/createMenuOnlineItem/Validation";
+import { createMenuOnlineItemController } from "../../../../../core/createMenuOnlineItem";
 
 const RouterV1Private_Post = Router();
 
@@ -54,7 +58,6 @@ if (process.env.NODE_ENV === "production") {
   pathOfDestiny = resolve(__dirname, `../../../../../../static`);
 }
 
-const uploadFile = storageMulter({ pathOfDestiny: pathOfDestiny + "/image" });
 const uploadFiles = storageMulter({
   pathOfDestiny: pathOfDestiny + "/storage",
 });
@@ -62,7 +65,7 @@ const uploadFiles = storageMulter({
 RouterV1Private_Post.post(
   "/connections-wa",
   // @ts-expect-error
-  multer({ storage: uploadFile }).single("fileImage"),
+  multer({ storage: uploadFiles }).single("fileImage"),
   (req: Request, _, next: NextFunction) => {
     req.body.accountId = Number(req.headers.authorization);
     next();
@@ -193,6 +196,30 @@ RouterV1Private_Post.post(
   "/integration/trello",
   createTrelloIntegrationValidation,
   createTrelloIntegrationController
+);
+
+RouterV1Private_Post.post(
+  "/menus-online",
+  // @ts-expect-error
+  multer({ storage: uploadFiles }).single("fileImage"),
+  (req: Request, _, next: NextFunction) => {
+    req.body.accountId = Number(req.headers.authorization);
+    next();
+  },
+  createMenuOnlineValidation,
+  createMenuOnlineController
+);
+
+RouterV1Private_Post.post(
+  "/menus-online/:uuid/items",
+  // @ts-expect-error
+  multer({ storage: uploadFiles }).single("fileImage"),
+  (req: Request, _, next: NextFunction) => {
+    req.body.accountId = Number(req.headers.authorization);
+    next();
+  },
+  createMenuOnlineItemValidation,
+  createMenuOnlineItemController
 );
 
 export default RouterV1Private_Post;

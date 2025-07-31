@@ -148,6 +148,8 @@ model Account {
   Charges             Charges[]
   LogSystem           LogSystem[]
   TrelloIntegration   TrelloIntegration[]
+  MenuOnline          MenusOnline[]
+  MenusOnlineItems    MenusOnlineItems[]
 
   @@index([id, email, hash, status, available, isUsedFreeTrialTime])
 }
@@ -1944,6 +1946,7 @@ model Orders {
   actionChannels        String[] // são listas de botão que aparece no pedido, e quando clica dispara uma ação no node que criou o pedido e a saida é com o valor clicado > e pode ser recuperado pelo proximo node REPLY ou SWFTH, 
   flowNodeId            String?
   flowId                String?
+  menuId                Int?
   flowStateId           Int? // flow onde esse node foi executado
   // qual ticket gerou o pedido
   // qual atendente gerou o pedido
@@ -1951,6 +1954,7 @@ model Orders {
   accountId             Int
   businessId            Int
   Business              Business             @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  menuOnline            MenusOnline?         @relation(fields: [menuId], references: [id], onDelete: SetNull)
   FlowState             FlowState?           @relation(fields: [flowStateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   ContactsWAOnAccount   ContactsWAOnAccount? @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   ConnectionWA          ConnectionWA?        @relation(fields: [connectionWAId], references: [id], onDelete: SetNull, onUpdate: Cascade)
@@ -2038,4 +2042,48 @@ model LogSystem {
   ConnectionWA   ConnectionWA? @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([id, connectionWAId, accountId])
+}
+
+model MenusOnline {
+  id         Int      @id @default(autoincrement())
+  uuid       String   @unique @default(uuid())
+  identifier String   @unique
+  logoImg    String
+  desc       String?
+  accountId  Int?
+  createAt   DateTime @default(now())
+  itemId     Int?
+
+  Item    MenusOnlineItems? @relation(fields: [itemId], references: [id])
+  Account Account?          @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  Orders Orders[]
+
+  @@index([id, uuid, accountId])
+}
+
+enum TypeCategory {
+  pizzas
+  drinks
+}
+
+model MenusOnlineItems {
+  id          Int          @id @default(autoincrement())
+  uuid        String       @unique @default(uuid())
+  name        String
+  desc        String?
+  category    TypeCategory
+  img         String
+  qnt         Int          @default(0)
+  beforePrice Decimal?     @db.Decimal(3, 2)
+  afterPrice  Decimal      @db.Decimal(3, 2)
+  accountId   Int?
+  createAt    DateTime     @default(now())
+  updateAt    DateTime     @default(now())
+
+  Account Account? @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  MenusOnline MenusOnline[]
+
+  @@index([id, uuid, accountId])
 }

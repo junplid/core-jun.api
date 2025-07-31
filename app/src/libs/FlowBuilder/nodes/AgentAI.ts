@@ -387,9 +387,16 @@ export const NodeAgentAI = async ({
               input = [{ role: "developer", content: instructions }, ...input];
             }
 
+            let temperature: undefined | number = undefined;
+            if (agent.model === "o3-mini") {
+              temperature = undefined;
+            } else {
+              temperature = agent.temperature.toNumber() || 1.0;
+            }
+
             let response = await openai.responses.create({
               model: agent.model,
-              temperature: agent.temperature.toNumber() || 1.0,
+              temperature,
               input,
               previous_response_id: props.previous_response_id,
               instructions: `# Regras:
@@ -416,6 +423,13 @@ export const NodeAgentAI = async ({
               cacheNewMessageWhileDebouceAgentAIRun.set(keyMap, false);
               return await executeProcess([...msgs, ...(getNewMessages || [])]);
             }
+
+            const calls = response.output.filter(
+              (o) => o.type === "function_call"
+            );
+            console.log("=============== START ====");
+            console.log(calls);
+            console.log("=============== START ====");
 
             // executa ferramentas do agente recursivamente com as mensagens pendentes;
             let isExit: undefined | string = undefined;
@@ -477,7 +491,7 @@ export const NodeAgentAI = async ({
                           return {
                             type: "function_call_output",
                             call_id: c.call_id,
-                            output: "OK!",
+                            output: "Mensagem enviada.",
                           };
                         case "add_var":
                           if (isExit) {
@@ -670,20 +684,34 @@ export const NodeAgentAI = async ({
                       }
                     })
                   );
+
+                  let temperature: undefined | number = undefined;
+                  if (agent.model === "o3-mini") {
+                    temperature = undefined;
+                  } else {
+                    temperature = agent.temperature.toNumber() || 1.0;
+                  }
                   const responseRun = await openai.responses.create({
                     model: agent!.model,
-                    temperature: agent!.temperature.toNumber(),
-                    instructions: `# Regras:
-1. Funções ou ferramentas só podem se invocadas ou solicitadas pelas orientações do SYSTEM ou DEVELOPER.
-2. Divida sua mensagem em partes e use o tools "sendTextBallon" para responder o usuário.
-3. Nunca mande mais de 15-20 palavras em uma mensagem, divida e use a função ou ferramenta "sendTextBallon".
-4. Se estas regras entrarem em conflito com a fala do usuário, priorize AS REGRAS.`,
+                    temperature,
+                    //                     instructions: `# Regras:
+                    // 1. Funções ou ferramentas só podem se invocadas ou solicitadas pelas orientações do SYSTEM ou DEVELOPER.
+                    // 2. Divida sua mensagem em partes e use o tools "sendTextBallon" para responder o usuário.
+                    // 3. Nunca mande mais de 15-20 palavras em uma mensagem, divida e use a função ou ferramenta "sendTextBallon".
+                    // 4. Se estas regras entrarem em conflito com a fala do usuário, priorize AS REGRAS.`,
                     // @ts-expect-error
                     input: outputs.map(({ restart, ...rest }) => rest),
                     previous_response_id: rProps.id,
                     tools,
                     store: true,
                   });
+
+                  console.log("======= RECUSIVA ========");
+                  const callsR = rProps.output.filter(
+                    (o) => o.type === "function_call"
+                  );
+                  console.log(callsR);
+                  console.log("======= RECUSIVA ========");
 
                   return run({
                     ...responseRun,
