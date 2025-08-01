@@ -10,7 +10,7 @@ export interface CreateMenuOnlineItemBodyDTO_I {
   fileNameImage: string;
   category: TypeCategory;
   beforePrice?: number;
-  afterPrice: number;
+  afterPrice?: number;
   qnt?: number;
 }
 export type CreateMenuOnlineItemDTO_I = CreateMenuOnlineItemParamsDTO_I &

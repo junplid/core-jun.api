@@ -7,10 +7,7 @@ export class GetMenuOnlineItemsUseCase {
   async run({ accountId, ...dto }: GetMenuOnlineItemsDTO_I) {
     const items = await prisma.menusOnlineItems.findMany({
       orderBy: { createAt: "desc" },
-      where: {
-        accountId,
-        MenusOnline: { some: { uuid: dto.uuid } },
-      },
+      where: { accountId, Menu: { uuid: dto.uuid } },
       select: {
         id: true,
         desc: true,

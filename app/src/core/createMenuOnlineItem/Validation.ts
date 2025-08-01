@@ -4,6 +4,7 @@ import {
   CreateMenuOnlineItemBodyDTO_I,
   CreateMenuOnlineItemParamsDTO_I,
 } from "./DTO";
+import { ErrorResponse } from "../../utils/ErrorResponse";
 
 export const createMenuOnlineItemValidation = (
   req: Request<
@@ -20,7 +21,7 @@ export const createMenuOnlineItemValidation = (
     category: Joi.valid("pizzas", "drinks").required(),
     desc: Joi.string().allow(""),
     beforePrice: Joi.number(),
-    afterPrice: Joi.number().required(),
+    afterPrice: Joi.number(),
     accountId: Joi.number().required(),
     fileNameImage: Joi.string().required(),
     qnt: Joi.number().min(0),
@@ -40,6 +41,16 @@ export const createMenuOnlineItemValidation = (
     return res.status(400).json({ errors });
   }
 
+  if (req.body.category === "drinks" && !req.body.afterPrice) {
+    throw new ErrorResponse(400).input({
+      path: "afterPrice",
+      text: "Campo obrigatório.",
+    });
+  }
+
+  req.body.qnt = validation.value.qnt;
+  req.body.beforePrice = validation.value.beforePrice;
+  req.body.afterPrice = validation.value.afterPrice;
   req.body.fileNameImage = req.file!.filename;
 
   next();

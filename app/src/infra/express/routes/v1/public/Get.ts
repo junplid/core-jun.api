@@ -16,6 +16,8 @@ import { listFbChatbot } from "../../../../../utils/cachesMap";
 import { sessionsBaileysWA } from "../../../../../adapters/Baileys";
 import { ModelFlows } from "../../../../../adapters/mongo/models/flows";
 import { NodeControler } from "../../../../../libs/FlowBuilder/Control";
+import { getMenuOnlinePublicValidation } from "../../../../../core/getMenuOnlinePublic/Validation";
+import { getMenuOnlinePublicController } from "../../../../../core/getMenuOnlinePublic";
 
 const RouterV1Public_Get = Router();
 
@@ -182,5 +184,11 @@ RouterV1Public_Get.get("/webhook/trello", (req: Request, res: Response) => {
 RouterV1Public_Get.head("/webhook/trello", (req: Request, res: Response) => {
   res.sendStatus(200);
 });
+
+RouterV1Public_Get.get(
+  "/menu/:identifier",
+  getMenuOnlinePublicValidation,
+  getMenuOnlinePublicController
+);
 
 export default RouterV1Public_Get;

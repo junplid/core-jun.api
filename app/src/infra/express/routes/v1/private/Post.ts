@@ -48,6 +48,8 @@ import { createMenuOnlineValidation } from "../../../../../core/createMenuOnline
 import { createMenuOnlineController } from "../../../../../core/createMenuOnline";
 import { createMenuOnlineItemValidation } from "../../../../../core/createMenuOnlineItem/Validation";
 import { createMenuOnlineItemController } from "../../../../../core/createMenuOnlineItem";
+import { createMenuOnlineSizePizzaValidation } from "../../../../../core/createMenuOnlineSizePizza/Validation";
+import { createMenuOnlineSizePizzaController } from "../../../../../core/createMenuOnlineSizePizza";
 
 const RouterV1Private_Post = Router();
 
@@ -220,6 +222,12 @@ RouterV1Private_Post.post(
   },
   createMenuOnlineItemValidation,
   createMenuOnlineItemController
+);
+
+RouterV1Private_Post.post(
+  "/menus-online/:uuid/sizes-pizza",
+  createMenuOnlineSizePizzaValidation,
+  createMenuOnlineSizePizzaController
 );
 
 export default RouterV1Private_Post;

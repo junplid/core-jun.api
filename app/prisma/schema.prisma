@@ -2045,21 +2045,36 @@ model LogSystem {
 }
 
 model MenusOnline {
-  id         Int      @id @default(autoincrement())
-  uuid       String   @unique @default(uuid())
-  identifier String   @unique
-  logoImg    String
-  desc       String?
-  accountId  Int?
-  createAt   DateTime @default(now())
-  itemId     Int?
+  id           Int      @id @default(autoincrement())
+  uuid         String   @unique @default(uuid())
+  identifier   String   @unique
+  logoImg      String
+  desc         String?
+  bg_primary   String?
+  bg_secondary String?
+  bg_tertiary  String?
+  createAt     DateTime @default(now())
+  accountId    Int?
+  Account      Account? @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  Item    MenusOnlineItems? @relation(fields: [itemId], references: [id])
-  Account Account?          @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  Orders Orders[]
+  Orders           Orders[]
+  SizesPizza       SizesPizza[]
+  MenusOnlineItems MenusOnlineItems[]
 
   @@index([id, uuid, accountId])
+}
+
+model SizesPizza {
+  id       Int         @id @default(autoincrement())
+  name     String
+  price    Decimal     @db.Decimal(6, 2)
+  flavors  Int
+  slices   Int?
+  createAt DateTime    @default(now())
+  menuId   Int
+  Menu     MenusOnline @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@index([id, menuId])
 }
 
 enum TypeCategory {
@@ -2071,19 +2086,22 @@ model MenusOnlineItems {
   id          Int          @id @default(autoincrement())
   uuid        String       @unique @default(uuid())
   name        String
+  label1      String?
+  label       String?
+  titlePage   String?
   desc        String?
   category    TypeCategory
   img         String
   qnt         Int          @default(0)
-  beforePrice Decimal?     @db.Decimal(3, 2)
-  afterPrice  Decimal      @db.Decimal(3, 2)
+  beforePrice Decimal?     @db.Decimal(6, 2)
+  afterPrice  Decimal?     @db.Decimal(6, 2)
   accountId   Int?
   createAt    DateTime     @default(now())
   updateAt    DateTime     @default(now())
+  menuId      Int
 
-  Account Account? @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Menu    MenusOnline @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  Account Account?    @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  MenusOnline MenusOnline[]
-
-  @@index([id, uuid, accountId])
+  @@index([uuid, menuId, accountId])
 }

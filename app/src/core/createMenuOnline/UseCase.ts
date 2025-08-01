@@ -11,7 +11,7 @@ export class CreateMenuOnlineUseCase {
       where: { id: dto.accountId },
       select: { isPremium: true },
     });
-    if (!getAccount) throw new ErrorResponse(40).container("Não autorizado.");
+    if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
 
     const countResource = await prisma.menusOnline.count({
       where: { accountId: dto.accountId },
@@ -67,7 +67,7 @@ export class CreateMenuOnlineUseCase {
       await remove(path).catch((_err) => {
         console.log("Error ao remover arquivo: ");
       });
-      throw new ErrorResponse(40).container(
+      throw new ErrorResponse(400).container(
         "Error ao tentar criar cardápio on-line."
       );
     }

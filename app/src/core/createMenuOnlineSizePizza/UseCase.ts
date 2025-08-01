@@ -1,14 +1,13 @@
-import { remove } from "fs-extra";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
-import { CreateMenuOnlineItemDTO_I } from "./DTO";
+import { CreateMenuOnlineSizePizzaDTO_I } from "./DTO";
 
-export class CreateMenuOnlineItemUseCase {
+export class CreateMenuOnlineSizePizzaUseCase {
   constructor() {}
 
-  async run({ fileNameImage, uuid, ...dto }: CreateMenuOnlineItemDTO_I) {
+  async run({ uuid, accountId, ...dto }: CreateMenuOnlineSizePizzaDTO_I) {
     const getAccount = await prisma.account.findFirst({
-      where: { id: dto.accountId },
+      where: { id: accountId },
       select: { isPremium: true },
     });
     if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
@@ -20,7 +19,7 @@ export class CreateMenuOnlineItemUseCase {
     }
 
     const menu = await prisma.menusOnline.findFirst({
-      where: { accountId: dto.accountId, uuid },
+      where: { accountId, uuid },
       select: { id: true },
     });
 
@@ -32,34 +31,22 @@ export class CreateMenuOnlineItemUseCase {
     }
 
     try {
-      const item = await prisma.menusOnlineItems.create({
+      const size = await prisma.sizesPizza.create({
         data: {
           ...dto,
-          img: fileNameImage,
           menuId: menu.id,
         },
-        select: { id: true, createAt: true, uuid: true },
+        select: { id: true, createAt: true },
       });
 
       return {
-        message: "Item criado com sucesso.",
+        message: "Tamanho criado com sucesso.",
         status: 201,
-        item,
+        size,
       };
     } catch (error) {
       console.log(error);
-      let path = "";
-      if (process.env.NODE_ENV === "production") {
-        path = `../static/storage/${fileNameImage}`;
-      } else {
-        path = `../../../static/storage/${fileNameImage}`;
-      }
-      await remove(path).catch((_err) => {
-        console.log("Error ao remover arquivo: ");
-      });
-      throw new ErrorResponse(400).container(
-        "Error ao tentar criar cardápio on-line."
-      );
+      throw new ErrorResponse(400).container("Error ao tentar criar tamanho.");
     }
   }
 }
