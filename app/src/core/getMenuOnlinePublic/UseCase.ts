@@ -14,6 +14,10 @@ export class GetMenuOnlinePublicUseCase {
         bg_secondary: true,
         bg_tertiary: true,
         logoImg: true,
+        label1: true,
+        label: true,
+        titlePage: true,
+        status: true,
         SizesPizza: {
           select: {
             id: true,
@@ -49,6 +53,7 @@ export class GetMenuOnlinePublicUseCase {
       status: 200,
       menu: {
         ...r,
+        status: !!r.status,
         items: MenusOnlineItems.map((item) => ({
           ...item,
           afterPrice: item.afterPrice?.toNumber(),

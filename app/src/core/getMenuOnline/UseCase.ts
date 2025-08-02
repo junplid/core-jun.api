@@ -8,7 +8,20 @@ export class GetMenuOnlineUseCase {
   async run({ accountId, ...dto }: GetMenuOnlineDTO_I) {
     const menu = await prisma.menusOnline.findFirst({
       where: dto,
-      select: { id: true, identifier: true, uuid: true, desc: true },
+      select: {
+        id: true,
+        identifier: true,
+        uuid: true,
+        desc: true,
+        bg_primary: true,
+        bg_secondary: true,
+        bg_tertiary: true,
+        label: true,
+        label1: true,
+        logoImg: true,
+        status: true,
+        titlePage: true,
+      },
     });
 
     if (!menu) {
@@ -18,6 +31,11 @@ export class GetMenuOnlineUseCase {
       });
     }
 
-    return { message: "OK!", status: 200, menu };
+    const nextMenu = Object.entries(menu).reduce((ac, [key, value]) => {
+      if (value !== null) ac[key] = value;
+      return ac;
+    }, {} as any);
+
+    return { message: "OK!", status: 200, menu: nextMenu };
   }
 }

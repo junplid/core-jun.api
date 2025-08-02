@@ -2053,6 +2053,9 @@ model MenusOnline {
   bg_primary   String?
   bg_secondary String?
   bg_tertiary  String?
+  logoLabel    String?  @db.Text
+  titlePage    String?
+  status       Boolean? @default(false)
   createAt     DateTime @default(now())
   accountId    Int?
   Account      Account? @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -2086,9 +2089,6 @@ model MenusOnlineItems {
   id          Int          @id @default(autoincrement())
   uuid        String       @unique @default(uuid())
   name        String
-  label1      String?
-  label       String?
-  titlePage   String?
   desc        String?
   category    TypeCategory
   img         String

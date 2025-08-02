@@ -36,6 +36,8 @@ import { updatePaymentIntegrationValidation } from "../../../../../core/updatePa
 import { updatePaymentIntegrationController } from "../../../../../core/updatePaymentIntegration";
 import { updateTrelloIntegrationValidation } from "../../../../../core/updateTrelloIntegration/Validation";
 import { updateTrelloIntegrationController } from "../../../../../core/updateTrelloIntegration";
+import { updateMenuOnlineValidation } from "../../../../../core/updateMenuOnline/Validation";
+import { updateMenuOnlineController } from "../../../../../core/updateMenuOnline";
 
 const RouterV1Private_Put = Router();
 
@@ -59,9 +61,16 @@ RouterV1Private_Put.put(
   updateDisconnectConnectionWhatsappController
 );
 
-const pathOfDestiny = resolve(__dirname, `../../../../../../static`);
+let pathOfDestiny = "";
+if (process.env.NODE_ENV === "production") {
+  pathOfDestiny = resolve(__dirname, `../static`);
+} else {
+  pathOfDestiny = resolve(__dirname, `../../../../../../static`);
+}
 
-const uploadFiles = storageMulter({ pathOfDestiny: pathOfDestiny + "/image" });
+const uploadFiles = storageMulter({
+  pathOfDestiny: pathOfDestiny + "/storage",
+});
 
 RouterV1Private_Put.put(
   "/connections-wa/:id",
@@ -145,6 +154,18 @@ RouterV1Private_Put.put(
   "/integration/trello/:id",
   updateTrelloIntegrationValidation,
   updateTrelloIntegrationController
+);
+
+RouterV1Private_Put.put(
+  "/menus-online/:id",
+  // @ts-expect-error
+  multer({ storage: uploadFiles }).single("fileImage"),
+  (req: Request, _, next: NextFunction) => {
+    req.body.accountId = Number(req.headers.authorization);
+    next();
+  },
+  updateMenuOnlineValidation,
+  updateMenuOnlineController
 );
 
 export default RouterV1Private_Put;
