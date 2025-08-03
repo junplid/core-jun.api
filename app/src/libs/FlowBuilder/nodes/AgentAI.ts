@@ -13,7 +13,7 @@ import { scheduleJob } from "node-schedule";
 import { prisma } from "../../../adapters/Prisma/client";
 import OpenAI from "openai";
 // import { validatePhoneNumber } from "../../../helpers/validatePhoneNumber";
-// import { TypingDelay } from "../../../adapters/Baileys/modules/typing";
+import { TypingDelay } from "../../../adapters/Baileys/modules/typing";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 
@@ -258,6 +258,10 @@ ${nodeInstruction}`,
   return arr;
 }
 
+function CalculeTypingDelay(text: string, ms = 150) {
+  return text.split(" ").length * (ms / 1000);
+}
+
 export const NodeAgentAI = async ({
   message = "",
   ...props
@@ -277,14 +281,14 @@ export const NodeAgentAI = async ({
     scheduleTimeoutAgentAI.set(keyMap, timeoutJob);
   }
 
-  function deleteDebounceAndTimeout() {
-    const debounce = cacheDebounceAgentAI.get(keyMap);
-    const scTimeout = scheduleTimeoutAgentAI.get(keyMap);
-    debounce?.cancel();
-    scTimeout?.cancel();
-    scheduleTimeoutAgentAI.delete(keyMap);
-    cacheDebounceAgentAI.delete(keyMap);
-  }
+  // function deleteDebounceAndTimeout() {
+  //   const debounce = cacheDebounceAgentAI.get(keyMap);
+  //   const scTimeout = scheduleTimeoutAgentAI.get(keyMap);
+  //   debounce?.cancel();
+  //   scTimeout?.cancel();
+  //   scheduleTimeoutAgentAI.delete(keyMap);
+  //   cacheDebounceAgentAI.delete(keyMap);
+  // }
 
   const agent = await getAgent(props.data.agentId, props.accountId);
 
@@ -294,6 +298,7 @@ export const NodeAgentAI = async ({
   // }
 
   // lista de mensagens recebidas enquanto estava esperando o debounce acabar
+
   const messages = cacheMessagesDebouceAgentAI.get(keyMap) || [];
   const nextMessages = [...messages, message];
   cacheMessagesDebouceAgentAI.set(keyMap, nextMessages);
@@ -427,9 +432,9 @@ export const NodeAgentAI = async ({
             const calls = response.output.filter(
               (o) => o.type === "function_call"
             );
-            console.log("=============== START ====");
-            console.log(calls);
-            console.log("=============== START ====");
+            // console.log("=============== START ====");
+            // console.log(calls);
+            // console.log("=============== START ====");
 
             // executa ferramentas do agente recursivamente com as mensagens pendentes;
             let isExit: undefined | string = undefined;
@@ -452,7 +457,7 @@ export const NodeAgentAI = async ({
                       const isNewMsg =
                         !!cacheNewMessageWhileDebouceAgentAIRun.get(keyMap);
                       if (isNewMsg) {
-                        console.log("DENTRO DO OUTPUTS");
+                        // console.log("DENTRO DO OUTPUTS");
                         return {
                           type: "function_call_output",
                           call_id: c.call_id,
@@ -471,6 +476,14 @@ export const NodeAgentAI = async ({
                             };
                           }
                           try {
+                            console.log({
+                              delay: CalculeTypingDelay(args.value),
+                            });
+                            await TypingDelay({
+                              connectionId: props.connectionWhatsId,
+                              toNumber: props.numberLead,
+                              delay: CalculeTypingDelay(args.value),
+                            });
                             await SendMessageText({
                               connectionId: props.connectionWhatsId,
                               text: args.value,
@@ -706,12 +719,12 @@ export const NodeAgentAI = async ({
                     store: true,
                   });
 
-                  console.log("======= RECUSIVA ========");
+                  // console.log("======= RECUSIVA ========");
                   const callsR = rProps.output.filter(
                     (o) => o.type === "function_call"
                   );
-                  console.log(callsR);
-                  console.log("======= RECUSIVA ========");
+                  // console.log(callsR);
+                  // console.log("======= RECUSIVA ========");
 
                   return run({
                     ...responseRun,
@@ -737,7 +750,7 @@ export const NodeAgentAI = async ({
               return await executeProcess([...msgs, ...(getNewMessages || [])]);
             }
 
-            console.log({ next: nextresponse.id });
+            // console.log({ next: nextresponse.id });
             await prisma.flowState.update({
               where: { id: props.flowStateId },
               data: { previous_response_id: nextresponse.id },

@@ -16,8 +16,6 @@ export class GetMenuOnlineUseCase {
         bg_primary: true,
         bg_secondary: true,
         bg_tertiary: true,
-        label: true,
-        label1: true,
         logoImg: true,
         status: true,
         titlePage: true,
@@ -26,7 +24,7 @@ export class GetMenuOnlineUseCase {
 
     if (!menu) {
       throw new ErrorResponse(400).toast({
-        title: `Cardápio on-nline não foi encontrado.`,
+        title: `Cardápio on-line não foi encontrado.`,
         type: "error",
       });
     }

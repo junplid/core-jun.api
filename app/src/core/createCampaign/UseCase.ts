@@ -7,11 +7,28 @@ import { ulid } from "ulid";
 import { cacheAccountSocket } from "../../infra/websocket/cache";
 import { socketIo } from "../../infra/express";
 import { startCampaign } from "../../utils/startCampaign";
+import { validatePhoneNumber } from "../../helpers/validatePhoneNumber";
 
 export class CreateCampaignUseCase {
   constructor() {}
 
-  async run({ accountId, ...dto }: CreateCampaignDTO_I) {
+  async run({ accountId, contacts: contactsDTO, ...dto }: CreateCampaignDTO_I) {
+    const listContactDTO: { id: number; name?: string }[] = [];
+    if (contactsDTO?.length) {
+      for await (const contact of contactsDTO) {
+        const newNumber = validatePhoneNumber(contact.number);
+        if (newNumber) {
+          const { id } = await prisma.contactsWA.upsert({
+            where: { completeNumber: newNumber },
+            create: { completeNumber: newNumber },
+            update: {},
+            select: { id: true },
+          });
+          listContactDTO.push({ id, name: contact.name });
+        }
+      }
+    }
+
     const isPremium = await prisma.account.findFirst({
       where: { id: accountId, isPremium: true },
       select: { id: true },
@@ -159,15 +176,47 @@ export class CreateCampaignUseCase {
         },
       });
 
-    const contacts = await prisma.contactsWAOnAccount.findMany({
-      where: {
-        accountId,
-        ...(dto.tagsIds?.length && {
-          TagOnContactsWAOnAccount: { some: { tagId: { in: dto.tagsIds } } },
-        }),
-      },
-      select: { id: true },
-    });
+    const contacts: number[] = [];
+
+    if (dto.tagsIds?.length) {
+      const getcontacts = await prisma.contactsWAOnAccount.findMany({
+        where: {
+          accountId,
+          ...(dto.tagsIds?.length && {
+            TagOnContactsWAOnAccount: { some: { tagId: { in: dto.tagsIds } } },
+          }),
+        },
+        select: { id: true },
+      });
+      contacts.push(...getcontacts.map((s) => s.id));
+    }
+
+    if (listContactDTO.length) {
+      for await (const c of listContactDTO) {
+        const exist = await prisma.contactsWAOnAccount.findFirst({
+          where: { accountId, contactWAId: c.id },
+          select: { id: true },
+        });
+        if (!exist) {
+          const { id: cId } = await prisma.contactsWAOnAccount.create({
+            data: { name: c.name || "<unknown>", accountId, contactWAId: c.id },
+            select: { id: true },
+          });
+          contacts.push(cId);
+        } else {
+          contacts.push(exist.id);
+        }
+      }
+    }
+
+    const setContacts = Array.from(new Set(contacts));
+
+    if (!setContacts.length) {
+      throw new ErrorResponse(400).input({
+        path: "tagsIds",
+        text: "Filtre os contatos por etiquetas ou manualmente.",
+      });
+    }
 
     const audience = await prisma.audience.create({
       data: {
@@ -182,9 +231,7 @@ export class CreateCampaignUseCase {
         }),
         ContactsWAOnAudience: {
           createMany: {
-            data: contacts.map(({ id: cId }) => ({
-              contactWAOnAccountId: cId,
-            })),
+            data: setContacts.map((cId) => ({ contactWAOnAccountId: cId })),
           },
         },
         type: "static",
@@ -192,13 +239,14 @@ export class CreateCampaignUseCase {
       },
       select: { id: true },
     });
+
     await prisma.flowState.createMany({
-      data: contacts.map((c) => ({
+      data: setContacts.map((c) => ({
         audienceId: audience.id,
         campaignId: id,
         flowId: dto.flowId,
         indexNode: "0",
-        contactsWAOnAccountId: c.id,
+        contactsWAOnAccountId: c,
       })),
       skipDuplicates: true,
     });
@@ -206,12 +254,12 @@ export class CreateCampaignUseCase {
     try {
       const createInstruction = () => {
         (async () => {
-          await new Promise((r) =>
-            setTimeout(
-              r,
-              Math.random() * (3 * 60 * 1000 - 40 * 1000) + 40 * 1000
-            )
-          );
+          // await new Promise((r) =>
+          //   setTimeout(
+          //     r,
+          //     Math.random() * (3 * 60 * 1000 - 40 * 1000) + 40 * 1000
+          //   )
+          // );
           await prisma.campaign.update({
             where: { id },
             data: { status: "running" },

@@ -214,7 +214,7 @@ export type NodeCreateOrderData = {
   varId_save_nOrder?: number; //
   notify?: boolean; //
   actionChannels: { key: string; text: string }[];
-  delivery_method?: string; // não sei o pq disso já tem o delivery_address
+  payment_method?: string; // não sei o pq disso já tem o delivery_address
   itens_count?: number;
 };
 
@@ -231,7 +231,7 @@ export type NodeUpdateOrderData = {
   tracking_code?: string;
   itens_count?: number;
   charge_transactionId?: string;
-  delivery_method?: string;
+  payment_method?: string;
   actionChannels: { key: string; text: string }[];
   notify?: boolean;
   fields?: string[];

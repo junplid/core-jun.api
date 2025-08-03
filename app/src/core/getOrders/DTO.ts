@@ -5,6 +5,7 @@ export interface GetOrdersQueryDTO_I {
   limit?: number;
   status?: TypeStatusOrder;
   priority?: TypePriorityOrder;
+  menu?: string;
 }
 
 export interface GetOrdersBodyDTO_I {

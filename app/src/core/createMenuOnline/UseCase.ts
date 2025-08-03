@@ -2,6 +2,7 @@ import { remove } from "fs-extra";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { CreateMenuOnlineDTO_I } from "./DTO";
+import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 
 export class CreateMenuOnlineUseCase {
   constructor() {}
@@ -43,6 +44,13 @@ export class CreateMenuOnlineUseCase {
       throw new ErrorResponse(400).input({
         text: "Já existe um cardápio com esse identificador.",
         path: "identifier",
+      });
+    }
+
+    if (!cacheConnectionsWAOnline.get(dto.connectionWAId)) {
+      throw new ErrorResponse(400).input({
+        text: "Selecione uma conexão WA ativa.",
+        path: "connectionWAId",
       });
     }
 

@@ -12,4 +12,5 @@ export interface CreateCampaignDTO_I {
     dayOfWeek: number;
     workingTimes?: { start: string; end: string }[];
   }[];
+  contacts?: { name?: string; number: string }[];
 }

@@ -11,6 +11,7 @@ export const createMenuOnlineValidation = (
     identifier: Joi.string().required(),
     desc: Joi.string().allow(""),
     accountId: Joi.number().required(),
+    connectionWAId: Joi.number().required(),
     fileNameImage: Joi.string().required(),
   });
 
@@ -29,6 +30,7 @@ export const createMenuOnlineValidation = (
   }
 
   req.body.fileNameImage = req.file!.filename;
+  req.body.connectionWAId = validation.value.connectionWAId;
 
   next();
 };

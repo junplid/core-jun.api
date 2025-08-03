@@ -3,4 +3,5 @@ export interface CreateMenuOnlineDTO_I {
   identifier: string;
   desc?: string;
   fileNameImage: string;
+  connectionWAId: number;
 }

@@ -50,6 +50,9 @@ import { createMenuOnlineItemValidation } from "../../../../../core/createMenuOn
 import { createMenuOnlineItemController } from "../../../../../core/createMenuOnlineItem";
 import { createMenuOnlineSizePizzaValidation } from "../../../../../core/createMenuOnlineSizePizza/Validation";
 import { createMenuOnlineSizePizzaController } from "../../../../../core/createMenuOnlineSizePizza";
+import { createCampaignValidation } from "../../../../../core/createCampaign/Validation";
+import { createCampaignController } from "../../../../../core/createCampaign";
+import { createMenuOnlineOrderValidation } from "../../../../../core/createMenuOnlineOrder/Validation";
 
 const RouterV1Private_Post = Router();
 
@@ -100,8 +103,8 @@ RouterV1Private_Post.post(
 
 RouterV1Private_Post.post(
   "/campaigns",
-  createPaymentIntegrationValidation,
-  createPaymentIntegrationController
+  createCampaignValidation,
+  createCampaignController
 );
 
 RouterV1Private_Post.post(

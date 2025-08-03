@@ -775,7 +775,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   },
                 },
               ]);
-              if (!flowFetch?.length) return console.log(`Flow not found.`);
+              if (!flowFetch?.length) return console.log(`Flow not found. 1`);
               const { edges, nodes, businessIds } = flowFetch[0];
               flow = { edges, nodes, businessIds };
               cacheFlowsMap.set(msg.FlowState.flowId, flow);
@@ -1531,7 +1531,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                             value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
                           },
                         });
-                        return console.log(`Flow not found.`);
+                        return console.log(`Flow not found. 2`);
                       }
                       const { edges, nodes, businessIds } = flowFetch[0];
                       flow = { edges, nodes, businessIds };
@@ -1595,7 +1595,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                             value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
                           },
                         });
-                        return console.log(`Flow not found.`);
+                        return console.log(`Flow not found. 3`);
                       }
                       const { edges, nodes, businessIds } = flowFetch[0];
                       flow = { edges, nodes, businessIds };
@@ -2112,7 +2112,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       },
                     },
                   ]);
-                  if (!flowFetch) {
+                  if (!getFlow) {
                     const hash = ulid();
                     cacheRootSocket.forEach((sockId) =>
                       socketIo.to(sockId).emit(`geral-logs`, {
@@ -2130,11 +2130,13 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                         value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${campaignOfConnection?.id} - flowId: #${flowId} | Flow não encontrado`,
                       },
                     });
-                    return console.log(`Flow not found.`);
+                    return console.log(`Flow not found. 4`);
                   }
                   const { edges, nodes, businessIds } = getFlow[0];
                   currentFlow = { nodes, edges, businessIds };
                   cacheFlowsMap.set(flowId, currentFlow);
+                } else {
+                  currentFlow = flowFetch;
                 }
               } else {
                 let flowFetch = cacheFlowsMap.get(campaignOfConnection.flowId);
@@ -2173,10 +2175,12 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       },
                     },
                   ]);
-                  if (!flowFetch) return console.log(`Flow not found.`);
+                  if (!getFlow) return console.log(`Flow not found. 5`);
                   const { edges, nodes, businessIds } = getFlow[0];
                   currentFlow = { nodes, edges, businessIds };
                   cacheFlowsMap.set(campaignOfConnection.flowId, currentFlow);
+                } else {
+                  currentFlow = flowFetch;
                 }
               }
 
@@ -2187,6 +2191,11 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
 
               if (!flowState.ContactsWAOnAccount) {
                 console.log("ContactsWAOnAccount not found for lead");
+                return;
+              }
+
+              if (!currentFlow.nodes) {
+                console.log("Fluxo não encontrado, BAILEYS");
                 return;
               }
 
@@ -2206,7 +2215,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   flowState.previous_response_id || undefined,
                 connectionWhatsId: props.connectionWhatsId,
                 clientWA: bot,
-                campaignId: id,
+                campaignId: campaignOfConnection?.id,
                 oldNodeId: flowState.indexNode || "0",
                 flowStateId: flowState.id,
                 contactsWAOnAccountId: flowState.ContactsWAOnAccount.id,

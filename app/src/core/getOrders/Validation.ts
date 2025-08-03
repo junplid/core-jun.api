@@ -31,6 +31,7 @@ export const getOrdersValidation = (
       "urgent",
       "critical"
     ).optional(),
+    menu: Joi.string().allow("").optional(),
   });
 
   const validation = schemaValidation.validate(

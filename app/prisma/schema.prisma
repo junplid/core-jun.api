@@ -775,6 +775,7 @@ model ConnectionWA {
   LogSystem            LogSystem[]
   ConnectionWAOnGroups ConnectionWAOnGroups[]
   Orders               Orders[]
+  MenusOnline          MenusOnline[]
 
   @@index([id, name, type, number])
 }
@@ -1927,12 +1928,15 @@ model Orders {
   n_order               String
   name                  String?              @db.VarChar(150)
   description           String?              @db.Text
-  delivery_method       String?
+  payment_method        String?
   deleted               Boolean              @default(false)
   status                TypeStatusOrder      @default(draft)
   priority              TypePriorityOrder?
   origin                String?              @db.VarChar(150)
   delivery_address      String?              @db.Text
+  delivery_complement   String?
+  delivery_cep          String?
+  who_receives          String?
   tracking_code         String?              @db.VarChar(150)
   delivery_code         String?              @db.VarChar(12)
   itens_count           Int?                 @default(0)
@@ -2045,20 +2049,22 @@ model LogSystem {
 }
 
 model MenusOnline {
-  id           Int      @id @default(autoincrement())
-  uuid         String   @unique @default(uuid())
-  identifier   String   @unique
-  logoImg      String
-  desc         String?
-  bg_primary   String?
-  bg_secondary String?
-  bg_tertiary  String?
-  logoLabel    String?  @db.Text
-  titlePage    String?
-  status       Boolean? @default(false)
-  createAt     DateTime @default(now())
-  accountId    Int?
-  Account      Account? @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id             Int          @id @default(autoincrement())
+  uuid           String       @unique @default(uuid())
+  identifier     String       @unique
+  logoImg        String
+  desc           String?
+  bg_primary     String?
+  bg_secondary   String?
+  bg_tertiary    String?
+  logoLabel      String?      @db.Text
+  titlePage      String?
+  status         Boolean?     @default(false)
+  createAt       DateTime     @default(now())
+  accountId      Int
+  Account        Account      @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  connectionWAId Int
+  ConnectionWA   ConnectionWA @relation(fields: [connectionWAId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   Orders           Orders[]
   SizesPizza       SizesPizza[]
@@ -2069,6 +2075,7 @@ model MenusOnline {
 
 model SizesPizza {
   id       Int         @id @default(autoincrement())
+  uuid     String      @unique @default(uuid())
   name     String
   price    Decimal     @db.Decimal(6, 2)
   flavors  Int

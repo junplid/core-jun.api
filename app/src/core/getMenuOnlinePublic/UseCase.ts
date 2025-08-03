@@ -14,13 +14,12 @@ export class GetMenuOnlinePublicUseCase {
         bg_secondary: true,
         bg_tertiary: true,
         logoImg: true,
-        label1: true,
-        label: true,
         titlePage: true,
         status: true,
         SizesPizza: {
           select: {
             id: true,
+            uuid: true,
             flavors: true,
             price: true,
             slices: true,

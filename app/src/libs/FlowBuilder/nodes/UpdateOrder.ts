@@ -82,10 +82,10 @@ export const NodeUpdateOrder = async (
       });
     }
 
-    if (fields?.includes("delivery_method")) {
-      restData.delivery_method = await resolveTextVariables({
+    if (fields?.includes("payment_method")) {
+      restData.payment_method = await resolveTextVariables({
         accountId: props.accountId,
-        text: restData.delivery_method || "",
+        text: restData.payment_method || "",
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
@@ -167,8 +167,8 @@ export const NodeUpdateOrder = async (
           ...(fields?.includes("data") && {
             data: restData.data,
           }),
-          ...(fields?.includes("delivery_method") && {
-            delivery_method: restData.delivery_method,
+          ...(fields?.includes("payment_method") && {
+            payment_method: restData.payment_method,
           }),
           ...(fields?.includes("priority") && {
             priority: restData.priority,

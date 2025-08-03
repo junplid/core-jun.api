@@ -76,69 +76,76 @@ export const NodeControler = ({
     cacheFlowInExecution.set(keyMap, true);
     const execute = async (props: IPropsControler): Promise<void> => {
       if (props.chatbotId) {
-        await new Promise<void>(async (resP, rejP) => {
-          async function verify() {
-            const chatbot = await prisma.chatbot.findFirst({
-              where: { id: props.chatbotId },
-              select: {
-                interrupted: true,
-                Business: { select: { interrupted: true } },
-                ConnectionWA: { select: { interrupted: true } },
-              },
-            });
+        try {
+          await new Promise<void>(async (resP, rejP) => {
+            async function verify() {
+              const chatbot = await prisma.chatbot.findFirst({
+                where: { id: props.chatbotId },
+                select: {
+                  interrupted: true,
+                  Business: { select: { interrupted: true } },
+                  ConnectionWA: { select: { interrupted: true } },
+                },
+              });
 
-            if (!chatbot) {
+              if (!chatbot) {
+                cacheFlowInExecution.delete(keyMap);
+                return rejP();
+              }
+              if (chatbot.interrupted) {
+                setTimeout(() => verify, 1000 * 60 * 3);
+                return;
+              }
+              if (chatbot.Business.interrupted) {
+                setTimeout(() => verify, 1000 * 60 * 3);
+                return;
+              }
+              if (!chatbot.ConnectionWA) {
+                cacheFlowInExecution.delete(keyMap);
+                return rejP();
+              }
+              if (chatbot.ConnectionWA.interrupted) {
+                setTimeout(() => verify, 1000 * 60 * 3);
+                return;
+              }
               cacheFlowInExecution.delete(keyMap);
-              return rejP();
+              return resP();
             }
-            if (chatbot.interrupted) {
-              setTimeout(() => verify, 1000 * 60 * 3);
-              return;
-            }
-            if (chatbot.Business.interrupted) {
-              setTimeout(() => verify, 1000 * 60 * 3);
-              return;
-            }
-            if (!chatbot.ConnectionWA) {
-              cacheFlowInExecution.delete(keyMap);
-              return rejP();
-            }
-            if (chatbot.ConnectionWA.interrupted) {
-              setTimeout(() => verify, 1000 * 60 * 3);
-              return;
-            }
-            cacheFlowInExecution.delete(keyMap);
-            return resP();
-          }
-          verify();
-        }).catch(() => {
+            verify();
+          });
+        } catch (error) {
           console.log("Error, chatbot não encontrado!");
           cacheFlowInExecution.delete(keyMap);
-          return rej();
-        });
+          return;
+        }
       }
 
       if (props.campaignId) {
-        await new Promise<void>(async (resP, rejP) => {
-          async function verify() {
-            const campaign = await prisma.campaign.findFirst({
-              where: { id: props.campaignId },
-              select: { status: true },
-            });
+        try {
+          await new Promise<void>(async (resP, rejP) => {
+            async function verify() {
+              const campaign = await prisma.campaign.findFirst({
+                where: { id: props.campaignId },
+                select: { status: true },
+              });
 
-            if (!campaign) return rejP();
+              if (!campaign) return rejP();
 
-            if (campaign.status === "paused" || campaign.status === "stopped") {
-              setTimeout(() => verify(), 1000 * 60 * 3);
-              return;
+              if (
+                campaign.status === "paused" ||
+                campaign.status === "stopped"
+              ) {
+                setTimeout(() => verify(), 1000 * 60 * 3);
+                return;
+              }
+              return resP();
             }
-            return resP();
-          }
-          verify();
-        }).catch(() => {
+            verify();
+          });
+        } catch (error) {
           console.log("Error, campanha não encontrada!");
-          return rej();
-        });
+          return;
+        }
       }
 
       const currentNode = props.nodes.find((f) => f.id === props.currentNodeId);
@@ -2294,7 +2301,6 @@ export const NodeControler = ({
 
       return res();
     };
-
     execute({ ...propsC, currentNodeId, oldNodeId });
   });
 };

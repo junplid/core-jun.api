@@ -108,10 +108,10 @@ export const NodeCreateOrder = async (
         numberLead: props.numberLead,
         nodeId: props.nodeId,
       });
-    } else if (restData.delivery_method) {
-      restData.delivery_method = await resolveTextVariables({
+    } else if (restData.payment_method) {
+      restData.payment_method = await resolveTextVariables({
         accountId: props.accountId,
-        text: restData.delivery_method,
+        text: restData.payment_method,
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
@@ -202,7 +202,7 @@ export const NodeCreateOrder = async (
           name: restData.name,
           data: restData.data,
           contact: ContactsWAOnAccount?.ContactsWA.completeNumber,
-          delivery_method: restData.delivery_method,
+          payment_method: restData.payment_method,
           priority: restData.priority || "low",
           delivery_address: restData.delivery_address,
           total: restData.total,

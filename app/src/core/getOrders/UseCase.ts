@@ -10,6 +10,7 @@ export class GetOrdersUseCase {
       deleted: false,
       ...(dto.status && { status: dto.status }),
       ...(dto.priority && { priority: dto.priority }),
+      ...(dto.menu && { menuOnline: { uuid: dto.menu } }),
     };
 
     const [orders, total] = await prisma.$transaction([
@@ -32,7 +33,7 @@ export class GetOrdersUseCase {
           createAt: true, //
           n_order: true, //
           delivery_address: true, //
-          delivery_method: true, //
+          payment_method: true, //
           actionChannels: true, //
         },
       }),

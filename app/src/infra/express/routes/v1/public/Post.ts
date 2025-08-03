@@ -17,6 +17,8 @@ import { cacheFlowsMap } from "../../../../../adapters/Baileys/Cache";
 import { ModelFlows } from "../../../../../adapters/mongo/models/flows";
 import { NodeControler } from "../../../../../libs/FlowBuilder/Control";
 import { sessionsBaileysWA } from "../../../../../adapters/Baileys";
+import { createMenuOnlineOrderValidation } from "../../../../../core/createMenuOnlineOrder/Validation";
+import { createMenuOnlineOrderController } from "../../../../../core/createMenuOnlineOrder";
 
 const RouterV1Public_Post = Router();
 
@@ -50,6 +52,12 @@ RouterV1Public_Post.post(
   "/send-password-recovery-email/:type",
   sendPasswordRecoveryEmailValidation,
   sendPasswordRecoveryEmailController
+);
+
+RouterV1Public_Post.post(
+  "/menu/:uuid/order",
+  createMenuOnlineOrderValidation,
+  createMenuOnlineOrderController
 );
 
 RouterV1Public_Post.post("/webhook/mercadopago", webhookMercadopago);

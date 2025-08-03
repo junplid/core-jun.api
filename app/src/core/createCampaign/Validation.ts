@@ -32,6 +32,14 @@ export const createCampaignValidation = (
         })
       )
       .optional(),
+    contacts: Joi.array()
+      .items(
+        Joi.object({
+          name: Joi.string(),
+          number: Joi.string().required(),
+        })
+      )
+      .optional(),
   });
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });

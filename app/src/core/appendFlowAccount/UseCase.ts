@@ -167,8 +167,8 @@ export class AppendFlowAccountUseCase {
         if (node.data.data) appendText += `${node.data.data} \n`;
         if (node.data.delivery_address)
           appendText += `${node.data.delivery_address} \n`;
-        if (node.data.delivery_method)
-          appendText += `${node.data.delivery_method} \n`;
+        if (node.data.payment_method)
+          appendText += `${node.data.payment_method} \n`;
         if (node.data.description) appendText += `${node.data.description} \n`;
         if (node.data.name) appendText += `${node.data.name} \n`;
         if (node.data.origin) appendText += `${node.data.origin} \n`;
@@ -516,8 +516,8 @@ export class AppendFlowAccountUseCase {
         if (node.data.data) appendText += `${node.data.data} \n`;
         if (node.data.delivery_address)
           appendText += `${node.data.delivery_address} \n`;
-        if (node.data.delivery_method)
-          appendText += `${node.data.delivery_method} \n`;
+        if (node.data.payment_method)
+          appendText += `${node.data.payment_method} \n`;
         if (node.data.description) appendText += `${node.data.description} \n`;
         if (node.data.name) appendText += `${node.data.name} \n`;
         if (node.data.origin) appendText += `${node.data.origin} \n`;
