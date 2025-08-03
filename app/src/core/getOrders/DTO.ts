@@ -1,10 +1,8 @@
-import { TypePriorityOrder, TypeStatusOrder } from "@prisma/client";
+import { TypeStatusOrder } from "@prisma/client";
 
 export interface GetOrdersQueryDTO_I {
-  page?: number;
   limit?: number;
-  status?: TypeStatusOrder;
-  priority?: TypePriorityOrder;
+  status: TypeStatusOrder[];
   menu?: string;
 }
 

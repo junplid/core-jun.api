@@ -1913,6 +1913,7 @@ enum TypeStatusOrder {
   refunded
   failed
   on_way
+  ready
 }
 
 enum TypePriorityOrder {

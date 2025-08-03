@@ -9,28 +9,26 @@ export const getOrdersValidation = (
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
-    page: Joi.number().min(1).default(1).optional(),
     limit: Joi.number().min(1).optional(),
-    status: Joi.valid(
-      "draft",
-      "pending",
-      "processing",
-      "confirmed",
-      "shipped",
-      "delivered",
-      "cancelled",
-      "returned",
-      "refunded",
-      "failed",
-      "on_way"
-    ).optional(),
-    priority: Joi.valid(
-      "low",
-      "medium",
-      "high",
-      "urgent",
-      "critical"
-    ).optional(),
+    status: Joi.array()
+      .items(
+        Joi.string().valid(
+          "draft",
+          "pending",
+          "processing",
+          "confirmed",
+          "shipped",
+          "delivered",
+          "cancelled",
+          "returned",
+          "refunded",
+          "failed",
+          "on_way",
+          "ready"
+        )
+      )
+      .default(["pending", "confirmed", "processing", "on_way", "completed"])
+      .optional(),
     menu: Joi.string().allow("").optional(),
   });
 
