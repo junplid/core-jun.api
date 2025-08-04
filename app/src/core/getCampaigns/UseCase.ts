@@ -27,10 +27,6 @@ export class GetCampaignsUseCase {
       const totalFlows = FlowState.length;
       const sentCount = FlowState.filter((fs) => fs.isSent).length;
       const finishCount = FlowState.filter((fs) => fs.isFinish).length;
-      const sentPercentage =
-        totalFlows > 0 ? (sentCount / totalFlows) * 100 : 0;
-      const finishPercentage =
-        totalFlows > 0 ? (finishCount / totalFlows) * 100 : 0;
 
       return {
         ...rest,
@@ -38,8 +34,8 @@ export class GetCampaignsUseCase {
           id: cb.Business.id,
           name: cb.Business.name,
         })),
-        finishPercentage,
-        sentPercentage,
+        finishCount,
+        sentCount,
         totalFlows,
       };
     });

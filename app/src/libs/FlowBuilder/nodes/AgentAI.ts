@@ -476,9 +476,6 @@ export const NodeAgentAI = async ({
                             };
                           }
                           try {
-                            console.log({
-                              delay: CalculeTypingDelay(args.value),
-                            });
                             await TypingDelay({
                               connectionId: props.connectionWhatsId,
                               toNumber: props.numberLead,

@@ -340,6 +340,14 @@ export const startCampaign = async ({
           },
         });
 
+        const socketsAccount = cacheAccountSocket.get(campaign.accountId);
+        socketsAccount?.listSocket?.forEach((sockId) =>
+          socketIo.to(sockId).emit(`sentCount-campaign`, {
+            id,
+            increment: 1,
+          })
+        );
+
         if (
           !stateFlow.completeNumber ||
           !stateFlow.contactsWAOnAccountId ||
@@ -459,6 +467,7 @@ export const startCampaign = async ({
                 where: { id: stateFlow.id },
                 data: { isFinish: true },
               });
+              // enviar socket de finishPercentage;
               const contactsInFlow = await prisma.flowState.count({
                 where: {
                   isFinish: false,
@@ -636,6 +645,14 @@ export const startCampaign = async ({
             firedOnDate: new Date(),
           },
         });
+
+        const socketsAccount = cacheAccountSocket.get(campaign.accountId);
+        socketsAccount?.listSocket?.forEach((sockId) =>
+          socketIo.to(sockId).emit(`sentCount-campaign`, {
+            id,
+            increment: 1,
+          })
+        );
 
         stateFlow.status = true;
         NodeControler({
