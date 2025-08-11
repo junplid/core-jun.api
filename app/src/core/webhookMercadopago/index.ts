@@ -7,6 +7,7 @@ import { cacheFlowsMap } from "../../adapters/Baileys/Cache";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { NodeControler } from "../../libs/FlowBuilder/Control";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
+import { mongo } from "../../adapters/mongo/connection";
 
 export const webhookMercadopago = async (req: Request, res: Response) => {
   try {
@@ -142,6 +143,7 @@ export const webhookMercadopago = async (req: Request, res: Response) => {
         flow = cacheFlowsMap.get(flowState.flowId);
 
         if (!flow) {
+          await mongo();
           const flowFetch = await ModelFlows.aggregate([
             {
               $match: { accountId: getCharge.accountId, _id: flowState.flowId },

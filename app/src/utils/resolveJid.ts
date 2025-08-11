@@ -5,7 +5,9 @@ export const resolveJid = async (
   sock: WASocket,
   rawNumber: string,
   pre: boolean
-): Promise<{ jid?: string; completeNumber?: string; contactId?: number }> => {
+): Promise<
+  { jid: string; completeNumber: string; contactId: number } | undefined
+> => {
   const digits = rawNumber.replace(/\D/g, "");
   const ccFixed = digits.startsWith("55") ? digits : `55${digits}`;
 
@@ -27,8 +29,9 @@ export const resolveJid = async (
     });
     if (getN?.id) {
       return {
-        jid: getN + `@s.whatsapp.net`,
-        ...getN,
+        jid: getN.completeNumber + `@s.whatsapp.net`,
+        contactId: getN.id,
+        completeNumber: getN.completeNumber,
       };
     }
   }
@@ -46,5 +49,5 @@ export const resolveJid = async (
       return { jid: c.jid, completeNumber: c.jid.split("@")[0], contactId: id };
     }
   }
-  return {};
+  return;
 };

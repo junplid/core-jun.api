@@ -4,6 +4,7 @@ import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { TypingDelay } from "../../../adapters/Baileys/modules/typing";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { prisma } from "../../../adapters/Prisma/client";
+import { NodeAddVariables } from "./AddVariables";
 
 interface PropsNodeMessage {
   numberLead: string;
@@ -59,6 +60,14 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
             flowStateId: props.flowStateId,
           },
         });
+        if (message.varId && msg.key.id) {
+          await NodeAddVariables({
+            data: { list: [{ id: message.varId, value: msg.key.id }] },
+            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            flowStateId: props.flowStateId,
+            nodeId: props.nodeId,
+          });
+        }
       } catch (error) {
         props.action.onErrorClient?.();
         console.log("error para enviar a mensagem", error);

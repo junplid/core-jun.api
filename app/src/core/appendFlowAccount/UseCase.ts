@@ -4,6 +4,7 @@ import { prisma } from "../../adapters/Prisma/client";
 import { ulid } from "ulid";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { NodePayload } from "../../libs/FlowBuilder/Payload";
+import { mongo } from "../../adapters/mongo/connection";
 
 export class AppendFlowAccountUseCase {
   constructor() {}
@@ -565,6 +566,7 @@ export class AppendFlowAccountUseCase {
       }
     }
 
+    await mongo();
     await ModelFlows.create({
       ...{
         accountId: alreadyExists.id,

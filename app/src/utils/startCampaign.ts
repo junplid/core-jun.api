@@ -8,6 +8,7 @@ import { NodeControler } from "../libs/FlowBuilder/Control";
 import { sessionsBaileysWA } from "../adapters/Baileys";
 import { cacheFlowsMap } from "../adapters/Baileys/Cache";
 import { cacheAccountSocket } from "../infra/websocket/cache";
+import { mongo } from "../adapters/mongo/connection";
 
 interface PropsStartCampaign {
   id: number;
@@ -363,6 +364,7 @@ export const startCampaign = async ({
 
         let flow = cacheFlowsMap.get(stateFlow.flowId);
         if (!flow) {
+          await mongo();
           const findFlow = await ModelFlows.aggregate([
             { $match: { accountId: campaign.accountId, _id: campaign.flowId } },
             {

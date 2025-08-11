@@ -19,6 +19,7 @@ import { NodeControler } from "../../../../../libs/FlowBuilder/Control";
 import { sessionsBaileysWA } from "../../../../../adapters/Baileys";
 import { createMenuOnlineOrderValidation } from "../../../../../core/createMenuOnlineOrder/Validation";
 import { createMenuOnlineOrderController } from "../../../../../core/createMenuOnlineOrder";
+import { mongo } from "../../../../../adapters/mongo/connection";
 
 const RouterV1Public_Post = Router();
 
@@ -128,6 +129,7 @@ RouterV1Public_Post.post("/webhook/trello", (req: Request, res: Response) => {
         | undefined;
       flow = cacheFlowsMap.get(getFlowState.flowId);
       if (!flow) {
+        await mongo();
         const flowFetch = await ModelFlows.aggregate([
           {
             $match: {

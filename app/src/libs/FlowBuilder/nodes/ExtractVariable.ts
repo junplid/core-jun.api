@@ -76,7 +76,7 @@ export const NodeExtractVariable = async ({
     const valueResolved = await resolveTextVariables({
       accountId: props.accountId,
       contactsWAOnAccountId: props.contactsWAOnAccountId,
-      text: data.value,
+      text: data.value || "",
       numberLead: props.numberLead,
       nodeId: props.nodeId,
     });
@@ -93,9 +93,9 @@ export const NodeExtractVariable = async ({
         });
       }
 
-      nextValue = resolveMatch(valueResolved);
+      nextValue = resolveMatch(valueResolved || "");
     } else {
-      nextValue = targetValue.replace(regex, valueResolved);
+      nextValue = targetValue.replace(regex, valueResolved || "");
     }
 
     const nextValueResolved = await resolveTextVariables({

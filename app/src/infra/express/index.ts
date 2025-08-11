@@ -1,5 +1,4 @@
 import { config } from "dotenv";
-import "../../adapters/mongo/connection";
 import { readdirSync } from "fs";
 import http from "http";
 import { resolve } from "path";

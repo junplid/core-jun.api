@@ -90,8 +90,10 @@ export async function resolveTextVariables(
     });
 
     for await (const variable of varsContact) {
-      const regex = new RegExp(`({{${variable.Variable.name}}})`, "g");
-      newMessage = newMessage.replace(regex, variable.value);
+      if (variable.value) {
+        const regex = new RegExp(`({{${variable.Variable.name}}})`, "g");
+        newMessage = newMessage.replace(regex, variable.value);
+      }
     }
   }
 

@@ -1,10 +1,12 @@
 import { GetFlowOnBusinessForSelectDTO_I } from "./DTO";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
+import { mongo } from "../../adapters/mongo/connection";
 
 export class GetFlowOnBusinessForSelectUseCase {
   constructor() {}
 
   async run(dto: GetFlowOnBusinessForSelectDTO_I) {
+    await mongo();
     const data = await ModelFlows.aggregate([
       {
         $match: {

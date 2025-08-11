@@ -9,9 +9,10 @@ services:
       - ./data-mongo:/data/db
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.runCommand({ ping: 1 })"]
-      interval: 10s
+      interval: 120s
+      start_period: 40s
       timeout: 5s
-      retries: 5  
+      retries: 3 
     networks: [rede_junplid]
 
 
@@ -21,9 +22,10 @@ services:
     env_file: .env.pg
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "$${POSTGRES_USER}"]
-      interval: 10s
+      interval: 120s
+      start_period: 40s
       timeout: 5s
-      retries: 5 
+      retries: 3
     ports:
       - "127.0.0.1:5432:5432"
     volumes:

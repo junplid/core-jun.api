@@ -13,7 +13,11 @@ interface Edges {
 
 export type IPropsControler = {
   actions?: {
-    onEnterNode?(props: { id: string; flowId: string }): Promise<void>;
+    onEnterNode?(props: {
+      id: string;
+      flowId: string;
+      agentId?: number;
+    }): Promise<void>;
     onExecutedNode?(
       props: { id: string; flowId: string },
       isShots?: boolean
@@ -1190,6 +1194,7 @@ export const NodeControler = ({
           await props.actions?.onEnterNode({
             id: currentNode.id,
             flowId: props.flowId,
+            agentId: currentNode.data.agentId,
           });
         }
         await LibraryNodes.NodeAgentAI({
@@ -1200,7 +1205,7 @@ export const NodeControler = ({
           message: props.type === "initial" ? undefined : props.message,
           connectionWhatsId: props.connectionWhatsId,
           action: {
-            onErrorClient: () => {
+            onErrorClient: async () => {
               if (props.oldNodeId === "0") {
                 props.actions?.onErrorClient &&
                   props.actions?.onErrorClient(currentNode.id);
@@ -1217,6 +1222,10 @@ export const NodeControler = ({
                   flowId: props.flowId,
                 });
                 cacheFlowInExecution.delete(keyMap);
+                await prisma.flowState.update({
+                  where: { id: props.flowStateId },
+                  data: { agentId: null },
+                });
                 return res();
               }
               if (props.actions?.onExecutedNode) {
@@ -2297,6 +2306,54 @@ export const NodeControler = ({
             });
         }
         return res();
+      }
+      if (currentNode.type === "NodeDeleteMessage") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeDeleteMessage({
+          numberLead: props.lead.number,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          data: currentNode.data,
+          connectionWhatsId: props.connectionWhatsId,
+        })
+          .then(async () => {
+            if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return;
+            }
+            if (props.actions?.onExecutedNode) {
+              props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
+            }
+
+            execute({
+              ...props,
+              ...(props.type === "running"
+                ? { message: props.message, type: "running" }
+                : { type: "initial" }),
+              currentNodeId: nextEdgesIds[0].id,
+              oldNodeId: currentNode.id,
+            });
+            return;
+          })
+          .catch((error) => {
+            console.log("ERROR NO MENSAGEM", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
       }
 
       return res();

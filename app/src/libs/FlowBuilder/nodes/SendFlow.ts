@@ -1,5 +1,6 @@
 import { cacheFlowsMap } from "../../../adapters/Baileys/Cache";
 import { prisma } from "../../../adapters/Prisma/client";
+import { mongo } from "../../../adapters/mongo/connection";
 import { ModelFlows } from "../../../adapters/mongo/models/flows";
 import { NodeSendFlowData } from "../Payload";
 
@@ -20,6 +21,7 @@ export const NodeSendFlow = async (
 }> => {
   let flowAlreadyExists = cacheFlowsMap.get(props.data.id);
   if (!flowAlreadyExists) {
+    await mongo();
     const newFlow = await ModelFlows.aggregate([
       {
         $match: {

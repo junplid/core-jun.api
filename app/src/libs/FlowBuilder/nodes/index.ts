@@ -5,6 +5,7 @@ import { NodeAgentAI } from "./AgentAI";
 import { NodeCalculator } from "./Calculator";
 import { NodeCharge } from "./Charge";
 import { NodeCreateOrder } from "./CreateOrder";
+import { NodeDeleteMessage } from "./DeleteMessage";
 import { NodeExtractVariable } from "./ExtractVariable";
 import { NodeFbPixel } from "./FbPixel";
 import { NodeIf } from "./If";
@@ -68,4 +69,5 @@ export const LibraryNodes = {
   NodeMoveTrelloCard,
   NodeUpdateTrelloCard,
   NodeWebhookTrelloCard,
+  NodeDeleteMessage,
 };

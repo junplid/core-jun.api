@@ -31,13 +31,13 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
 
   for await (const { number } of props.data.numbers) {
     const newNumber = validatePhoneNumber(number);
-    let contactsWAOnAccountId: number | null = null;
 
     if (newNumber) {
       const valid = await resolveJid(props.botWA, newNumber, true);
-      if (!valid.jid) continue;
+      if (!valid) continue;
 
-      if (valid.contactId) {
+      if (props.data.tagIds?.length) {
+        let contactsWAOnAccountId: number | null = null;
         const contactAccount = await prisma.contactsWAOnAccount.findFirst({
           where: { accountId: props.accountId, contactWAId: valid.contactId },
           select: { id: true },
@@ -55,17 +55,15 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
         } else {
           contactsWAOnAccountId = contactAccount.id;
         }
-      }
-
-      if (!contactsWAOnAccountId) continue;
-      for await (const tagId of props.data.tagIds || []) {
-        const isExist = await prisma.tagOnContactsWAOnAccount.findFirst({
-          where: { contactsWAOnAccountId: contactsWAOnAccountId, tagId },
-        });
-        if (!isExist) {
-          await prisma.tagOnContactsWAOnAccount.create({
-            data: { contactsWAOnAccountId: contactsWAOnAccountId, tagId },
+        for await (const tagId of props.data.tagIds) {
+          const isExist = await prisma.tagOnContactsWAOnAccount.findFirst({
+            where: { contactsWAOnAccountId: contactsWAOnAccountId, tagId },
           });
+          if (!isExist) {
+            await prisma.tagOnContactsWAOnAccount.create({
+              data: { contactsWAOnAccountId: contactsWAOnAccountId, tagId },
+            });
+          }
         }
       }
 

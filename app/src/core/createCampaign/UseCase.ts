@@ -8,6 +8,7 @@ import { cacheAccountSocket } from "../../infra/websocket/cache";
 import { socketIo } from "../../infra/express";
 import { startCampaign } from "../../utils/startCampaign";
 import { validatePhoneNumber } from "../../helpers/validatePhoneNumber";
+import { mongo } from "../../adapters/mongo/connection";
 
 export class CreateCampaignUseCase {
   constructor() {}
@@ -97,6 +98,7 @@ export class CreateCampaignUseCase {
       });
     }
 
+    await mongo();
     const flowExist = await ModelFlows.exists({
       accountId,
       _id: dto.flowId,
@@ -254,12 +256,12 @@ export class CreateCampaignUseCase {
     try {
       const createInstruction = () => {
         (async () => {
-          await new Promise((r) =>
-            setTimeout(
-              r,
-              Math.random() * (3 * 60 * 1000 - 40 * 1000) + 40 * 1000
-            )
-          );
+          // await new Promise((r) =>
+          //   setTimeout(
+          //     r,
+          //     Math.random() * (3 * 60 * 1000 - 40 * 1000) + 40 * 1000
+          //   )
+          // );
           await prisma.campaign.update({
             where: { id },
             data: { status: "running" },

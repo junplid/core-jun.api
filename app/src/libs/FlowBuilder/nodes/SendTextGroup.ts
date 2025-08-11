@@ -4,6 +4,7 @@ import { TypingDelay } from "../../../adapters/Baileys/modules/typing";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { prisma } from "../../../adapters/Prisma/client";
 import { SendTextGroup } from "../../../adapters/Baileys/modules/sendTextGroup";
+import { NodeAddVariables } from "./AddVariables";
 
 interface PropsNodeMessage {
   numberLead: string;
@@ -24,15 +25,17 @@ export const NodeSendTextGroup = (props: PropsNodeMessage): Promise<void> => {
     if (!props.data.messages?.length) return res();
 
     for await (const message of props.data.messages) {
-      try {
-        await TypingDelay({
-          delay: Number(message.interval || 0),
-          toNumber: props.numberLead,
-          connectionId: props.connectionWhatsId,
-        });
-      } catch (error) {
-        props.action.onErrorClient?.();
-        rej(error);
+      if (message.interval) {
+        try {
+          await TypingDelay({
+            delay: Number(message.interval || 0),
+            toNumber: props.numberLead,
+            connectionId: props.connectionWhatsId,
+          });
+        } catch (error) {
+          props.action.onErrorClient?.();
+          rej(error);
+        }
       }
 
       try {
@@ -59,6 +62,24 @@ export const NodeSendTextGroup = (props: PropsNodeMessage): Promise<void> => {
             flowStateId: props.flowStateId,
           },
         });
+        if (message.varId && msg.key.id) {
+          await NodeAddVariables({
+            data: { list: [{ id: message.varId, value: msg.key.id }] },
+            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            flowStateId: props.flowStateId,
+            nodeId: props.nodeId,
+          });
+        }
+        if (message.varId_groupJid && msg.key.remoteJid) {
+          await NodeAddVariables({
+            data: {
+              list: [{ id: message.varId_groupJid, value: msg.key.remoteJid }],
+            },
+            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            flowStateId: props.flowStateId,
+            nodeId: props.nodeId,
+          });
+        }
       } catch (error) {
         props.action.onErrorClient?.();
         console.log("error para enviar a mensagem", error);

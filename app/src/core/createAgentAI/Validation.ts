@@ -22,7 +22,7 @@ export const createAgentAIValidation = (
     knowledgeBase: Joi.string().optional(),
     files: Joi.array().items(Joi.number()).optional(),
     instructions: Joi.string().allow("").optional(),
-    timeout: Joi.number().min(1).max(7200).optional(),
+    timeout: Joi.number().min(1).max(14400).optional(),
     debounce: Joi.number().min(0).max(9).optional(),
   });
 

@@ -1,32 +1,47 @@
 import mongoose from "mongoose";
 
-const connectToDatabase = async () => {
-  try {
-    await mongoose.connect(
-      "mongodb://junplidroot:passwordjunplid@mongo_junplid:27017/junplid?authSource=admin"
-    );
-    console.log("DATABASE#1 -", "Conectando...");
-    console.log("DATABASE#1 -", "Conectado com sucesso!");
-  } catch (error) {
-    console.error("Erro ao conectar com MongoDB:", error);
-  }
+const { DATABASE_URL } = process.env;
+if (!DATABASE_URL) {
+  throw new Error(
+    'Defina DATABASE_URL no .env (ex.: DATABASE_URL="mongodb://junplidroot:passwordjunplid@database:27017/junplid?authSource=admin")'
+  );
+}
+
+type TMongooseCache = {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
 };
 
-(async () => {
-  new Promise<void>((res) => {
-    let attempts = 0;
-    const run = () => {
-      if (attempts < 2) {
-        setTimeout(() => {
-          connectToDatabase()
-            .catch(() => {
-              attempts += 1;
-              run();
-            })
-            .then(res);
-        }, 2000);
-      }
-    };
-    run();
-  });
-})();
+const cache: TMongooseCache = {
+  conn: null,
+  promise: null,
+};
+
+export async function mongo() {
+  if (cache.conn) return cache.conn;
+
+  if (!cache.promise) {
+    cache.promise = mongoose
+      .connect(
+        "mongodb://junplidroot:passwordjunplid@mongo_junplid:27017/junplid?authSource=admin",
+        {
+          serverSelectionTimeoutMS: 20000,
+        }
+      )
+      .then((m) => {
+        mongoose.pluralize(null);
+        mongoose.set("strictQuery", true);
+
+        // if (process.env.NODE_ENV !== "production") {
+        //   mongoose.set("debug", true);
+        // }
+
+        return m;
+      })
+      .catch((err) => {
+        throw err;
+      });
+  }
+  cache.conn = await cache.promise;
+  return cache.conn;
+}

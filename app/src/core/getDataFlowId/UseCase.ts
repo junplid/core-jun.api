@@ -1,11 +1,13 @@
 import { GetDataFlowIdDTO_I } from "./DTO";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
+import { mongo } from "../../adapters/mongo/connection";
 
 export class GetDataFlowIdUseCase {
   constructor() {}
 
   async run(dto: GetDataFlowIdDTO_I) {
     try {
+      await mongo();
       const data = await ModelFlows.aggregate([
         { $match: { _id: dto.id, accountId: dto.accountId } },
         {

@@ -10,6 +10,7 @@ import {
 import { prisma } from "../adapters/Prisma/client";
 import { ModelFlows } from "../adapters/mongo/models/flows";
 import { NodeControler } from "../libs/FlowBuilder/Control";
+import { mongo } from "../adapters/mongo/connection";
 // import { clientRedis } from "../adapters/RedisDB";
 
 export interface ChatbotQueue_I {
@@ -161,7 +162,7 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
                 ];
               }
             }
-
+            await mongo();
             const flowFetch = await ModelFlows.aggregate([
               {
                 $match: {

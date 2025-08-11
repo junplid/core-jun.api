@@ -45,6 +45,7 @@ import { TypingDelay } from "./modules/typing";
 import { TypeStatusCampaign } from "@prisma/client";
 import NodeCache from "node-cache";
 import { ulid } from "ulid";
+import { mongo } from "../mongo/connection";
 
 /**
  * Estima quanto tempo (em segundos) alguém levou para digitar `text`.
@@ -741,6 +742,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               | undefined;
             flow = cacheFlowsMap.get(msg.FlowState?.flowId);
             if (!flow) {
+              await mongo();
               const flowFetch = await ModelFlows.aggregate([
                 {
                   $match: {
@@ -895,6 +897,8 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
             !body.messages[0].message?.reactionMessage &&
             !body.messages[0].reactions?.length
           ) {
+            await mongo();
+
             const numberLead = body.messages[0].key.remoteJid?.split("@")[0];
             if (!numberLead) {
               console.log("Deu erro para recuperar número do lead");
@@ -1823,7 +1827,11 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                         } else {
                           await prisma.flowState.update({
                             where: { id: indexCurrentAlreadyExist.id },
-                            data: { indexNode: node.id, flowId: node.flowId },
+                            data: {
+                              indexNode: node.id,
+                              flowId: node.flowId,
+                              agentId: node.agentId || null,
+                            },
                           });
                         }
                       },
@@ -2240,11 +2248,14 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     }
                     // verificar se todos foram encerrados
                     const contactsInFlow = await prisma.flowState.count({
-                      where: { isFinish: false, campaignId: id },
+                      where: {
+                        isFinish: false,
+                        campaignId: campaignOfConnection?.id,
+                      },
                     });
                     if (!contactsInFlow) {
                       await prisma.campaign.update({
-                        where: { id },
+                        where: { id: campaignOfConnection?.id },
                         data: { status: "finished" },
                       });
                       cacheAccountSocket

@@ -3,11 +3,13 @@ import { prisma } from "../../adapters/Prisma/client";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { ulid } from "ulid";
+import { mongo } from "../../adapters/mongo/connection";
 
 export class CreateFlowUseCase {
   constructor() {}
 
   async run({ businessIds, ...dto }: CreateFlowDTO_I) {
+    await mongo();
     const getAccount = await prisma.account.findFirst({
       where: { id: dto.accountId },
       select: { isPremium: true },

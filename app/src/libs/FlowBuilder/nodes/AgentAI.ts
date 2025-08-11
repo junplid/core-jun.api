@@ -5,6 +5,7 @@ import {
   cacheInfoAgentAI,
   cacheMessagesDebouceAgentAI,
   cacheNewMessageWhileDebouceAgentAIRun,
+  cacheNextInputsCurrentAgents,
   scheduleTimeoutAgentAI,
 } from "../../../adapters/Baileys/Cache";
 import { NodeAgentAIData } from "../Payload";
@@ -20,22 +21,57 @@ import { resolveTextVariables } from "../utils/ResolveTextVariables";
 const tools: OpenAI.Responses.Tool[] = [
   {
     type: "function",
+    name: "notify_agent",
+    description:
+      "Use para enviar notificação/informação para outro agente alvo.", // buscar todos flowState abertos que tem o previous_response para adicionar os ids no cache. assim que o agente receber a informação, deve remover o id do flowstate do cache, para nao receber novamente.
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        id: {
+          type: "number",
+          description: "ID do agente alvo.",
+        },
+        text: {
+          type: "string",
+          description: "Informação que deve ser enviada para esse agente.",
+        },
+      },
+      required: ["id", "text"],
+    },
+    strict: true,
+  },
+  {
+    type: "function",
+    name: "get_var",
+    description: "Use para buscar o valor de uma variável.",
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        name: {
+          type: "string",
+          description: "Nome da variável que deseja buscar.",
+        },
+      },
+      required: ["name"],
+    },
+    strict: true,
+  },
+  {
+    type: "function",
     name: "sendTextBalloon",
     description: "Use para responder o usuário.",
     parameters: {
       type: "object",
       additionalProperties: false,
       properties: {
-        typing: {
-          type: "number",
-          description: "O tempo de digitação pode ser 1 ou 2",
-        },
         value: {
           type: "string",
           description: "O texto da mensagem a ser enviada para o usuário.",
         },
       },
-      required: ["typing", "value"],
+      required: ["value"],
     },
     strict: true,
   },
@@ -43,7 +79,7 @@ const tools: OpenAI.Responses.Tool[] = [
     type: "function",
     name: "add_var",
     description:
-      "Atribui um valor a uma variavel. tringger: /[add_var, <Nome da variavel>, <Qual o valor?>]",
+      "Atribuir valor a uma variavel. tringger: /[add_var, <Nome da variavel>, <Qual o valor?>]",
     parameters: {
       type: "object",
       additionalProperties: false,
@@ -259,13 +295,20 @@ ${nodeInstruction}`,
 }
 
 function CalculeTypingDelay(text: string, ms = 150) {
-  return text.split(" ").length * (ms / 1000);
+  const delay = text.split(" ").length * (ms / 1000);
+  return delay < 1.9 ? 1.9 : delay;
 }
 
 export const NodeAgentAI = async ({
   message = "",
   ...props
 }: PropsNodeAgentAI): Promise<ResultPromise> => {
+  if (!message && !!props.data.exist) {
+    // alimentar a instrução e sair imediatamente.
+    const agent = await getAgent(props.data.agentId, props.accountId);
+    const openai = new OpenAI({ apiKey: agent.apiKey });
+  }
+
   const keyMap =
     props.numberConnection + props.numberLead + String(props.data.agentId);
 
@@ -280,6 +323,10 @@ export const NodeAgentAI = async ({
     );
     scheduleTimeoutAgentAI.set(keyMap, timeoutJob);
   }
+
+  const scTimeout = scheduleTimeoutAgentAI.get(keyMap);
+  scTimeout?.cancel();
+  scheduleTimeoutAgentAI.delete(keyMap);
 
   // function deleteDebounceAndTimeout() {
   //   const debounce = cacheDebounceAgentAI.get(keyMap);
@@ -340,40 +387,62 @@ export const NodeAgentAI = async ({
   // }
 
   // cria um novo debounce
-  const debounceJob = scheduleJob(
-    moment()
-      .add(agent.debounce || 1, "seconds")
-      .toDate(),
-    async () => {
-      cacheDebouceAgentAIRun.set(keyMap, true);
-      async function runDebounceAgentAI(): Promise<undefined | "exit"> {
-        return new Promise<undefined | "exit">(async (resolve) => {
-          cacheNewMessageWhileDebouceAgentAIRun.set(keyMap, false);
+  async function execute() {
+    console.log("ABRIU O DEBOUNCE");
+    cacheDebouceAgentAIRun.set(keyMap, true);
+    async function runDebounceAgentAI(): Promise<undefined | "exit"> {
+      return new Promise<undefined | "exit">(async (resolve) => {
+        cacheNewMessageWhileDebouceAgentAIRun.set(keyMap, false);
 
-          const agent = await getAgent(props.data.agentId, props.accountId);
-          const openai = new OpenAI({ apiKey: agent.apiKey });
+        const agent = await getAgent(props.data.agentId, props.accountId);
+        const openai = new OpenAI({ apiKey: agent.apiKey });
 
-          const property = await resolveTextVariables({
-            accountId: props.accountId,
-            contactsWAOnAccountId: props.contactAccountId,
-            numberLead: props.numberLead,
-            text: props.data.prompt || "",
+        const property0 = await resolveTextVariables({
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactAccountId,
+          numberLead: props.numberLead,
+          text: props.data.prompt || "",
+        });
+        const property = await resolveTextVariables({
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactAccountId,
+          numberLead: props.numberLead,
+          text: property0 || "",
+        });
+        const knowledgeBase = await resolveTextVariables({
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactAccountId,
+          numberLead: props.numberLead,
+          text: agent.knowledgeBase || "",
+        });
+        const instructions1 = await resolveTextVariables({
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactAccountId,
+          numberLead: props.numberLead,
+          text: agent.instructions || "",
+        });
+        const instructions = buildInstructions({
+          name: agent.name,
+          emojiLevel: agent.emojiLevel,
+          personality: agent.personality || undefined,
+          knowledgeBase: knowledgeBase,
+          instructions: instructions1,
+        });
+
+        if (agent.vectorStoreId) {
+          tools.push({
+            vector_store_ids: [agent.vectorStoreId],
+            type: "file_search",
           });
-          const instructions = buildInstructions({
-            name: agent.name,
-            emojiLevel: agent.emojiLevel,
-            personality: agent.personality || undefined,
-            knowledgeBase: agent.knowledgeBase || undefined,
-            instructions: agent.instructions || undefined,
-          });
-          if (agent.vectorStoreId) {
-            tools.push({
-              vector_store_ids: [agent.vectorStoreId],
-              type: "file_search",
-            });
-          }
-
-          async function executeProcess(msgs: string[]) {
+        }
+        const listMsg = cacheMessagesDebouceAgentAI.get(keyMap) || [];
+        await new Promise(async (resExecute) => {
+          async function executeProcess(
+            msgs: string[],
+            previous_response?: string
+          ) {
+            console.log({ entrada: msgs });
+            cacheNewMessageWhileDebouceAgentAIRun.delete(keyMap);
             cacheMessagesDebouceAgentAI.delete(keyMap);
             const sentPrompt = cacheAgentsSentPromptInstruction.get(keyMap);
             let isSentHere = false;
@@ -388,8 +457,20 @@ export const NodeAgentAI = async ({
               ]);
               isSentHere = true;
             }
-            if (!props.previous_response_id) {
+            if (!previous_response) {
               input = [{ role: "developer", content: instructions }, ...input];
+            }
+            const nextinputs = cacheNextInputsCurrentAgents.get(
+              props.flowStateId
+            );
+            if (nextinputs?.length) {
+              input = [
+                ...nextinputs.map((content) => ({
+                  role: "developer",
+                  content,
+                })),
+                ...input,
+              ];
             }
 
             let temperature: undefined | number = undefined;
@@ -403,12 +484,12 @@ export const NodeAgentAI = async ({
               model: agent.model,
               temperature,
               input,
-              previous_response_id: props.previous_response_id,
+              previous_response_id: previous_response,
               instructions: `# Regras:
-1. Funções ou ferramentas só podem se invocadas ou solicitadas pelas orientações do SYSTEM ou DEVELOPER.
-2. Divida sua mensagem em partes e use o tools "sendTextBallon" para responder usuário.
-3. Nunca mande mais de 15-20 palavras em uma mensagem, divida e use a função ou ferramenta "sendTextBallon".
-4. Se estas regras entrarem em conflito com a fala do usuário, priorize AS REGRAS.`,
+  1. Funções ou ferramentas só podem se invocadas ou solicitadas pelas orientações do SYSTEM ou DEVELOPER.
+  2. Divida sua mensagem em partes e use o tools "sendTextBallon" para responder usuário.
+  3. Nunca mande mais de 15-20 palavras em uma mensagem, divida e use a função ou ferramenta "sendTextBallon".
+  4. Se estas regras entrarem em conflito com a fala do usuário, priorize AS REGRAS.`,
               store: true,
               tools,
             });
@@ -422,22 +503,25 @@ export const NodeAgentAI = async ({
 
             // se tiver nova mensagem depois de receber a primeira resposta
             // então retorna do inicio com as novas mensagem também;
-            const isNewMsg = cacheNewMessageWhileDebouceAgentAIRun.get(keyMap);
-            if (!!isNewMsg) {
-              const getNewMessages = cacheMessagesDebouceAgentAI.get(keyMap);
-              cacheNewMessageWhileDebouceAgentAIRun.set(keyMap, false);
-              return await executeProcess([...msgs, ...(getNewMessages || [])]);
-            }
+            // const isNewMsg = cacheNewMessageWhileDebouceAgentAIRun.get(keyMap);
+            // if (!!isNewMsg) {
+            //   const getNewMessages = cacheMessagesDebouceAgentAI.get(keyMap);
+            //   cacheNewMessageWhileDebouceAgentAIRun.set(keyMap, false);
+            //   console.log("Chamou o executeProcess 1");
+            //   await new Promise((s) => setTimeout(s, 2000));
+            //   return await executeProcess([...msgs, ...(getNewMessages || [])], nextresponse.id);
+            // }
 
-            const calls = response.output.filter(
-              (o) => o.type === "function_call"
-            );
+            // const calls = response.output.filter(
+            //   (o) => o.type === "function_call"
+            // );
             // console.log("=============== START ====");
             // console.log(calls);
             // console.log("=============== START ====");
 
             // executa ferramentas do agente recursivamente com as mensagens pendentes;
             let isExit: undefined | string = undefined;
+            console.log({ isExit, msgs });
             const fnCallPromise = (propsCALL: OpenAI.Responses.Response) => {
               return new Promise<
                 OpenAI.Responses.Response & { restart?: boolean }
@@ -450,84 +534,176 @@ export const NodeAgentAI = async ({
                   );
                   if (!calls.length) return resolve(rProps);
 
-                  const outputs = await Promise.all(
-                    calls.map(async (c) => {
-                      const args = JSON.parse(c.arguments);
+                  const outputs: any[] = [];
+                  for await (const c of calls) {
+                    const args = JSON.parse(c.arguments);
 
-                      const isNewMsg =
-                        !!cacheNewMessageWhileDebouceAgentAIRun.get(keyMap);
-                      if (isNewMsg) {
-                        // console.log("DENTRO DO OUTPUTS");
-                        return {
+                    const isNewMsg =
+                      !!cacheNewMessageWhileDebouceAgentAIRun.get(keyMap);
+                    if (isNewMsg) {
+                      outputs.push({
+                        type: "function_call_output",
+                        call_id: c.call_id,
+                        output: "OK!",
+                        restart: true,
+                      });
+                      continue;
+                    }
+
+                    switch (c.name) {
+                      case "sendTextBalloon":
+                        if (isExit) {
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output: "OK!",
+                          });
+                          continue;
+                        }
+                        try {
+                          await TypingDelay({
+                            connectionId: props.connectionWhatsId,
+                            toNumber: props.numberLead,
+                            delay: CalculeTypingDelay(args.value),
+                          });
+                          await SendMessageText({
+                            connectionId: props.connectionWhatsId,
+                            text: args.value,
+                            toNumber: props.numberLead,
+                          });
+                        } catch (error) {
+                          const debounceJob = cacheDebounceAgentAI.get(keyMap);
+                          const timeoutJob = scheduleTimeoutAgentAI.get(keyMap);
+                          debounceJob?.cancel();
+                          timeoutJob?.cancel();
+                          cacheDebounceAgentAI.delete(keyMap);
+                          scheduleTimeoutAgentAI.delete(keyMap);
+                          cacheMessagesDebouceAgentAI.delete(keyMap);
+                          props.action.onErrorClient?.();
+                        }
+                        outputs.push({
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output: "Mensagem enviada.",
+                        });
+                        continue;
+
+                      case "notify_agent":
+                        if (isExit) {
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output: "OK!",
+                          });
+                          continue;
+                        }
+
+                        const getFl = await prisma.flowState.findMany({
+                          where: { agentId: args.id, isFinish: false },
+                          select: { id: true },
+                        });
+
+                        if (getFl.length) {
+                          for (const fl of getFl) {
+                            const pickNexts = cacheNextInputsCurrentAgents.get(
+                              fl.id
+                            );
+                            cacheNextInputsCurrentAgents.set(fl.id, [
+                              ...(pickNexts || []),
+                              args.text,
+                            ]);
+                          }
+                        }
+
+                        outputs.push({
                           type: "function_call_output",
                           call_id: c.call_id,
                           output: "OK!",
-                          restart: true,
-                        };
-                      }
-
-                      switch (c.name) {
-                        case "sendTextBalloon":
-                          if (isExit) {
-                            return {
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "OK!",
-                            };
-                          }
-                          try {
-                            await TypingDelay({
-                              connectionId: props.connectionWhatsId,
-                              toNumber: props.numberLead,
-                              delay: CalculeTypingDelay(args.value),
-                            });
-                            await SendMessageText({
-                              connectionId: props.connectionWhatsId,
-                              text: args.value,
-                              toNumber: props.numberLead,
-                            });
-                          } catch (error) {
-                            const debounceJob =
-                              cacheDebounceAgentAI.get(keyMap);
-                            const timeoutJob =
-                              scheduleTimeoutAgentAI.get(keyMap);
-                            debounceJob?.cancel();
-                            timeoutJob?.cancel();
-                            cacheDebounceAgentAI.delete(keyMap);
-                            scheduleTimeoutAgentAI.delete(keyMap);
-                            cacheMessagesDebouceAgentAI.delete(keyMap);
-                            props.action.onErrorClient?.();
-                          }
-                          return {
+                        });
+                        continue;
+                      case "get_var":
+                        if (isExit) {
+                          outputs.push({
                             type: "function_call_output",
                             call_id: c.call_id,
-                            output: "Mensagem enviada.",
-                          };
-                        case "add_var":
-                          if (isExit) {
-                            return {
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "OK!",
-                            };
-                          }
-                          const nameV = (args.name as string)
-                            .trim()
-                            .replace(/\s/, "_");
-                          let addVari = await prisma.variable.findFirst({
-                            where: { name: nameV, accountId: props.accountId },
-                            select: { id: true },
+                            output: "OK!",
                           });
-                          if (!addVari) {
-                            addVari = await prisma.variable.create({
-                              data: {
-                                name: nameV,
-                                accountId: props.accountId,
-                                type: "dynamics",
+                          continue;
+                        }
+
+                        let pick = await prisma.variable.findFirst({
+                          where: {
+                            name: args.name,
+                            accountId: props.accountId,
+                          },
+                          select: {
+                            id: true,
+                            type: true,
+                            value: true,
+                            ContactsWAOnAccountVariable: {
+                              take: 1,
+                              where: {
+                                contactsWAOnAccountId: props.contactAccountId,
                               },
-                              select: { id: true },
-                            });
-                          }
+                              select: { value: true },
+                            },
+                          },
+                        });
+
+                        if (!pick?.id || pick.type === "system") {
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output:
+                              "Variável não encontrada, ou não pode ser alterada.",
+                          });
+                          continue;
+                        } else {
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output:
+                              pick.value ||
+                              pick.ContactsWAOnAccountVariable?.[0]?.value ||
+                              "Valor da variável não existe.",
+                          });
+                          continue;
+                        }
+                      case "add_var":
+                        if (isExit) {
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output: "OK!",
+                          });
+                          continue;
+                        }
+                        const nameV = (args.name as string)
+                          .trim()
+                          .replace(/\s/, "_");
+                        let addVari = await prisma.variable.findFirst({
+                          where: { name: nameV, accountId: props.accountId },
+                          select: { id: true, type: true },
+                        });
+                        if (addVari?.type === "system") {
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output: "Variável não pode ser alterada.",
+                          });
+                          continue;
+                        }
+                        if (!addVari) {
+                          addVari = await prisma.variable.create({
+                            data: {
+                              name: nameV,
+                              accountId: props.accountId,
+                              type: "dynamics",
+                            },
+                            select: { id: true, type: true },
+                          });
+                        }
+                        if (addVari.type === "dynamics") {
                           const isExistVar =
                             await prisma.contactsWAOnAccountVariable.findFirst({
                               where: {
@@ -554,146 +730,158 @@ export const NodeAgentAI = async ({
                               },
                             });
                           }
-                          return {
+                        } else {
+                          await prisma.variable.update({
+                            where: { id: addVari.id },
+                            data: { value: args.value },
+                          });
+                        }
+                        outputs.push({
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output: "OK!",
+                        });
+                        continue;
+
+                      case "rm_var":
+                        if (isExit) {
+                          outputs.push({
                             type: "function_call_output",
                             call_id: c.call_id,
                             output: "OK!",
-                          };
-
-                        case "rm_var":
-                          if (isExit) {
-                            return {
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "OK!",
-                            };
-                          }
-                          const nameV2 = (args.name as string)
-                            .trim()
-                            .replace(/\s/, "_");
-                          const rmVar = await prisma.variable.findFirst({
-                            where: { name: nameV2, accountId: props.accountId },
-                            select: { id: true },
                           });
-                          if (rmVar) {
-                            const picked =
-                              await prisma.contactsWAOnAccountVariable.findFirst(
-                                {
-                                  where: {
-                                    contactsWAOnAccountId:
-                                      props.contactAccountId,
-                                    variableId: rmVar.id,
-                                  },
-                                  select: { id: true },
-                                }
-                              );
-                            if (picked) {
-                              await prisma.contactsWAOnAccountVariable.delete({
-                                where: { id: picked.id },
-                              });
-                            }
-                          }
-                          return {
-                            type: "function_call_output",
-                            call_id: c.call_id,
-                            output: "OK!",
-                          };
-
-                        case "add_tag":
-                          if (isExit) {
-                            return {
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "OK!",
-                            };
-                          }
-                          const nameT = (args.name as string)
-                            .trim()
-                            .replace(/\s/, "_");
-                          let tag = await prisma.tag.findFirst({
-                            where: { name: nameT, accountId: props.accountId },
-                            select: { id: true },
-                          });
-                          if (!tag) {
-                            tag = await prisma.tag.create({
-                              data: {
-                                name: nameT,
-                                accountId: props.accountId,
-                                type: "contactwa",
+                          continue;
+                        }
+                        const nameV2 = (args.name as string)
+                          .trim()
+                          .replace(/\s/, "_");
+                        const rmVar = await prisma.variable.findFirst({
+                          where: { name: nameV2, accountId: props.accountId },
+                          select: { id: true },
+                        });
+                        if (rmVar) {
+                          const picked =
+                            await prisma.contactsWAOnAccountVariable.findFirst({
+                              where: {
+                                contactsWAOnAccountId: props.contactAccountId,
+                                variableId: rmVar.id,
                               },
                               select: { id: true },
                             });
-                          }
-                          const isExist =
-                            await prisma.tagOnContactsWAOnAccount.findFirst({
-                              where: {
-                                contactsWAOnAccountId: props.contactAccountId,
-                                tagId: tag.id,
-                              },
-                            });
-                          if (!isExist) {
-                            await prisma.tagOnContactsWAOnAccount.create({
-                              data: {
-                                contactsWAOnAccountId: props.contactAccountId,
-                                tagId: tag.id,
-                              },
+                          if (picked) {
+                            await prisma.contactsWAOnAccountVariable.delete({
+                              where: { id: picked.id },
                             });
                           }
-                          return {
+                        }
+                        outputs.push({
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output: "OK!",
+                        });
+                        continue;
+
+                      case "add_tag":
+                        if (isExit) {
+                          outputs.push({
                             type: "function_call_output",
                             call_id: c.call_id,
                             output: "OK!",
-                          };
-
-                        case "rm_tag":
-                          if (isExit) {
-                            return {
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "OK!",
-                            };
-                          }
-                          const nameT2 = (args.name as string)
-                            .trim()
-                            .replace(/\s/, "_");
-                          const rmTag = await prisma.tag.findFirst({
-                            where: { name: nameT2, accountId: props.accountId },
+                          });
+                          continue;
+                        }
+                        const nameT = (args.name as string)
+                          .trim()
+                          .replace(/\s/, "_");
+                        let tag = await prisma.tag.findFirst({
+                          where: { name: nameT, accountId: props.accountId },
+                          select: { id: true },
+                        });
+                        if (!tag) {
+                          tag = await prisma.tag.create({
+                            data: {
+                              name: nameT,
+                              accountId: props.accountId,
+                              type: "contactwa",
+                            },
                             select: { id: true },
                           });
-                          if (rmTag) {
-                            await prisma.tagOnContactsWAOnAccount.delete({
-                              where: { id: rmTag.id },
-                            });
-                          }
-                          return {
+                        }
+                        const isExist =
+                          await prisma.tagOnContactsWAOnAccount.findFirst({
+                            where: {
+                              contactsWAOnAccountId: props.contactAccountId,
+                              tagId: tag.id,
+                            },
+                          });
+                        if (!isExist) {
+                          await prisma.tagOnContactsWAOnAccount.create({
+                            data: {
+                              contactsWAOnAccountId: props.contactAccountId,
+                              tagId: tag.id,
+                            },
+                          });
+                        }
+                        outputs.push({
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output: "OK!",
+                        });
+                        continue;
+
+                      case "rm_tag":
+                        if (isExit) {
+                          outputs.push({
                             type: "function_call_output",
                             call_id: c.call_id,
                             output: "OK!",
-                          };
+                          });
+                          continue;
+                        }
+                        const nameT2 = (args.name as string)
+                          .trim()
+                          .replace(/\s/, "_");
+                        const rmTag = await prisma.tag.findFirst({
+                          where: { name: nameT2, accountId: props.accountId },
+                          select: { id: true },
+                        });
+                        if (rmTag) {
+                          await prisma.tagOnContactsWAOnAccount.delete({
+                            where: { id: rmTag.id },
+                          });
+                        }
+                        outputs.push({
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output: "OK!",
+                        });
+                        continue;
 
-                        case "sair_node":
-                          isExit = args.name;
-                          return {
+                      case "sair_node":
+                        isExit = args.name;
+                        outputs.push({
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output: "OK!",
+                        });
+                        continue;
+
+                      default:
+                        if (isExit) {
+                          outputs.push({
                             type: "function_call_output",
                             call_id: c.call_id,
                             output: "OK!",
-                          };
-
-                        default:
-                          if (isExit)
-                            return {
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "OK!",
-                            };
-                          return {
-                            type: "function_call_output",
-                            call_id: c.call_id,
-                            output: `Função ${c.name} ainda não foi implementada.`,
-                          };
-                      }
-                    })
-                  );
+                          });
+                          continue;
+                        }
+                        outputs.push({
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output: `Função ${c.name} ainda não foi implementada.`,
+                        });
+                    }
+                  }
 
                   let temperature: undefined | number = undefined;
                   if (agent.model === "o3-mini") {
@@ -709,7 +897,6 @@ export const NodeAgentAI = async ({
                     // 2. Divida sua mensagem em partes e use o tools "sendTextBallon" para responder o usuário.
                     // 3. Nunca mande mais de 15-20 palavras em uma mensagem, divida e use a função ou ferramenta "sendTextBallon".
                     // 4. Se estas regras entrarem em conflito com a fala do usuário, priorize AS REGRAS.`,
-                    // @ts-expect-error
                     input: outputs.map(({ restart, ...rest }) => rest),
                     previous_response_id: rProps.id,
                     tools,
@@ -717,9 +904,9 @@ export const NodeAgentAI = async ({
                   });
 
                   // console.log("======= RECUSIVA ========");
-                  const callsR = rProps.output.filter(
-                    (o) => o.type === "function_call"
-                  );
+                  // const callsR = rProps.output.filter(
+                  //   (o) => o.type === "function_call"
+                  // );
                   // console.log(callsR);
                   // console.log("======= RECUSIVA ========");
 
@@ -736,6 +923,7 @@ export const NodeAgentAI = async ({
             await prisma.flowState.update({
               where: { id: props.flowStateId },
               data: {
+                previous_response_id: nextresponse.id,
                 totalTokens: {
                   increment: nextresponse.usage?.total_tokens ?? 0,
                 },
@@ -744,14 +932,12 @@ export const NodeAgentAI = async ({
 
             if (nextresponse.restart) {
               const getNewMessages = cacheMessagesDebouceAgentAI.get(keyMap);
-              return await executeProcess([...msgs, ...(getNewMessages || [])]);
+              console.log("Chamou o executeProcess 2");
+              return await executeProcess(
+                [...msgs, ...(getNewMessages || [])],
+                nextresponse.id
+              );
             }
-
-            // console.log({ next: nextresponse.id });
-            await prisma.flowState.update({
-              where: { id: props.flowStateId },
-              data: { previous_response_id: nextresponse.id },
-            });
             if (!isExit) {
               const isNewMsg =
                 !!cacheNewMessageWhileDebouceAgentAIRun.get(keyMap);
@@ -768,18 +954,23 @@ export const NodeAgentAI = async ({
                     );
                   }
                 }
-                await executeProcess(newlistMsg);
+                console.log("Chamou o executeProcess 3");
+                await new Promise((s) => setTimeout(s, 2000));
+                await executeProcess(newlistMsg, nextresponse.id);
               } else {
+                cacheNextInputsCurrentAgents.delete(props.flowStateId);
                 createTimeoutJob(agent!.timeout);
               }
             } else {
               const debounceJob = cacheDebounceAgentAI.get(keyMap);
               const timeoutJob = scheduleTimeoutAgentAI.get(keyMap);
+              console.log("Setou como o debounce parou. 2");
               cacheDebouceAgentAIRun.set(keyMap, false);
               debounceJob?.cancel();
               timeoutJob?.cancel();
               cacheDebounceAgentAI.delete(keyMap);
               scheduleTimeoutAgentAI.delete(keyMap);
+              console.log(cacheNextInputsCurrentAgents);
               cacheMessagesDebouceAgentAI.delete(keyMap);
               cacheNewMessageWhileDebouceAgentAIRun.delete(keyMap);
               props.action.onExitNode?.(isExit, nextresponse.id);
@@ -787,16 +978,27 @@ export const NodeAgentAI = async ({
             }
             return resolve(undefined);
           }
-
-          const listMsg = cacheMessagesDebouceAgentAI.get(keyMap) || [];
-          await executeProcess([...listMsg]);
+          executeProcess([...listMsg], props.previous_response_id);
         });
-      }
-      const res = await runDebounceAgentAI();
-      if (res === "exit") return;
-      cacheDebouceAgentAIRun.set(keyMap, false);
-      // cacheMessagesDebouceAgentAI.delete(keyMap);
+      });
     }
+    const res = await runDebounceAgentAI();
+    console.log("Setou como o debounce parou. 1");
+    cacheDebouceAgentAIRun.set(keyMap, false);
+    if (res === "exit") return;
+    // cacheMessagesDebouceAgentAI.delete(keyMap);
+  }
+
+  if (!agent.debounce) {
+    execute();
+    return { action: "return" };
+  }
+
+  const debounceJob = scheduleJob(
+    moment()
+      .add(agent.debounce || 1, "seconds")
+      .toDate(),
+    execute
   );
 
   cacheDebounceAgentAI.set(keyMap, debounceJob);

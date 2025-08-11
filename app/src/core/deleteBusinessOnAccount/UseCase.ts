@@ -8,9 +8,11 @@ import {
 import { resolve } from "path";
 import { readFile, writeFileSync } from "fs-extra";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { mongo } from "../../adapters/mongo/connection";
 
 async function removeBusinessId(businessId: number) {
-  const flows = await ModelFlows.find({ businessIds: businessId });
+  await mongo();
+  const flows = await ModelFlows.find({ businessIds: businessId }).lean();
 
   for (const flow of flows) {
     if (flow.businessIds.length === 1 && flow.businessIds[0] === businessId) {

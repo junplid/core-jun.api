@@ -2,6 +2,7 @@ import { UpdateDataFlowDTO_I } from "./DTO";
 import { cacheFlowsMap } from "../../adapters/Baileys/Cache";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
+import { mongo } from "../../adapters/mongo/connection";
 
 export class UpdateDataFlowUseCase {
   constructor() {}
@@ -9,6 +10,7 @@ export class UpdateDataFlowUseCase {
   async run(dto: UpdateDataFlowDTO_I) {
     try {
       cacheFlowsMap.delete(dto.id);
+      await mongo();
 
       if (dto.nodes) {
         for await (const change of dto.nodes) {
@@ -20,7 +22,7 @@ export class UpdateDataFlowUseCase {
                 "data.nodes.id": change.node.id,
               },
               { "data.nodes.$": 1 }
-            );
+            ).lean();
 
             if (alreadyExists?.data.nodes.length) {
               await ModelFlows.updateOne(
@@ -54,7 +56,7 @@ export class UpdateDataFlowUseCase {
                 "data.edges.id": change.edge.id,
               },
               { "data.edges.$": 1 }
-            );
+            ).lean();
 
             if (alreadyExists?.data.edges.length) {
               await ModelFlows.updateOne(

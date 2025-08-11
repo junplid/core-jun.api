@@ -37,6 +37,7 @@ export type NodeMessageData = {
     text: string;
     interval?: number;
     key: string;
+    varId?: number;
   }[];
 };
 
@@ -118,6 +119,7 @@ export type NodeSendAudiosLiveData = {
 export type NodeAgentAIData = {
   prompt?: string;
   agentId: number;
+  exist?: boolean;
 };
 
 export interface NodeTransferDepartmentData {
@@ -197,6 +199,8 @@ export type NodeSendTextGroupData = {
     text: string;
     interval?: number;
     key: string;
+    varId?: number;
+    varId_groupJid?: number;
   }[];
 };
 
@@ -296,6 +300,11 @@ export type NodeWebhookTrelloCardData = {
   varId_save_listAfterId?: number;
 };
 
+export type NodeDeleteMessageData = {
+  varId_messageId?: number;
+  varId_groupJid?: number;
+};
+
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeFinish"
@@ -333,7 +342,8 @@ export type TypeNodesPayload =
   | "NodeUpdateTrelloCard"
   | "NodeRemoveTrelloCard"
   | "NodeMoveTrelloCard"
-  | "NodeWebhookTrelloCard";
+  | "NodeWebhookTrelloCard"
+  | "NodeDeleteMessage";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -373,4 +383,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeRemoveTrelloCard"; data: NodeRemoveTrelloCardData }
   | { type: "NodeMoveTrelloCard"; data: NodeMoveTrelloCardData }
   | { type: "NodeWebhookTrelloCard"; data: NodeWebhookTrelloCardData }
+  | { type: "NodeDeleteMessage"; data: NodeDeleteMessageData }
 );

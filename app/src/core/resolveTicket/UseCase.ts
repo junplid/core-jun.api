@@ -3,6 +3,7 @@ import {
   cacheConnectionsWAOnline,
   cacheFlowsMap,
 } from "../../adapters/Baileys/Cache";
+import { mongo } from "../../adapters/mongo/connection";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { prisma } from "../../adapters/Prisma/client";
 import { socketIo } from "../../infra/express";
@@ -121,6 +122,7 @@ export class ResolveTicketUseCase {
 
       let flow = cacheFlowsMap.get(rest.GoBackFlowState.flowId);
       if (!flow) {
+        await mongo();
         const findFlow = await ModelFlows.aggregate([
           {
             $match: {

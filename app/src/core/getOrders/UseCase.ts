@@ -54,7 +54,63 @@ export class GetOrdersUseCase {
     return {
       message: "OK!",
       status: 200,
-      orders: nextOrders,
+      orders: {
+        pending: [],
+        confirmed: [
+          {
+            id: 1,
+            name: "Gustavo Oliveira",
+            total: 20,
+            data: `(1) Pizza Média, sabores:
+- Calabresa
+- Frango c/ catupiry
+OBS: Não colocar cebola`,
+            priority: null,
+            status: "pending",
+            createAt: new Date(),
+            n_order: "123456",
+            delivery_address: "",
+            payment_method: null,
+            sequence: 0,
+          },
+          {
+            id: 2,
+            name: "Liliam",
+            total: 20,
+            data: `(1) Pizza Pequena, sabores:
+- Calabresa
+
+(1) Coca-Cola em lata`,
+            priority: null,
+            status: "confirmed",
+            createAt: new Date(),
+            n_order: "123456",
+            delivery_address: "",
+            payment_method: null,
+            sequence: 0,
+          },
+        ],
+        processing: [
+          {
+            id: 3,
+            name: "Gabriel",
+            total: 20,
+            data: `(1) Pizza Familia, sabores:
+- Calabresa
+- Frango c/ catupiry
+- Portuguesa
+
+(1) Pepsi 1 litro`,
+            priority: null,
+            status: "confirmed",
+            createAt: new Date(),
+            n_order: "123456",
+            delivery_address: "",
+            payment_method: null,
+            sequence: 1,
+          },
+        ],
+      },
     };
   }
 }

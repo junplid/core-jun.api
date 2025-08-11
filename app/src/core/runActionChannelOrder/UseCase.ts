@@ -5,6 +5,7 @@ import { ErrorResponse } from "../../utils/ErrorResponse";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { NodeControler } from "../../libs/FlowBuilder/Control";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
+import { mongo } from "../../adapters/mongo/connection";
 
 export class RunActionChannelOrderUseCase {
   constructor() {}
@@ -83,6 +84,7 @@ export class RunActionChannelOrderUseCase {
     let flow: { edges: any[]; nodes: any[]; businessIds: number[] } | undefined;
     flow = cacheFlowsMap.get(order.flowId);
     if (!flow) {
+      await mongo();
       const flowFetch = await ModelFlows.aggregate([
         {
           $match: { accountId: dto.accountId, _id: order.flowId },

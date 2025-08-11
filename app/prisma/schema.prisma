@@ -938,6 +938,7 @@ model FlowState {
   firedOnDate           DateTime?
   isFinish              Boolean?             @default(false)
   indexNode             String?
+  agentId               Int?
   fbc                   String?
   fbp                   String?
   ua                    String?

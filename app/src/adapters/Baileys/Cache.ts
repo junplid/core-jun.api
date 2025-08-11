@@ -61,3 +61,9 @@ export const cacheDebounceTimedQueue = new Map<string, Job | null>();
  * Retorna uma lista de nodes agent que foram executados;
  */
 export const cacheAgentsSentPromptInstruction = new Map<string, string[]>();
+
+/**
+ * key = flowstate.id
+ * Retorna uma lista de informações para inserir no agent em questão;
+ */
+export const cacheNextInputsCurrentAgents = new Map<number, string[]>();

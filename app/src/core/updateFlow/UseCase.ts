@@ -1,3 +1,4 @@
+import { mongo } from "../../adapters/mongo/connection";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
@@ -8,10 +9,11 @@ export class UpdateFlowUseCase {
 
   async run({ accountId, id, ...dto }: UpdateFlowDTO_I) {
     try {
+      await mongo();
       const nextFlow = await ModelFlows.findOneAndUpdate(
         { _id: id, accountId },
         { $set: dto }
-      );
+      ).lean();
 
       if (!nextFlow) {
         throw new ErrorResponse(400).toast({
