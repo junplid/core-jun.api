@@ -8,6 +8,7 @@ import { WebSocketIo } from "../websocket";
 import { App as app } from "./app";
 import { startConnections } from "../../utils/startConnections";
 import { startChatbotQueue } from "../../utils/startChatbotQueue";
+import { ensureDir } from "fs-extra";
 
 config();
 
@@ -56,6 +57,7 @@ const startServer = async (): Promise<void> => {
           } else {
             path = resolve(__dirname, `../../../bin/chatbot-queue`);
           }
+          await ensureDir(path);
           const dirPathQueue = readdirSync(path);
 
           for await (const fileName of dirPathQueue) {

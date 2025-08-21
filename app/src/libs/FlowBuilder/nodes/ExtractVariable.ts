@@ -98,6 +98,13 @@ export const NodeExtractVariable = async ({
       nextValue = targetValue.replace(regex, valueResolved || "");
     }
 
+    console.log({
+      nextValue,
+      targetValue,
+      dataValue: data.value,
+      valueResolved,
+    });
+
     const nextValueResolved = await resolveTextVariables({
       accountId: props.accountId,
       contactsWAOnAccountId: props.contactsWAOnAccountId,

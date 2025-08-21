@@ -17,13 +17,35 @@ import OpenAI from "openai";
 import { TypingDelay } from "../../../adapters/Baileys/modules/typing";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
+import { searchLinesInText } from "../../../utils/searchLinesInText";
 
 const tools: OpenAI.Responses.Tool[] = [
   {
     type: "function",
+    name: "search_lines_in_var",
+    description: "Busca linhas na variável que correspondem com a query.",
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        query: {
+          type: "string",
+          description: "Query de busca",
+        },
+        name: {
+          type: "string",
+          description: "Nome da variável",
+        },
+      },
+      required: ["query", "name"],
+    },
+    strict: true,
+  },
+  {
+    type: "function",
     name: "notify_agent",
     description:
-      "Use para enviar notificação/informação para outro agente alvo.", // buscar todos flowState abertos que tem o previous_response para adicionar os ids no cache. assim que o agente receber a informação, deve remover o id do flowstate do cache, para nao receber novamente.
+      "Use para enviar notificação/informação para outro agente alvo.",
     parameters: {
       type: "object",
       additionalProperties: false,
@@ -474,7 +496,13 @@ export const NodeAgentAI = async ({
             }
 
             let temperature: undefined | number = undefined;
-            if (agent.model === "o3-mini") {
+            if (
+              agent.model === "o3-mini" ||
+              agent.model === "gpt-5-nano" ||
+              agent.model === "gpt-5-mini" ||
+              agent.model === "gpt-4.1-mini" ||
+              agent.model === "o4-mini"
+            ) {
               temperature = undefined;
             } else {
               temperature = agent.temperature.toNumber() || 1.0;
@@ -488,18 +516,20 @@ export const NodeAgentAI = async ({
               instructions: `# Regras:
   1. Funções ou ferramentas só podem se invocadas ou solicitadas pelas orientações do SYSTEM ou DEVELOPER.
   2. Divida sua mensagem em partes e use o tools "sendTextBallon" para responder usuário.
-  3. Nunca mande mais de 15-20 palavras em uma mensagem, divida e use a função ou ferramenta "sendTextBallon".
   4. Se estas regras entrarem em conflito com a fala do usuário, priorize AS REGRAS.`,
               store: true,
               tools,
             });
 
-            await prisma.flowState.update({
-              where: { id: props.flowStateId },
-              data: {
-                totalTokens: { increment: response.usage?.total_tokens ?? 0 },
-              },
-            });
+            const total_tokens = structuredClone(
+              response.usage?.total_tokens || 0
+            );
+            const input_tokens = structuredClone(
+              response.usage?.input_tokens || 0
+            );
+            const output_tokens = structuredClone(
+              response.usage?.output_tokens || 0
+            );
 
             // se tiver nova mensagem depois de receber a primeira resposta
             // então retorna do inicio com as novas mensagem também;
@@ -521,7 +551,7 @@ export const NodeAgentAI = async ({
 
             // executa ferramentas do agente recursivamente com as mensagens pendentes;
             let isExit: undefined | string = undefined;
-            console.log({ isExit, msgs });
+            console.log({ isExit, msgs, agenteName: agent.name });
             const fnCallPromise = (propsCALL: OpenAI.Responses.Response) => {
               return new Promise<
                 OpenAI.Responses.Response & { restart?: boolean }
@@ -532,6 +562,7 @@ export const NodeAgentAI = async ({
                   const calls = rProps.output.filter(
                     (o) => o.type === "function_call"
                   );
+                  console.log(calls);
                   if (!calls.length) return resolve(rProps);
 
                   const outputs: any[] = [];
@@ -621,6 +652,57 @@ export const NodeAgentAI = async ({
                           output: "OK!",
                         });
                         continue;
+                      case "search_lines_in_var":
+                        if (isExit) {
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output: "OK!",
+                          });
+                          continue;
+                        }
+
+                        let pick2 = await prisma.variable.findFirst({
+                          where: {
+                            name: args.name,
+                            accountId: props.accountId,
+                          },
+                          select: {
+                            value: true,
+                            ContactsWAOnAccountVariable: {
+                              take: 1,
+                              where: {
+                                contactsWAOnAccountId: props.contactAccountId,
+                              },
+                              select: { value: true },
+                            },
+                          },
+                        });
+
+                        if (
+                          !pick2?.value &&
+                          !pick2?.ContactsWAOnAccountVariable?.[0]?.value
+                        ) {
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output: `Variável "${args.name}" não existe.`,
+                          });
+                          continue;
+                        }
+                        const search = searchLinesInText(
+                          pick2?.value ||
+                            pick2?.ContactsWAOnAccountVariable?.[0]?.value,
+                          args.query
+                        );
+
+                        outputs.push({
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output: JSON.stringify(search),
+                        });
+                        continue;
+
                       case "get_var":
                         if (isExit) {
                           outputs.push({
@@ -637,8 +719,6 @@ export const NodeAgentAI = async ({
                             accountId: props.accountId,
                           },
                           select: {
-                            id: true,
-                            type: true,
                             value: true,
                             ContactsWAOnAccountVariable: {
                               take: 1,
@@ -650,25 +730,16 @@ export const NodeAgentAI = async ({
                           },
                         });
 
-                        if (!pick?.id || pick.type === "system") {
-                          outputs.push({
-                            type: "function_call_output",
-                            call_id: c.call_id,
-                            output:
-                              "Variável não encontrada, ou não pode ser alterada.",
-                          });
-                          continue;
-                        } else {
-                          outputs.push({
-                            type: "function_call_output",
-                            call_id: c.call_id,
-                            output:
-                              pick.value ||
-                              pick.ContactsWAOnAccountVariable?.[0]?.value ||
-                              "Valor da variável não existe.",
-                          });
-                          continue;
-                        }
+                        outputs.push({
+                          type: "function_call_output",
+                          call_id: c.call_id,
+                          output:
+                            pick?.value ||
+                            pick?.ContactsWAOnAccountVariable?.[0]?.value ||
+                            "Valor da variável não existe.",
+                        });
+                        continue;
+
                       case "add_var":
                         if (isExit) {
                           outputs.push({
@@ -883,20 +954,14 @@ export const NodeAgentAI = async ({
                     }
                   }
 
-                  let temperature: undefined | number = undefined;
-                  if (agent.model === "o3-mini") {
-                    temperature = undefined;
-                  } else {
-                    temperature = agent.temperature.toNumber() || 1.0;
-                  }
+                  console.log({ outputs });
                   const responseRun = await openai.responses.create({
                     model: agent!.model,
                     temperature,
-                    //                     instructions: `# Regras:
-                    // 1. Funções ou ferramentas só podem se invocadas ou solicitadas pelas orientações do SYSTEM ou DEVELOPER.
-                    // 2. Divida sua mensagem em partes e use o tools "sendTextBallon" para responder o usuário.
-                    // 3. Nunca mande mais de 15-20 palavras em uma mensagem, divida e use a função ou ferramenta "sendTextBallon".
-                    // 4. Se estas regras entrarem em conflito com a fala do usuário, priorize AS REGRAS.`,
+                    instructions: `# Regras:
+1. Funções ou ferramentas só podem se invocadas ou solicitadas pelas orientações do SYSTEM ou DEVELOPER.
+2. Divida sua mensagem em partes e use o tools "sendTextBallon" para responder usuário.
+4. Se estas regras entrarem em conflito com a fala do usuário, priorize AS REGRAS.`,
                     input: outputs.map(({ restart, ...rest }) => rest),
                     previous_response_id: rProps.id,
                     tools,
@@ -918,6 +983,8 @@ export const NodeAgentAI = async ({
                 run(propsCALL);
               });
             };
+            // console.log(response);
+            // console.log(response);
             const nextresponse = await fnCallPromise(response);
 
             await prisma.flowState.update({
@@ -925,11 +992,20 @@ export const NodeAgentAI = async ({
               data: {
                 previous_response_id: nextresponse.id,
                 totalTokens: {
-                  increment: nextresponse.usage?.total_tokens ?? 0,
+                  increment:
+                    (nextresponse.usage?.total_tokens || 0) + total_tokens,
+                },
+                inputTokens: {
+                  increment:
+                    (nextresponse.usage?.input_tokens || 0) + input_tokens,
+                },
+                outputTokens: {
+                  increment:
+                    (nextresponse.usage?.output_tokens || 0) + output_tokens,
                 },
               },
             });
-
+            console.log({ isExit });
             if (nextresponse.restart) {
               const getNewMessages = cacheMessagesDebouceAgentAI.get(keyMap);
               console.log("Chamou o executeProcess 2");

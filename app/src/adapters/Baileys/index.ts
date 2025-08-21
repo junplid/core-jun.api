@@ -47,15 +47,9 @@ import NodeCache from "node-cache";
 import { ulid } from "ulid";
 import { mongo } from "../mongo/connection";
 
-/**
- * Estima quanto tempo (em segundos) alguém levou para digitar `text`.
- * @param text Texto que a pessoa digitou.
- * @param wpm  Velocidade média de digitação (padrão = 250 palavras/minuto).
- */
-export function estimateTypingTime(text: string, wpm = 250): number {
-  const words = text.trim().split(/\s+/).filter(Boolean).length; // conta palavras
-  const minutes = words / wpm;
-  return Math.round(minutes * 60); // segundos (arredondado)
+function CalculeTypingDelay(text: string, ms = 150) {
+  const delay = text.split(" ").length * (ms / 1000);
+  return delay < 1.9 ? 1.9 : delay;
 }
 
 function getTimeBR(time: string) {
@@ -564,13 +558,10 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               return;
             }
             if (connection === "open") {
-              console.log("1");
               const all = await bot.groupFetchAllParticipating();
-              console.log("2");
               await Promise.all(
                 Object.values(all).map((g) => bot.groupMetadata(g.id))
               );
-              console.log("3");
               attempts = 0;
               try {
                 emitStatus(props.connectionWhatsId, "open");
@@ -705,6 +696,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               return;
             }
 
+            console.log({ keyReaction: body[0].key });
             const number = body[0].key.remoteJid?.split("@")[0];
             if (!number) {
               console.log("Deu erro para recuperar número do lead");
@@ -1845,23 +1837,28 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   return await validMsgChatbot();
                 }
 
-                const validTime = chatbot.OperatingDays.some((day) => {
-                  const nowTime = moment().tz("America/Sao_Paulo");
-                  const currentDayWeek = nowTime.get("weekday");
+                const nowTime = moment().tz("America/Sao_Paulo");
+                const dayOfWeek = nowTime.get("weekday");
 
-                  if (day.dayOfWeek === currentDayWeek) {
+                const validTime = chatbot.OperatingDays.some((day) => {
+                  if (day.dayOfWeek === dayOfWeek) {
                     if (day.WorkingTimes?.length) {
-                      return day.WorkingTimes.some(({ end, start }) => {
-                        return nowTime.isBetween(
-                          getTimeBR(end),
-                          getTimeBR(start)
+                      const valid = day.WorkingTimes.some(({ end, start }) => {
+                        const isbet = nowTime.isBetween(
+                          getTimeBR(start),
+                          getTimeBR(end)
                         );
+                        console.log({ isbet, end, start, nowTime });
+                        return isbet;
                       });
+                      return valid;
                     } else {
                       return true;
                     }
                   }
                 });
+
+                console.log({ validTime });
 
                 if (!validTime) {
                   if (chatbot.fallback) {
@@ -1873,14 +1870,15 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       },
                       select: { id: true, fallbackSent: true },
                     });
+                    console.log({ flowState });
                     if (!flowState) {
                       await new Promise((resolve) =>
-                        setTimeout(resolve, 1000 * 60)
+                        setTimeout(resolve, 1000 * 4)
                       );
                       await TypingDelay({
                         connectionId: props.connectionWhatsId,
                         toNumber: numberLead + "@s.whatsapp.net",
-                        delay: estimateTypingTime(chatbot.fallback),
+                        delay: CalculeTypingDelay(chatbot.fallback),
                       });
                       await SendMessageText({
                         connectionId: props.connectionWhatsId,
@@ -1900,12 +1898,12 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     } else {
                       if (!flowState.fallbackSent) {
                         await new Promise((resolve) =>
-                          setTimeout(resolve, 1000 * 60)
+                          setTimeout(resolve, 1000 * 4)
                         );
                         await TypingDelay({
                           connectionId: props.connectionWhatsId,
                           toNumber: numberLead + "@s.whatsapp.net",
-                          delay: estimateTypingTime(chatbot.fallback),
+                          delay: CalculeTypingDelay(chatbot.fallback),
                         });
                         await SendMessageText({
                           connectionId: props.connectionWhatsId,
@@ -1941,6 +1939,9 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     }).filter((s) => s >= 0)
                   );
 
+                  console.log({ minutesToNextExecutionInQueue });
+                  if (minutesToNextExecutionInQueue > 239) return;
+
                   const dateNextExecution = moment()
                     .tz("America/Sao_paulo")
                     .add(minutesToNextExecutionInQueue, "minutes");
@@ -1957,6 +1958,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
 
                   const pathOriginal = pathChatbotQueue + `/${chatbot.id}.json`;
 
+                  console.log({ pathOriginal });
                   if (!existsSync(pathOriginal)) {
                     console.info("======= Path não existia");
                     try {

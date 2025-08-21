@@ -3,6 +3,7 @@ import { NodeChargeData } from "../Payload";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import moment from "moment-timezone";
+import { parseDirtyStringToNumber } from "../../../utils/parseDirtyStringToNumber";
 
 interface PropsNodeCharge {
   data: NodeChargeData;
@@ -40,11 +41,13 @@ export const NodeCharge = async (
   });
   const payment = new Payment(client);
   try {
-    const total = await resolveTextVariables({
-      accountId: props.accountId,
-      text: String(props.data.total),
-      contactsWAOnAccountId: props.contactsWAOnAccountId,
-    });
+    const total = parseDirtyStringToNumber(
+      await resolveTextVariables({
+        accountId: props.accountId,
+        text: String(props.data.total),
+        contactsWAOnAccountId: props.contactsWAOnAccountId,
+      })
+    );
     const description = await resolveTextVariables({
       accountId: props.accountId,
       text: props.data.content || "",
@@ -59,15 +62,15 @@ export const NodeCharge = async (
 
     const charge = await payment.create({
       body: {
-        transaction_amount: Number(total),
+        transaction_amount: total,
         description,
         payment_method_id: props.data.method_type || "pix",
         payer: { email },
         date_of_expiration,
-        notification_url:
-          "https://junplid.com.br/v1/public/webhook/mercadopago",
         // notification_url:
-        //   "https://810367d51941.ngrok-free.app/v1/public/webhook/mercadopago",
+        //   "https://junplid.com.br/v1/public/webhook/mercadopago",
+        notification_url:
+          "https://8f57071bd8c8.ngrok-free.app/v1/public/webhook/mercadopago",
       },
     });
 

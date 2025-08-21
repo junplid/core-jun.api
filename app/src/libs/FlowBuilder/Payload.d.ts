@@ -305,6 +305,11 @@ export type NodeDeleteMessageData = {
   varId_groupJid?: number;
 };
 
+export type NodeDistributeData = {
+  type: "sequential" | "random" | "balanced" | "intelligent";
+  exits: { key: string }[];
+};
+
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeFinish"
@@ -343,7 +348,8 @@ export type TypeNodesPayload =
   | "NodeRemoveTrelloCard"
   | "NodeMoveTrelloCard"
   | "NodeWebhookTrelloCard"
-  | "NodeDeleteMessage";
+  | "NodeDeleteMessage"
+  | "NodeDistribute";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -384,4 +390,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeMoveTrelloCard"; data: NodeMoveTrelloCardData }
   | { type: "NodeWebhookTrelloCard"; data: NodeWebhookTrelloCardData }
   | { type: "NodeDeleteMessage"; data: NodeDeleteMessageData }
+  | { type: "NodeDistribute"; data: NodeDistributeData }
 );

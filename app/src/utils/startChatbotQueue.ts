@@ -32,9 +32,9 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
     console.log("INICIOU A FILA DE ESPERA DO ROBO");
     let path = "";
     if (process.env?.NODE_ENV === "production") {
-      path = resolve(__dirname, `./bin/chatbot-queue/${chatbotId}.json`);
+      path = resolve(__dirname, `../bin/chatbot-queue/${chatbotId}.json`);
     } else {
-      path = resolve(__dirname, `./chatbot-queue/${chatbotId}.json`);
+      path = resolve(__dirname, `../../bin/chatbot-queue/${chatbotId}.json`);
     }
 
     const content: ChatbotQueue_I = JSON.parse(String(readFileSync(path)));
@@ -205,7 +205,7 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
                 connectionWAId: infoChatbot.ConnectionWA.id,
                 contactsWAOnAccountId: ContactsWAOnAccount[0].id,
               },
-              select: { indexNode: true, id: true },
+              select: { indexNode: true, id: true, previous_response_id: true },
             });
             console.log("18");
 
@@ -217,7 +217,11 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
                   indexNode: "0",
                   flowId: infoChatbot.flowId,
                 },
-                select: { indexNode: true, id: true },
+                select: {
+                  indexNode: true,
+                  id: true,
+                  previous_response_id: true,
+                },
               });
             }
             console.log("19");
@@ -247,6 +251,8 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
               currentNodeId: currentIndexNodeLead?.indexNode || "0",
               edges: edges,
               nodes: nodes,
+              previous_response_id:
+                currentIndexNodeLead.previous_response_id || undefined,
               numberConnection:
                 infoChatbot.ConnectionWA.number + "@s.whatsapp.net",
               message: leadData.messageText ?? "",

@@ -14,7 +14,31 @@ type ResultPromise = { handleId?: string };
 export const NodeSwitchVariable = async (
   props: PropsNodeSwitchVariable
 ): Promise<ResultPromise> => {
-  const { data, contactsWAOnAccountId } = props;
+  const { data } = props;
+
+  let valueVar = "";
+  const get = await prisma.variable.findFirst({
+    where: { id: data.id },
+    select: {
+      type: true,
+      id: true,
+      value: true,
+      name: true,
+      ContactsWAOnAccountVariable: { select: { value: true } },
+    },
+  });
+
+  if (!get) return { handleId: undefined };
+  if (get.type === "system") {
+    valueVar = await resolveTextVariables({
+      accountId: props.accountId,
+      text: `{{${get.name}}}`,
+      contactsWAOnAccountId: props.contactsWAOnAccountId,
+      numberLead: props.numberLead,
+    });
+  } else {
+    valueVar = get.value || get.ContactsWAOnAccountVariable?.[0].value || "";
+  }
 
   for await (const { v, key } of data.values) {
     const nextV = await resolveTextVariables({
@@ -23,16 +47,8 @@ export const NodeSwitchVariable = async (
       contactsWAOnAccountId: props.contactsWAOnAccountId,
       numberLead: props.numberLead,
     });
-    const is = await prisma.variable.findFirst({
-      where: {
-        id: data.id,
-        ContactsWAOnAccountVariable: {
-          some: { contactsWAOnAccountId, value: nextV },
-        },
-      },
-      select: { id: true },
-    });
-    if (is) return { handleId: key };
+
+    if (valueVar === nextV) return { handleId: key };
   }
 
   return { handleId: undefined };

@@ -1,11 +1,14 @@
 import { prisma } from "../../../adapters/Prisma/client";
 import { NodeAddVariablesData } from "../Payload";
+import { resolveTextVariables } from "../utils/ResolveTextVariables";
 
 interface PropsNodeAction {
   data: NodeAddVariablesData;
   flowStateId: number;
   contactsWAOnAccountId: number;
   nodeId: string;
+  accountId: number;
+  numberLead: string;
 }
 
 export const NodeAddVariables = (props: PropsNodeAction): Promise<void> =>
@@ -19,6 +22,13 @@ export const NodeAddVariables = (props: PropsNodeAction): Promise<void> =>
       });
 
       if (exist) {
+        const nextValue = await resolveTextVariables({
+          accountId: props.accountId,
+          text: newVar.value || "",
+          nodeId: props.nodeId,
+          contactsWAOnAccountId,
+          numberLead: props.numberLead,
+        });
         const picked = await prisma.contactsWAOnAccountVariable.findFirst({
           where: { contactsWAOnAccountId, variableId: newVar.id },
           select: { id: true },
@@ -28,7 +38,7 @@ export const NodeAddVariables = (props: PropsNodeAction): Promise<void> =>
             data: {
               contactsWAOnAccountId,
               variableId: newVar.id,
-              value: newVar.value,
+              value: nextValue,
             },
           });
         } else {
@@ -37,7 +47,7 @@ export const NodeAddVariables = (props: PropsNodeAction): Promise<void> =>
             data: {
               contactsWAOnAccountId,
               variableId: newVar.id,
-              value: newVar.value,
+              value: nextValue,
             },
           });
         }

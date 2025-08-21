@@ -21,7 +21,7 @@ export type IPropsControler = {
     onExecutedNode?(
       props: { id: string; flowId: string },
       isShots?: boolean
-    ): void;
+    ): Promise<void>;
     onFinish?(vl?: string): Promise<void>;
     onErrorNumber?(): void;
     onErrorClient?(indexNode: string): void;
@@ -168,7 +168,10 @@ export const NodeControler = ({
       if (!currentNode) {
         cacheFlowInExecution.delete(keyMap);
         if (props.forceFinish) await props.actions?.onFinish?.("110");
-        props.actions?.onExecutedNode?.({ id: "0", flowId: props.flowId });
+        await props.actions?.onExecutedNode?.({
+          id: "0",
+          flowId: props.flowId,
+        });
         return res();
       }
 
@@ -240,7 +243,7 @@ export const NodeControler = ({
       console.log(currentNode.type, props.type);
       if (currentNode.type === "NodeInitial") {
         if (props.actions?.onExecutedNode) {
-          props.actions?.onExecutedNode({
+          await props.actions?.onExecutedNode({
             id: currentNode.id,
             flowId: props.flowId,
           });
@@ -248,7 +251,10 @@ export const NodeControler = ({
         if (!nextEdgesIds.length) {
           cacheFlowInExecution.delete(keyMap);
           if (props.forceFinish) await props.actions?.onFinish?.("110");
-          props.actions?.onExecutedNode?.({ id: "0", flowId: props.flowId });
+          await props.actions?.onExecutedNode?.({
+            id: "0",
+            flowId: props.flowId,
+          });
           return res();
         }
 
@@ -262,7 +268,7 @@ export const NodeControler = ({
       }
       if (currentNode.type === "NodeFinish") {
         if (props.actions?.onExecutedNode) {
-          props.actions?.onExecutedNode({
+          await props.actions?.onExecutedNode({
             id: currentNode.id,
             flowId: props.flowId,
           });
@@ -308,14 +314,14 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -361,14 +367,14 @@ export const NodeControler = ({
             if (!nextNodeId) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
               return res();
             }
             if (props.actions?.onExecutedNode) {
-              props.actions.onExecutedNode({
+              await props.actions.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -384,7 +390,7 @@ export const NodeControler = ({
           .then(async (d) => {
             console.log({ d });
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -396,7 +402,7 @@ export const NodeControler = ({
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
-                props.actions?.onExecutedNode?.({
+                await props.actions?.onExecutedNode?.({
                   id: "0",
                   flowId: props.flowId,
                 });
@@ -457,7 +463,7 @@ export const NodeControler = ({
             );
             if (!nextNodeId) {
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -465,7 +471,7 @@ export const NodeControler = ({
               return res();
             }
             if (props.actions?.onExecutedNode) {
-              props.actions.onExecutedNode({
+              await props.actions.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -480,7 +486,7 @@ export const NodeControler = ({
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -492,7 +498,7 @@ export const NodeControler = ({
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
-                props.actions?.onExecutedNode?.({
+                await props.actions?.onExecutedNode?.({
                   id: "0",
                   flowId: props.flowId,
                 });
@@ -520,7 +526,7 @@ export const NodeControler = ({
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
-                props.actions?.onExecutedNode?.({
+                await props.actions?.onExecutedNode?.({
                   id: "0",
                   flowId: props.flowId,
                 });
@@ -555,7 +561,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -563,7 +569,7 @@ export const NodeControler = ({
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -602,15 +608,17 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
             }
+            console.log("nextEdgesIds", nextEdgesIds.length);
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              console.log(!!props.actions?.onExecutedNode);
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -645,10 +653,12 @@ export const NodeControler = ({
           flowStateId: props.flowStateId,
           contactsWAOnAccountId: props.contactsWAOnAccountId,
           nodeId: currentNodeId,
+          accountId: props.accountId,
+          numberLead: props.lead.number,
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -656,7 +666,7 @@ export const NodeControler = ({
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -695,7 +705,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -703,7 +713,7 @@ export const NodeControler = ({
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -742,7 +752,7 @@ export const NodeControler = ({
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -783,7 +793,7 @@ export const NodeControler = ({
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -791,7 +801,7 @@ export const NodeControler = ({
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -804,7 +814,7 @@ export const NodeControler = ({
             if (!nextNodeId) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -840,7 +850,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -848,7 +858,7 @@ export const NodeControler = ({
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -895,14 +905,14 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -948,14 +958,14 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -1000,14 +1010,14 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -1053,14 +1063,14 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -1106,14 +1116,14 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -1159,14 +1169,14 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -1217,7 +1227,7 @@ export const NodeControler = ({
               );
               if (!nextNodeId) {
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
-                props.actions?.onExecutedNode?.({
+                await props.actions?.onExecutedNode?.({
                   id: "0",
                   flowId: props.flowId,
                 });
@@ -1229,7 +1239,7 @@ export const NodeControler = ({
                 return res();
               }
               if (props.actions?.onExecutedNode) {
-                props.actions.onExecutedNode({
+                await props.actions.onExecutedNode({
                   id: currentNode.id,
                   flowId: props.flowId,
                 });
@@ -1252,14 +1262,14 @@ export const NodeControler = ({
               if (!nextNodeId) {
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
-                props.actions?.onExecutedNode?.({
+                await props.actions?.onExecutedNode?.({
                   id: "0",
                   flowId: props.flowId,
                 });
                 return res();
               }
               if (props.actions?.onExecutedNode) {
-                props.actions.onExecutedNode({
+                await props.actions.onExecutedNode({
                   id: currentNode.id,
                   flowId: props.flowId,
                 });
@@ -1280,7 +1290,7 @@ export const NodeControler = ({
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -1292,7 +1302,7 @@ export const NodeControler = ({
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
-                props.actions?.onExecutedNode?.({
+                await props.actions?.onExecutedNode?.({
                   id: "0",
                   flowId: props.flowId,
                 });
@@ -1320,7 +1330,7 @@ export const NodeControler = ({
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
-                props.actions?.onExecutedNode?.({
+                await props.actions?.onExecutedNode?.({
                   id: "0",
                   flowId: props.flowId,
                 });
@@ -1360,13 +1370,13 @@ export const NodeControler = ({
               if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
-                props.actions?.onExecutedNode?.({
+                await props.actions?.onExecutedNode?.({
                   id: "0",
                   flowId: props.flowId,
                 });
                 return;
               }
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: nextEdgesIds[0].id,
                 flowId: props.flowId,
               });
@@ -1374,7 +1384,7 @@ export const NodeControler = ({
             }
             if (d === "ERROR") {
               if (props.actions?.onExecutedNode) {
-                props.actions?.onExecutedNode({
+                await props.actions?.onExecutedNode({
                   id: currentNode.id,
                   flowId: props.flowId,
                 });
@@ -1385,7 +1395,7 @@ export const NodeControler = ({
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
-                props.actions?.onExecutedNode?.({
+                await props.actions?.onExecutedNode?.({
                   id: "0",
                   flowId: props.flowId,
                 });
@@ -1430,14 +1440,14 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -1483,14 +1493,14 @@ export const NodeControler = ({
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -1544,7 +1554,7 @@ export const NodeControler = ({
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -1556,7 +1566,7 @@ export const NodeControler = ({
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
-                props.actions?.onExecutedNode?.({
+                await props.actions?.onExecutedNode?.({
                   id: "0",
                   flowId: props.flowId,
                 });
@@ -1577,7 +1587,7 @@ export const NodeControler = ({
             if (!isNextNodeMain) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -1614,14 +1624,14 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -1661,7 +1671,7 @@ export const NodeControler = ({
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -1672,7 +1682,7 @@ export const NodeControler = ({
             if (!isNextNodeMain) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -1706,7 +1716,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -1714,7 +1724,7 @@ export const NodeControler = ({
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -1769,14 +1779,14 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -1824,14 +1834,14 @@ export const NodeControler = ({
               if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
-                props.actions?.onExecutedNode?.({
+                await props.actions?.onExecutedNode?.({
                   id: "0",
                   flowId: props.flowId,
                 });
                 return;
               }
               if (props.actions?.onExecutedNode) {
-                props.actions?.onExecutedNode({
+                await props.actions?.onExecutedNode({
                   id: currentNode.id,
                   flowId: props.flowId,
                 });
@@ -1852,7 +1862,7 @@ export const NodeControler = ({
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
-                props.actions?.onExecutedNode?.({
+                await props.actions?.onExecutedNode?.({
                   id: "0",
                   flowId: props.flowId,
                 });
@@ -1898,14 +1908,14 @@ export const NodeControler = ({
               if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
-                props.actions?.onExecutedNode?.({
+                await props.actions?.onExecutedNode?.({
                   id: "0",
                   flowId: props.flowId,
                 });
                 return;
               }
               if (props.actions?.onExecutedNode) {
-                props.actions?.onExecutedNode({
+                await props.actions?.onExecutedNode({
                   id: currentNode.id,
                   flowId: props.flowId,
                 });
@@ -1926,7 +1936,7 @@ export const NodeControler = ({
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
-                props.actions?.onExecutedNode?.({
+                await props.actions?.onExecutedNode?.({
                   id: "0",
                   flowId: props.flowId,
                 });
@@ -1970,7 +1980,7 @@ export const NodeControler = ({
             );
             if (!nextNodeId) {
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -1978,7 +1988,7 @@ export const NodeControler = ({
               return res();
             }
             if (props.actions?.onExecutedNode) {
-              props.actions.onExecutedNode({
+              await props.actions.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -1996,7 +2006,7 @@ export const NodeControler = ({
         );
         if (!nextNodeId) {
           if (props.forceFinish) await props.actions?.onFinish?.("110");
-          props.actions?.onExecutedNode?.({
+          await props.actions?.onExecutedNode?.({
             id: "0",
             flowId: props.flowId,
           });
@@ -2004,7 +2014,7 @@ export const NodeControler = ({
           return res();
         }
         if (props.actions?.onExecutedNode) {
-          props.actions.onExecutedNode({
+          await props.actions.onExecutedNode({
             id: currentNode.id,
             flowId: props.flowId,
           });
@@ -2039,7 +2049,7 @@ export const NodeControler = ({
         );
         if (!nextNodeId) {
           if (props.forceFinish) await props.actions?.onFinish?.("110");
-          props.actions?.onExecutedNode?.({
+          await props.actions?.onExecutedNode?.({
             id: "0",
             flowId: props.flowId,
           });
@@ -2047,7 +2057,7 @@ export const NodeControler = ({
           return res();
         }
         if (props.actions?.onExecutedNode) {
-          props.actions.onExecutedNode({
+          await props.actions.onExecutedNode({
             id: currentNode.id,
             flowId: props.flowId,
           });
@@ -2078,7 +2088,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -2086,7 +2096,7 @@ export const NodeControler = ({
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -2124,7 +2134,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -2132,7 +2142,7 @@ export const NodeControler = ({
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -2170,7 +2180,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -2178,7 +2188,7 @@ export const NodeControler = ({
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -2218,7 +2228,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -2226,7 +2236,7 @@ export const NodeControler = ({
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
@@ -2274,7 +2284,7 @@ export const NodeControler = ({
             .then(async (ac) => {
               if (ac === "return") return res();
               if (props.actions?.onExecutedNode) {
-                props.actions?.onExecutedNode({
+                await props.actions?.onExecutedNode({
                   id: currentNode.id,
                   flowId: props.flowId,
                 });
@@ -2282,7 +2292,7 @@ export const NodeControler = ({
               if (!nextEdgesIds.length) {
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
-                props.actions?.onExecutedNode?.({
+                await props.actions?.onExecutedNode?.({
                   id: "0",
                   flowId: props.flowId,
                 });
@@ -2324,14 +2334,14 @@ export const NodeControler = ({
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              props.actions?.onExecutedNode?.({
+              await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
               });
               return;
             }
             if (props.actions?.onExecutedNode) {
-              props.actions?.onExecutedNode({
+              await props.actions?.onExecutedNode({
                 id: currentNode.id,
                 flowId: props.flowId,
               });
@@ -2354,6 +2364,46 @@ export const NodeControler = ({
             return res();
           });
         return;
+      }
+      if (currentNode.type === "NodeDistribute") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        const saida = await LibraryNodes.NodeDistribute({
+          data: currentNode.data,
+        });
+
+        const nextNodeId = nextEdgesIds?.find((nd) =>
+          nd.sourceHandle?.includes(saida)
+        );
+        if (!nextNodeId) {
+          if (props.forceFinish) await props.actions?.onFinish?.("110");
+          await props.actions?.onExecutedNode?.({
+            id: "0",
+            flowId: props.flowId,
+          });
+          cacheFlowInExecution.delete(keyMap);
+          return res();
+        }
+
+        if (props.actions?.onExecutedNode) {
+          await props.actions?.onExecutedNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+
+        return execute({
+          ...props,
+          currentNodeId: nextNodeId.id,
+          oldNodeId: currentNode.id,
+          ...(props.type === "running"
+            ? { message: props.message, type: "running" }
+            : { type: "initial" }),
+        });
       }
 
       return res();

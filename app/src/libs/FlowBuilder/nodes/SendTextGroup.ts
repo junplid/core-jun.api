@@ -68,6 +68,8 @@ export const NodeSendTextGroup = (props: PropsNodeMessage): Promise<void> => {
             contactsWAOnAccountId: props.contactsWAOnAccountId,
             flowStateId: props.flowStateId,
             nodeId: props.nodeId,
+            accountId: props.accountId,
+            numberLead: props.numberLead,
           });
         }
         if (message.varId_groupJid && msg.key.remoteJid) {
@@ -78,6 +80,8 @@ export const NodeSendTextGroup = (props: PropsNodeMessage): Promise<void> => {
             contactsWAOnAccountId: props.contactsWAOnAccountId,
             flowStateId: props.flowStateId,
             nodeId: props.nodeId,
+            accountId: props.accountId,
+            numberLead: props.numberLead,
           });
         }
       } catch (error) {

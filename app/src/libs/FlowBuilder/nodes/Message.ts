@@ -66,6 +66,8 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
             contactsWAOnAccountId: props.contactsWAOnAccountId,
             flowStateId: props.flowStateId,
             nodeId: props.nodeId,
+            accountId: props.accountId,
+            numberLead: props.numberLead,
           });
         }
       } catch (error) {
