@@ -10,8 +10,8 @@ import { loginRootController } from "../../../../../core/loginRoot";
 import { createRootValidation } from "../../../../../core/createRoot/Validation";
 import { createRootController } from "../../../../../core/createRoot";
 import { webhookMercadopago } from "../../../../../core/webhookMercadopago";
-import { registerIntentValidation } from "../../../../../core/registerIntent/Validation";
-import { registerIntentController } from "../../../../../core/registerIntent";
+// import { registerIntentValidation } from "../../../../../core/registerIntent/Validation";
+// import { registerIntentController } from "../../../../../core/registerIntent";
 import { prisma } from "../../../../../adapters/Prisma/client";
 import { cacheFlowsMap } from "../../../../../adapters/Baileys/Cache";
 import { ModelFlows } from "../../../../../adapters/mongo/models/flows";
@@ -23,11 +23,11 @@ import { mongo } from "../../../../../adapters/mongo/connection";
 
 const RouterV1Public_Post = Router();
 
-RouterV1Public_Post.post(
-  "/register/intent",
-  registerIntentValidation,
-  registerIntentController
-);
+// RouterV1Public_Post.post(
+//   "/register/intent",
+//   registerIntentValidation,
+//   registerIntentController
+// );
 
 RouterV1Public_Post.post(
   "/register/account",

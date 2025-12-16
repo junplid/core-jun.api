@@ -1,9 +1,7 @@
-version: "3.9"
-
-services:  
+services:
   # ------------- Mongo -----------------
   mongo_junplid:
-    image: mongo:6.0 
+    image: mongo:6.0
     restart: unless-stopped
     env_file: .env.mongo
     volumes:
@@ -24,7 +22,7 @@ services:
       test: ["CMD", "pg_isready", "-U", "$${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
-      retries: 5 
+      retries: 5
     ports:
       - "127.0.0.1:5432:5432"
     volumes:

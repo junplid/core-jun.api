@@ -9,7 +9,9 @@ export class CreateFlowUseCase {
   constructor() {}
 
   async run({ businessIds, ...dto }: CreateFlowDTO_I) {
+    console.log("1");
     await mongo();
+    console.log("2");
     const getAccount = await prisma.account.findFirst({
       where: { id: dto.accountId },
       select: { isPremium: true },

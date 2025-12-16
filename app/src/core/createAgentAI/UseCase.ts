@@ -90,15 +90,15 @@ export class CreateAgentAIUseCase {
         });
       }
 
-      try {
-        const client = new OpenAI({ apiKey: dto.apiKey });
-        await client.models.list();
-      } catch (error) {
-        throw new ErrorResponse(400).input({
-          path: "apiKey",
-          text: "Credencial de API inválida",
-        });
-      }
+      // try {
+      //   const client = new OpenAI({ apiKey: dto.apiKey });
+      //   await client.models.list();
+      // } catch (error) {
+      //   throw new ErrorResponse(400).input({
+      //     path: "apiKey",
+      //     text: "Credencial de API inválida",
+      //   });
+      // }
 
       const newProviderCredential = await prisma.providerCredential.create({
         data: {
@@ -132,7 +132,7 @@ export class CreateAgentAIUseCase {
           text: `Já existe um agente IA com esse provedor e nome: "${dto.name}"`,
         });
     }
-    const client = new OpenAI({ apiKey });
+    // const client = new OpenAI({ apiKey });
 
     try {
       const { AgentAIOnBusiness, id, ...agent } = await prisma.agentAI.create({
@@ -163,37 +163,37 @@ export class CreateAgentAIUseCase {
         },
       });
 
-      if (dto.files?.length) {
-        const filesIds = await Promise.all(
-          dto.files.map(async (fileLocalId) => {
-            const existFile = await prisma.storagePaths.findFirst({
-              where: { id: fileLocalId, accountId },
-              select: { id: true, fileName: true },
-            });
-            if (existFile?.id) {
-              const fileId = await ensureFileByName(
-                client,
-                existFile.fileName,
-                resolve(path, existFile.fileName)
-              );
-              await prisma.storagePathOnAgentAI.create({
-                data: { agentAIId: id, storagePathId: existFile.id, fileId },
-              });
-              return fileId;
-            }
-            return undefined;
-          })
-        );
-        const filterFiles = filesIds.filter((id) => id) as string[];
-        const { id: vsId } = await client.vectorStores.create({
-          name: `knowledge-base-${id}`,
-          file_ids: filterFiles,
-        });
-        await prisma.agentAI.update({
-          where: { id },
-          data: { vectorStoreId: vsId },
-        });
-      }
+      // if (dto.files?.length) {
+      //   const filesIds = await Promise.all(
+      //     dto.files.map(async (fileLocalId) => {
+      //       const existFile = await prisma.storagePaths.findFirst({
+      //         where: { id: fileLocalId, accountId },
+      //         select: { id: true, fileName: true },
+      //       });
+      //       if (existFile?.id) {
+      //         const fileId = await ensureFileByName(
+      //           client,
+      //           existFile.fileName,
+      //           resolve(path, existFile.fileName)
+      //         );
+      //         await prisma.storagePathOnAgentAI.create({
+      //           data: { agentAIId: id, storagePathId: existFile.id, fileId },
+      //         });
+      //         return fileId;
+      //       }
+      //       return undefined;
+      //     })
+      //   );
+      //   const filterFiles = filesIds.filter((id) => id) as string[];
+      //   const { id: vsId } = await client.vectorStores.create({
+      //     name: `knowledge-base-${id}`,
+      //     file_ids: filterFiles,
+      //   });
+      //   await prisma.agentAI.update({
+      //     where: { id },
+      //     data: { vectorStoreId: vsId },
+      //   });
+      // }
 
       return {
         status: 201,
