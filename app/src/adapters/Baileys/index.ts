@@ -365,10 +365,10 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
         // });
 
         bot.ev.on("groups.update", async ([event]) => {
-          // @ts-expect-error
-          const metadata = await bot.groupMetadata(event.id);
-          // @ts-expect-error
-          groupCache.set(event.id, metadata);
+          if (event?.id) {
+            const metadata = await bot.groupMetadata(event.id);
+            groupCache.set(event.id, metadata);
+          }
         });
 
         bot.ev.on("group-participants.update", async (event) => {
@@ -696,16 +696,15 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               return;
             }
 
-            console.log({ keyReaction: body[0].key });
-            const number = body[0].key.remoteJid?.split("@")[0];
-            if (!number) {
+            const identifierLead = body[0].key.remoteJid;
+            if (!identifierLead) {
               console.log("Deu erro para recuperar número do lead");
               return;
             }
             const { ContactsWAOnAccount, ...contactWA } =
               await prisma.contactsWA.upsert({
-                where: { completeNumber: number },
-                create: { completeNumber: number },
+                where: { completeNumber: identifierLead },
+                create: { completeNumber: identifierLead },
                 update: {},
                 select: {
                   id: true,
@@ -827,6 +826,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   flowId: msg!.FlowState!.flowId!,
                   flowBusinessIds: flow!.businessIds,
                   type: "running",
+                  action: null,
                   connectionWhatsId: props.connectionWhatsId,
                   chatbotId: msg!.FlowState!.chatbotId || undefined,
                   campaignId: msg!.FlowState!.campaignId || undefined,
@@ -837,7 +837,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   flowStateId: msg!.FlowState!.id,
                   contactsWAOnAccountId:
                     msg!.FlowState!.ContactsWAOnAccount!.id,
-                  lead: { number: numberLead! + "@s.whatsapp.net" },
+                  lead: { number: numberLead },
                   edges: flow!.edges,
                   nodes: flow!.nodes,
                   contactsWAOnAccountReactionId: ContactsWAOnAccount[0].id,
@@ -858,7 +858,10 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       return;
                     },
                     onErrorNumber: async () => {
-                      console.error("Erro no número do contato", number);
+                      console.error(
+                        "Erro no número do contato",
+                        identifierLead
+                      );
                       cacheRunningQueueReaction.set(keyMap, false);
                       cachePendingReactionsList.delete(keyMap);
                       return;
@@ -891,8 +894,9 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
           ) {
             await mongo();
 
-            const numberLead = body.messages[0].key.remoteJid?.split("@")[0];
-            if (!numberLead) {
+            const identifierLead = body.messages[0].key.remoteJid;
+
+            if (!identifierLead) {
               console.log("Deu erro para recuperar número do lead");
               return;
             }
@@ -922,16 +926,16 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
             }
 
             const profilePicUrl = await bot
-              .profilePictureUrl(body.messages[0].key.remoteJid!)
+              .profilePictureUrl(identifierLead)
               .then((s) => s)
               .catch(() => undefined);
 
             const { ContactsWAOnAccount, ...contactWA } =
               await prisma.contactsWA.upsert({
-                where: { completeNumber: numberLead },
+                where: { completeNumber: identifierLead },
                 create: {
                   img: profilePicUrl,
-                  completeNumber: numberLead!,
+                  completeNumber: identifierLead,
                   ContactsWAOnAccount: {
                     create: {
                       accountId: props.accountId,
@@ -962,7 +966,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
             }
 
             // Verifica se o lead está aguardando processamento
-            if (leadAwaiting.get(numberLead)) return;
+            if (leadAwaiting.get(identifierLead)) return;
 
             const messageAudio = body.messages[0].message?.audioMessage;
             const messageImage = body.messages[0].message?.imageMessage;
@@ -979,7 +983,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               where: {
                 status: { in: ["OPEN", "NEW"] },
                 ContactsWAOnAccount: {
-                  ContactsWA: { completeNumber: numberLead },
+                  ContactsWA: { completeNumber: identifierLead },
                 },
                 ConnectionWA: { number: numberConnection },
               },
@@ -1019,7 +1023,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     pathStatic + `/${fileName}`,
                     new Uint8Array(buffer)
                   );
-                  leadAwaiting.set(numberLead, false);
+                  leadAwaiting.set(identifierLead, false);
                 } catch (error) {
                   const hash = ulid();
                   cacheRootSocket.forEach((sockId) =>
@@ -1426,7 +1430,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
 
             if (chatbot) {
               const isToRestartChatbot = chatbotRestartInDate.get(
-                `${numberConnection}+${numberLead}`
+                `${numberConnection}+${identifierLead}`
               );
               if (!!isToRestartChatbot) {
                 const isbefore = moment()
@@ -1437,7 +1441,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   return;
                 } else {
                   chatbotRestartInDate.delete(
-                    `${numberConnection}+${numberLead}`
+                    `${numberConnection}+${identifierLead}`
                   );
                 }
               }
@@ -1690,7 +1694,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                         pathStatic + `/${fileName}`,
                         new Uint8Array(buffer)
                       );
-                      leadAwaiting.set(numberLead, false);
+                      leadAwaiting.set(identifierLead, false);
                     } catch (error) {
                       const hash = ulid();
                       cacheRootSocket.forEach((sockId) =>
@@ -1728,13 +1732,14 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     isSavePositionLead: true,
                     flowStateId: currentIndexNodeLead.id,
                     contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                    lead: { number: body.messages[0].key.remoteJid! },
+                    lead: { number: identifierLead },
                     currentNodeId: currentIndexNodeLead?.indexNode || "0",
                     edges: flow.edges,
                     nodes: flow.nodes,
                     numberConnection: numberConnection + "@s.whatsapp.net",
                     message: messageText ?? "",
                     accountId: props.accountId,
+                    action: null,
                     actions: {
                       onFinish: async (vl) => {
                         if (currentIndexNodeLead) {
@@ -1761,7 +1766,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                               )
                               .toDate();
                             chatbotRestartInDate.set(
-                              `${numberConnection}+${numberLead}`,
+                              `${numberConnection}+${identifierLead}`,
                               nextDate
                             );
                           }
@@ -1829,7 +1834,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       },
                     },
                   }).finally(() => {
-                    leadAwaiting.set(numberLead, false);
+                    leadAwaiting.set(identifierLead, false);
                   });
                 };
 
@@ -1877,13 +1882,13 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       );
                       await TypingDelay({
                         connectionId: props.connectionWhatsId,
-                        toNumber: numberLead + "@s.whatsapp.net",
+                        toNumber: identifierLead + "@s.whatsapp.net",
                         delay: CalculeTypingDelay(chatbot.fallback),
                       });
                       await SendMessageText({
                         connectionId: props.connectionWhatsId,
                         text: chatbot.fallback,
-                        toNumber: numberLead + "@s.whatsapp.net",
+                        toNumber: identifierLead + "@s.whatsapp.net",
                       });
                       await prisma.flowState.create({
                         data: {
@@ -1902,13 +1907,13 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                         );
                         await TypingDelay({
                           connectionId: props.connectionWhatsId,
-                          toNumber: numberLead + "@s.whatsapp.net",
+                          toNumber: identifierLead + "@s.whatsapp.net",
                           delay: CalculeTypingDelay(chatbot.fallback),
                         });
                         await SendMessageText({
                           connectionId: props.connectionWhatsId,
                           text: chatbot.fallback,
-                          toNumber: numberLead + "@s.whatsapp.net",
+                          toNumber: identifierLead + "@s.whatsapp.net",
                         });
                         await prisma.flowState.update({
                           where: { id: flowState.id },
@@ -1947,7 +1952,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     .add(minutesToNextExecutionInQueue, "minutes");
 
                   const dataLeadQueue = {
-                    number: numberLead,
+                    number: identifierLead,
                     pushName: body.messages[0].pushName ?? "SEM NOME",
                     messageText,
                     messageAudio: messageAudio?.url,
@@ -1981,7 +1986,9 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     if (chatbotQueue !== "") {
                       const JSONQueue: ChatbotQueue = JSON.parse(chatbotQueue);
                       if (
-                        !JSONQueue.queue.some((s) => s.number === numberLead)
+                        !JSONQueue.queue.some(
+                          (s) => s.number === identifierLead
+                        )
                       ) {
                         JSONQueue.queue.push(dataLeadQueue);
                       }
@@ -2032,7 +2039,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   some: {
                     isFinish: false,
                     ContactsWAOnAccount: {
-                      ContactsWA: { completeNumber: numberLead },
+                      ContactsWA: { completeNumber: identifierLead },
                     },
                   },
                 },
@@ -2048,7 +2055,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                 where: {
                   campaignId: campaignOfConnection?.id,
                   ContactsWAOnAccount: {
-                    ContactsWA: { completeNumber: numberLead },
+                    ContactsWA: { completeNumber: identifierLead },
                   },
                 },
                 select: {
@@ -2081,7 +2088,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                 return console.log("FlowState not found for lead");
               }
 
-              leadAwaiting.set(numberLead, true);
+              leadAwaiting.set(identifierLead, true);
               const { id, flowId } = flowState;
 
               let currentFlow = {} as {
@@ -2209,6 +2216,12 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                 return;
               }
 
+              const ss = true;
+              if (ss) {
+                console.log("Campanhas estão temporariamente desativadas");
+                return;
+              }
+
               await NodeControler({
                 businessName: businessInfo?.Business.name!,
                 isSavePositionLead: true,
@@ -2229,9 +2242,8 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                 oldNodeId: flowState.indexNode || "0",
                 flowStateId: flowState.id,
                 contactsWAOnAccountId: flowState.ContactsWAOnAccount.id,
-                lead: {
-                  number: numberLead + "@s.whatsapp.net",
-                },
+                lead: { number: identifierLead },
+                action: null,
                 currentNodeId: flowState.indexNode || "0",
                 edges: currentFlow.edges,
                 nodes: currentFlow.nodes,
@@ -2337,7 +2349,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   },
                 },
               }).finally(() => {
-                leadAwaiting.set(numberLead, false);
+                leadAwaiting.set(identifierLead, false);
               });
             }
             return;

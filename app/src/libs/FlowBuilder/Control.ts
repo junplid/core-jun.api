@@ -46,6 +46,7 @@ export type IPropsControler = {
   businessName: string;
   flowBusinessIds?: number[];
   forceFinish?: boolean;
+  action: string | null;
 } & (
   | { type: "initial" }
   | {
@@ -1827,52 +1828,46 @@ export const NodeControler = ({
           nodeId: currentNode.id,
           flowStateId: props.flowStateId,
           flowId: props.flowId,
-          ...(props.type === "running" && { action: props.message }),
+          ...(props.type === "running" && {
+            action: props.action || undefined,
+          }),
         })
           .then(async (action) => {
-            if (!action) {
-              if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
-                cacheFlowInExecution.delete(keyMap);
-                if (props.forceFinish) await props.actions?.onFinish?.("110");
-                await props.actions?.onExecutedNode?.({
-                  id: "0",
-                  flowId: props.flowId,
-                });
-                return;
-              }
-              if (props.actions?.onExecutedNode) {
-                await props.actions?.onExecutedNode({
-                  id: currentNode.id,
-                  flowId: props.flowId,
-                });
-              }
+            const nextNode = nextEdgesIds.find(
+              (s) => s.sourceHandle === "main"
+            );
+            if (!nextNode) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              await props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return;
+            }
 
+            if (props.actions?.onExecutedNode) {
+              await props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
+            }
+
+            if (!action) {
               execute({
                 ...props,
                 ...(props.type === "running"
                   ? { message: props.message, type: "running" }
                   : { type: "initial" }),
-                currentNodeId: nextEdgesIds[0].id,
+                currentNodeId: nextNode.id,
                 oldNodeId: currentNode.id,
               });
             } else {
-              const isNextNodeMain = nextEdgesIds.find((nh) =>
-                nh.sourceHandle?.includes("action")
-              );
-              if (!isNextNodeMain) {
-                cacheFlowInExecution.delete(keyMap);
-                if (props.forceFinish) await props.actions?.onFinish?.("110");
-                await props.actions?.onExecutedNode?.({
-                  id: "0",
-                  flowId: props.flowId,
-                });
-                return res();
-              }
-              return execute({
+              execute({
                 ...props,
                 type: "running",
                 message: action,
-                currentNodeId: isNextNodeMain.id,
+                currentNodeId: nextNode.id,
                 oldNodeId: currentNode.id,
                 isSavePositionLead: false,
               });

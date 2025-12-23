@@ -122,39 +122,39 @@ ${p.obs ? `OBS: ${p.obs}` : ""}`;
         })
         .join("\n");
       const n_order = genNumCode(6);
-      const order = await prisma.orders.create({
-        data: {
-          n_order,
-          accountId: exist.accountId,
-          businessId: exist.ConnectionWA.businessId,
-          connectionWAId: exist.ConnectionWA.id,
-          name: rest.who_receives,
-          menuId: exist.id,
-          ...rest,
-          total,
-          status: "draft",
-          data: dataOrder,
-        },
-        select: { id: true, createAt: true, priority: true },
-      });
+      // const order = await prisma.orders.create({
+      //   data: {
+      //     n_order,
+      //     accountId: exist.accountId,
+      //     businessId: exist.ConnectionWA.businessId,
+      //     connectionWAId: exist.ConnectionWA.id,
+      //     name: rest.who_receives,
+      //     menuId: exist.id,
+      //     ...rest,
+      //     total,
+      //     status: "draft",
+      //     data: dataOrder,
+      //   },
+      //   select: { id: true, createAt: true, priority: true },
+      // });
 
-      cacheAccountSocket.get(exist.accountId)?.listSocket?.forEach((sockId) => {
-        socketIo.of(`/menu-${uuid}/orders`).emit("list", {
-          accountId: exist.accountId,
-          action: "new",
-          order: {
-            ...order,
-            name: rest.who_receives,
-            n_order,
-            delivery_address: rest.delivery_address,
-            payment_method: rest.payment_method,
-            actionChannels: [],
-            status: "draft",
-            data: dataOrder,
-            total,
-          },
-        });
-      });
+      // cacheAccountSocket.get(exist.accountId)?.listSocket?.forEach((sockId) => {
+      //   socketIo.of(`/menu-${uuid}/orders`).emit("list", {
+      //     accountId: exist.accountId,
+      //     action: "new",
+      //     order: {
+      //       ...order,
+      //       name: rest.who_receives,
+      //       n_order,
+      //       delivery_address: rest.delivery_address,
+      //       payment_method: rest.payment_method,
+      //       actionChannels: [],
+      //       status: "draft",
+      //       data: dataOrder,
+      //       total,
+      //     },
+      //   });
+      // });
 
       const redirectTo = `https://api.whatsapp.com/send?phone=${
         exist.ConnectionWA.number

@@ -182,6 +182,7 @@ RouterV1Public_Post.post("/webhook/trello", (req: Request, res: Response) => {
         await new Promise<void>(async (res, rej) => {
           await NodeControler({
             forceFinish: true,
+            action: null,
             businessName: getFlowState.ConnectionWA!.Business.name,
             flowId: getFlowState.flowId!,
             flowBusinessIds: flow.businessIds,
@@ -201,7 +202,7 @@ RouterV1Public_Post.post("/webhook/trello", (req: Request, res: Response) => {
               getFlowState.previous_response_id || undefined,
             flowStateId: flowStateId,
             contactsWAOnAccountId: getFlowState.ContactsWAOnAccount!.id,
-            lead: { number: numberLead! + "@s.whatsapp.net" },
+            lead: { number: numberLead },
             edges: flow!.edges,
             nodes: flow!.nodes,
             numberConnection:

@@ -1935,12 +1935,14 @@ model Orders {
   payment_method        String?
   deleted               Boolean              @default(false)
   status                TypeStatusOrder      @default(draft)
+  isDragDisabled        Boolean              @default(false)
   priority              TypePriorityOrder?
   origin                String?              @db.VarChar(150)
   delivery_address      String?              @db.Text
   delivery_complement   String?
   delivery_cep          String?
   who_receives          String?
+  rank                  Decimal              @db.Decimal(20, 10)
   tracking_code         String?              @db.VarChar(150)
   delivery_code         String?              @db.VarChar(12)
   itens_count           Int?                 @default(0)

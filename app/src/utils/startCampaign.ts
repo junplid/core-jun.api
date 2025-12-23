@@ -409,10 +409,8 @@ export const startCampaign = async ({
           businessName: infoConnection?.Business.name!,
           connectionWhatsId: connection.id,
           clientWA: connectionWA,
-          lead: {
-            number:
-              stateFlow.completeNumber.replace("+", "") + "@s.whatsapp.net",
-          },
+          action: null,
+          lead: { number: stateFlow.completeNumber },
           oldNodeId: stateFlow.indexNode || "0",
           accountId: campaign.accountId,
           flowId: campaign.flowId,
@@ -661,12 +659,9 @@ export const startCampaign = async ({
           businessName: infoConnection?.Business.name!,
           connectionWhatsId: clientsWA[i]!.id,
           clientWA: clientsWA[i]!.bot!,
+          action: null,
           lead: {
-            number:
-              stateFlow.ContactsWAOnAccount!.ContactsWA.completeNumber.replace(
-                "+",
-                ""
-              ) + "@s.whatsapp.net",
+            number: stateFlow.ContactsWAOnAccount!.ContactsWA.completeNumber,
           },
           oldNodeId: stateFlow.indexNode || "0",
           accountId: campaign.accountId,

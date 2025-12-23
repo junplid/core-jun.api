@@ -191,4 +191,24 @@ RouterV1Public_Get.get(
   getMenuOnlinePublicController
 );
 
+// start API Oficial WhatsApp
+// RouterV1Public_Get.get("/wa/test", (req, res) => {
+//   const {
+//     "hub.mode": mode,
+//     "hub.challenge": challenge,
+//     "hub.verify_token": token,
+//   } = req.query;
+
+//   console.log(req);
+
+//   return res.status(200).send(challenge);
+// });
+
+// RouterV1Public_Get.post("/wa/test", (req, res) => {
+//   const timestamp = new Date().toISOString().replace("T", " ").slice(0, 19);
+//   console.log(`\n\nWebhook received ${timestamp}\n`);
+//   console.log(JSON.stringify(req.body, null, 2));
+//   res.status(200).end();
+// });
+
 export default RouterV1Public_Get;

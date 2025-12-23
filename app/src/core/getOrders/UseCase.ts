@@ -16,6 +16,8 @@ const select = {
   delivery_address: true,
   payment_method: true,
   actionChannels: true,
+  rank: true,
+  isDragDisabled: true,
 };
 
 export class GetOrdersUseCase {
@@ -40,13 +42,13 @@ export class GetOrdersUseCase {
     const nextOrders = dto.status.reduce(
       (ac, cr, index) => ({
         ...ac,
-        [cr]: orders[index].map(
-          ({ ContactsWAOnAccount, ...order }, sequence) => ({
+        [cr]: orders[index]
+          .map(({ ContactsWAOnAccount, rank, ...order }) => ({
             ...order,
-            sequence,
+            sequence: rank.toNumber(),
             contact: ContactsWAOnAccount?.ContactsWA.completeNumber,
-          })
-        ),
+          }))
+          .sort((a, b) => a.sequence - b.sequence),
       }),
       {} as { [x: string]: any }
     );
@@ -54,63 +56,7 @@ export class GetOrdersUseCase {
     return {
       message: "OK!",
       status: 200,
-      orders: {
-        pending: [],
-        confirmed: [
-          {
-            id: 1,
-            name: "Gustavo Oliveira",
-            total: 20,
-            data: `(1) Pizza Média, sabores:
-- Calabresa
-- Frango c/ catupiry
-OBS: Não colocar cebola`,
-            priority: null,
-            status: "pending",
-            createAt: new Date(),
-            n_order: "123456",
-            delivery_address: "",
-            payment_method: null,
-            sequence: 0,
-          },
-          {
-            id: 2,
-            name: "Liliam",
-            total: 20,
-            data: `(1) Pizza Pequena, sabores:
-- Calabresa
-
-(1) Coca-Cola em lata`,
-            priority: null,
-            status: "confirmed",
-            createAt: new Date(),
-            n_order: "123456",
-            delivery_address: "",
-            payment_method: null,
-            sequence: 0,
-          },
-        ],
-        processing: [
-          {
-            id: 3,
-            name: "Gabriel",
-            total: 20,
-            data: `(1) Pizza Familia, sabores:
-- Calabresa
-- Frango c/ catupiry
-- Portuguesa
-
-(1) Pepsi 1 litro`,
-            priority: null,
-            status: "confirmed",
-            createAt: new Date(),
-            n_order: "123456",
-            delivery_address: "",
-            payment_method: null,
-            sequence: 1,
-          },
-        ],
-      },
+      orders: nextOrders,
     };
   }
 }

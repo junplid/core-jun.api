@@ -220,6 +220,7 @@ export type NodeCreateOrderData = {
   actionChannels: { key: string; text: string }[];
   payment_method?: string; // não sei o pq disso já tem o delivery_address
   itens_count?: number;
+  isDragDisabled: boolean;
 };
 
 export type NodeUpdateOrderData = {

@@ -19,6 +19,7 @@ export const SendMessageText = async ({
     const bot = sessionsBaileysWA.get(connectionId);
     if (!bot || !cacheConnectionsWAOnline.get(connectionId))
       throw new Error("CONEXÃO OFFLINE");
+    console.log(props.toNumber);
     return safeSendMessage(bot, props.toNumber, { text: props.text });
   };
 

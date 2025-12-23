@@ -117,8 +117,22 @@ export const NodeCreateOrder = async (
         nodeId: props.nodeId,
       });
     }
+    console.log("vindo aqui");
 
     const tracking_code = genNumCode(5);
+    const last = await prisma.orders.findFirst({
+      where: {
+        accountId: props.accountId,
+        status: restData.status || "pending",
+      },
+      orderBy: { rank: "desc" },
+      select: { rank: true },
+    });
+
+    const GAP = 640;
+    const newRank = last ? last.rank.plus(GAP) : GAP;
+
+    console.log("vindo aqui");
 
     const { id, createAt, ContactsWAOnAccount } = await prisma.orders.create({
       data: {
@@ -129,6 +143,7 @@ export const NodeCreateOrder = async (
         connectionWAId: props.connectionWhatsId,
         flowId: props.flowId,
         n_order,
+        rank: newRank,
         tracking_code,
         ...restData,
         status: restData.status || "pending",
@@ -146,6 +161,7 @@ export const NodeCreateOrder = async (
         },
       },
     });
+    console.log("vindo aqui");
 
     if (varId_save_nOrder) {
       const exist = await prisma.variable.findFirst({
@@ -183,23 +199,22 @@ export const NodeCreateOrder = async (
     }
 
     cacheAccountSocket.get(props.accountId)?.listSocket?.forEach((sockId) => {
-      if (notify) {
-        socketIo.to(sockId).emit(`notify-order`, {
-          id,
-          accountId: props.accountId,
-          title: "Novo pedido.",
-          action: "new",
-        });
-      }
-      socketIo.to(sockId).emit(`order`, {
+      // if (notify) {
+      //   socketIo.to(sockId).emit(`notify-order`, {
+      //     id,
+      //     accountId: props.accountId,
+      //     title: "Novo pedido.",
+      //     action: "new",
+      //   });
+      // }
+      socketIo.to(sockId).emit(`order:new`, {
         accountId: props.accountId,
-        action: "new",
         order: {
           id,
+          name: restData.name,
+          n_order,
           createAt,
           status: restData.status || "pending",
-          n_order,
-          name: restData.name,
           data: restData.data,
           contact: ContactsWAOnAccount?.ContactsWA.completeNumber,
           payment_method: restData.payment_method,
@@ -207,13 +222,15 @@ export const NodeCreateOrder = async (
           delivery_address: restData.delivery_address,
           total: restData.total,
           actionChannels: actionChannels.map((s) => s.text),
+          sequence: newRank,
+          isDragDisabled: restData.isDragDisabled,
         },
       });
     });
 
     return;
   } catch (error) {
-    console.log(error);
+    console.log("", error);
     return;
   }
 };

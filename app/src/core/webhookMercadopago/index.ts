@@ -203,6 +203,7 @@ export const webhookMercadopago = async (req: Request, res: Response) => {
         if (!bot) return;
         console.log("20");
         await NodeControler({
+          action: null,
           businessName: flowState.ConnectionWA.Business.name,
           flowId: flowState.flowId,
           flowBusinessIds: flow.businessIds,
@@ -217,9 +218,7 @@ export const webhookMercadopago = async (req: Request, res: Response) => {
           flowStateId: getCharge.flowStateId,
           contactsWAOnAccountId: flowState.ContactsWAOnAccount.id,
           lead: {
-            number:
-              flowState.ContactsWAOnAccount.ContactsWA.completeNumber +
-              "@s.whatsapp.net",
+            number: flowState.ContactsWAOnAccount.ContactsWA.completeNumber,
           },
           currentNodeId: nextNode.target,
           edges: flow.edges,

@@ -171,11 +171,8 @@ export class ResolveTicketUseCase {
         clientWA,
         businessName: InboxDepartment.name,
         connectionWhatsId: rest.connectionWAId,
-        lead: {
-          number:
-            ContactsWAOnAccount.ContactsWA.completeNumber.replace("+", "") +
-            "@s.whatsapp.net",
-        },
+        action: null,
+        lead: { number: ContactsWAOnAccount.ContactsWA.completeNumber },
         oldNodeId: rest.GoBackFlowState.indexNode || "0",
         accountId: rest.accountId,
         flowId: rest.GoBackFlowState.flowId,

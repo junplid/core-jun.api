@@ -24,7 +24,8 @@ export const getOrdersValidation = (
           "refunded",
           "failed",
           "on_way",
-          "ready"
+          "ready",
+          "completed"
         )
       )
       .default(["pending", "confirmed", "processing", "on_way", "completed"])
