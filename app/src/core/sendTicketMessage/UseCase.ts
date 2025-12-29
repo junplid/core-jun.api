@@ -64,8 +64,7 @@ export class SendTicketMessageUseCase {
         const msg = await SendMessageText({
           connectionId: exist.connectionWAId,
           text: dto.text,
-          toNumber:
-            ContactsWAOnAccount.ContactsWA.completeNumber + "@s.whatsapp.net",
+          toNumber: ContactsWAOnAccount.ContactsWA.completeNumber,
         });
         if (!msg?.key?.id) {
           throw new ErrorResponse(500).toast({
@@ -175,9 +174,7 @@ export class SendTicketMessageUseCase {
               const msg = await SendFile({
                 connectionId: exist.connectionWAId,
                 originalName: e.originalName,
-                toNumber:
-                  exist.ContactsWAOnAccount.ContactsWA.completeNumber +
-                  "@s.whatsapp.net",
+                toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
                 caption,
                 document: readFileSync(urlStatic),
                 mimetype: mimetype || undefined,
@@ -263,9 +260,7 @@ export class SendTicketMessageUseCase {
                 const msg = await SendImage({
                   connectionId: exist.connectionWAId,
                   url: urlStatic,
-                  toNumber:
-                    exist.ContactsWAOnAccount.ContactsWA.completeNumber +
-                    "@s.whatsapp.net",
+                  toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
                   caption,
                 });
                 if (!msg?.key?.id) {
@@ -333,9 +328,7 @@ export class SendTicketMessageUseCase {
               if (/^video\//.test(mimetype)) {
                 const msg = await SendVideo({
                   connectionId: exist.connectionWAId,
-                  toNumber:
-                    exist.ContactsWAOnAccount.ContactsWA.completeNumber +
-                    "@s.whatsapp.net",
+                  toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
                   caption,
                   video: readFileSync(urlStatic),
                   mimetype: mimetype || undefined,
@@ -413,9 +406,7 @@ export class SendTicketMessageUseCase {
           if (dto.type === "audio") {
             const msg = await SendAudio({
               connectionId: exist.connectionWAId,
-              toNumber:
-                exist.ContactsWAOnAccount.ContactsWA.completeNumber +
-                "@s.whatsapp.net",
+              toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
               urlStatic: urlStatic,
               ptt: firstFile.type === "audio",
               mimetype: mimetype || undefined,
@@ -510,9 +501,7 @@ export class SendTicketMessageUseCase {
               const msg = await SendFile({
                 connectionId: exist.connectionWAId,
                 originalName: e.originalName,
-                toNumber:
-                  exist.ContactsWAOnAccount.ContactsWA.completeNumber +
-                  "@s.whatsapp.net",
+                toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
                 caption,
                 document: readFileSync(urlStatic),
                 mimetype: mimetype || undefined,
@@ -597,9 +586,7 @@ export class SendTicketMessageUseCase {
                 const msg = await SendImage({
                   connectionId: exist.connectionWAId,
                   url: urlStatic,
-                  toNumber:
-                    exist.ContactsWAOnAccount.ContactsWA.completeNumber +
-                    "@s.whatsapp.net",
+                  toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
                   caption,
                 });
                 if (!msg?.key?.id) {
@@ -667,9 +654,7 @@ export class SendTicketMessageUseCase {
               if (/^video\//.test(mimetype)) {
                 const msg = await SendVideo({
                   connectionId: exist.connectionWAId,
-                  toNumber:
-                    exist.ContactsWAOnAccount.ContactsWA.completeNumber +
-                    "@s.whatsapp.net",
+                  toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
                   caption,
                   video: readFileSync(urlStatic),
                   mimetype: mimetype || undefined,
@@ -747,9 +732,7 @@ export class SendTicketMessageUseCase {
           if (dto.type === "audio") {
             const msg = await SendAudio({
               connectionId: exist.connectionWAId,
-              toNumber:
-                exist.ContactsWAOnAccount.ContactsWA.completeNumber +
-                "@s.whatsapp.net",
+              toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
               urlStatic: urlStatic,
               ptt: file.type === "audio",
               mimetype: mimetype || undefined,

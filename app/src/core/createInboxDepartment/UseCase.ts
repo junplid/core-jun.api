@@ -33,7 +33,7 @@ export class CreateInboxDepartmentUseCase {
       });
     }
 
-    if (inboxUserIds) {
+    if (inboxUserIds?.length) {
       for await (const inboxUser of inboxUserIds) {
         const user = await prisma.inboxUsers.findFirst({
           where: { id: inboxUser, accountId: dto.accountId },
@@ -53,7 +53,7 @@ export class CreateInboxDepartmentUseCase {
       const { Business, ...rest } = await prisma.inboxDepartments.create({
         data: {
           ...dto,
-          InboxUsers: { connect: inboxUserIds.map((id) => ({ id })) },
+          InboxUsers: { connect: inboxUserIds?.map((id) => ({ id })) },
         },
         select: {
           id: true,
@@ -65,7 +65,12 @@ export class CreateInboxDepartmentUseCase {
       return {
         message: "OK.",
         status: 201,
-        inboxDepartment: { tickets_open: 0, ...rest, business: Business },
+        inboxDepartment: {
+          tickets_open: 0,
+          tickets_new: 0,
+          ...rest,
+          business: Business,
+        },
       };
     } catch (error) {
       console.error("Error creating inbox department:", error);

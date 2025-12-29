@@ -24,7 +24,5 @@ export const appendFlowAccountValidation = (
     return res.status(400).json({ errors });
   }
 
-  const { number: numberBody, ...rest } = validation.value;
-
   next();
 };
