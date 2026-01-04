@@ -62,51 +62,56 @@ export class ResolveTicketUseCase {
         });
 
       if (dto.accountId) {
+        const isonline = cacheAccountSocket.get(dto.accountId)?.listSocket
+          .length;
+
         cacheAccountSocket
           .get(dto.accountId)
           ?.listSocket?.forEach(async (sockId) => {
-            socketIo.to(sockId).emit(`inbox`, {
+            socketIo.to(sockId.id).emit(`inbox`, {
               accountId: dto.accountId,
               departmentId: InboxDepartment.id,
               departmentName: InboxDepartment.name,
               status: "RESOLVED",
-              notifyMsc: false,
-              notifyToast: false,
               id: dto.id,
             });
+          });
+        if (isonline) {
+          socketIo
+            .of(`/business-${InboxDepartment.businessId}/inbox`)
+            .emit("list", {
+              status: "RESOLVED",
+              forceOpen: false,
+              departmentId: InboxDepartment.id,
+              notifyMsc: false,
+              name: ContactsWAOnAccount.name,
+              lastInteractionDate: updateAt,
+              id: dto.id,
+              userId: undefined, // caso seja enviado para um usuário.
+            });
+        }
 
-            socketIo
-              .of(`/business-${InboxDepartment.businessId}/inbox`)
-              .emit("list", {
-                status: "RESOLVED",
-                forceOpen: false,
-                departmentId: InboxDepartment.id,
-                notifyMsc: false,
-                notifyToast: false,
-                name: ContactsWAOnAccount.name,
-                lastInteractionDate: updateAt,
-                id: dto.id,
-                userId: undefined, // caso seja enviado para um usuário.
-              });
-
-            if (dto.orderId) {
-              const order = await prisma.orders.findFirst({
-                where: {
-                  id: dto.orderId,
-                  accountId: dto.accountId,
-                },
-                select: { status: true },
-              });
-              if (order?.status) {
-                socketIo.to(sockId).emit(`order:ticket:remove`, {
+        if (dto.orderId) {
+          const order = await prisma.orders.findFirst({
+            where: {
+              id: dto.orderId,
+              accountId: dto.accountId,
+            },
+            select: { status: true },
+          });
+          if (order?.status) {
+            cacheAccountSocket
+              .get(dto.accountId)
+              ?.listSocket?.forEach(async (sockId) => {
+                socketIo.to(sockId.id).emit(`order:ticket:remove`, {
                   accountId: dto.accountId,
                   status: order.status,
                   ticketId: dto.id,
                   orderId: dto.orderId,
                 });
-              }
-            }
-          });
+              });
+          }
+        }
       }
 
       if (!rest.GoBackFlowState || !rest.GoBackFlowState.flowId) {

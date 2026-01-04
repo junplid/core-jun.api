@@ -45,12 +45,12 @@ export const startConnections = (): Promise<void> =>
                 onConnection: (conn) => {
                   if (conn === "open") {
                     socketIds?.forEach((socketId) => {
-                      socketIo.to(socketId).emit(`status-connection`, {
+                      socketIo.to(socketId.id).emit(`status-connection`, {
                         connectionId: session.connectionWhatsId,
                         connection: "sync",
                       });
                       setTimeout(() => {
-                        socketIo.to(socketId).emit(`status-connection`, {
+                        socketIo.to(socketId.id).emit(`status-connection`, {
                           connectionId: session.connectionWhatsId,
                           connection: "open",
                         });

@@ -221,6 +221,11 @@ export const NodeCreateOrder = async (
         body_txt: `${restData.name} - #${n_order}`,
         body_html: `${restData.name} - #${n_order}`,
         url_redirect: "/auth/orders",
+        onFilterSocket(sockets) {
+          return sockets
+            .filter((s) => s.focused !== `page-orders`)
+            .map((s) => s.id);
+        },
       });
     }
 

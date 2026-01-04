@@ -343,7 +343,7 @@ export const startCampaign = async ({
 
         const socketsAccount = cacheAccountSocket.get(campaign.accountId);
         socketsAccount?.listSocket?.forEach((sockId) =>
-          socketIo.to(sockId).emit(`sentCount-campaign`, {
+          socketIo.to(sockId.id).emit(`sentCount-campaign`, {
             id,
             increment: 1,
           })
@@ -447,7 +447,7 @@ export const startCampaign = async ({
                 cacheAccountSocket
                   .get(campaign.accountId)
                   ?.listSocket?.forEach((sockId) =>
-                    socketIo.to(sockId).emit("status-campaign", {
+                    socketIo.to(sockId.id).emit("status-campaign", {
                       id,
                       status: "finished",
                     })
@@ -482,7 +482,7 @@ export const startCampaign = async ({
                 cacheAccountSocket
                   .get(campaign.accountId)
                   ?.listSocket?.forEach((sockId) =>
-                    socketIo.to(sockId).emit("status-campaign", {
+                    socketIo.to(sockId.id).emit("status-campaign", {
                       id,
                       status: "finished",
                     })
@@ -508,7 +508,7 @@ export const startCampaign = async ({
                 cacheAccountSocket
                   .get(campaign.accountId)
                   ?.listSocket?.forEach((sockId) =>
-                    socketIo.to(sockId).emit("status-campaign", {
+                    socketIo.to(sockId.id).emit("status-campaign", {
                       id,
                       status: "finished",
                     })
@@ -648,7 +648,7 @@ export const startCampaign = async ({
 
         const socketsAccount = cacheAccountSocket.get(campaign.accountId);
         socketsAccount?.listSocket?.forEach((sockId) =>
-          socketIo.to(sockId).emit(`sentCount-campaign`, {
+          socketIo.to(sockId.id).emit(`sentCount-campaign`, {
             id,
             increment: 1,
           })
@@ -699,7 +699,7 @@ export const startCampaign = async ({
                 cacheAccountSocket
                   .get(campaign.accountId)
                   ?.listSocket?.forEach((sockId) =>
-                    socketIo.to(sockId).emit("status-campaign", {
+                    socketIo.to(sockId.id).emit("status-campaign", {
                       id,
                       status: "finished",
                     })
@@ -733,7 +733,7 @@ export const startCampaign = async ({
                 cacheAccountSocket
                   .get(campaign.accountId)
                   ?.listSocket?.forEach((sockId) =>
-                    socketIo.to(sockId).emit("status-campaign", {
+                    socketIo.to(sockId.id).emit("status-campaign", {
                       id,
                       status: "finished",
                     })

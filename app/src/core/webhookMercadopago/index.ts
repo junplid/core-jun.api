@@ -207,6 +207,8 @@ export const webhookMercadopago = async (req: Request, res: Response) => {
             title_html: `Venda confirmada`,
             body_txt: `Valor: ${formatToBRL(getCharge.total.toNumber())}`,
             body_html: `Valor: ${formatToBRL(getCharge.total.toNumber())}`,
+            // notificar apenas o android
+            onFilterSocket: (sockets) => [],
           });
         }
 

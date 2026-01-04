@@ -267,7 +267,7 @@ export class CreateCampaignUseCase {
             data: { status: "running" },
           });
           cacheAccountSocket.get(accountId)?.listSocket?.forEach((sockId) =>
-            socketIo.to(sockId).emit(`status-campaign`, {
+            socketIo.to(sockId.id).emit(`status-campaign`, {
               id,
               status: "running",
             })

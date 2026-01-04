@@ -112,18 +112,30 @@ export const NodeTransferDepartment = async (
       title_html: `Novo ticket`,
       body_txt: `"${ContactsWAOnAccount.name}" está aguardando`,
       body_html: `"${ContactsWAOnAccount.name}" está aguardando`,
+      url_redirect: `$self/?open_ticket=${id}&bId=${department.businessId}&name=${ContactsWAOnAccount.name}`,
+      onFilterSocket(sockets) {
+        return sockets
+          .filter((s) => s.focused !== `modal-department-${props.data.id}`)
+          .map((s) => s.id);
+      },
     });
 
-    socketIo.of(`/business-${department.businessId}/inbox`).emit("list", {
-      status: "NEW",
-      forceOpen: false,
-      departmentId: props.data.id,
-      notifyMsc: true,
-      name: ContactsWAOnAccount.name,
-      lastInteractionDate: createAt,
-      id,
-      userId: undefined, // caso seja enviado para um usuário.
-    });
+    const isOnline = !!cacheAccountSocket
+      .get(props.accountId)
+      ?.listSocket.some(
+        (s) => s.focused === `modal-department-${props.data.id}`
+      );
+    if (isOnline) {
+      socketIo.of(`/business-${department.businessId}/inbox`).emit("list", {
+        status: "NEW",
+        forceOpen: false,
+        departmentId: props.data.id,
+        name: ContactsWAOnAccount.name,
+        lastInteractionDate: createAt,
+        id,
+        userId: undefined, // caso seja enviado para um usuário.
+      });
+    }
 
     return "OK";
   } catch (error) {

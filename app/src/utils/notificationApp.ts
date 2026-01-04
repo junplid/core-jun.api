@@ -12,11 +12,24 @@ type Props = {
   body_html?: string;
   toast_position?: string;
   toast_duration?: number;
-  url_redirect?: string; // `#self/?open_ticket=1` ///// o self significa que a url deve ser incrementada
+  url_redirect?: string; // `$self/?open_ticket=1` ///// o self significa que a url deve ser incrementada
   accountId: number | null;
+  onFilterSocket?(
+    sockets: {
+      id: string;
+      platform: "android" | "ios" | "desktop";
+      isMobile: boolean;
+      isPWA: boolean;
+      focused: null | string;
+    }[]
+  ): string[];
 };
 
-export async function NotificationApp({ accountId, ...props }: Props) {
+export async function NotificationApp({
+  accountId,
+  onFilterSocket,
+  ...props
+}: Props) {
   if (!accountId) {
     // TODO:
     // notificar todos os accounts via websockets
@@ -27,17 +40,18 @@ export async function NotificationApp({ accountId, ...props }: Props) {
   const accountSocket = cacheAccountSocket.get(accountId);
   let channel: TypeChannelsNotification = "websocket";
 
-  if (accountSocket && accountSocket.listSocket.length) {
-    accountSocket.listSocket.forEach(async (skt) => {
-      if (skt.platform === "android") {
-        channel = "push";
-        await sendPushNotification(accountId, {
-          title: props.title_txt,
-          body: props.body_txt,
-          url: props.url_redirect,
-        });
-      }
-      socketIo.to(skt.id).emit("notification", props);
+  let listSocket: string[] = [];
+  if (accountSocket) {
+    if (onFilterSocket) {
+      listSocket = onFilterSocket(accountSocket.listSocket);
+    } else {
+      accountSocket.listSocket.map((s) => s.id);
+    }
+  }
+
+  if (listSocket.length) {
+    listSocket.forEach(async (skt) => {
+      socketIo.to(skt).emit("notification", props);
     });
   } else {
     channel = "push";

@@ -5,6 +5,7 @@ interface CacheStateUserSocket {
     platform: "android" | "ios" | "desktop";
     isMobile: boolean;
     isPWA: boolean;
+    focused: null | string;
   }[];
   linkedPages?: string[];
   currentTicket?: number | null;

@@ -108,8 +108,6 @@ export class SendTicketMessageUseCase {
                 },
                 by: "contact",
                 departmentId: InboxDepartment.id,
-                notifyMsc: false,
-                notifyToast: false,
                 ticketId: dto.id,
                 userId: dto.userId, // caso seja enviado para um usuário.
                 lastInteractionDate: createAt,
@@ -124,8 +122,6 @@ export class SendTicketMessageUseCase {
                 },
                 by: "user",
                 departmentId: InboxDepartment.id,
-                notifyMsc: false,
-                notifyToast: false,
                 ticketId: dto.id,
                 userId: undefined, // caso seja enviado para um usuário.
                 lastInteractionDate: lastInteractionDate!,

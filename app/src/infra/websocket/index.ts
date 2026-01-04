@@ -70,6 +70,22 @@ export const WebSocketIo = (io: Server) => {
 
     if (!auth.accountId && !auth.rootId) return socket.disconnect(true);
 
+    socket.on("set-focused", (data: { focus: string | null }) => {
+      if (auth.accountId) {
+        const stateUser = cacheAccountSocket.get(auth.accountId);
+        if (stateUser) {
+          const nextState = stateUser.listSocket.map((sk) => {
+            if (sk.id === socket.id) sk.focused = data.focus;
+            return sk;
+          });
+          cacheAccountSocket.set(auth.accountId, {
+            ...stateUser,
+            listSocket: nextState,
+          });
+        }
+      }
+    });
+
     socket.on("create-session", async (data: PropsCreateSessionWA_I) => {
       const connectionDB = await prisma.connectionWA.findFirst({
         where: {

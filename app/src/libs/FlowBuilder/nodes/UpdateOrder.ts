@@ -148,28 +148,24 @@ export const NodeUpdateOrder = async (
       select: { updateAt: true, name: true },
     });
 
+    await NotificationApp({
+      accountId: props.accountId,
+      title_txt: "Pedido atualizado",
+      title_html: "Pedido atualizado",
+      body_txt: `#${getOrder.n_order} - ${name}`,
+      body_html: `#${getOrder.n_order} - ${name}`,
+      url_redirect: "/auth/orders",
+      onFilterSocket(sockets) {
+        return sockets
+          .filter((s) => s.focused !== `page-orders`)
+          .map((s) => s.id);
+      },
+    });
+
     cacheAccountSocket
       .get(props.accountId)
       ?.listSocket?.forEach(async (sockId) => {
-        if (notify) {
-          socketIo.to(sockId).emit(`notify-order`, {
-            id: getOrder.id,
-            accountId: props.accountId,
-            title: `Pedido #${getOrder.n_order} atualizado.`,
-            action: "update",
-          });
-
-          await NotificationApp({
-            accountId: props.accountId,
-            title_txt: "Pedido atualizado",
-            title_html: "Pedido atualizado",
-            body_txt: `#${getOrder.n_order} - ${name}`,
-            body_html: `#${getOrder.n_order} - ${name}`,
-            url_redirect: "/auth/orders",
-          });
-        }
-
-        socketIo.to(sockId).emit(`order`, {
+        socketIo.to(sockId.id).emit(`order`, {
           accountId: props.accountId,
           action: "update",
           order: {

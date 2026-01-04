@@ -38,51 +38,57 @@ export class ReturnTicketUseCase {
         });
 
       if (dto.accountId) {
-        cacheAccountSocket
-          .get(dto.accountId)
-          ?.listSocket?.forEach(async (sockId) => {
-            socketIo.to(sockId).emit(`inbox`, {
-              accountId: dto.accountId,
-              departmentId: InboxDepartment.id,
-              departmentName: InboxDepartment.name,
-              status: "RETURN",
-              notifyMsc: false,
-              notifyToast: false,
-              id: dto.id,
-            });
+        const isonline = cacheAccountSocket.get(dto.accountId)?.listSocket
+          .length;
 
-            socketIo
-              .of(`/business-${InboxDepartment.businessId}/inbox`)
-              .emit("list", {
-                status: "RETURN",
-                forceOpen: false,
+        socketIo
+          .of(`/business-${InboxDepartment.businessId}/inbox`)
+          .emit("list", {
+            status: "RETURN",
+            forceOpen: false,
+            departmentId: InboxDepartment.id,
+            name: ContactsWAOnAccount.name,
+            lastInteractionDate: updateAt,
+            id: dto.id,
+            userId: undefined, // caso seja enviado para um usuário.
+          });
+        if (isonline) {
+          cacheAccountSocket
+            .get(dto.accountId)
+            ?.listSocket?.forEach(async (sockId) => {
+              socketIo.to(sockId.id).emit(`inbox`, {
+                accountId: dto.accountId,
                 departmentId: InboxDepartment.id,
+                departmentName: InboxDepartment.name,
+                status: "RETURN",
                 notifyMsc: false,
-                notifyToast: false,
-                name: ContactsWAOnAccount.name,
-                lastInteractionDate: updateAt,
                 id: dto.id,
-                userId: undefined, // caso seja enviado para um usuário.
               });
+            });
+        }
 
-            if (dto.orderId) {
-              const order = await prisma.orders.findFirst({
-                where: {
-                  id: dto.orderId,
-                  accountId: dto.accountId,
-                },
-                select: { status: true },
-              });
-              if (order?.status) {
-                socketIo.to(sockId).emit(`order:ticket:return`, {
+        if (dto.orderId) {
+          const order = await prisma.orders.findFirst({
+            where: {
+              id: dto.orderId,
+              accountId: dto.accountId,
+            },
+            select: { status: true },
+          });
+
+          if (order?.status) {
+            cacheAccountSocket
+              .get(dto.accountId)
+              ?.listSocket?.forEach(async (sockId) => {
+                socketIo.to(sockId.id).emit(`order:ticket:return`, {
                   accountId: dto.accountId,
                   status: order.status,
                   ticketId: dto.id,
                   orderId: dto.orderId,
                 });
-              }
-            }
-          });
+              });
+          }
+        }
       }
 
       return {
