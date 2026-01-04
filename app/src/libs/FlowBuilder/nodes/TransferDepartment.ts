@@ -1,6 +1,8 @@
+import { cacheConnectionsWAOnline } from "../../../adapters/Baileys/Cache";
 import { prisma } from "../../../adapters/Prisma/client";
 import { socketIo } from "../../../infra/express";
 import { cacheAccountSocket } from "../../../infra/websocket/cache";
+import { NotificationApp } from "../../../utils/notificationApp";
 import { NodeTransferDepartmentData } from "../Payload";
 
 interface PropsNodeTransferDepartment {
@@ -10,16 +12,6 @@ interface PropsNodeTransferDepartment {
   connectionWAId: number;
   nodeId: string;
   accountId: number;
-}
-
-interface PropsInbox {
-  accountId: number;
-  departmentId: number;
-  departmentName: string;
-  status: "NEW" | "MESSAGE";
-  notifyMsc: boolean;
-  notifyToast: boolean;
-  id: number;
 }
 
 function getRandomNumber(min: number, max: number) {
@@ -52,46 +44,85 @@ export const NodeTransferDepartment = async (
       checkProtocol(protocol);
     });
 
-    const { id, createAt, ContactsWAOnAccount } = await prisma.tickets.create({
-      data: {
-        protocol: uniqueProtocol,
-        destination: "department",
-        connectionWAId: props.connectionWAId,
-        contactWAOnAccountId: props.contactsWAOnAccountId,
-        inboxDepartmentId: props.data.id,
-        goBackFlowStateId: props.flowStateId,
-        accountId: props.accountId,
-        // atualizar o index do node quando a saida for OK no controlador
+    const { id, createAt, ContactsWAOnAccount, ...t } =
+      await prisma.tickets.create({
+        data: {
+          protocol: uniqueProtocol,
+          destination: "department",
+          connectionWAId: props.connectionWAId,
+          contactWAOnAccountId: props.contactsWAOnAccountId,
+          inboxDepartmentId: props.data.id,
+          goBackFlowStateId: props.flowStateId,
+          accountId: props.accountId,
+          // atualizar o index do node quando a saida for OK no controlador
+        },
+        select: {
+          id: true,
+          createAt: true,
+          ContactsWAOnAccount: { select: { name: true } },
+          ConnectionWA: { select: { name: true } },
+          InboxDepartment: { select: { name: true } },
+        },
+      });
+
+    const orders = await prisma.orders.findMany({
+      where: {
+        deleted: false,
+        contactsWAOnAccountId: props.contactsWAOnAccountId,
       },
-      select: {
-        id: true,
-        createAt: true,
-        ContactsWAOnAccount: { select: { name: true } },
-      },
+      select: { id: true, connectionWAId: true, status: true },
     });
 
-    cacheAccountSocket.get(props.accountId)?.listSocket?.forEach((sockId) => {
-      socketIo.to(sockId).emit(`inbox`, {
-        accountId: props.accountId,
-        departmentId: props.data.id,
-        departmentName: department.name,
-        status: "NEW",
-        notifyMsc: true,
-        notifyToast: true,
+    orders.forEach((order) => {
+      if (!order.connectionWAId) return;
+      const ticket = {
+        connection: {
+          s: !!cacheConnectionsWAOnline.get(order.connectionWAId),
+          id: props.connectionWAId,
+          name: t.ConnectionWA.name,
+        },
         id,
-      } as PropsInbox);
+        // lastMessage: "system",
+        departmentName: t.InboxDepartment.name,
+        status: "NEW",
+      };
 
-      socketIo.of(`/business-${department.businessId}/inbox`).emit("list", {
-        status: "NEW",
-        forceOpen: false,
-        departmentId: props.data.id,
-        notifyMsc: true,
-        notifyToast: false,
-        name: ContactsWAOnAccount.name,
-        lastInteractionDate: createAt,
-        id,
-        userId: undefined, // caso seja enviado para um usuário.
-      });
+      cacheAccountSocket
+        .get(props.accountId)
+        ?.listSocket?.forEach(async (sockId) => {
+          socketIo.to(sockId.id).emit(`order:ticket:new`, {
+            accountId: props.accountId,
+            status: order.status,
+            orderId: order.id,
+            ticket,
+          });
+        });
+    });
+
+    // aqui tem um problema, notificar o inbox, mas se o ticket estiver atrelado a um pedido?
+    // qual sera prioridade?
+
+    // >>> que tal, quando abrir novo ticket a notificação será neutra,
+    // tendo o redirect para o modal de chatplayer
+    // enviar informação de pedido caso esse tiket tenha.
+
+    await NotificationApp({
+      accountId: props.accountId,
+      title_txt: `Novo ticket`,
+      title_html: `Novo ticket`,
+      body_txt: `"${ContactsWAOnAccount.name}" está aguardando`,
+      body_html: `"${ContactsWAOnAccount.name}" está aguardando`,
+    });
+
+    socketIo.of(`/business-${department.businessId}/inbox`).emit("list", {
+      status: "NEW",
+      forceOpen: false,
+      departmentId: props.data.id,
+      notifyMsc: true,
+      name: ContactsWAOnAccount.name,
+      lastInteractionDate: createAt,
+      id,
+      userId: undefined, // caso seja enviado para um usuário.
     });
 
     return "OK";

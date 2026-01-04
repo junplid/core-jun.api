@@ -5,6 +5,8 @@ import { socketIo } from "../../../infra/express";
 import { cacheAccountSocket } from "../../../infra/websocket/cache";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { resolveMoney } from "../utils/ResolveMoney";
+import { cacheConnectionsWAOnline } from "../../../adapters/Baileys/Cache";
+import { NotificationApp } from "../../../utils/notificationApp";
 
 interface PropsCreateOrder {
   numberLead: string;
@@ -132,8 +134,6 @@ export const NodeCreateOrder = async (
     const GAP = 640;
     const newRank = last ? last.rank.plus(GAP) : GAP;
 
-    console.log("vindo aqui");
-
     const { id, createAt, ContactsWAOnAccount } = await prisma.orders.create({
       data: {
         accountId: props.accountId,
@@ -157,11 +157,26 @@ export const NodeCreateOrder = async (
         createAt: true,
         Business: { select: { name: true, id: true } },
         ContactsWAOnAccount: {
-          select: { ContactsWA: { select: { completeNumber: true } } },
+          select: {
+            ContactsWA: { select: { completeNumber: true } },
+            Tickets: {
+              where: { status: { notIn: ["DELETED", "RESOLVED"] } },
+              select: {
+                ConnectionWA: { select: { name: true, id: true } },
+                id: true,
+                InboxDepartment: { select: { name: true } },
+                status: true,
+                Messages: {
+                  take: 1,
+                  orderBy: { id: "desc" },
+                  select: { by: true },
+                },
+              },
+            },
+          },
         },
       },
     });
-    console.log("vindo aqui");
 
     if (varId_save_nOrder) {
       const exist = await prisma.variable.findFirst({
@@ -198,35 +213,56 @@ export const NodeCreateOrder = async (
       }
     }
 
-    cacheAccountSocket.get(props.accountId)?.listSocket?.forEach((sockId) => {
-      // if (notify) {
-      //   socketIo.to(sockId).emit(`notify-order`, {
-      //     id,
-      //     accountId: props.accountId,
-      //     title: "Novo pedido.",
-      //     action: "new",
-      //   });
-      // }
-      socketIo.to(sockId).emit(`order:new`, {
+    if (notify) {
+      await NotificationApp({
         accountId: props.accountId,
-        order: {
-          id,
-          name: restData.name,
-          n_order,
-          createAt,
-          status: restData.status || "pending",
-          data: restData.data,
-          contact: ContactsWAOnAccount?.ContactsWA.completeNumber,
-          payment_method: restData.payment_method,
-          priority: restData.priority || "low",
-          delivery_address: restData.delivery_address,
-          total: restData.total,
-          actionChannels: actionChannels.map((s) => s.text),
-          sequence: newRank,
-          isDragDisabled: restData.isDragDisabled,
-        },
+        title_txt: `Novo pedido`,
+        title_html: `Novo pedido`,
+        body_txt: `${restData.name} - #${n_order}`,
+        body_html: `${restData.name} - #${n_order}`,
+        url_redirect: "/auth/orders",
       });
-    });
+    }
+
+    cacheAccountSocket
+      .get(props.accountId)
+      ?.listSocket?.forEach(async (sockId) => {
+        socketIo.to(sockId.id).emit(`order:new`, {
+          accountId: props.accountId,
+          order: {
+            id,
+            name: restData.name,
+            n_order,
+            businessId: restData.businessId,
+            description: restData.description,
+            origin: restData.origin,
+            createAt,
+            delivery_address: restData.delivery_address,
+            payment_method: restData.payment_method,
+            actionChannels: actionChannels.map((s) => s.text),
+            contact: ContactsWAOnAccount?.ContactsWA.completeNumber,
+            status: restData.status || "pending",
+            priority: restData.priority || "low",
+            data: restData.data,
+            total: restData.total,
+            sequence: newRank,
+            isDragDisabled: restData.isDragDisabled,
+            ticket:
+              ContactsWAOnAccount?.Tickets.map((tk) => {
+                const isConnected = !!cacheConnectionsWAOnline.get(
+                  tk.ConnectionWA.id
+                );
+                return {
+                  connection: { ...tk.ConnectionWA, s: isConnected },
+                  id: tk.id,
+                  // lastMessage: tk.Messages[0].by,
+                  departmentName: tk.InboxDepartment.name,
+                  status: tk.status,
+                };
+              }) || [],
+          },
+        });
+      });
 
     return;
   } catch (error) {

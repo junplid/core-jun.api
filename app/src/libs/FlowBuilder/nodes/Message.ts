@@ -5,6 +5,7 @@ import { TypingDelay } from "../../../adapters/Baileys/modules/typing";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { prisma } from "../../../adapters/Prisma/client";
 import { NodeAddVariables } from "./AddVariables";
+import { NotificationApp } from "../../../utils/notificationApp";
 
 interface PropsNodeMessage {
   numberLead: string;
@@ -22,7 +23,14 @@ interface PropsNodeMessage {
 
 export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
   return new Promise(async (res, rej) => {
-    console.log(props.data);
+    console.log("1");
+    await NotificationApp({
+      accountId: props.accountId,
+      body_txt: "Teste de notificação",
+      title_txt: "Notificação",
+    });
+    console.log("2");
+
     if (!props.data.messages?.length) return res();
 
     for await (const message of props.data.messages) {
@@ -39,7 +47,6 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
       }
 
       try {
-        console.log("1");
         const nextText = await resolveTextVariables({
           accountId: props.accountId,
           contactsWAOnAccountId: props.contactsWAOnAccountId,
@@ -48,14 +55,12 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
           numberLead: props.numberLead,
           nodeId: props.nodeId,
         });
-        console.log("2", { nextText });
         const msg = await SendMessageText({
           connectionId: props.connectionWhatsId,
           text: nextText,
           toNumber: props.numberLead,
         });
         if (!msg) return rej("Error ao enviar mensagem");
-        console.log("3");
         await prisma.messages.create({
           data: {
             by: "bot",
@@ -65,7 +70,6 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
             flowStateId: props.flowStateId,
           },
         });
-        console.log("4");
         if (message.varId && msg.key.id) {
           await NodeAddVariables({
             data: { list: [{ id: message.varId, value: msg.key.id }] },
@@ -76,10 +80,8 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
             numberLead: props.numberLead,
           });
         }
-        console.log("5");
       } catch (error) {
         props.action.onErrorClient?.();
-        console.log("error para enviar a mensagem", error);
         rej("Error ao enviar mensagem");
       }
     }

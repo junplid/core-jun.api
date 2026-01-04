@@ -5,6 +5,7 @@ export interface ResolveTicketParamsDTO_I {
 export interface ResolveTicketBodyDTO_I {
   accountId?: number;
   userId?: number;
+  orderId?: number;
 }
 
 export type ResolveTicketDTO_I = ResolveTicketParamsDTO_I &

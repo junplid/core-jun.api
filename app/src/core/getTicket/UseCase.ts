@@ -34,6 +34,32 @@ export class GetTicketUseCase {
           },
         },
         inboxUserId: true,
+        GoBackFlowState: {
+          select: {
+            Messages: {
+              orderBy: { createAt: "asc" },
+              select: {
+                type: true,
+                address: true,
+                by: true,
+                caption: true,
+                createAt: true,
+                fileName: true,
+                fullName: true,
+                latitude: true,
+                inboxUserId: true,
+                message: true,
+                fileNameOriginal: true,
+                longitude: true,
+                name: true,
+                number: true,
+                org: true,
+                ptt: true,
+                id: true,
+              },
+            },
+          },
+        },
         Messages: {
           orderBy: { createAt: "asc" },
           select: {
@@ -68,7 +94,15 @@ export class GetTicketUseCase {
       data: { read: true },
     });
 
-    const { ContactsWAOnAccount, Messages, InboxDepartment, ...rest } = data;
+    const {
+      ContactsWAOnAccount,
+      Messages,
+      GoBackFlowState,
+      InboxDepartment,
+      ...rest
+    } = data;
+
+    const listMessages = [...(GoBackFlowState?.Messages || []), ...Messages];
 
     return {
       message: "OK!",
@@ -77,7 +111,7 @@ export class GetTicketUseCase {
         ...rest,
         inboxDepartmentId: InboxDepartment.id,
         businessId: InboxDepartment.businessId,
-        messages: Messages.map((msg) => {
+        messages: listMessages.map((msg) => {
           if (msg.type === "text") {
             return {
               content: {

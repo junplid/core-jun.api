@@ -46,6 +46,7 @@ import { TypeStatusCampaign } from "@prisma/client";
 import NodeCache from "node-cache";
 import { ulid } from "ulid";
 import { mongo } from "../mongo/connection";
+import { NotificationApp } from "../../utils/notificationApp";
 
 function CalculeTypingDelay(text: string, ms = 150) {
   const delay = text.split(" ").length * (ms / 1000);
@@ -192,7 +193,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
           cacheAccountSocket
             .get(props.accountId)
             ?.listSocket?.forEach((sockId) =>
-              socketIo.to(sockId).emit(`status-connection`, {
+              socketIo.to(sockId.id).emit(`status-connection`, {
                 connectionId: props.connectionWhatsId,
                 connection: status,
               })
@@ -394,7 +395,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                 code.splice(4, 0, "-");
                 socketIds.forEach((socketId) => {
                   socketIo
-                    .to(socketId)
+                    .to(socketId.id)
                     .emit(
                       `pairing-code-${props.connectionWhatsId}`,
                       code.join("").split("-")
@@ -403,7 +404,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               } else {
                 socketIds.forEach((socketId) => {
                   socketIo
-                    .to(socketId)
+                    .to(socketId.id)
                     .emit(`qr-code-${props.connectionWhatsId}`, qr);
                 });
               }
@@ -895,6 +896,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
             await mongo();
 
             const identifierLead = body.messages[0].key.remoteJid;
+            const keyMapLeadAwaiting = `${props.connectionWhatsId}+${identifierLead}`;
 
             if (!identifierLead) {
               console.log("Deu erro para recuperar número do lead");
@@ -966,7 +968,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
             }
 
             // Verifica se o lead está aguardando processamento
-            if (leadAwaiting.get(identifierLead)) return;
+            if (leadAwaiting.get(keyMapLeadAwaiting)) return;
 
             const messageAudio = body.messages[0].message?.audioMessage;
             const messageImage = body.messages[0].message?.imageMessage;
@@ -996,6 +998,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                 id: true,
                 inboxUserId: true,
                 status: true,
+                ContactsWAOnAccount: { select: { name: true } },
               },
             });
             if (ticket) {
@@ -1023,7 +1026,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     pathStatic + `/${fileName}`,
                     new Uint8Array(buffer)
                   );
-                  leadAwaiting.set(identifierLead, false);
+                  leadAwaiting.set(keyMapLeadAwaiting, false);
                 } catch (error) {
                   const hash = ulid();
                   cacheRootSocket.forEach((sockId) =>
@@ -1289,75 +1292,74 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                 `/business-${ticket.InboxDepartment.businessId}/inbox`
               );
 
-              cacheAccountSocket
-                .get(ticket.accountId)
-                ?.listSocket?.forEach((sockId) => {
-                  socketIo.to(sockId).emit(`inbox`, {
-                    accountId: ticket.accountId,
-                    departmentId: ticket.InboxDepartment.id,
-                    departmentName: ticket.InboxDepartment.name,
-                    status: "MESSAGE",
-                    notifyMsc: true,
-                    notifyToast: true,
-                    id: ticket.id,
-                  });
-                  inboxSpace.emit("message-list", {
-                    content: {
-                      id: msg.id,
-                      ...(messageText && { type: "text", text: messageText }),
-                      ...(messageAudio && { type: "audio" }),
-                      ...(messageImage && { type: "image" }),
-                      ...((doc || docWithCaption) && { type: "file" }),
-                    },
-                    by: "contact",
-                    departmentId: ticket.InboxDepartment.id,
-                    notifyMsc: !isCurrentTicket,
-                    notifyToast: false,
-                    ticketId: ticket.id,
-                    userId: ticket.inboxUserId, // caso seja enviado para um usuário.
-                    lastInteractionDate: msg.createAt,
-                    read: isCurrentTicket,
-                  });
-                  inboxSpace.emit("message", {
-                    content: {
-                      id: msg.id,
-                      ...(messageText && { type: "text", text: messageText }),
-                      ...(messageAudio && {
-                        type: "audio",
-                        fileName,
-                        ptt: messageAudio.ptt,
-                      }),
-                      ...(messageImage && {
-                        type: "image",
-                        fileName,
-                        ...(messageImage.caption && {
-                          caption: messageImage?.caption,
-                        }),
-                      }),
-                      ...(doc && {
-                        type: "file",
-                        fileName: fileName,
-                        fileNameOriginal,
-                        ...(doc.caption && { caption: doc.caption }),
-                      }),
-                      ...(docWithCaption && {
-                        type: "file",
-                        fileName: fileName,
-                        fileNameOriginal,
-                        ...(docWithCaption.caption && {
-                          caption: docWithCaption.caption,
-                        }),
-                      }),
-                    },
-                    by: "contact",
-                    departmentId: ticket.InboxDepartment.id,
-                    notifyMsc: !isCurrentTicket,
-                    notifyToast: false,
-                    ticketId: ticket.id,
-                    userId: ticket.inboxUserId, // caso seja enviado para um usuário.
-                    lastInteractionDate: msg.createAt,
-                  });
-                });
+              await NotificationApp({
+                accountId: props.accountId,
+                title_txt: `${ticket.ContactsWAOnAccount.name}`,
+                title_html: `${ticket.ContactsWAOnAccount.name}`,
+                body_txt: !messageText
+                  ? `🎤📷 arquivo de mídia`
+                  : messageText.slice(0, 24),
+                body_html: !messageText
+                  ? `🎤📷 arquivo de mídia`
+                  : messageText.slice(0, 24),
+              });
+
+              inboxSpace.emit("message-list", {
+                content: {
+                  id: msg.id,
+                  ...(messageText && { type: "text", text: messageText }),
+                  ...(messageAudio && { type: "audio" }),
+                  ...(messageImage && { type: "image" }),
+                  ...((doc || docWithCaption) && { type: "file" }),
+                },
+                by: "contact",
+                departmentId: ticket.InboxDepartment.id,
+                notifyMsc: !isCurrentTicket, // quem controla a notificação é a função NotificationApp
+                ticketId: ticket.id,
+                userId: ticket.inboxUserId, // caso seja enviado para um usuário.
+                lastInteractionDate: msg.createAt,
+                read: isCurrentTicket,
+              });
+
+              // modifica o chat
+              inboxSpace.emit("message", {
+                content: {
+                  id: msg.id,
+                  ...(messageText && { type: "text", text: messageText }),
+                  ...(messageAudio && {
+                    type: "audio",
+                    fileName,
+                    ptt: messageAudio.ptt,
+                  }),
+                  ...(messageImage && {
+                    type: "image",
+                    fileName,
+                    ...(messageImage.caption && {
+                      caption: messageImage?.caption,
+                    }),
+                  }),
+                  ...(doc && {
+                    type: "file",
+                    fileName: fileName,
+                    fileNameOriginal,
+                    ...(doc.caption && { caption: doc.caption }),
+                  }),
+                  ...(docWithCaption && {
+                    type: "file",
+                    fileName: fileName,
+                    fileNameOriginal,
+                    ...(docWithCaption.caption && {
+                      caption: docWithCaption.caption,
+                    }),
+                  }),
+                },
+                by: "contact",
+                departmentId: ticket.InboxDepartment.id,
+                notifyMsc: !isCurrentTicket, // quem controla a notificação é a função NotificationApp
+                ticketId: ticket.id,
+                userId: ticket.inboxUserId, // caso seja enviado para um usuário.
+                lastInteractionDate: msg.createAt,
+              });
 
               //   businessSpace.emit("synchronize-message", {
               //     ticketId: ticket.id,
@@ -1398,7 +1400,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               //     },
               //   } as PropsSynchronizeTicketMessageHumanService);
 
-              //   leadAwaiting.set(numberLead, false);
+              //   leadAwaiting.set(keyMapLeadAwaiting, false);
               return;
             }
 
@@ -1429,6 +1431,44 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
             });
 
             if (chatbot) {
+              let currentIndexNodeLead = await prisma.flowState.findFirst({
+                where: {
+                  connectionWAId: props.connectionWhatsId,
+                  contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                  isFinish: false,
+                },
+                select: {
+                  indexNode: true,
+                  id: true,
+                  previous_response_id: true,
+                },
+              });
+              if (!currentIndexNodeLead) {
+                currentIndexNodeLead = await prisma.flowState.create({
+                  data: {
+                    connectionWAId: props.connectionWhatsId,
+                    contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                    indexNode: "0",
+                    flowId: chatbot.flowId,
+                    chatbotId: chatbot.id,
+                  },
+                  select: {
+                    indexNode: true,
+                    id: true,
+                    previous_response_id: true,
+                  },
+                });
+              }
+
+              await prisma.messages.create({
+                data: {
+                  by: "contact",
+                  message: messageText ?? "<Enviou mídia>",
+                  type: "text",
+                  messageKey: body.messages[0].key.id,
+                  flowStateId: currentIndexNodeLead.id,
+                },
+              });
               const isToRestartChatbot = chatbotRestartInDate.get(
                 `${numberConnection}+${identifierLead}`
               );
@@ -1624,34 +1664,6 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     return console.log(`Flow não encontrado.`);
                   }
 
-                  let currentIndexNodeLead = await prisma.flowState.findFirst({
-                    where: {
-                      connectionWAId: props.connectionWhatsId,
-                      contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                      isFinish: false,
-                    },
-                    select: {
-                      indexNode: true,
-                      id: true,
-                      previous_response_id: true,
-                    },
-                  });
-                  if (!currentIndexNodeLead) {
-                    currentIndexNodeLead = await prisma.flowState.create({
-                      data: {
-                        connectionWAId: props.connectionWhatsId,
-                        contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                        indexNode: "0",
-                        flowId: chatbot.flowId,
-                        chatbotId: chatbot.id,
-                      },
-                      select: {
-                        indexNode: true,
-                        id: true,
-                        previous_response_id: true,
-                      },
-                    });
-                  }
                   const businessInfo = await prisma.connectionWA.findFirst({
                     where: { id: props.connectionWhatsId },
                     select: { Business: { select: { name: true } } },
@@ -1694,7 +1706,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                         pathStatic + `/${fileName}`,
                         new Uint8Array(buffer)
                       );
-                      leadAwaiting.set(identifierLead, false);
+                      leadAwaiting.set(keyMapLeadAwaiting, false);
                     } catch (error) {
                       const hash = ulid();
                       cacheRootSocket.forEach((sockId) =>
@@ -1834,7 +1846,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       },
                     },
                   }).finally(() => {
-                    leadAwaiting.set(identifierLead, false);
+                    leadAwaiting.set(keyMapLeadAwaiting, false);
                   });
                 };
 
@@ -2088,7 +2100,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                 return console.log("FlowState not found for lead");
               }
 
-              leadAwaiting.set(identifierLead, true);
+              leadAwaiting.set(keyMapLeadAwaiting, true);
               const { id, flowId } = flowState;
 
               let currentFlow = {} as {
@@ -2275,7 +2287,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       cacheAccountSocket
                         .get(props.accountId)
                         ?.listSocket.forEach((socketId) => {
-                          socketIo.to(socketId).emit("status-campaign", {
+                          socketIo.to(socketId.id).emit("status-campaign", {
                             campaignId: id,
                             status: "finished" as TypeStatusCampaign,
                           });
@@ -2349,7 +2361,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   },
                 },
               }).finally(() => {
-                leadAwaiting.set(identifierLead, false);
+                leadAwaiting.set(keyMapLeadAwaiting, false);
               });
             }
             return;

@@ -53,6 +53,8 @@ import { createMenuOnlineSizePizzaController } from "../../../../../core/createM
 import { createCampaignValidation } from "../../../../../core/createCampaign/Validation";
 import { createCampaignController } from "../../../../../core/createCampaign";
 import { createMenuOnlineOrderValidation } from "../../../../../core/createMenuOnlineOrder/Validation";
+import { createPushTokenValidation } from "../../../../../core/createPushToken/Validation";
+import { createPushTokenController } from "../../../../../core/createPushToken";
 
 const RouterV1Private_Post = Router();
 
@@ -231,6 +233,12 @@ RouterV1Private_Post.post(
   "/menus-online/:uuid/sizes-pizza",
   createMenuOnlineSizePizzaValidation,
   createMenuOnlineSizePizzaController
+);
+
+RouterV1Private_Post.post(
+  "/push-token",
+  createPushTokenValidation,
+  createPushTokenController
 );
 
 export default RouterV1Private_Post;

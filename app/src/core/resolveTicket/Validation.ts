@@ -10,6 +10,7 @@ export const resolveTicketValidation = (
   const schemaValidation = Joi.object({
     accountId: Joi.number().optional(),
     userId: Joi.number().optional(),
+    orderId: Joi.number().optional(),
     id: Joi.number().required(),
   }).or("accountId", "userId");
 

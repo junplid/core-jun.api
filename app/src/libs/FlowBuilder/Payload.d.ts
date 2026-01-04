@@ -179,13 +179,13 @@ export type NodeChargeData = {
   paymentIntegrationId: number;
   total: number;
   currency?: string;
-  businessId?: number; //
-  method_type: TypeMethodCharge; //
-  varId_email?: number; //
-  content?: string; //
-  varId_save_transactionId?: number; //
-  varId_save_qrCode?: number; //
-  varId_save_linkPayment?: number; //
+  businessId?: number;
+  method_type: TypeMethodCharge;
+  varId_email?: number;
+  content?: string;
+  varId_save_transactionId?: number;
+  varId_save_qrCode?: number;
+  varId_save_linkPayment?: number;
 };
 
 export type NodeRandomCodeData = {
@@ -240,6 +240,7 @@ export type NodeUpdateOrderData = {
   actionChannels: { key: string; text: string }[];
   notify?: boolean;
   fields?: string[];
+  isDragDisabled?: boolean;
 };
 
 export type NodeGetOrdersData = {

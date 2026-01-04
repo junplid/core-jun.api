@@ -8,6 +8,8 @@ import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { NodeControler } from "../../libs/FlowBuilder/Control";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
 import { mongo } from "../../adapters/mongo/connection";
+import { NotificationApp } from "../../utils/notificationApp";
+import { formatToBRL } from "brazilian-values";
 
 export const webhookMercadopago = async (req: Request, res: Response) => {
   try {
@@ -79,6 +81,7 @@ export const webhookMercadopago = async (req: Request, res: Response) => {
             flowNodeId: true, // continuar daqui no canal de status
             flowStateId: true,
             PaymentIntegration: { select: { access_token: true } },
+            total: true,
           },
         });
 
@@ -196,6 +199,17 @@ export const webhookMercadopago = async (req: Request, res: Response) => {
             return e.source === getCharge.flowNodeId;
           }
         });
+
+        if (nextNode.sourceHandle.includes("approved")) {
+          await NotificationApp({
+            accountId: getCharge.accountId,
+            title_txt: `Venda confirmada`,
+            title_html: `Venda confirmada`,
+            body_txt: `Valor: ${formatToBRL(getCharge.total.toNumber())}`,
+            body_html: `Valor: ${formatToBRL(getCharge.total.toNumber())}`,
+          });
+        }
+
         console.log("18");
         if (!nextNode) return;
         console.log("19");

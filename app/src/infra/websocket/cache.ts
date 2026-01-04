@@ -1,7 +1,11 @@
 interface CacheStateUserSocket {
   // accountId: number;
-  listSocket: string[];
-  isMobile?: boolean;
+  listSocket: {
+    id: string;
+    platform: "android" | "ios" | "desktop";
+    isMobile: boolean;
+    isPWA: boolean;
+  }[];
   linkedPages?: string[];
   currentTicket?: number | null;
 }
@@ -9,6 +13,5 @@ interface CacheStateUserSocket {
 export const cacheAccountSocket: Map<number, CacheStateUserSocket> = new Map();
 export const cacheRootSocket: string[] = [];
 
-export const cacheSocketAccount: Map<number, string> = new Map();
 export const cacheSocketHumanServiceUsers: Map<string, number> = new Map();
 // export const cacheStateUserSocket: Map<number, CacheStateUserSocket> = new Map();

@@ -58,10 +58,10 @@ export const WebSocketIo = (io: Server) => {
       const stateUser = cacheAccountSocket.get(auth.accountId);
       if (!stateUser) {
         cacheAccountSocket.set(auth.accountId, {
-          listSocket: [socket.id],
+          listSocket: [{ id: socket.id, ...auth.clientMeta }],
         });
       } else {
-        stateUser.listSocket.push(socket.id);
+        stateUser.listSocket.push({ id: socket.id, ...auth.clientMeta });
       }
     }
     if (auth.rootId) {
@@ -188,7 +188,7 @@ export const WebSocketIo = (io: Server) => {
       const stateUser = cacheAccountSocket.get(auth.accountId);
       if (stateUser) {
         stateUser.listSocket = stateUser.listSocket.filter(
-          (ids) => ids !== socket.id
+          (ids) => ids.id !== socket.id
         );
         if (stateUser.listSocket.length === 0) {
           cacheAccountSocket.delete(auth.accountId);
@@ -208,8 +208,8 @@ export const WebSocketIo = (io: Server) => {
         cacheAccountSocket
           .get(auth.accountId)
           ?.listSocket?.forEach((sockId) => {
-            if (sockId !== socket.id) {
-              socket.to(sockId).emit(`order:update-rank`, {
+            if (sockId.id !== socket.id) {
+              socket.to(sockId.id).emit(`order:update-rank`, {
                 ...props,
                 accountId: auth.accountId,
               });
@@ -238,8 +238,8 @@ export const WebSocketIo = (io: Server) => {
         cacheAccountSocket
           .get(auth.accountId)
           ?.listSocket?.forEach((sockId) => {
-            if (sockId !== socket.id) {
-              socket.to(sockId).emit(`order:update-status`, {
+            if (sockId.id !== socket.id) {
+              socket.to(sockId.id).emit(`order:update-status`, {
                 ...props,
                 accountId: auth.accountId,
               });
@@ -446,7 +446,7 @@ export const WebSocketIo = (io: Server) => {
                 const indexCurrentAlreadyExist =
                   await prisma.flowState.findFirst({
                     where: {
-                      connectionWAId: flowState.connectionWAId,
+                      connectionWAId: order.connectionWAId,
                       contactsWAOnAccountId: order.ContactsWAOnAccount?.id,
                     },
                     select: { id: true },
@@ -474,7 +474,9 @@ export const WebSocketIo = (io: Server) => {
             },
           }).finally(() => {
             leadAwaiting.set(
-              order.ContactsWAOnAccount!.ContactsWA.completeNumber,
+              `${order.connectionWAId}+${
+                order.ContactsWAOnAccount!.ContactsWA.completeNumber
+              }`,
               false
             );
           });

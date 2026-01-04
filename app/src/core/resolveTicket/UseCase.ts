@@ -2,6 +2,7 @@ import { sessionsBaileysWA } from "../../adapters/Baileys";
 import {
   cacheConnectionsWAOnline,
   cacheFlowsMap,
+  leadAwaiting,
 } from "../../adapters/Baileys/Cache";
 import { mongo } from "../../adapters/mongo/connection";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
@@ -61,31 +62,51 @@ export class ResolveTicketUseCase {
         });
 
       if (dto.accountId) {
-        cacheAccountSocket.get(dto.accountId)?.listSocket?.forEach((sockId) => {
-          socketIo.to(sockId).emit(`inbox`, {
-            accountId: dto.accountId,
-            departmentId: InboxDepartment.id,
-            departmentName: InboxDepartment.name,
-            status: "RESOLVED",
-            notifyMsc: false,
-            notifyToast: false,
-            id: dto.id,
-          });
-
-          socketIo
-            .of(`/business-${InboxDepartment.businessId}/inbox`)
-            .emit("list", {
-              status: "RESOLVED",
-              forceOpen: false,
+        cacheAccountSocket
+          .get(dto.accountId)
+          ?.listSocket?.forEach(async (sockId) => {
+            socketIo.to(sockId).emit(`inbox`, {
+              accountId: dto.accountId,
               departmentId: InboxDepartment.id,
+              departmentName: InboxDepartment.name,
+              status: "RESOLVED",
               notifyMsc: false,
               notifyToast: false,
-              name: ContactsWAOnAccount.name,
-              lastInteractionDate: updateAt,
               id: dto.id,
-              userId: undefined, // caso seja enviado para um usuário.
             });
-        });
+
+            socketIo
+              .of(`/business-${InboxDepartment.businessId}/inbox`)
+              .emit("list", {
+                status: "RESOLVED",
+                forceOpen: false,
+                departmentId: InboxDepartment.id,
+                notifyMsc: false,
+                notifyToast: false,
+                name: ContactsWAOnAccount.name,
+                lastInteractionDate: updateAt,
+                id: dto.id,
+                userId: undefined, // caso seja enviado para um usuário.
+              });
+
+            if (dto.orderId) {
+              const order = await prisma.orders.findFirst({
+                where: {
+                  id: dto.orderId,
+                  accountId: dto.accountId,
+                },
+                select: { status: true },
+              });
+              if (order?.status) {
+                socketIo.to(sockId).emit(`order:ticket:remove`, {
+                  accountId: dto.accountId,
+                  status: order.status,
+                  ticketId: dto.id,
+                  orderId: dto.orderId,
+                });
+              }
+            }
+          });
       }
 
       if (!rest.GoBackFlowState || !rest.GoBackFlowState.flowId) {
@@ -186,7 +207,6 @@ export class ResolveTicketUseCase {
         actions: {
           onFinish: async (vl) => {
             if (rest.GoBackFlowState) {
-              console.log("TA CAINDO AQUI, finalizando fluxo");
               await prisma.flowState.update({
                 where: { id: rest.GoBackFlowState.id },
                 data: { isFinish: true },
@@ -231,6 +251,11 @@ export class ResolveTicketUseCase {
             }
           },
         },
+      }).finally(() => {
+        leadAwaiting.set(
+          `${rest.connectionWAId}+${ContactsWAOnAccount.ContactsWA.completeNumber}`,
+          false
+        );
       });
 
       return { message: "OK!", status: 201 };

@@ -3,6 +3,7 @@ import { prisma } from "../../../adapters/Prisma/client";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { cacheAccountSocket } from "../../../infra/websocket/cache";
 import { socketIo } from "../../../infra/express";
+import { NotificationApp } from "../../../utils/notificationApp";
 
 interface PropsUpdateOrder {
   numberLead: string;
@@ -39,7 +40,7 @@ export const NodeUpdateOrder = async (
     });
     const getOrder = await prisma.orders.findFirst({
       where: { n_order },
-      select: { id: true },
+      select: { id: true, n_order: true },
     });
 
     if (!getOrder) return "not_found";
@@ -128,7 +129,11 @@ export const NodeUpdateOrder = async (
         : [];
     }
 
-    const { updateAt } = await prisma.orders.update({
+    if (fields?.includes("dragDrop")) {
+      restData.isDragDisabled = !!restData.isDragDisabled;
+    }
+
+    const { updateAt, name } = await prisma.orders.update({
       where: { id: getOrder.id },
       data: {
         ...restData,
@@ -140,51 +145,65 @@ export const NodeUpdateOrder = async (
             completedAt: new Date(),
           }),
       },
-      select: { updateAt: true },
+      select: { updateAt: true, name: true },
     });
 
-    cacheAccountSocket.get(props.accountId)?.listSocket?.forEach((sockId) => {
-      if (notify) {
-        socketIo.to(sockId).emit(`notify-order`, {
-          id: getOrder.id,
+    cacheAccountSocket
+      .get(props.accountId)
+      ?.listSocket?.forEach(async (sockId) => {
+        if (notify) {
+          socketIo.to(sockId).emit(`notify-order`, {
+            id: getOrder.id,
+            accountId: props.accountId,
+            title: `Pedido #${getOrder.n_order} atualizado.`,
+            action: "update",
+          });
+
+          await NotificationApp({
+            accountId: props.accountId,
+            title_txt: "Pedido atualizado",
+            title_html: "Pedido atualizado",
+            body_txt: `#${getOrder.n_order} - ${name}`,
+            body_html: `#${getOrder.n_order} - ${name}`,
+            url_redirect: "/auth/orders",
+          });
+        }
+
+        socketIo.to(sockId).emit(`order`, {
           accountId: props.accountId,
-          title: "Pedido atualizado.",
           action: "update",
+          order: {
+            id: getOrder.id,
+            ...(fields?.includes("name") && {
+              name: restData.name,
+            }),
+            ...(fields?.includes("status") && {
+              status: restData.status,
+            }),
+            ...(fields?.includes("data") && {
+              data: restData.data,
+            }),
+            ...(fields?.includes("payment_method") && {
+              payment_method: restData.payment_method,
+            }),
+            ...(fields?.includes("priority") && {
+              priority: restData.priority,
+            }),
+            ...(fields?.includes("delivery_address") && {
+              delivery_address: restData.delivery_address,
+            }),
+            ...(fields?.includes("total") && {
+              total: restData.total,
+            }),
+            ...(fields?.includes("actionChannels") && {
+              actionChannels: restData.actionChannels.map((s) => s.text),
+            }),
+            ...(fields?.includes("dragDrop") && {
+              isDragDisabled: !!restData.isDragDisabled,
+            }),
+          },
         });
-      }
-
-      socketIo.to(sockId).emit(`order`, {
-        accountId: props.accountId,
-        action: "update",
-        order: {
-          id: getOrder.id,
-          ...(fields?.includes("status") && {
-            status: restData.status,
-          }),
-          ...(fields?.includes("name") && {
-            name: restData.name,
-          }),
-          ...(fields?.includes("data") && {
-            data: restData.data,
-          }),
-          ...(fields?.includes("payment_method") && {
-            payment_method: restData.payment_method,
-          }),
-          ...(fields?.includes("priority") && {
-            priority: restData.priority,
-          }),
-          ...(fields?.includes("delivery_address") && {
-            delivery_address: restData.delivery_address,
-          }),
-          ...(fields?.includes("total") && {
-            total: restData.total,
-          }),
-          ...(fields?.includes("actionChannels") && {
-            actionChannels: restData.actionChannels.map((s) => s.text),
-          }),
-        },
       });
-    });
 
     return "ok";
   } catch (error) {

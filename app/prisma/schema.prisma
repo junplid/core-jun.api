@@ -150,6 +150,8 @@ model Account {
   TrelloIntegration   TrelloIntegration[]
   MenuOnline          MenusOnline[]
   MenusOnlineItems    MenusOnlineItems[]
+  notifications       Notifications[]
+  pushTokens          PushTokens[]
 
   @@index([id, email, hash, status, available, isUsedFreeTrialTime])
 }
@@ -2117,4 +2119,45 @@ model MenusOnlineItems {
   Account Account?    @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([uuid, menuId, accountId])
+}
+
+enum TypeChannelsNotification {
+  websocket
+  push
+  email
+  wa
+}
+
+enum TypeStatusChannelsNotification {
+  unread
+  read
+}
+
+model Notifications {
+  id             Int                            @id @default(autoincrement())
+  type           String?
+  title_txt      String // mostrado no push
+  body_txt       String
+  title_html     String? // mostrado no toast
+  body_html      String?
+  channels       TypeChannelsNotification[]
+  toast_position String?
+  toast_duration Int?
+  status         TypeStatusChannelsNotification @default(unread)
+  url_redirect   String?
+  readAt         DateTime?
+  createAt       DateTime                       @default(now())
+  updateAt       DateTime                       @default(now())
+  accountId      Int? // caso não tenha o account, significa que todos serão notificados.
+  Account        Account?                       @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model PushTokens {
+  id         Int      @id @default(autoincrement())
+  token      String   @unique
+  platform   String
+  lastUsedAt DateTime @default(now())
+  createAt   DateTime @default(now())
+  accountId  Int
+  Account    Account  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
