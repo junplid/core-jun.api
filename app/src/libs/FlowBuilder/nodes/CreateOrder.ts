@@ -219,7 +219,7 @@ export const NodeCreateOrder = async (
         title_txt: `Novo pedido`,
         title_html: `Novo pedido`,
         body_txt: `${restData.name} - #${n_order}`,
-        body_html: `${restData.name} - #${n_order}`,
+        body_html: `<span className="font-medium text-sm line-clamp-1">Novo pedido</span><span className="text-xs font-light">${restData.name} - #${n_order}</span>`,
         url_redirect: "/auth/orders",
         onFilterSocket(sockets) {
           return sockets

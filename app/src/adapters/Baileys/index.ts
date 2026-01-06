@@ -1299,9 +1299,11 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                 body_txt: !messageText
                   ? `🎤📷 arquivo de mídia`
                   : messageText.slice(0, 24),
-                body_html: !messageText
-                  ? `🎤📷 arquivo de mídia`
-                  : messageText.slice(0, 24),
+
+                body_html: `<span className="font-medium text-sm line-clamp-1">
+${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
+</span> 
+<span className="text-xs font-light">${ticket.ContactsWAOnAccount.name}</span>`,
                 url_redirect: `$self/?open_ticket=${ticket.id}&bId=${ticket.InboxDepartment.businessId}&name=${ticket.ContactsWAOnAccount.name}`,
                 onFilterSocket(sockets) {
                   return sockets

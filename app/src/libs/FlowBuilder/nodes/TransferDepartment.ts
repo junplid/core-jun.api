@@ -111,7 +111,12 @@ export const NodeTransferDepartment = async (
       title_txt: `Novo ticket`,
       title_html: `Novo ticket`,
       body_txt: `"${ContactsWAOnAccount.name}" está aguardando`,
-      body_html: `"${ContactsWAOnAccount.name}" está aguardando`,
+      body_html: `<span className="font-medium text-sm line-clamp-1">Novo ticket</span>
+<span className="text-xs font-light">
+  ${ContactsWAOnAccount.name} está
+  <span className="text-orange-300 font-medium"> aguardando</span>
+  ...
+</span>`,
       url_redirect: `$self/?open_ticket=${id}&bId=${department.businessId}&name=${ContactsWAOnAccount.name}`,
       onFilterSocket(sockets) {
         return sockets

@@ -153,7 +153,7 @@ export const NodeUpdateOrder = async (
       title_txt: "Pedido atualizado",
       title_html: "Pedido atualizado",
       body_txt: `#${getOrder.n_order} - ${name}`,
-      body_html: `#${getOrder.n_order} - ${name}`,
+      body_html: `<span className="font-medium text-sm line-clamp-1">Pedido atualizado</span><span className="text-xs font-light">#${getOrder.n_order} - ${name}</span>`,
       url_redirect: "/auth/orders",
       onFilterSocket(sockets) {
         return sockets

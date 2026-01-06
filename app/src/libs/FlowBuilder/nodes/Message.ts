@@ -23,13 +23,11 @@ interface PropsNodeMessage {
 
 export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
   return new Promise(async (res, rej) => {
-    console.log("1");
-    await NotificationApp({
-      accountId: props.accountId,
-      body_txt: "Teste de notificação",
-      title_txt: "Notificação",
-    });
-    console.log("2");
+    // await NotificationApp({
+    //   accountId: props.accountId,
+    //   body_txt: "Teste de notificação",
+    //   title_txt: "Notificação",
+    // });
 
     if (!props.data.messages?.length) return res();
 
