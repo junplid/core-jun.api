@@ -63,6 +63,8 @@ jobs:
       - name: Buildar app
         working-directory: ./app
         run: yarn build
+        env:
+          FIREBASE_SERVICE_ACCOUNT_BASE64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BASE64 }}
 
       - name: Preparar chave SSH
         run: |
