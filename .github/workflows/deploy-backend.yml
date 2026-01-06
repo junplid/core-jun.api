@@ -48,6 +48,11 @@ jobs:
           echo "${{ secrets.ENV_MONGO_FILE }}" > .env.mongo
           echo "${{ secrets.ENV_PG_FILE }}"    > .env.pg
 
+      - name: Adicionar Firebase ao .env
+        run: |
+          echo "" >> ./app/.env
+          echo "FIREBASE_SERVICE_ACCOUNT_BASE64=${{ secrets.FIREBASE_SERVICE_ACCOUNT_BASE64 }}" >> ./app/.env
+
       - name: Instalar Yarn
         run: npm install -g yarn
 
