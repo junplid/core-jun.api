@@ -10,6 +10,7 @@ import {
 } from "fs-extra";
 import { resolve } from "path";
 import OpenAI from "openai";
+import "./cronReminders";
 
 interface VectorStoreTest {
   apiKey: string;

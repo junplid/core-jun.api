@@ -6,7 +6,6 @@ import makeWASocket, {
   downloadMediaMessage,
   fetchLatestBaileysVersion,
   useMultiFileAuthState,
-  makeCacheableSignalKeyStore,
 } from "baileys";
 import { writeFileSync } from "fs";
 import {
@@ -38,7 +37,6 @@ import {
   cacheRunningQueueReaction,
 } from "./Cache";
 import { startChatbotQueue } from "../../utils/startChatbotQueue";
-import { validatePhoneNumber } from "../../helpers/validatePhoneNumber";
 import mime from "mime-types";
 import { SendMessageText } from "./modules/sendMessage";
 import { TypingDelay } from "./modules/typing";
@@ -47,6 +45,7 @@ import NodeCache from "node-cache";
 import { ulid } from "ulid";
 import { mongo } from "../mongo/connection";
 import { NotificationApp } from "../../utils/notificationApp";
+import { resolveJid } from "../../utils/resolveJid";
 
 function CalculeTypingDelay(text: string, ms = 150) {
   const delay = text.split(" ").length * (ms / 1000);

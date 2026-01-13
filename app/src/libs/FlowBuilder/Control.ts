@@ -241,7 +241,6 @@ export const NodeControler = ({
       //       return res();
       //     });
       // }
-      console.log(currentNode.type, props.type);
       if (currentNode.type === "NodeInitial") {
         if (props.actions?.onExecutedNode) {
           await props.actions?.onExecutedNode({
@@ -2399,6 +2398,217 @@ export const NodeControler = ({
             ? { message: props.message, type: "running" }
             : { type: "initial" }),
         });
+      }
+      if (currentNode.type === "NodeCreateAppointment") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeCreateAppointment({
+          numberLead: props.lead.number,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          data: currentNode.data,
+          accountId: props.accountId,
+          businessName: props.businessName,
+          connectionWhatsId: props.connectionWhatsId,
+          nodeId: currentNode.id,
+          flowStateId: props.flowStateId,
+          flowId: props.flowId,
+          ...(props.type === "running" && {
+            action: props.action || undefined,
+          }),
+        })
+          .then(async (action) => {
+            const nextNode = nextEdgesIds.find(
+              (s) => s.sourceHandle === "main"
+            );
+            if (!nextNode) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              await props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return;
+            }
+
+            if (props.actions?.onExecutedNode) {
+              await props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
+            }
+
+            if (!action) {
+              execute({
+                ...props,
+                ...(props.type === "running"
+                  ? { message: props.message, type: "running" }
+                  : { type: "initial" }),
+                currentNodeId: nextNode.id,
+                oldNodeId: currentNode.id,
+              });
+            } else {
+              execute({
+                ...props,
+                type: "running",
+                message: action,
+                currentNodeId: nextNode.id,
+                oldNodeId: currentNode.id,
+                isSavePositionLead: false,
+              });
+            }
+            return;
+          })
+          .catch((error) => {
+            console.log("ERROR NO Appointment", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+
+      if (currentNode.type === "NodeUpdateAppointment") {
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeUpdateAppointment({
+          numberLead: props.lead.number,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          data: currentNode.data,
+          accountId: props.accountId,
+          businessName: props.businessName,
+          nodeId: currentNode.id,
+          flowStateId: props.flowStateId,
+        })
+          .then(async (action) => {
+            console.log({ action });
+            if (action.n === "not_found") {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              await props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return;
+            }
+            if (action.n === "ok") {
+              if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+                cacheFlowInExecution.delete(keyMap);
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                await props.actions?.onExecutedNode?.({
+                  id: "0",
+                  flowId: props.flowId,
+                });
+                return;
+              }
+              if (props.actions?.onExecutedNode) {
+                await props.actions?.onExecutedNode({
+                  id: currentNode.id,
+                  flowId: props.flowId,
+                });
+              }
+
+              return execute({
+                ...props,
+                ...(props.type === "running"
+                  ? { message: props.message, type: "running" }
+                  : { type: "initial" }),
+                currentNodeId: nextEdgesIds[0].id,
+                oldNodeId: currentNode.id,
+              });
+            }
+
+            if (action.n === "no_transfer" || action.n === "transfer") {
+              const currentNode2 = props.nodes.find(
+                (f) => f.id === action.nodeId
+              );
+
+              if (!currentNode) {
+                cacheFlowInExecution.delete(keyMap);
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                await props.actions?.onExecutedNode?.({
+                  id: "0",
+                  flowId: props.flowId,
+                });
+                return res();
+              }
+              const nextEdgesIds2 = props.edges
+                .filter((f) => currentNode2?.id === f.source)
+                ?.map((nn) => {
+                  const node = props.nodes.find((f) => f.id === nn.target);
+                  return {
+                    id: nn.target,
+                    sourceHandle: nn.sourceHandle,
+                    nodeNextType: node?.type,
+                  };
+                });
+              const nextNode = nextEdgesIds2.find((s) =>
+                s.sourceHandle?.includes(action.status)
+              );
+              if (!nextNode) {
+                if (action.n === "transfer") {
+                  cacheFlowInExecution.delete(keyMap);
+                  if (props.forceFinish) await props.actions?.onFinish?.("110");
+                  await props.actions?.onExecutedNode?.({
+                    id: "0",
+                    flowId: props.flowId,
+                  });
+                }
+                return;
+              }
+              if (props.actions?.onExecutedNode) {
+                await props.actions?.onExecutedNode({
+                  id: currentNode.id,
+                  flowId: props.flowId,
+                });
+              }
+
+              if (action.n === "transfer") {
+                return execute({
+                  ...props,
+                  ...(props.type === "running"
+                    ? { message: props.message, type: "running" }
+                    : { type: "initial" }),
+                  currentNodeId: nextNode.id,
+                  oldNodeId: currentNode.id,
+                });
+              } else {
+                execute({
+                  ...props,
+                  ...(props.type === "running"
+                    ? { message: props.message, type: "running" }
+                    : { type: "initial" }),
+                  currentNodeId: nextNode.id,
+                  oldNodeId: currentNode.id,
+                  isSavePositionLead: false,
+                  actions: undefined,
+                });
+                return execute({
+                  ...props,
+                  ...(props.type === "running"
+                    ? { message: props.message, type: "running" }
+                    : { type: "initial" }),
+                  currentNodeId: nextEdgesIds[0].id,
+                  oldNodeId: currentNode.id,
+                });
+              }
+            }
+            return;
+          })
+          .catch((error) => {
+            console.log("ERROR NO MENSAGEM", error);
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
       }
 
       return res();

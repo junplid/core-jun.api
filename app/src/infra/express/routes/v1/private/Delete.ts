@@ -33,6 +33,8 @@ import { deleteMenuOnlineValidation } from "../../../../../core/deleteMenuOnline
 import { deleteMenuOnlineController } from "../../../../../core/deleteMenuOnline";
 import { deleteMenuOnlineItemValidation } from "../../../../../core/deleteMenuOnlineItem/Validation";
 import { deleteMenuOnlineItemController } from "../../../../../core/deleteMenuOnlineItem";
+import { deleteAppointmentValidation } from "../../../../../core/deleteAppointment/Validation";
+import { deleteAppointmentController } from "../../../../../core/deleteAppointment";
 
 const RouterV1Private_Delete = Router();
 
@@ -136,6 +138,12 @@ RouterV1Private_Delete.delete(
   "/menus-online/item/:uuid",
   deleteMenuOnlineItemValidation,
   deleteMenuOnlineItemController
+);
+
+RouterV1Private_Delete.delete(
+  "/appointments/:id",
+  deleteAppointmentValidation,
+  deleteAppointmentController
 );
 
 export default RouterV1Private_Delete;

@@ -123,6 +123,10 @@ import { getMenuOnlineValidation } from "../../../../../core/getMenuOnline/Valid
 import { getMenuOnlineController } from "../../../../../core/getMenuOnline";
 import { getMenuOnlineItemsValidation } from "../../../../../core/getMenuOnlineItems/Validation";
 import { getMenuOnlineItemsController } from "../../../../../core/getMenuOnlineItems";
+import { getAppointmentsController } from "../../../../../core/getAppointments";
+import { getAppointmentsValidation } from "../../../../../core/getAppointments/Validation";
+import { getAppointmentDetailsValidation } from "../../../../../core/getAppointmentDetails/Validation";
+import { getAppointmentDetailsController } from "../../../../../core/getAppointmentDetails";
 
 const RouterV1Private_Get = Router();
 
@@ -464,6 +468,18 @@ RouterV1Private_Get.get(
   "/menus-online/:uuid/items",
   getMenuOnlineItemsValidation,
   getMenuOnlineItemsController
+);
+
+RouterV1Private_Get.get(
+  "/appointments",
+  getAppointmentsValidation,
+  getAppointmentsController
+);
+
+RouterV1Private_Get.get(
+  "/appointments/:id/details",
+  getAppointmentDetailsValidation,
+  getAppointmentDetailsController
 );
 
 export default RouterV1Private_Get;

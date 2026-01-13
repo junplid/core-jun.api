@@ -1,4 +1,5 @@
 import {
+  StatusAppointments,
   TypeMethodCharge,
   TypePriorityOrder,
   TypeStatusOrder,
@@ -312,6 +313,29 @@ export type NodeDistributeData = {
   exits: { key: string }[];
 };
 
+export type NodeCreateAppointmentData = {
+  businessId: number;
+  title: string;
+  desc?: string;
+  status: StatusAppointments;
+  startAt: string;
+  // endAt: string;
+  varId_save_nAppointment?: number;
+  actionChannels: { key: string; text: string }[];
+};
+
+export type NodeUpdateAppointmentData = {
+  n_appointment: string;
+  title?: string;
+  desc?: string;
+  startAt?: string;
+  status?: StatusAppointments;
+  actionChannels: { key: string; text: string }[];
+  notify?: boolean;
+  fields?: string[];
+  transfer_direction?: boolean;
+};
+
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeFinish"
@@ -343,6 +367,8 @@ export type TypeNodesPayload =
   | "NodeSendTextGroup"
   | "NodeCreateOrder"
   | "NodeUpdateOrder"
+  | "NodeCreateAppointment"
+  | "NodeUpdateAppointment"
   | "NodeTimedQueue"
   | "NodeCalculator"
   | "NodeAddTrelloCard"
@@ -393,4 +419,6 @@ export type NodePayload = { id: string } & (
   | { type: "NodeWebhookTrelloCard"; data: NodeWebhookTrelloCardData }
   | { type: "NodeDeleteMessage"; data: NodeDeleteMessageData }
   | { type: "NodeDistribute"; data: NodeDistributeData }
+  | { type: "NodeCreateAppointment"; data: NodeCreateAppointmentData }
+  | { type: "NodeUpdateAppointment"; data: NodeUpdateAppointmentData }
 );

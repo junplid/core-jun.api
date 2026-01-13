@@ -4,6 +4,7 @@ import { NodeAddVariables } from "./AddVariables";
 import { NodeAgentAI } from "./AgentAI";
 import { NodeCalculator } from "./Calculator";
 import { NodeCharge } from "./Charge";
+import { NodeCreateAppointment } from "./CreateAppointment";
 import { NodeCreateOrder } from "./CreateOrder";
 import { NodeDeleteMessage } from "./DeleteMessage";
 import { NodeDistribute } from "./Distribute";
@@ -31,6 +32,7 @@ import { NodeSwitchVariable } from "./Switch";
 import { NodeTimedQueue } from "./TimedQueue";
 import { NodeTimer } from "./Timer";
 import { NodeTransferDepartment } from "./TransferDepartment";
+import { NodeUpdateAppointment } from "./UpdateAppointment";
 import { NodeUpdateOrder } from "./UpdateOrder";
 import { NodeUpdateTrelloCard } from "./UpdateTrelloCard";
 import { NodeWebhookTrelloCard } from "./WebhookTrelloCard";
@@ -72,4 +74,6 @@ export const LibraryNodes = {
   NodeWebhookTrelloCard,
   NodeDeleteMessage,
   NodeDistribute,
+  NodeCreateAppointment,
+  NodeUpdateAppointment,
 };

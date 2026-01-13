@@ -38,6 +38,8 @@ import { updateTrelloIntegrationValidation } from "../../../../../core/updateTre
 import { updateTrelloIntegrationController } from "../../../../../core/updateTrelloIntegration";
 import { updateMenuOnlineValidation } from "../../../../../core/updateMenuOnline/Validation";
 import { updateMenuOnlineController } from "../../../../../core/updateMenuOnline";
+import { updateAppointmentValidation } from "../../../../../core/updateAppointment/Validation";
+import { updateAppointmentController } from "../../../../../core/updateAppointment";
 
 const RouterV1Private_Put = Router();
 
@@ -166,6 +168,12 @@ RouterV1Private_Put.put(
   },
   updateMenuOnlineValidation,
   updateMenuOnlineController
+);
+
+RouterV1Private_Put.put(
+  "/appointments/:id",
+  updateAppointmentValidation,
+  updateAppointmentController
 );
 
 export default RouterV1Private_Put;

@@ -23,7 +23,7 @@ export async function mongo() {
   if (!cache.promise) {
     cache.promise = mongoose
       .connect(
-        "mongodb://junplidroot:passwordjunplid@mongo_junplid:27017/junplid?authSource=admin",
+        "mongodb://root:123456@mongo_junplid:27017/junplid?authSource=admin",
         {
           serverSelectionTimeoutMS: 20000,
         }
