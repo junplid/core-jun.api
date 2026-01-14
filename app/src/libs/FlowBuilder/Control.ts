@@ -747,7 +747,6 @@ export const NodeControler = ({
         await LibraryNodes.NodeSendFlow({
           data: currentNode.data,
           flowStateId: props.flowStateId,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
           nodeId: currentNodeId,
         })
           .then(async (d) => {
@@ -943,7 +942,6 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeSendFiles({
-          botWA: props.clientWA,
           numberLead: props.lead.number,
           contactsWAOnAccountId: props.contactsWAOnAccountId,
           data: currentNode.data,
@@ -1212,9 +1210,35 @@ export const NodeControler = ({
           numberConnection: props.numberConnection,
           data: currentNode.data,
           nodeId: currentNode.id,
-          message: props.type === "initial" ? undefined : props.message,
+          flowId: props.flowId,
+          businessName: props.businessName,
+          ...(props.type === "initial"
+            ? { message: undefined }
+            : {
+                message: props.action
+                  ? {
+                      isDev: true,
+                      value: /\[order-\d+\]/.test(props.action)
+                        ? `${props.action.replace(
+                            /(.*)\s\[order-(\d)+\]/,
+                            "ROOT solicitou que $1 do pedido $2(ID)"
+                          )}`
+                        : /\[appointment-\d+\]/.test(props.action)
+                        ? `${props.action.replace(
+                            /(.*)\s\[appointment-(\d)+\]/,
+                            "ROOT solicitou que $1 do evento $2(ID)"
+                          )}`
+                        : /\[ticket-\d+\]/.test(props.action)
+                        ? `${props.action.replace(
+                            /(.*)\s\[appointment-(\d)+\]/,
+                            "$1"
+                          )}`
+                        : props.action,
+                    }
+                  : { value: props.message, isDev: false },
+              }),
           connectionWhatsId: props.connectionWhatsId,
-          action: {
+          actions: {
             onErrorClient: async () => {
               if (props.oldNodeId === "0") {
                 props.actions?.onErrorClient &&
@@ -1281,6 +1305,39 @@ export const NodeControler = ({
                 currentNodeId: nextNodeId.id,
                 oldNodeId: currentNode.id,
               });
+            },
+            onSendFlow: async (newFlowId, previous_response_id) => {
+              await LibraryNodes.NodeSendFlow({
+                data: { id: newFlowId },
+                flowStateId: props.flowStateId,
+                nodeId: currentNodeId,
+              })
+                .then(async (d) => {
+                  if (props.actions?.onExecutedNode) {
+                    await props.actions?.onExecutedNode({
+                      id: currentNode.id,
+                      flowId: props.flowId,
+                    });
+                  }
+                  return execute({
+                    ...props,
+                    type: "initial",
+                    currentNodeId: "0",
+                    oldNodeId: "0",
+                    nodes: d.nodes,
+                    edges: d.edges,
+                    flowBusinessIds: d.businessIds,
+                    flowId: d.flowId,
+                    previous_response_id: previous_response_id || undefined,
+                  });
+                })
+                .catch((error) => {
+                  console.log("error ao executar nodeAddTags", error);
+                  cacheFlowInExecution.delete(keyMap);
+                  props.actions?.onErrorNumber &&
+                    props.actions?.onErrorNumber();
+                  return res();
+                });
             },
           },
           accountId: props.accountId,
@@ -1828,7 +1885,7 @@ export const NodeControler = ({
           flowStateId: props.flowStateId,
           flowId: props.flowId,
           ...(props.type === "running" && {
-            action: props.action || undefined,
+            action: props.action?.replace(" [order]", "") || undefined,
           }),
         })
           .then(async (action) => {
@@ -2417,7 +2474,7 @@ export const NodeControler = ({
           flowStateId: props.flowStateId,
           flowId: props.flowId,
           ...(props.type === "running" && {
-            action: props.action || undefined,
+            action: props.action?.replace(" [appointment]", "") || undefined,
           }),
         })
           .then(async (action) => {
@@ -2483,9 +2540,7 @@ export const NodeControler = ({
           contactsWAOnAccountId: props.contactsWAOnAccountId,
           data: currentNode.data,
           accountId: props.accountId,
-          businessName: props.businessName,
           nodeId: currentNode.id,
-          flowStateId: props.flowStateId,
         })
           .then(async (action) => {
             console.log({ action });

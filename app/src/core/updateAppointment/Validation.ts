@@ -22,6 +22,14 @@ export const updateAppointmentValidation = (
     title: Joi.string().optional(),
     desc: Joi.string().optional(),
     startAt: Joi.date().optional(),
+    status: Joi.string().valid([
+      "suggested",
+      "pending_confirmation",
+      "confirmed",
+      "canceled",
+      "completed",
+      "expired",
+    ]),
   });
 
   const validation = schemaValidation.validate(

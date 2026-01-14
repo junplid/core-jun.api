@@ -193,17 +193,29 @@ export class ResolveTicketUseCase {
         );
       }
 
+      const orderNode = flow.nodes.find(
+        (n: any) => n.id === rest.GoBackFlowState!.indexNode
+      ) as any;
+
       NodeControler({
         clientWA,
         businessName: InboxDepartment.name,
         connectionWhatsId: rest.connectionWAId,
-        action: null,
         lead: { number: ContactsWAOnAccount.ContactsWA.completeNumber },
         oldNodeId: rest.GoBackFlowState.indexNode || "0",
         accountId: rest.accountId,
         flowId: rest.GoBackFlowState.flowId,
         numberConnection: rest.ConnectionWA.number! + "@s.whatsapp.net",
-        type: "initial",
+        ...(orderNode.type === "NodeAgentAI"
+          ? {
+              type: "running",
+              action: `O atendimento foi resolvido [ticket-${dto.id}]`,
+              message: `O atendimento foi resolvido [ticket-${dto.id}]`,
+            }
+          : {
+              type: "initial",
+              action: null,
+            }),
         contactsWAOnAccountId: ContactsWAOnAccount.id,
         flowStateId: rest.GoBackFlowState.id,
         nodes: flow.nodes,

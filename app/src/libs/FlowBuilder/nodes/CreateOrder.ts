@@ -19,6 +19,9 @@ interface PropsCreateOrder {
   flowStateId: number;
   flowId: string;
   action?: string;
+  actions?: {
+    onCodeAppointment(code: string): void;
+  };
 }
 
 export const NodeCreateOrder = async (
@@ -177,6 +180,8 @@ export const NodeCreateOrder = async (
         },
       },
     });
+
+    props.actions?.onCodeAppointment(n_order);
 
     if (varId_save_nOrder) {
       const exist = await prisma.variable.findFirst({

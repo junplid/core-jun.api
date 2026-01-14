@@ -1,4 +1,3 @@
-import { WASocket } from "baileys";
 import { prisma } from "../../../adapters/Prisma/client";
 import { NodeSendFilesData } from "../Payload";
 import { lookup } from "mime-types";
@@ -9,7 +8,6 @@ import { resolve } from "path";
 
 interface PropsNodeSendFiles {
   numberLead: string;
-  botWA: WASocket;
   contactsWAOnAccountId: number;
   connectionWAId: number;
   data: NodeSendFilesData;
@@ -33,7 +31,7 @@ export const NodeSendFiles = (props: PropsNodeSendFiles): Promise<void> => {
     if (firstFile) {
       const e = await prisma.storagePaths.findFirst({
         where: { id: firstFile.id, accountId: props.accountId },
-        select: { fileName: true },
+        select: { fileName: true, originalName: true },
       });
 
       if (e) {
@@ -54,7 +52,7 @@ export const NodeSendFiles = (props: PropsNodeSendFiles): Promise<void> => {
         try {
           const msg = await SendFile({
             connectionId: props.connectionWAId,
-            originalName: firstFile.originalName,
+            originalName: e.originalName,
             toNumber: props.numberLead,
             caption,
             document: readFileSync(urlStatic),
@@ -66,7 +64,7 @@ export const NodeSendFiles = (props: PropsNodeSendFiles): Promise<void> => {
                 by: "bot",
                 type: "file",
                 fileName: e.fileName,
-                fileNameOriginal: firstFile.originalName,
+                fileNameOriginal: e.originalName,
                 message: "",
                 caption,
                 flowStateId: props.flowStateId,
@@ -82,7 +80,7 @@ export const NodeSendFiles = (props: PropsNodeSendFiles): Promise<void> => {
     for await (const file of props.data.files) {
       const e = await prisma.storagePaths.findFirst({
         where: { id: file.id, accountId: props.accountId },
-        select: { fileName: true },
+        select: { fileName: true, originalName: true },
       });
       if (e) {
         const urlStatic = `${path}/${e.fileName}`;
@@ -90,7 +88,7 @@ export const NodeSendFiles = (props: PropsNodeSendFiles): Promise<void> => {
         try {
           const msg = await SendFile({
             connectionId: props.connectionWAId,
-            originalName: file.originalName,
+            originalName: e.originalName,
             toNumber: props.numberLead,
             document: readFileSync(urlStatic),
             mimetype: mimetype || undefined,
@@ -101,7 +99,7 @@ export const NodeSendFiles = (props: PropsNodeSendFiles): Promise<void> => {
                 by: "bot",
                 type: "file",
                 fileName: e.fileName,
-                fileNameOriginal: file.originalName,
+                fileNameOriginal: e.originalName,
                 message: "",
                 flowStateId: props.flowStateId,
               },

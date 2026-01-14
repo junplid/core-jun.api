@@ -249,8 +249,6 @@ export const WebSocketIo = (io: Server) => {
         nextStatus: TypeStatusOrder;
         orderId: number;
       }) => {
-        // chamar o fluxo com base no status aqui
-
         cacheAccountSocket
           .get(auth.accountId)
           ?.listSocket?.forEach((sockId) => {
@@ -270,9 +268,11 @@ export const WebSocketIo = (io: Server) => {
         const order = await prisma.orders.findFirst({
           where: { accountId: auth.accountId, id: props.orderId },
           select: {
+            id: true,
             flowNodeId: true,
             flowStateId: true,
             flowId: true,
+            n_order: true,
             connectionWAId: true,
             ContactsWAOnAccount: {
               select: {
@@ -350,10 +350,15 @@ export const WebSocketIo = (io: Server) => {
             };
           });
 
-        const nextNodeId = nextEdgesIds?.find((nd: any) =>
-          nd.sourceHandle?.includes(props.nextStatus)
-        );
-        console.log({ nextNodeId });
+        // se o order foi criado por um node de agente então é isso.
+        let nextNodeId: any = null;
+        if (orderNode.type === "NodeAgentAI") {
+          nextNodeId = orderNode.id;
+        } else {
+          nextNodeId = nextEdgesIds?.find((nd: any) =>
+            nd.sourceHandle?.includes(props.nextStatus)
+          );
+        }
         if (nextNodeId) {
           const flowState = await prisma.flowState.findFirst({
             where: { id: order.flowStateId },
@@ -399,8 +404,16 @@ export const WebSocketIo = (io: Server) => {
             businessName: businessInfo.Business.name,
             flowId: order.flowId,
             flowBusinessIds: flow.businessIds,
-            type: "initial",
-            action: null,
+            ...(orderNode.type === "NodeAgentAI"
+              ? {
+                  type: "running",
+                  action: `O pedido ${order}(codigo do pedido) ${order.id}(ID) mudou para a coluna ${props.nextStatus}`,
+                  message: `O pedido ${order}(codigo do pedido) ${order.id}(ID) mudou para a coluna ${props.nextStatus}`,
+                }
+              : {
+                  type: "initial",
+                  action: null,
+                }),
             connectionWhatsId: order.connectionWAId,
             chatbotId: flowState.chatbotId || undefined,
             campaignId: flowState.campaignId || undefined,
@@ -499,6 +512,8 @@ export const WebSocketIo = (io: Server) => {
         }
       }
     );
+
+    // atualizar status do evento.
   });
 
   io.of(/^\/business-\d+\/inbox$/).on("connection", async (socket) => {

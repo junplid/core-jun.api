@@ -7,7 +7,6 @@ import { NodeSendFlowData } from "../Payload";
 interface PropsNodeSendFlow {
   data: NodeSendFlowData;
   flowStateId: number;
-  contactsWAOnAccountId: number;
   nodeId: string;
 }
 

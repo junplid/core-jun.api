@@ -16,7 +16,6 @@ import { NotificationApp } from "../../utils/notificationApp";
 cron.schedule("*/4 * * * *", () => {
   (async () => {
     try {
-      const now = momentLib();
       const reminders = await prisma.appointmentReminders.findMany({
         where: {
           notify_at: { lt: new Date() },
@@ -163,10 +162,14 @@ cron.schedule("*/4 * * * *", () => {
               };
             });
 
-          const nextNodeId = nextEdgesIds?.find((nd: any) =>
-            nd.sourceHandle?.includes(moment)
-          );
-
+          let nextNodeId: any = null;
+          if (orderNode.type === "NodeAgentAI") {
+            nextNodeId = orderNode.id;
+          } else {
+            nextNodeId = nextEdgesIds?.find((nd: any) =>
+              nd.sourceHandle?.includes(moment)
+            );
+          }
           if (nextNodeId) {
             const businessInfo = await prisma.connectionWA.findFirst({
               where: { id: Appointment.ConnectionWA.id },
@@ -186,12 +189,17 @@ cron.schedule("*/4 * * * *", () => {
               return;
             }
 
-            await NodeControler({
+            NodeControler({
               businessName: businessInfo.Business.name,
               flowId: Appointment.flowId,
               flowBusinessIds: flow.businessIds,
-              type: "initial",
-              action: null,
+              ...(orderNode.type === "NodeAgentAI"
+                ? {
+                    type: "running",
+                    action: `Lembrete de evento automatico: ${body_txt}`,
+                    message: `Lembrete de evento automatico: ${body_txt}`,
+                  }
+                : { type: "initial", action: null }),
               connectionWhatsId: Appointment.ConnectionWA.id,
               chatbotId: Appointment.FlowState.chatbotId || undefined,
               campaignId: Appointment.FlowState.campaignId || undefined,

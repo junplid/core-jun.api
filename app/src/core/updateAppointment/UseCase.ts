@@ -11,6 +11,7 @@ export class UpdateAppointmentUseCase {
   async run({ accountId, id, startAt, ...dto }: UpdateAppointmentDTO_I) {
     const exist = await prisma.appointments.findFirst({
       where: { accountId, id },
+      select: { status: true },
     });
 
     if (!exist) {
@@ -30,7 +31,7 @@ export class UpdateAppointmentUseCase {
       const appointment = await prisma.appointments.update({
         where: { id },
         data: { ...dto, startAt: nextStartAt?.toDate() },
-        select: { title: true, desc: true, startAt: true },
+        select: { title: true, desc: true, startAt: true, status: true },
       });
 
       cacheAccountSocket.get(accountId)?.listSocket?.forEach(async (sockId) => {
@@ -86,6 +87,10 @@ export class UpdateAppointmentUseCase {
             });
           }
         }
+      }
+
+      if (dto.status !== exist.status) {
+        // a adm pode confirmar o evento?
       }
 
       return {

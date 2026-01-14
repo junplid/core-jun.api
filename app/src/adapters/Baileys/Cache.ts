@@ -17,7 +17,10 @@ export const cacheFlowInExecution: Map<string, boolean> = new Map();
 export const cacheTestAgentAI = new Map<string, string>();
 
 export const cacheDebounceAgentAI = new Map<string, Job | null>();
-export const cacheMessagesDebouceAgentAI = new Map<string, string[]>();
+export const cacheMessagesDebouceAgentAI = new Map<
+  string,
+  { value: string; isDev: boolean }[]
+>();
 export const cacheNewMessageWhileDebouceAgentAIRun = new Map<string, boolean>();
 /**
  * key = `{numero da conexão}+{numero do contato}`

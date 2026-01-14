@@ -17,6 +17,9 @@ interface PropsCreateOrder {
   flowStateId: number;
   flowId: string;
   action?: string;
+  actions?: {
+    onCodeAppointment(code: string): void;
+  };
 }
 
 export const NodeCreateAppointment = async (
@@ -26,6 +29,7 @@ export const NodeCreateAppointment = async (
     if (props.action) return props.action;
 
     const n_appointment = genNumCode(7);
+    props.actions?.onCodeAppointment(n_appointment);
     const { actionChannels, varId_save_nAppointment, startAt, ...restData } =
       props.data;
 

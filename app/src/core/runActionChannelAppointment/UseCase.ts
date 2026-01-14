@@ -16,12 +16,10 @@ export class RunActionChannelOrderUseCase {
       select: {
         flowNodeId: true,
         flowId: true,
-        FlowState: {
-          select: {
-            previous_response_id: true,
-          },
-        },
         ConnectionWA: { select: { number: true, id: true } },
+        FlowState: {
+          select: { previous_response_id: true },
+        },
         ContactsWAOnAccount: {
           select: {
             id: true,
@@ -128,7 +126,7 @@ export class RunActionChannelOrderUseCase {
     }
 
     const orderNode = flow.nodes.find(
-      (n: any) => n.id === order.flowNodeId
+      (n: any) => n.type === "NodeCreateOrder" && n.id === order.flowNodeId
     ) as any;
 
     if (!orderNode) {
@@ -147,14 +145,15 @@ export class RunActionChannelOrderUseCase {
       flowId: order.flowId,
       flowBusinessIds: flow!.businessIds,
       type: "running",
-      action: `${action} [order-${dto.id}]`,
+      action: `${action} [appointment-${dto.id}]`,
       connectionWhatsId: order.ConnectionWA.id,
       oldNodeId: orderNode.id,
       currentNodeId: orderNode.id,
-      message: `${action} [order-${dto.id}]`,
+      message: action,
       clientWA: bot,
       isSavePositionLead: false,
       flowStateId: order.flowStateId,
+      // previewus do agent
       previous_response_id: order.FlowState?.previous_response_id || undefined,
       contactsWAOnAccountId: order.ContactsWAOnAccount.id,
       lead: { number },

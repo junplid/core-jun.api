@@ -11,9 +11,8 @@ interface PropsUpdateOrder {
   contactsWAOnAccountId: number;
   data: NodeUpdateAppointmentData;
   accountId: number;
-  businessName: string;
   nodeId: string;
-  flowStateId: number;
+  isIA?: boolean;
 }
 
 export const NodeUpdateAppointment = async (
@@ -167,6 +166,8 @@ export const NodeUpdateAppointment = async (
           },
         });
       });
+
+    if (props.isIA) return { n: "ok" };
 
     if (!!restData.status) {
       return {
