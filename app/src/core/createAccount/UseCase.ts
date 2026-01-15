@@ -50,6 +50,7 @@ export class CreateAccountUseCase {
           password: nextPassword,
           contactWAId,
           assetsUsedId: assetsUsedId.id,
+          Business: { create: { name: "Master" } },
         },
         select: { id: true, hash: true },
       });
