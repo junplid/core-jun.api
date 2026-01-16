@@ -9,6 +9,7 @@ export const createChatbotValidation = (
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
+    agentId: Joi.number().optional(),
     name: Joi.string().required(),
     businessId: Joi.number().required(),
     flowId: Joi.string().required(),

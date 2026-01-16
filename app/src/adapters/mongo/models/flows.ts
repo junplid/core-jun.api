@@ -8,6 +8,7 @@ export interface ModelFlowsDoc extends Document {
   businessIds: number[];
   createdAt: Date;
   updatedAt: Date;
+  agentId?: number;
 }
 
 export const ModelFlows: Model<ModelFlowsDoc> = mongoose.model<ModelFlowsDoc>(
@@ -24,6 +25,7 @@ export const ModelFlows: Model<ModelFlowsDoc> = mongoose.model<ModelFlowsDoc>(
       data: { type: Object, required: true },
       accountId: { type: Number, required: true },
       businessIds: { type: [Number], required: false },
+      agentId: { type: Number, required: false },
     },
     { timestamps: true }
   )

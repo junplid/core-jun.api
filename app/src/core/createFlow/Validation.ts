@@ -9,6 +9,7 @@ export const createFlowValidation = (
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
+    agentId: Joi.number().optional(),
     subUserUid: Joi.string().optional(),
     businessIds: Joi.array().items(Joi.number()).optional(),
     name: Joi.string().required(),

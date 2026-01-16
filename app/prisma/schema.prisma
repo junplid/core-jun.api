@@ -781,6 +781,7 @@ model ConnectionWA {
   Orders               Orders[]
   MenusOnline          MenusOnline[]
   Appointments         Appointments[]
+  AgentAI              AgentAI?
 
   @@index([id, name, type, number])
 }
@@ -1108,6 +1109,7 @@ model Chatbot {
   OperatingDays         OperatingDays[]
   TimeToRestart         TimeToRestartChatbot?
   FlowState             FlowState[]
+  AgentAI               AgentAI?
 
   @@index([name, accountId, businessId, status])
 }
@@ -1847,8 +1849,12 @@ model AgentAI {
   createAt              DateTime               @default(now())
   updateAt              DateTime               @default(now()) @updatedAt
   accountId             Int
+  connectionWAId        Int?                   @unique
+  chatbotId             Int?                   @unique
   providerCredentialId  Int
   Account               Account                @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ConnectionWA          ConnectionWA?          @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Chatbot               Chatbot?               @relation(fields: [chatbotId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ProviderCredential    ProviderCredential     @relation(fields: [providerCredentialId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   AgentAIOnBusiness     AgentAIOnBusiness[]
   StoragePathsOnAgentAI StoragePathOnAgentAI[]

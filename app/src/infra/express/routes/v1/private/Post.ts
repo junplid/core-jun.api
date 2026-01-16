@@ -69,10 +69,14 @@ const uploadFiles = storageMulter({
   pathOfDestiny: pathOfDestiny + "/storage",
 });
 
+const uploadImage = storageMulter({
+  pathOfDestiny: pathOfDestiny + "/image",
+});
+
 RouterV1Private_Post.post(
   "/connections-wa",
   // @ts-expect-error
-  multer({ storage: uploadFiles }).single("fileImage"),
+  multer({ storage: uploadImage }).single("fileImage"),
   (req: Request, _, next: NextFunction) => {
     req.body.accountId = Number(req.headers.authorization);
     next();
@@ -208,7 +212,7 @@ RouterV1Private_Post.post(
 RouterV1Private_Post.post(
   "/menus-online",
   // @ts-expect-error
-  multer({ storage: uploadFiles }).single("fileImage"),
+  multer({ storage: uploadImage }).single("fileImage"),
   (req: Request, _, next: NextFunction) => {
     req.body.accountId = Number(req.headers.authorization);
     next();
@@ -220,7 +224,7 @@ RouterV1Private_Post.post(
 RouterV1Private_Post.post(
   "/menus-online/:uuid/items",
   // @ts-expect-error
-  multer({ storage: uploadFiles }).single("fileImage"),
+  multer({ storage: uploadImage }).single("fileImage"),
   (req: Request, _, next: NextFunction) => {
     req.body.accountId = Number(req.headers.authorization);
     next();

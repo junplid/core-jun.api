@@ -5,7 +5,6 @@ import { TypingDelay } from "../../../adapters/Baileys/modules/typing";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { prisma } from "../../../adapters/Prisma/client";
 import { NodeAddVariables } from "./AddVariables";
-import { NotificationApp } from "../../../utils/notificationApp";
 
 interface PropsNodeMessage {
   numberLead: string;
@@ -23,12 +22,6 @@ interface PropsNodeMessage {
 
 export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
   return new Promise(async (res, rej) => {
-    // await NotificationApp({
-    //   accountId: props.accountId,
-    //   body_txt: "Teste de notificação",
-    //   title_txt: "Notificação",
-    // });
-
     if (!props.data.messages?.length) return res();
 
     for await (const message of props.data.messages) {

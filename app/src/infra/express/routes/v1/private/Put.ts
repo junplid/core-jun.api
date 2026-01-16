@@ -70,14 +70,14 @@ if (process.env.NODE_ENV === "production") {
   pathOfDestiny = resolve(__dirname, `../../../../../../static`);
 }
 
-const uploadFiles = storageMulter({
-  pathOfDestiny: pathOfDestiny + "/storage",
+const uploadImage = storageMulter({
+  pathOfDestiny: pathOfDestiny + "/image",
 });
 
 RouterV1Private_Put.put(
   "/connections-wa/:id",
   // @ts-expect-error
-  multer({ storage: uploadFiles }).single("fileImage"),
+  multer({ storage: uploadImage }).single("fileImage"),
   (req: Request, _, next: NextFunction) => {
     req.body.accountId = Number(req.headers.authorization);
     next();
@@ -161,7 +161,7 @@ RouterV1Private_Put.put(
 RouterV1Private_Put.put(
   "/menus-online/:id",
   // @ts-expect-error
-  multer({ storage: uploadFiles }).single("fileImage"),
+  multer({ storage: uploadImage }).single("fileImage"),
   (req: Request, _, next: NextFunction) => {
     req.body.accountId = Number(req.headers.authorization);
     next();

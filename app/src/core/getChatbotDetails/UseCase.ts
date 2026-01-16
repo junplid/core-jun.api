@@ -21,6 +21,7 @@ export class GetChatbotDetailsUseCase {
         updateAt: true,
         trigger: true,
         cbj: true,
+        AgentAI: { select: { id: true, name: true } },
       },
     });
 

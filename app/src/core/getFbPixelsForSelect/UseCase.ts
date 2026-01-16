@@ -10,6 +10,7 @@ export class GetFbPixelsForSelectUseCase {
         accountId: dto.accountId,
         ...(dto.businessId?.length && { businessId: { in: dto.businessId } }),
       },
+      orderBy: { id: "desc" },
       select: { id: true, name: true },
     });
 

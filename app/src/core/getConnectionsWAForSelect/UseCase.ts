@@ -1,4 +1,3 @@
-import { sessionsBaileysWA } from "../../adapters/Baileys";
 import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 import { prisma } from "../../adapters/Prisma/client";
 import { GetConnectionsWAForSelectDTO_I } from "./DTO";
@@ -12,7 +11,9 @@ export class GetConnectionsWAForSelectUseCase {
         ...(dto.type && { type: dto.type }),
         ...(dto.businessIds?.length && { businessId: { in: dto.businessIds } }),
         Business: { accountId: dto.accountId },
+        AgentAI: null,
       },
+      orderBy: { id: "desc" },
       select: {
         id: true,
         name: true,

@@ -26,6 +26,11 @@ export class GetFlowDetailsUseCase {
       select: { name: true, id: true },
     });
 
+    const agent = await prisma.agentAI.findFirst({
+      where: { id: flow.agentId },
+      select: { name: true },
+    });
+
     return {
       message: "OK!",
       status: 200,
@@ -36,6 +41,7 @@ export class GetFlowDetailsUseCase {
         type: flow.type,
         createAt: flow.createdAt,
         updateAt: flow.updatedAt,
+        AgentAI: agent ? { name: agent.name, id: flow.agentId } : null,
       },
     };
   }

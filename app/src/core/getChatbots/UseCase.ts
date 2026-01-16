@@ -10,6 +10,7 @@ export class GetChabotsUseCase {
       where: {
         accountId: dto.accountId,
       },
+      orderBy: { id: "desc" },
       select: {
         name: true,
         id: true,
@@ -17,14 +18,23 @@ export class GetChabotsUseCase {
         status: true,
         ConnectionWA: { select: { id: true, number: true } },
         Business: { select: { name: true, id: true } },
+        AgentAI: { select: { id: true, name: true } },
       },
     });
 
     const nextData = data.map(({ ConnectionWA, status, ...r }) => {
+      let connStt = "close";
+
+      if (ConnectionWA) {
+        const isConnected = !!cacheConnectionsWAOnline.get(ConnectionWA.id);
+        connStt = !!isConnected ? "open" : "close";
+      }
+
       if (!ConnectionWA || !status) {
         return {
           ...r,
           status: false,
+          connStt,
           // source: null,
         };
       }
@@ -38,6 +48,7 @@ export class GetChabotsUseCase {
         ...r,
         // source,
         status: !!cacheConnectionsWAOnline.get(ConnectionWA.id) && status,
+        connStt,
       };
     });
 

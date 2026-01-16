@@ -13,7 +13,9 @@ export class GetChabotsForSelectUseCase {
         ...(dto.businessIds?.length && {
           businessId: { in: dto.businessIds },
         }),
+        AgentAI: null,
       },
+      orderBy: { id: "desc" },
       select: {
         name: true,
         id: true,

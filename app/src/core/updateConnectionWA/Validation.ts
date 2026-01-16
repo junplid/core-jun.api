@@ -13,10 +13,10 @@ export const updateConnectionWAValidation = (
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
     accountId: Joi.number().required(),
-    businessId: Joi.number().required(),
+    businessId: Joi.number().optional(),
     description: Joi.string().allow(""),
-    name: Joi.string().required(),
-    type: Joi.string().valid("chatbot", "marketing").required(),
+    name: Joi.string().optional(),
+    type: Joi.string().valid("chatbot", "marketing").optional(),
     profileName: Joi.string().allow(""),
     profileStatus: Joi.string().allow(""),
     lastSeenPrivacy: Joi.string().valid(
@@ -62,8 +62,9 @@ export const updateConnectionWAValidation = (
   }
 
   req.params.id = Number(req.params.id);
-
-  req.body.businessId = Number(req.body.businessId);
+  if (req.body.businessId) {
+    req.body.businessId = Number(req.body.businessId);
+  }
   req.body.fileNameImage = req.file?.filename;
 
   next();

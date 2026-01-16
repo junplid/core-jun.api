@@ -17,6 +17,7 @@ export class GetInboxDepartmentsUseCase {
         },
         Business: { select: { id: true, name: true } },
       },
+      orderBy: { id: "desc" },
     });
 
     return {

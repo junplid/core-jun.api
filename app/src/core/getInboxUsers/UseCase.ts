@@ -14,6 +14,7 @@ export class GetInboxUsersUseCase {
         _count: { select: { Tickets: { where: { status: "OPEN" } } } },
         InboxDepartment: { select: { name: true, id: true } },
       },
+      orderBy: { id: "desc" },
     });
 
     return {

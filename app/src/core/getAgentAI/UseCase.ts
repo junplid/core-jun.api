@@ -21,6 +21,8 @@ export class GetAgentAIUseCase {
         instructions: true,
         debounce: true,
         timeout: true,
+        connectionWAId: true,
+        chatbotId: true,
         StoragePathsOnAgentAI: {
           select: {
             StoragePaths: {

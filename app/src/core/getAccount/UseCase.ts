@@ -15,6 +15,7 @@ export class GetAccountUseCase {
           emailVerified: true,
           onboarded: true,
           isPremium: true,
+          Business: { select: { id: true } },
         },
       });
 
@@ -46,14 +47,16 @@ export class GetAccountUseCase {
       //   nextNumber.splice(4, 0, "9");
       // }
 
+      const { Business, ...rest } = account;
       return {
         message: "OK",
         status: 200,
         account: {
-          ...account,
-          isPremium: !!account.isPremium,
+          ...rest,
+          isPremium: !!rest.isPremium,
           id: dto.accountId,
-          name: account.name ?? account.email,
+          name: rest.name ?? rest.email,
+          businessId: Business[0].id,
         },
       };
     } catch (error) {

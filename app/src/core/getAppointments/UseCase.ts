@@ -40,6 +40,7 @@ export class GetAppointmentsUseCase {
           //   },
           // },
         },
+        orderBy: { id: "desc" },
       });
 
       const nextAppointments = appointments.map(({ ...ap }) => {

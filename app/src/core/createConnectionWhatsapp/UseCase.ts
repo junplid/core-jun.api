@@ -7,7 +7,7 @@ import { remove } from "fs-extra";
 export class CreateConnectionWAUseCase {
   constructor() {}
 
-  async run({ accountId, ...dto }: CreateConnectionWADTO_I) {
+  async run({ accountId, agentId, ...dto }: CreateConnectionWADTO_I) {
     // const countResource = await prisma.connectionWA.count({
     //   where: { Business: { accountId } },
     // });
@@ -142,6 +142,7 @@ export class CreateConnectionWAUseCase {
           description: dto.description,
           type: dto.type,
           businessId: dto.businessId,
+          ...(agentId && { AgentAI: { connect: { id: agentId } } }),
         },
         select: {
           id: true,

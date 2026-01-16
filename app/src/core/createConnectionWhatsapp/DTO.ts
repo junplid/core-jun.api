@@ -21,4 +21,5 @@ export interface CreateConnectionWADTO_I {
   groupsAddPrivacy?: WAPrivacyGroupAddValue;
   readReceiptsPrivacy?: WAReadReceiptsValue;
   fileNameImage?: string;
+  agentId?: number;
 }

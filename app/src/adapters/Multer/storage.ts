@@ -1,3 +1,4 @@
+import { ensureDir } from "fs-extra";
 import multer from "multer";
 import removeAccents from "remove-accents";
 import { v4 } from "uuid";
@@ -8,7 +9,9 @@ interface PropsStorageMulter {
 
 export const storageMulter = (props: PropsStorageMulter) =>
   multer.diskStorage({
-    destination: function (req, file, cb) {
+    destination: async function (req, file, cb) {
+      // console.log({ pathOfDestiny: props.pathOfDestiny });
+      await ensureDir(props.pathOfDestiny);
       cb(null, props.pathOfDestiny);
     },
     filename: function (req, file, cb) {

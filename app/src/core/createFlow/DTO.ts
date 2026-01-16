@@ -3,4 +3,5 @@ export interface CreateFlowDTO_I {
   type?: "marketing" | "chatbot" | "universal";
   businessIds?: number[];
   accountId: number;
+  agentId?: number;
 }

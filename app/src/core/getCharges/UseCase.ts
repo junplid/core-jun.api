@@ -26,6 +26,7 @@ export class GetChargesUseCase {
           select: { id: true, name: true },
         },
       },
+      orderBy: { id: "desc" },
     });
 
     const charges = data.map(({ ContactsWAOnAccount, Business, ...r }) => {

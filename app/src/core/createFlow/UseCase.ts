@@ -8,10 +8,8 @@ import { mongo } from "../../adapters/mongo/connection";
 export class CreateFlowUseCase {
   constructor() {}
 
-  async run({ businessIds, ...dto }: CreateFlowDTO_I) {
-    console.log("1");
+  async run({ businessIds, agentId: agentIdDto, ...dto }: CreateFlowDTO_I) {
     await mongo();
-    console.log("2");
     const getAccount = await prisma.account.findFirst({
       where: { id: dto.accountId },
       select: { isPremium: true },
@@ -42,20 +40,39 @@ export class CreateFlowUseCase {
       });
     }
 
+    const nodes: any = [
+      {
+        id: "0",
+        type: "NodeInitial",
+        data: { selects: {} },
+        position: { x: 100, y: 200 },
+        deletable: false,
+      },
+    ];
+    const edges: any = [];
+
+    if (agentIdDto) {
+      nodes.push({
+        id: "v3D0oW8JysPIgmuzlo6D5",
+        type: "NodeAgentAI",
+        data: { selects: {}, agentId: agentIdDto },
+        position: { x: 230, y: 200 },
+        deletable: false,
+      });
+      edges.push({
+        id: "xy-edge__0main-v3D0oW8JysPIgmuzlo6D5",
+        source: "0",
+        target: "v3D0oW8JysPIgmuzlo6D5",
+        sourceHandle: "main",
+      });
+    }
+
     const flow = await ModelFlows.create({
-      ...{ ...dto, _id: ulid() },
+      ...{ ...dto, agentId: agentIdDto, _id: ulid() },
       data: {
         metrics: {},
-        nodes: [
-          {
-            id: "0",
-            type: "NodeInitial",
-            data: { selects: {} },
-            position: { x: 100, y: 200 },
-            deletable: false,
-          },
-        ],
-        edges: [],
+        nodes,
+        edges,
       },
     });
 

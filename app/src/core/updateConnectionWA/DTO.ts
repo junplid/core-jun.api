@@ -7,11 +7,11 @@ import {
 } from "baileys";
 
 export interface UpdateConnectionWABodyDTO_I {
-  name: string;
-  description?: string;
   accountId: number;
-  businessId: number;
-  type: TypeConnetion;
+  name?: string;
+  description?: string;
+  businessId?: number;
+  type?: TypeConnetion;
   profileName?: string;
   profileStatus?: string;
   lastSeenPrivacy?: WAPrivacyValue;

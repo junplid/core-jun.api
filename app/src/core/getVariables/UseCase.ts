@@ -13,6 +13,7 @@ export class GetVariableBusinessUseCase {
         }),
         OR: [{ accountId: null }, { accountId }],
         ...dto,
+        name: { notIn: [""] },
       },
       select: {
         id: true,

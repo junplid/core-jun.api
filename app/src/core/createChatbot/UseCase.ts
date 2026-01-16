@@ -7,7 +7,7 @@ import checkConflictOfOperatingDays from "../../helpers/checkConflictOfOperating
 export class CreateChatbotUseCase {
   constructor() {}
 
-  async run({ ...dto }: CreateChatbotDTO_I) {
+  async run({ agentId, ...dto }: CreateChatbotDTO_I) {
     const getAccount = await prisma.account.findFirst({
       where: { id: dto.accountId },
       select: { isPremium: true },
@@ -128,6 +128,7 @@ export class CreateChatbotUseCase {
       data: {
         ...data,
         ...(timeToRestart && { TimeToRestart: { create: timeToRestart } }),
+        ...(agentId && { AgentAI: { connect: { id: agentId } } }),
       },
       select: {
         // cbj: true, poderá vizualizar o link de redirecionamento para

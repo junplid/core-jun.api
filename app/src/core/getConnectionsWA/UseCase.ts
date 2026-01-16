@@ -1,4 +1,3 @@
-import { sessionsBaileysWA } from "../../adapters/Baileys";
 import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 import { prisma } from "../../adapters/Prisma/client";
 import { GetConnectionsWADTO_I } from "./DTO";
@@ -9,12 +8,14 @@ export class GetConnectionsWAUseCase {
   async run(dto: GetConnectionsWADTO_I) {
     const connections = await prisma.connectionWA.findMany({
       where: { Business: dto },
+      orderBy: { id: "desc" },
       select: {
         name: true,
         type: true,
         id: true,
         Business: { select: { name: true, id: true } },
         createAt: true,
+        AgentAI: { select: { id: true, name: true } },
       },
     });
 

@@ -35,7 +35,12 @@ export class UpdateConnectionWAUseCase {
           id,
           Business: { accountId },
         },
-        data: { name, businessId, type, description },
+        data: {
+          name,
+          businessId,
+          type,
+          description,
+        },
         select: {
           Business: { select: { name: true, id: true } },
           ConnectionConfig: { select: { fileNameImgPerfil: true } },
@@ -60,12 +65,14 @@ export class UpdateConnectionWAUseCase {
       const hasConfig = !!(Object.keys(config).length || fileNameImage);
 
       if (hasConfig) {
-        await prisma.connectionConfig.update({
-          where: {
+        await prisma.connectionConfig.upsert({
+          where: { connectionWAId: id },
+          create: {
+            ...config,
+            fileNameImgPerfil: fileNameImage,
             connectionWAId: id,
-            ConnectionWA: { Business: { accountId } },
           },
-          data: { ...config, fileNameImgPerfil: fileNameImage },
+          update: { ...config, fileNameImgPerfil: fileNameImage },
         });
 
         const bot = sessionsBaileysWA.get(id);

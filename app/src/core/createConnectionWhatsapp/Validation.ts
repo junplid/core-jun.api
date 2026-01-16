@@ -9,6 +9,7 @@ export const createConnectionWAValidation = (
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
+    agentId: Joi.number().optional(),
     businessId: Joi.number().required(),
     description: Joi.string().allow(""),
     name: Joi.string().required(),

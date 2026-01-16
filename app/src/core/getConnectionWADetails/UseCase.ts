@@ -21,6 +21,7 @@ export class GetConnectionWADetailsUseCase {
         Chatbot: { select: { name: true, id: true } },
         Business: { select: { name: true, id: true } },
         createAt: true,
+        AgentAI: { select: { id: true, name: true } },
       },
     });
 

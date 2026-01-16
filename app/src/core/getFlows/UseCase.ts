@@ -22,6 +22,13 @@ export class GetFlowsUseCase {
           where: { id: { in: flow.businessIds } },
           select: { name: true, id: true },
         });
+        let agent: any = null;
+        if (flow.agentId) {
+          agent = await prisma.agentAI.findFirst({
+            where: { id: flow.agentId },
+            select: { name: true },
+          });
+        }
         return {
           id: flow._id,
           name: flow.name,
@@ -29,6 +36,7 @@ export class GetFlowsUseCase {
           createAt: flow.createdAt,
           updateAt: flow.updatedAt,
           businesses,
+          AgentAI: agent ? { name: agent.name, id: flow.agentId } : null,
         };
       })
     );

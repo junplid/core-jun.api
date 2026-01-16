@@ -7,15 +7,9 @@ import {
   decodeTokenAuth,
 } from "../../../../../helpers/authToken";
 import cookieParser from "cookie-parser";
-import {
-  cacheConnectionsWAOnline,
-  cacheFlowsMap,
-} from "../../../../../adapters/Baileys/Cache";
+import { cacheConnectionsWAOnline } from "../../../../../adapters/Baileys/Cache";
 import crypto from "crypto";
 import { listFbChatbot } from "../../../../../utils/cachesMap";
-import { sessionsBaileysWA } from "../../../../../adapters/Baileys";
-import { ModelFlows } from "../../../../../adapters/mongo/models/flows";
-import { NodeControler } from "../../../../../libs/FlowBuilder/Control";
 import { getMenuOnlinePublicValidation } from "../../../../../core/getMenuOnlinePublic/Validation";
 import { getMenuOnlinePublicController } from "../../../../../core/getMenuOnlinePublic";
 
