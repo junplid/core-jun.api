@@ -33,6 +33,7 @@ export class GetChabotsUseCase {
       if (!ConnectionWA || !status) {
         return {
           ...r,
+          connectionWAId: ConnectionWA?.id,
           status: false,
           connStt,
           // source: null,

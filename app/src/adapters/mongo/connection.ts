@@ -1,12 +1,5 @@
 import mongoose from "mongoose";
 
-const { DATABASE_URL } = process.env;
-if (!DATABASE_URL) {
-  throw new Error(
-    'Defina DATABASE_URL no .env (ex.: DATABASE_URL="mongodb://junplidroot:passwordjunplid@database:27017/junplid?authSource=admin")'
-  );
-}
-
 type TMongooseCache = {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
@@ -17,17 +10,14 @@ const cache: TMongooseCache = {
   promise: null,
 };
 
+const url = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@mongo_junplid:27017/${process.env.MONGO_INITDB_DATABASE}?authSource=admin`;
+
 export async function mongo() {
   if (cache.conn) return cache.conn;
 
   if (!cache.promise) {
     cache.promise = mongoose
-      .connect(
-        "mongodb://root:123456@mongo_junplid:27017/junplid?authSource=admin",
-        {
-          serverSelectionTimeoutMS: 20000,
-        }
-      )
+      .connect(url, { serverSelectionTimeoutMS: 20000 })
       .then((m) => {
         mongoose.pluralize(null);
         mongoose.set("strictQuery", true);

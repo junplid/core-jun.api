@@ -1833,9 +1833,18 @@ enum TypeEmojiLevel {
   high
 }
 
+enum TypeServiceTier {
+  default
+  flex
+  auto
+  scale
+  priority
+}
+
 model AgentAI {
   id                    Int                    @id @default(autoincrement())
   name                  String
+  service_tier          TypeServiceTier        @default(default)
   personality           String?                @db.Text
   vectorStoreId         String?
   knowledgeBase         String?                @db.Text

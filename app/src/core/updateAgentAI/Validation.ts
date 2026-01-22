@@ -5,7 +5,7 @@ import { UpdateAgentAIBodyDTO_I, UpdateAgentAIParamsDTO_I } from "./DTO";
 export const updateAgentAIValidation = (
   req: Request<UpdateAgentAIParamsDTO_I, any, UpdateAgentAIBodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
@@ -17,19 +17,26 @@ export const updateAgentAIValidation = (
     name: Joi.string().optional(),
     emojiLevel: Joi.string().valid("none", "low", "medium", "high").optional(),
     language: Joi.string().optional(),
-    personality: Joi.string().optional(),
+    personality: Joi.string().allow("").optional(),
     model: Joi.string().optional(),
     temperature: Joi.number().min(0).max(1).optional(),
-    knowledgeBase: Joi.string().optional(),
+    knowledgeBase: Joi.string().allow("").optional(),
     files: Joi.array().items(Joi.number()).optional(),
     instructions: Joi.string().allow("").optional(),
     timeout: Joi.number().min(1).max(14400).optional(),
     debounce: Joi.number().min(0).max(9).optional(),
+    service_tier: Joi.valid(
+      "default",
+      "flex",
+      "auto",
+      "scale",
+      "priority",
+    ).optional(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {

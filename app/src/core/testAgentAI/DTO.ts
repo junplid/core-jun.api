@@ -1,3 +1,5 @@
+import { TypeServiceTier } from "@prisma/client";
+
 export interface TestAgentAIDTO_I {
   content: string;
   accountId: number;
@@ -12,4 +14,5 @@ export interface TestAgentAIDTO_I {
   knowledgeBase?: string;
   files?: number[];
   instructions?: string;
+  service_tier?: TypeServiceTier;
 }

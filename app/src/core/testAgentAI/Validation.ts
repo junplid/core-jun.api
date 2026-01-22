@@ -5,7 +5,7 @@ import { TestAgentAIDTO_I } from "./DTO";
 export const testAgentAIValidation = (
   req: Request<any, any, TestAgentAIDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     content: Joi.string().required(),
@@ -15,13 +15,20 @@ export const testAgentAIValidation = (
     tokenTest: Joi.string().required(),
     name: Joi.string().required(),
     emojiLevel: Joi.string().valid("none", "low", "medium", "high").optional(),
-    personality: Joi.string().optional(),
+    personality: Joi.string().allow("").optional(),
     model: Joi.string().required(),
     language: Joi.string().optional(),
     temperature: Joi.number().min(0).max(2).optional(),
-    knowledgeBase: Joi.string().optional(),
+    knowledgeBase: Joi.string().allow("").optional(),
     files: Joi.array().items(Joi.number()).optional(),
     instructions: Joi.string().allow("").optional(),
+    service_tier: Joi.valid(
+      "default",
+      "flex",
+      "auto",
+      "scale",
+      "priority",
+    ).optional(),
   }).or("providerCredentialId", "apiKey");
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });

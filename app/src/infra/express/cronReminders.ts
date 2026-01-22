@@ -83,22 +83,22 @@ cron.schedule("*/4 * * * *", () => {
           let body_txt = "";
           if (moment === "day") {
             body_txt = `Amanhã às ${momentLib(Appointment.startAt).format(
-              "HH:mm"
+              "HH:mm",
             )}`;
           } else if (moment === "hour") {
             body_txt = `Começa em 2 horas, às ${momentLib(
-              Appointment.startAt
+              Appointment.startAt,
             ).format("HH:mm")}`;
           } else {
             body_txt = `Compromisso "${Appointment.title}" começa em 30 minutos`;
           }
-          await NotificationApp({
-            accountId: Appointment.accountId,
-            title_txt: "Lembrete de agenda",
-            body_txt,
-            onFilterSocket: () => [],
-            url_redirect: "/auth/appointments",
-          });
+          // await NotificationApp({
+          //   accountId: Appointment.accountId,
+          //   title_txt: "Lembrete de agenda",
+          //   body_txt,
+          //   onFilterSocket: () => [],
+          //   url_redirect: "/auth/appointments",
+          // });
           let flow: any = null;
           flow = cacheFlowsMap.get(Appointment.flowId);
           if (!flow) {
@@ -150,7 +150,7 @@ cron.schedule("*/4 * * * *", () => {
           }
 
           const orderNode = flow.nodes.find(
-            (n: any) => n.id === Appointment.flowNodeId
+            (n: any) => n.id === Appointment.flowNodeId,
           ) as any;
 
           const nextEdgesIds = flow.edges
@@ -167,7 +167,7 @@ cron.schedule("*/4 * * * *", () => {
             nextNodeId = orderNode.id;
           } else {
             nextNodeId = nextEdgesIds?.find((nd: any) =>
-              nd.sourceHandle?.includes(moment)
+              nd.sourceHandle?.includes(moment),
             );
           }
           if (nextNodeId) {
@@ -196,8 +196,8 @@ cron.schedule("*/4 * * * *", () => {
               ...(orderNode.type === "NodeAgentAI"
                 ? {
                     type: "running",
-                    action: `Lembrete de evento automatico: ${body_txt}`,
-                    message: `Lembrete de evento automatico: ${body_txt}`,
+                    action: `Lembrete de agendamento automatico: ${body_txt}`,
+                    message: `Lembrete de agendamento automatico: ${body_txt}`,
                   }
                 : { type: "initial", action: null }),
               connectionWhatsId: Appointment.ConnectionWA.id,
@@ -227,7 +227,7 @@ cron.schedule("*/4 * * * *", () => {
                       "@s.whatsapp.net" +
                       Appointment.ContactsWAOnAccount!.ContactsWA
                         .completeNumber +
-                      "@s.whatsapp.net"
+                      "@s.whatsapp.net",
                   );
                   if (scheduleExecutionCache) {
                     scheduleExecutionCache.cancel();
@@ -245,7 +245,7 @@ cron.schedule("*/4 * * * *", () => {
                       .tz("America/Sao_Paulo")
                       .add(
                         Appointment.FlowState!.Chatbot.TimeToRestart.value,
-                        Appointment.FlowState!.Chatbot.TimeToRestart.type
+                        Appointment.FlowState!.Chatbot.TimeToRestart.type,
                       )
                       .toDate();
                     chatbotRestartInDate.set(
@@ -253,7 +253,7 @@ cron.schedule("*/4 * * * *", () => {
                         Appointment.ContactsWAOnAccount?.ContactsWA
                           .completeNumber
                       }`,
-                      nextDate
+                      nextDate,
                     );
                   }
                 },
@@ -300,7 +300,7 @@ cron.schedule("*/4 * * * *", () => {
             }).finally(() => {
               leadAwaiting.set(
                 `${Appointment.ConnectionWA?.id}+${Appointment.ContactsWAOnAccount?.ContactsWA.completeNumber}`,
-                false
+                false,
               );
             });
           }

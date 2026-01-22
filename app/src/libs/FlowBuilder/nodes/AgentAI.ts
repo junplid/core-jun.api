@@ -39,7 +39,7 @@ import { NodeUpdateOrder } from "./UpdateOrder";
 const tools: OpenAI.Responses.Tool[] = [
   {
     type: "function",
-    name: "search_lines_in_var",
+    name: "pesquisar_valor_em_variavel",
     description: "Busca linhas na variável que correspondem com a query.",
     parameters: {
       type: "object",
@@ -60,7 +60,7 @@ const tools: OpenAI.Responses.Tool[] = [
   },
   {
     type: "function",
-    name: "notify_agent",
+    name: "notificar_agente",
     description:
       "Use para enviar notificação/informação para outro agente alvo.",
     parameters: {
@@ -82,8 +82,8 @@ const tools: OpenAI.Responses.Tool[] = [
   },
   {
     type: "function",
-    name: "get_var",
-    description: "Use para buscar o valor de uma variável.",
+    name: "buscar_variavel",
+    description: "Use para buscar o ID e valor de uma variável.",
     parameters: {
       type: "object",
       additionalProperties: false,
@@ -99,38 +99,14 @@ const tools: OpenAI.Responses.Tool[] = [
   },
   {
     type: "function",
-    name: "sendTextBalloon",
-    description: "Use para responder o usuário.",
+    name: "adicionar_variavel",
+    description: "Atribuir valor a uma variavel do usuario",
     parameters: {
       type: "object",
       additionalProperties: false,
       properties: {
-        value: {
-          type: "string",
-          description: "O texto da mensagem a ser enviada para o usuário.",
-        },
-      },
-      required: ["value"],
-    },
-    strict: true,
-  },
-  {
-    type: "function",
-    name: "add_var",
-    description:
-      "Atribuir valor a uma variavel. tringger: /[add_var, <Nome da variavel>, <Qual o valor?>]",
-    parameters: {
-      type: "object",
-      additionalProperties: false,
-      properties: {
-        name: {
-          type: "string",
-          description: "Nome da variavel a ser atribuída",
-        },
-        value: {
-          type: "string",
-          description: "Valor a ser atribuído à variavel",
-        },
+        name: { type: "string", description: "Nome da variável." },
+        value: { type: "string", description: "Valor da variável" },
       },
       required: ["name", "value"],
     },
@@ -138,16 +114,15 @@ const tools: OpenAI.Responses.Tool[] = [
   },
   {
     type: "function",
-    name: "rm_var",
-    description:
-      "Remove uma variavel. tringger: /[remove_var, <Nome da variavel>]",
+    name: "remover_variavel",
+    description: "Remove uma variavel do usuário.",
     parameters: {
       type: "object",
       additionalProperties: false,
       properties: {
         name: {
           type: "string",
-          description: "Nome da variavel a ser removida",
+          description: "Nome da variável.",
         },
       },
       required: ["name"],
@@ -156,16 +131,15 @@ const tools: OpenAI.Responses.Tool[] = [
   },
   {
     type: "function",
-    name: "add_tag",
-    description:
-      'Adiciona uma tag/etiqueta. tringger: /[add_tag, "Nome estático"]',
+    name: "adicionar_tag",
+    description: "Adiciona uma tag/etiqueta ao usuário.",
     parameters: {
       type: "object",
       additionalProperties: false,
       properties: {
         name: {
           type: "string",
-          description: "Nome estático da tag/etiqueta a ser adicionada",
+          description: "Nome da tag/etiqueta.",
         },
       },
       required: ["name"],
@@ -174,15 +148,15 @@ const tools: OpenAI.Responses.Tool[] = [
   },
   {
     type: "function",
-    name: "rm_tag",
-    description: "Remove uma tag/etiqueta. tringger: /[remove_tag, <Nome>]",
+    name: "remover_tag",
+    description: "Remove uma tag/etiqueta do usuário.",
     parameters: {
       type: "object",
       additionalProperties: false,
       properties: {
         name: {
           type: "string",
-          description: "Nome da tag/etiqueta a ser removida",
+          description: "Nome da tag/etiqueta.",
         },
       },
       required: ["name"],
@@ -209,7 +183,7 @@ const tools: OpenAI.Responses.Tool[] = [
   {
     type: "function",
     name: "enviar_fluxo",
-    description: "Use para transferir para outro fluxograma/fluxo.",
+    description: "Use para transferir o usuário para outro fluxograma/fluxo.",
     parameters: {
       type: "object",
       additionalProperties: false,
@@ -226,14 +200,14 @@ const tools: OpenAI.Responses.Tool[] = [
   {
     type: "function",
     name: "buscar_tag",
-    description: "Use para buscar informações de uma tag/etiqueta.",
+    description: "Use para saber se a tag/etiqueta está associada ao usuário.",
     parameters: {
       type: "object",
       additionalProperties: false,
       properties: {
         name: {
           type: "string",
-          description: "Nome da tag/etiqueta que deseja buscar.",
+          description: "Nome da tag/etiqueta.",
         },
       },
       required: ["name"],
@@ -243,7 +217,7 @@ const tools: OpenAI.Responses.Tool[] = [
   {
     type: "function",
     name: "aguardar_tempo",
-    description: "Use para pausar/aguardar um tempo para voltar a interação.",
+    description: "Use para pausar/aguardar um tempo para voltar a interagir.",
     parameters: {
       type: "object",
       additionalProperties: false,
@@ -302,7 +276,7 @@ const tools: OpenAI.Responses.Tool[] = [
       },
       required: ["id"],
     },
-    strict: true,
+    strict: false,
   },
   {
     type: "function",
@@ -323,7 +297,7 @@ const tools: OpenAI.Responses.Tool[] = [
       },
       required: ["id"],
     },
-    strict: true,
+    strict: false,
   },
   {
     type: "function",
@@ -344,7 +318,7 @@ const tools: OpenAI.Responses.Tool[] = [
       },
       required: ["id"],
     },
-    strict: true,
+    strict: false,
   },
   {
     type: "function",
@@ -365,7 +339,7 @@ const tools: OpenAI.Responses.Tool[] = [
       },
       required: ["id"],
     },
-    strict: true,
+    strict: false,
   },
   {
     type: "function",
@@ -388,7 +362,7 @@ const tools: OpenAI.Responses.Tool[] = [
   {
     type: "function",
     name: "gerar_codigo_randomico",
-    description: "Use para criar um codigo aleatorio.",
+    description: "Use para criar um código aleatório.",
     parameters: {
       type: "object",
       additionalProperties: false,
@@ -400,7 +374,7 @@ const tools: OpenAI.Responses.Tool[] = [
       },
       // required: ["id"],
     },
-    strict: true,
+    strict: false,
   },
   {
     type: "function",
@@ -432,10 +406,16 @@ const tools: OpenAI.Responses.Tool[] = [
           description: "Adiciona botões no card do evento",
           items: { type: "string" },
         },
+        reminders: {
+          type: "array",
+          description:
+            "Formato obrigatorio de cada item: YYYY-MM-DDTHH:mm (ISO 8601)",
+          items: { type: "string" },
+        },
       },
       required: ["title", "status", "startAt"],
     },
-    strict: true,
+    strict: false,
   },
   {
     type: "function",
@@ -475,7 +455,7 @@ const tools: OpenAI.Responses.Tool[] = [
       },
       required: ["event_code"],
     },
-    strict: true,
+    strict: false,
   },
   {
     type: "function",
@@ -554,7 +534,7 @@ const tools: OpenAI.Responses.Tool[] = [
       },
       // required: [],
     },
-    strict: true,
+    strict: false,
   },
   {
     type: "function",
@@ -637,9 +617,81 @@ const tools: OpenAI.Responses.Tool[] = [
       },
       required: ["event_code"],
     },
+    strict: false,
+  },
+  {
+    type: "function",
+    name: "buscar_momento_atual",
+    description:
+      "Retorna a data e hora atuais com informações de fuso e dia da semana",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+      additionalProperties: false,
+    },
+    strict: false,
+  },
+  {
+    type: "function",
+    name: "resolver_dia_da_semana",
+    description:
+      "Resolve um dia da semana citado pelo usuário para a próxima data futura correspondente",
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        dia_semana: {
+          type: "string",
+          enum: [
+            "segunda",
+            "terca",
+            "quarta",
+            "quinta",
+            "sexta",
+            "sabado",
+            "domingo",
+          ],
+          description: "Dia da semana normalizado, sem acentos",
+        },
+      },
+      required: ["dia_semana"],
+    },
     strict: true,
   },
+  {
+    type: "function",
+    name: "buscar_eventos_por_data",
+    description:
+      "Use quando precisar buscar eventos em um dia específico ou um intervalo de dias",
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        tipo: {
+          type: "string",
+          enum: ["dia", "intervalo"],
+        },
+        inicio: {
+          type: "string",
+          description: "Data inicial no formato YYYY-MM-DD",
+        },
+        fim: {
+          type: "string",
+          description:
+            "Data final no formato YYYY-MM-DD (obrigatório se tipo = intervalo)",
+        },
+      },
+      required: ["tipo", "inicio"],
+    },
+    strict: false,
+  },
 ];
+
+type ResultDebounceAgentAI =
+  | { run: "exit" }
+  | { run: "enviar_fluxo" }
+  | undefined;
 
 function buildInstructions(dto: {
   name: string;
@@ -653,7 +705,7 @@ function buildInstructions(dto: {
   lines.push(`Seu nome é ${dto.name}.`);
   lines.push("\n");
   if (dto.personality) {
-    lines.push(`# Personalidade`);
+    lines.push(`# Sua personalidade`);
     lines.push("\n");
     lines.push(dto.personality);
     lines.push("\n\n");
@@ -689,7 +741,7 @@ function buildInstructions(dto: {
 
 const getNextTimeOut = (
   type: "minutes" | "hours" | "days" | "seconds",
-  value: number
+  value: number,
 ) => {
   try {
     if (type === "seconds" && value > 1440) value = 1440;
@@ -749,6 +801,7 @@ async function getAgent(id: number, accountId: number) {
         ProviderCredential: { select: { apiKey: true } },
         vectorStoreId: true,
         debounce: true,
+        service_tier: true,
       },
     });
     if (!agent) throw new Error("AgentAI not found");
@@ -797,7 +850,7 @@ export const NodeAgentAI = async ({
     /// o adm solicita que execute o tools "..." valor: "..."
     const nextTimeout = getNextTimeOut("seconds", timeout);
     const timeoutJob = scheduleJob(nextTimeout, async () =>
-      props.actions?.onExecuteTimeout?.()
+      props.actions?.onExecuteTimeout?.(),
     );
     scheduleTimeoutAgentAI.set(keyMap, timeoutJob);
   }
@@ -868,243 +921,258 @@ export const NodeAgentAI = async ({
   async function execute() {
     console.log("ABRIU O DEBOUNCE");
     cacheDebouceAgentAIRun.set(keyMap, true);
-    async function runDebounceAgentAI(): Promise<
-      { run: "exit" } | { run: "enviar_fluxo" } | undefined
-    > {
-      return new Promise<{ run: "exit" } | { run: "enviar_fluxo" } | undefined>(
-        async (resolve) => {
-          cacheNewMessageWhileDebouceAgentAIRun.set(keyMap, false);
+    async function runDebounceAgentAI(): Promise<ResultDebounceAgentAI> {
+      return new Promise<ResultDebounceAgentAI>(async (resolve, reject) => {
+        cacheNewMessageWhileDebouceAgentAIRun.set(keyMap, false);
 
-          const agent = await getAgent(props.data.agentId, props.accountId);
-          const openai = new OpenAI({ apiKey: agent.apiKey });
+        const agent = await getAgent(props.data.agentId, props.accountId);
+        const openai = new OpenAI({ apiKey: agent.apiKey });
 
-          const property0 = await resolveTextVariables({
-            accountId: props.accountId,
-            contactsWAOnAccountId: props.contactAccountId,
-            numberLead: props.numberLead,
-            text: props.data.prompt || "",
-          });
-          const property = await resolveTextVariables({
-            accountId: props.accountId,
-            contactsWAOnAccountId: props.contactAccountId,
-            numberLead: props.numberLead,
-            text: property0 || "",
-          });
-          const knowledgeBase = await resolveTextVariables({
-            accountId: props.accountId,
-            contactsWAOnAccountId: props.contactAccountId,
-            numberLead: props.numberLead,
-            text: agent.knowledgeBase || "",
-          });
-          const instructions1 = await resolveTextVariables({
-            accountId: props.accountId,
-            contactsWAOnAccountId: props.contactAccountId,
-            numberLead: props.numberLead,
-            text: agent.instructions || "",
-          });
-          const instructions = buildInstructions({
-            name: agent.name,
-            emojiLevel: agent.emojiLevel,
-            personality: agent.personality || undefined,
-            knowledgeBase: knowledgeBase,
-            instructions: instructions1,
-          });
+        const property0 = await resolveTextVariables({
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactAccountId,
+          numberLead: props.numberLead,
+          text: props.data.prompt || "",
+        });
+        const property = await resolveTextVariables({
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactAccountId,
+          numberLead: props.numberLead,
+          text: property0 || "",
+        });
+        const knowledgeBase = await resolveTextVariables({
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactAccountId,
+          numberLead: props.numberLead,
+          text: agent.knowledgeBase || "",
+        });
+        const instructions1 = await resolveTextVariables({
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactAccountId,
+          numberLead: props.numberLead,
+          text: agent.instructions || "",
+        });
+        const instructions = buildInstructions({
+          name: agent.name,
+          emojiLevel: agent.emojiLevel,
+          personality: agent.personality || undefined,
+          knowledgeBase: knowledgeBase,
+          instructions: instructions1,
+        });
 
-          if (agent.vectorStoreId) {
-            tools.push({
-              vector_store_ids: [agent.vectorStoreId],
-              type: "file_search",
-            });
-          }
-          const listMsg = cacheMessagesDebouceAgentAI.get(keyMap) || [];
-          await new Promise(async (resExecute) => {
-            async function executeProcess(
-              msgs: { isDev: boolean; value: string }[],
-              previous_response?: string
+        if (agent.vectorStoreId) {
+          tools.push({
+            vector_store_ids: [agent.vectorStoreId],
+            type: "file_search",
+          });
+        }
+        const listMsg = cacheMessagesDebouceAgentAI.get(keyMap) || [];
+        await new Promise(async (resExecute) => {
+          async function executeProcess(
+            msgs: { isDev: boolean; value: string }[],
+            previous_response?: string,
+          ) {
+            console.log({ entrada: msgs });
+            cacheNewMessageWhileDebouceAgentAIRun.delete(keyMap);
+            cacheMessagesDebouceAgentAI.delete(keyMap);
+            const sentPrompt = cacheAgentsSentPromptInstruction.get(keyMap);
+            let isSentHere = false;
+            let input: any[] = [];
+
+            // pra saber se já foi enviado a instrução do agente e nao
+            // enviar novamente a mesma instrução a cada mensagem.
+            if (sentPrompt?.length && sentPrompt.includes(props.nodeId)) {
+              for (const ms of msgs) {
+                input.push({
+                  role: ms.isDev ? "system" : "user",
+                  content: ms.value,
+                });
+              }
+            } else {
+              if (property) input.push(buildInput(property));
+              for (const ms of msgs) {
+                input.push({
+                  role: ms.isDev ? "system" : "user",
+                  content: ms.value,
+                });
+              }
+              cacheAgentsSentPromptInstruction.set(keyMap, [
+                props.nodeId,
+                ...(sentPrompt || []),
+              ]);
+              isSentHere = true;
+            }
+            if (!previous_response) {
+              input = [{ role: "developer", content: instructions }, ...input];
+            }
+            // usando recuperar as notificações que o agente recebeu de outro agente.
+            const nextinputs = cacheNextInputsCurrentAgents.get(
+              props.flowStateId,
+            );
+            if (nextinputs?.length) {
+              input = [
+                ...nextinputs.map((content) => ({
+                  role: "developer",
+                  content,
+                })),
+                ...input,
+              ];
+            }
+
+            let temperature: undefined | number = undefined;
+            if (
+              agent.model === "o3-mini" ||
+              agent.model === "gpt-5-nano" ||
+              agent.model === "gpt-5-mini" ||
+              agent.model === "gpt-4.1-mini" ||
+              agent.model === "o4-mini"
             ) {
-              console.log({ entrada: msgs });
-              cacheNewMessageWhileDebouceAgentAIRun.delete(keyMap);
-              cacheMessagesDebouceAgentAI.delete(keyMap);
-              const sentPrompt = cacheAgentsSentPromptInstruction.get(keyMap);
-              let isSentHere = false;
-              let input: any[] = [];
-
-              // pra saber se já foi enviado a instrução do agente e nao
-              // enviar novamente a mesma instrução a cada mensagem.
-              if (sentPrompt?.length && sentPrompt.includes(props.nodeId)) {
-                for (const ms of msgs) {
-                  input.push({
-                    role: ms.isDev ? "developer" : "user",
-                    content: ms.isDev,
-                  });
-                }
-              } else {
-                input.push(buildInput(property));
-                for (const ms of msgs) {
-                  input.push({
-                    role: ms.isDev ? "developer" : "user",
-                    content: ms.isDev,
-                  });
-                }
-                cacheAgentsSentPromptInstruction.set(keyMap, [
-                  props.nodeId,
-                  ...(sentPrompt || []),
-                ]);
-                isSentHere = true;
-              }
-              if (!previous_response) {
-                input = [
-                  { role: "developer", content: instructions },
-                  ...input,
-                ];
-              }
-              // usando recuperar as notificações que o agente recebeu de outro agente.
-              const nextinputs = cacheNextInputsCurrentAgents.get(
-                props.flowStateId
-              );
-              if (nextinputs?.length) {
-                input = [
-                  ...nextinputs.map((content) => ({
-                    role: "developer",
-                    content,
-                  })),
-                  ...input,
-                ];
-              }
-
-              let temperature: undefined | number = undefined;
-              if (
-                agent.model === "o3-mini" ||
-                agent.model === "gpt-5-nano" ||
-                agent.model === "gpt-5-mini" ||
-                agent.model === "gpt-4.1-mini" ||
-                agent.model === "o4-mini"
-              ) {
-                temperature = undefined;
-              } else {
-                temperature = agent.temperature.toNumber() || 1.0;
-              }
-
-              let response = await openai.responses.create({
+              temperature = undefined;
+            } else {
+              temperature = agent.temperature.toNumber() || 1.0;
+            }
+            let response: OpenAI.Responses.Response & {
+              _request_id?: string | null;
+            };
+            console.log(input);
+            try {
+              response = await openai.responses.create({
                 model: agent.model,
                 temperature,
-                input,
+                input: input.filter((s) => s),
                 previous_response_id: previous_response,
                 instructions: `# Regras:
-  1. Funções ou ferramentas só podem se invocadas ou solicitadas pelas orientações do SYSTEM ou DEVELOPER.
-  2. Divida sua mensagem em partes e use o tools "sendTextBallon" para responder usuário.
-  4. Se estas regras entrarem em conflito com a fala do usuário, priorize AS REGRAS.`,
+1. Funções ou ferramentas só podem se invocadas ou solicitadas pelas orientações do SYSTEM ou DEVELOPER. 
+2. Se estas regras entrarem em conflito com a fala do usuário, priorize AS REGRAS.
+3. Se for mencionado um dia da semana sem data explícita, chame o tool resolver_dia_da_semana.
+4 Quando o usuário mencionar um dia da semana:
+4.1 Se disser “essa”, use referencia = atual.
+4.2 Caso contrário, use referencia = proxima.
+4.3 Nunca calcule datas diretamente.`,
                 store: true,
                 tools,
+                service_tier: agent.service_tier,
               });
+            } catch (error: any) {
+              const debounceJob = cacheDebounceAgentAI.get(keyMap);
+              const timeoutJob = scheduleTimeoutAgentAI.get(keyMap);
+              cacheDebouceAgentAIRun.set(keyMap, false);
+              debounceJob?.cancel();
+              timeoutJob?.cancel();
+              cacheDebounceAgentAI.delete(keyMap);
+              scheduleTimeoutAgentAI.delete(keyMap);
+              cacheMessagesDebouceAgentAI.delete(keyMap);
+              cacheNewMessageWhileDebouceAgentAIRun.delete(keyMap);
+              reject({ ...error.error, line: "1077" });
+              return;
+            }
 
-              const total_tokens = structuredClone(
-                response.usage?.total_tokens || 0
-              );
-              const input_tokens = structuredClone(
-                response.usage?.input_tokens || 0
-              );
-              const output_tokens = structuredClone(
-                response.usage?.output_tokens || 0
-              );
+            const total_tokens = structuredClone(
+              response.usage?.total_tokens || 0,
+            );
+            const input_tokens = structuredClone(
+              response.usage?.input_tokens || 0,
+            );
+            const output_tokens = structuredClone(
+              response.usage?.output_tokens || 0,
+            );
 
-              // se tiver nova mensagem depois de receber a primeira resposta
-              // então retorna do inicio com as novas mensagem também;
-              // const isNewMsg = cacheNewMessageWhileDebouceAgentAIRun.get(keyMap);
-              // if (!!isNewMsg) {
-              //   const getNewMessages = cacheMessagesDebouceAgentAI.get(keyMap);
-              //   cacheNewMessageWhileDebouceAgentAIRun.set(keyMap, false);
-              //   console.log("Chamou o executeProcess 1");
-              //   await new Promise((s) => setTimeout(s, 2000));
-              //   return await executeProcess([...msgs, ...(getNewMessages || [])], nextresponse.id);
-              // }
+            // se tiver nova mensagem depois de receber a primeira resposta
+            // então retorna do inicio com as novas mensagem também;
+            // const isNewMsg = cacheNewMessageWhileDebouceAgentAIRun.get(keyMap);
+            // if (!!isNewMsg) {
+            //   const getNewMessages = cacheMessagesDebouceAgentAI.get(keyMap);
+            //   cacheNewMessageWhileDebouceAgentAIRun.set(keyMap, false);
+            //   console.log("Chamou o executeProcess 1");
+            //   await new Promise((s) => setTimeout(s, 2000));
+            //   return await executeProcess([...msgs, ...(getNewMessages || [])], nextresponse.id);
+            // }
 
-              // const calls = response.output.filter(
-              //   (o) => o.type === "function_call"
-              // );
-              // console.log("=============== START ====");
-              // console.log(calls);
-              // console.log("=============== START ====");
+            // const calls = response.output.filter(
+            //   (o) => o.type === "function_call"
+            // );
+            // console.log("=============== START ====");
+            // console.log(calls);
+            // console.log("=============== START ====");
 
-              // executa ferramentas do agente recursivamente com as mensagens pendentes;
-              let executeNow = null as null | {
-                event:
-                  | "exist"
-                  | "enviar_fluxo"
-                  | "transferir_para_atendimento_humano";
-                value: string | number;
-              };
-              // console.log({ isExit: executeNow, msgs, agenteName: agent.name });
-              const fnCallPromise = (propsCALL: OpenAI.Responses.Response) => {
-                return new Promise<
-                  OpenAI.Responses.Response & { restart?: boolean }
-                >((resolve) => {
-                  const run = async (
-                    rProps: OpenAI.Responses.Response & { restart?: boolean }
-                  ) => {
-                    const calls = rProps.output.filter(
-                      (o) => o.type === "function_call"
-                    );
-                    console.log(calls);
-                    if (!calls.length) return resolve(rProps);
+            // executa ferramentas do agente recursivamente com as mensagens pendentes;
+            let executeNow = null as null | {
+              event:
+                | "exist"
+                | "enviar_fluxo"
+                | "transferir_para_atendimento_humano";
+              value: string | number;
+            };
+            // console.log({ isExit: executeNow, msgs, agenteName: agent.name });
+            const fnCallPromise = (propsCALL: OpenAI.Responses.Response) => {
+              return new Promise<
+                OpenAI.Responses.Response & { restart?: boolean }
+              >((resolveCall) => {
+                const run = async (
+                  rProps: OpenAI.Responses.Response & { restart?: boolean },
+                ) => {
+                  let restart = false;
+                  const outputs: OpenAI.Responses.ResponseInput = [];
+                  for await (const c of rProps.output) {
+                    if (c.type === "message") {
+                      const isNewMsg =
+                        !!cacheNewMessageWhileDebouceAgentAIRun.get(keyMap);
+                      if (isNewMsg) {
+                        restart = true;
+                        continue;
+                      }
 
-                    const outputs: any[] = [];
-                    for await (const c of calls) {
+                      for await (const item of c.content) {
+                        if (item.type === "output_text") {
+                          if (executeNow) continue;
+
+                          const texts = item.text.split("\n\n");
+                          for await (const text of texts) {
+                            try {
+                              await TypingDelay({
+                                connectionId: props.connectionWhatsId,
+                                toNumber: props.numberLead,
+                                delay: CalculeTypingDelay(text),
+                              });
+                              await SendMessageText({
+                                connectionId: props.connectionWhatsId,
+                                text: text,
+                                toNumber: props.numberLead,
+                              });
+                            } catch (error) {
+                              const debounceJob =
+                                cacheDebounceAgentAI.get(keyMap);
+                              const timeoutJob =
+                                scheduleTimeoutAgentAI.get(keyMap);
+                              debounceJob?.cancel();
+                              timeoutJob?.cancel();
+                              cacheDebounceAgentAI.delete(keyMap);
+                              scheduleTimeoutAgentAI.delete(keyMap);
+                              cacheMessagesDebouceAgentAI.delete(keyMap);
+                              props.actions.onErrorClient?.();
+                              // matar aqui;
+                            }
+                          }
+                        }
+                      }
+                    }
+                    if (c.type === "function_call") {
                       const args = JSON.parse(c.arguments);
 
                       const isNewMsg =
                         !!cacheNewMessageWhileDebouceAgentAIRun.get(keyMap);
                       if (isNewMsg) {
+                        restart = true;
                         outputs.push({
                           type: "function_call_output",
                           call_id: c.call_id,
                           output: "OK!",
-                          restart: true,
                         });
                         continue;
                       }
 
                       switch (c.name) {
-                        case "sendTextBalloon":
-                          if (executeNow) {
-                            outputs.push({
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "OK!",
-                            });
-                            continue;
-                          }
-                          try {
-                            await TypingDelay({
-                              connectionId: props.connectionWhatsId,
-                              toNumber: props.numberLead,
-                              delay: CalculeTypingDelay(args.value),
-                            });
-                            await SendMessageText({
-                              connectionId: props.connectionWhatsId,
-                              text: args.value,
-                              toNumber: props.numberLead,
-                            });
-                          } catch (error) {
-                            const debounceJob =
-                              cacheDebounceAgentAI.get(keyMap);
-                            const timeoutJob =
-                              scheduleTimeoutAgentAI.get(keyMap);
-                            debounceJob?.cancel();
-                            timeoutJob?.cancel();
-                            cacheDebounceAgentAI.delete(keyMap);
-                            scheduleTimeoutAgentAI.delete(keyMap);
-                            cacheMessagesDebouceAgentAI.delete(keyMap);
-                            props.actions.onErrorClient?.();
-                          }
-                          outputs.push({
-                            type: "function_call_output",
-                            call_id: c.call_id,
-                            output: "Mensagem enviada.",
-                          });
-                          continue;
-
-                        case "notify_agent":
+                        case "notificar_agente":
                           if (executeNow) {
                             outputs.push({
                               type: "function_call_output",
@@ -1137,7 +1205,7 @@ export const NodeAgentAI = async ({
                           });
                           continue;
 
-                        case "search_lines_in_var":
+                        case "pesquisar_valor_em_variavel":
                           if (executeNow) {
                             outputs.push({
                               type: "function_call_output",
@@ -1178,7 +1246,7 @@ export const NodeAgentAI = async ({
                           const search = searchLinesInText(
                             pick2?.value ||
                               pick2?.ContactsWAOnAccountVariable?.[0]?.value,
-                            args.query
+                            args.query,
                           );
 
                           outputs.push({
@@ -1188,7 +1256,7 @@ export const NodeAgentAI = async ({
                           });
                           continue;
 
-                        case "get_var":
+                        case "buscar_variavel":
                           if (executeNow) {
                             outputs.push({
                               type: "function_call_output",
@@ -1225,7 +1293,7 @@ export const NodeAgentAI = async ({
                             outputV =
                               "Variável não encontrada ou não está associada ao usuário.";
                           } else {
-                            outputV = `ID da variável= ${pick.id}\nValor=${valueVar}`;
+                            outputV = `ID da variável=${pick.id}\nValor=${valueVar}`;
                           }
 
                           outputs.push({
@@ -1273,7 +1341,7 @@ export const NodeAgentAI = async ({
                                 type: "function_call_output",
                                 call_id: c.call_id,
                                 output:
-                                  "Etiqueta encontrada, mas não est associada ao usuário.",
+                                  "Etiqueta encontrada, mas não está associada ao usuário.",
                               });
                             } else {
                               if (pickTag.TagOnContactsWAOnAccount.length) {
@@ -1289,7 +1357,7 @@ export const NodeAgentAI = async ({
 
                           continue;
 
-                        case "add_var":
+                        case "adicionar_variavel":
                           if (executeNow) {
                             outputs.push({
                               type: "function_call_output",
@@ -1333,7 +1401,7 @@ export const NodeAgentAI = async ({
                                     variableId: addVari.id,
                                   },
                                   select: { id: true },
-                                }
+                                },
                               );
                             if (!isExistVar) {
                               await prisma.contactsWAOnAccountVariable.create({
@@ -1366,7 +1434,7 @@ export const NodeAgentAI = async ({
                           });
                           continue;
 
-                        case "rm_var":
+                        case "remover_variavel":
                           if (executeNow) {
                             outputs.push({
                               type: "function_call_output",
@@ -1392,7 +1460,7 @@ export const NodeAgentAI = async ({
                                     variableId: rmVar.id,
                                   },
                                   select: { id: true },
-                                }
+                                },
                               );
                             if (picked) {
                               await prisma.contactsWAOnAccountVariable.delete({
@@ -1407,7 +1475,7 @@ export const NodeAgentAI = async ({
                           });
                           continue;
 
-                        case "add_tag":
+                        case "adicionar_tag":
                           if (executeNow) {
                             outputs.push({
                               type: "function_call_output",
@@ -1455,7 +1523,7 @@ export const NodeAgentAI = async ({
                           });
                           continue;
 
-                        case "rm_tag":
+                        case "remover_tag":
                           if (executeNow) {
                             outputs.push({
                               type: "function_call_output",
@@ -1514,7 +1582,7 @@ export const NodeAgentAI = async ({
                           await mongo();
                           const flow = await ModelFlows.findOne(
                             { name: args.name },
-                            { _id: 1 }
+                            { _id: 1 },
                           ).lean();
                           if (!flow) {
                             outputs.push({
@@ -1545,7 +1613,7 @@ export const NodeAgentAI = async ({
                             continue;
                           }
                           const botWA = sessionsBaileysWA.get(
-                            props.connectionWhatsId
+                            props.connectionWhatsId,
                           );
                           if (botWA) {
                             await NodeNotifyWA({
@@ -1588,7 +1656,7 @@ export const NodeAgentAI = async ({
                             continue;
                           }
                           const botWA2 = sessionsBaileysWA.get(
-                            props.connectionWhatsId
+                            props.connectionWhatsId,
                           );
                           if (botWA2) {
                             let isError = false;
@@ -1647,7 +1715,7 @@ export const NodeAgentAI = async ({
                             continue;
                           }
                           const botWA3 = sessionsBaileysWA.get(
-                            props.connectionWhatsId
+                            props.connectionWhatsId,
                           );
                           if (botWA3) {
                             let isError = false;
@@ -1699,7 +1767,7 @@ export const NodeAgentAI = async ({
                             continue;
                           }
                           const botWA4 = sessionsBaileysWA.get(
-                            props.connectionWhatsId
+                            props.connectionWhatsId,
                           );
                           if (botWA4) {
                             let isError = false;
@@ -1752,7 +1820,7 @@ export const NodeAgentAI = async ({
                             continue;
                           }
                           const botWA5 = sessionsBaileysWA.get(
-                            props.connectionWhatsId
+                            props.connectionWhatsId,
                           );
                           if (botWA5) {
                             let isError = false;
@@ -1857,52 +1925,62 @@ export const NodeAgentAI = async ({
                           continue;
 
                         case "criar_evento":
-                          let codeAppointment = "";
-                          const pickBusiness = await prisma.business.findFirst({
-                            where: {
-                              name: props.businessName,
+                          try {
+                            let codeAppointment = "";
+                            const pickBusiness =
+                              await prisma.business.findFirst({
+                                where: {
+                                  name: props.businessName,
+                                  accountId: props.accountId,
+                                },
+                                select: { id: true },
+                              });
+                            if (!pickBusiness) {
+                              outputs.push({
+                                type: "function_call_output",
+                                call_id: c.call_id,
+                                output: `Não foi possivel criar evento. Projeto(${props.businessName}) não encontrado. Error interno!`,
+                              });
+                              continue;
+                            }
+                            await NodeCreateAppointment({
                               accountId: props.accountId,
-                            },
-                            select: { id: true },
-                          });
-                          if (!pickBusiness) {
+                              connectionWhatsId: props.connectionWhatsId,
+                              flowId: props.flowId,
+                              numberLead: props.numberLead,
+                              actions: {
+                                onCodeAppointment(code) {
+                                  codeAppointment = code;
+                                },
+                              },
+                              data: {
+                                ...args,
+                                ...(args.actionChannels?.length && {
+                                  actionChannels: args.actionChannels.map(
+                                    (text: string) => ({ text, key: nanoid() }),
+                                  ),
+                                }),
+                                businessId: pickBusiness.id,
+                              },
+                              contactsWAOnAccountId: props.contactAccountId,
+                              flowStateId: props.flowStateId,
+                              nodeId: props.nodeId,
+                              businessName: props.businessName,
+                            });
+
                             outputs.push({
                               type: "function_call_output",
                               call_id: c.call_id,
-                              output: `Não foi possivel criar evento. Projeto(${props.businessName}) não encontrado. Error interno!`,
+                              output: `Criado com sucesso, codigo do evento: ${codeAppointment}`,
                             });
-                            continue;
+                          } catch (error) {
+                            console.log(error);
+                            outputs.push({
+                              type: "function_call_output",
+                              call_id: c.call_id,
+                              output: `Error interno ao tentar criar agendamento.`,
+                            });
                           }
-                          await NodeCreateAppointment({
-                            accountId: props.accountId,
-                            connectionWhatsId: props.connectionWhatsId,
-                            flowId: props.flowId,
-                            numberLead: props.numberLead,
-                            actions: {
-                              onCodeAppointment(code) {
-                                codeAppointment = code;
-                              },
-                            },
-                            data: {
-                              ...args,
-                              ...(args.actionChannels?.length && {
-                                actionChannels: args.actionChannels.map(
-                                  (text: string) => ({ text, key: nanoid() })
-                                ),
-                              }),
-                              businessId: pickBusiness.id,
-                            },
-                            contactsWAOnAccountId: props.contactAccountId,
-                            flowStateId: props.flowStateId,
-                            nodeId: props.nodeId,
-                            businessName: props.businessName,
-                          });
-
-                          outputs.push({
-                            type: "function_call_output",
-                            call_id: c.call_id,
-                            output: `Criado com sucesso, codigo do evento: ${codeAppointment}`,
-                          });
                           continue;
 
                         case "atualizar_evento":
@@ -1913,7 +1991,7 @@ export const NodeAgentAI = async ({
                                 accountId: props.accountId,
                               },
                               select: { id: true },
-                            }
+                            },
                           );
                           if (!pickBusiness2) {
                             outputs.push({
@@ -1937,7 +2015,7 @@ export const NodeAgentAI = async ({
                               n_appointment: event_code,
                               ...(args.actionChannels?.length && {
                                 actionChannels: args.actionChannels.map(
-                                  (text: string) => ({ text, key: nanoid() })
+                                  (text: string) => ({ text, key: nanoid() }),
                                 ),
                               }),
                             },
@@ -1961,7 +2039,7 @@ export const NodeAgentAI = async ({
                                 accountId: props.accountId,
                               },
                               select: { id: true },
-                            }
+                            },
                           );
                           if (!pickBusiness3) {
                             outputs.push({
@@ -1985,7 +2063,7 @@ export const NodeAgentAI = async ({
                               ...args,
                               ...(args.actionChannels?.length && {
                                 actionChannels: args.actionChannels.map(
-                                  (text: string) => ({ text, key: nanoid() })
+                                  (text: string) => ({ text, key: nanoid() }),
                                 ),
                               }),
                               businessId: pickBusiness3.id,
@@ -2018,7 +2096,7 @@ export const NodeAgentAI = async ({
                               nOrder: event_code,
                               ...(args.actionChannels?.length && {
                                 actionChannels: args.actionChannels.map(
-                                  (text: string) => ({ text, key: nanoid() })
+                                  (text: string) => ({ text, key: nanoid() }),
                                 ),
                               }),
                             },
@@ -2031,6 +2109,135 @@ export const NodeAgentAI = async ({
                             call_id: c.call_id,
                             output: `Pedido atualizado.`,
                           });
+                          continue;
+
+                        case "buscar_momento_atual":
+                          const currentMoment =
+                            moment().tz("America/Sao_Paulo");
+
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output: JSON.stringify({
+                              data: currentMoment.format("YYYY-MM-DD"),
+                              hora: currentMoment.format("HH:mm"),
+                              dia_semana_nome: currentMoment.format("dddd"),
+                              dia_semana_number: currentMoment.day(),
+                            }),
+                          });
+                          continue;
+
+                        case "resolver_dia_da_semana":
+                          const { dia_semana, referencia } = args;
+                          const now = moment().startOf("day");
+
+                          const mapa: Record<string, number> = {
+                            domingo: 0,
+                            segunda: 1,
+                            terca: 2,
+                            quarta: 3,
+                            quinta: 4,
+                            sexta: 5,
+                            sabado: 6,
+                          };
+
+                          const target = mapa[dia_semana];
+
+                          if (target === undefined) {
+                            outputs.push({
+                              type: "function_call_output",
+                              call_id: c.call_id,
+                              output: `Dia da semana inválido: ${dia_semana}`,
+                            });
+                            continue;
+                          }
+
+                          let dataBase = now.clone();
+                          if (referencia === "proxima") dataBase.add(1, "week");
+                          dataBase.day(target);
+
+                          if (
+                            referencia === "atual" &&
+                            dataBase.isBefore(now, "day")
+                          ) {
+                            outputs.push({
+                              type: "function_call_output",
+                              call_id: c.call_id,
+                              output: JSON.stringify({
+                                error: "DATA_NO_PASSADO",
+                                message:
+                                  "O dia solicitado já passou na semana atual",
+                              }),
+                            });
+                            continue;
+                          }
+
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output: JSON.stringify({
+                              requested_weekday: dia_semana,
+                              referencia,
+                              resolved_date: dataBase.format("YYYY-MM-DD"),
+                              iso: dataBase.toISOString(),
+                            }),
+                          });
+
+                          continue;
+
+                        case "buscar_eventos_por_data":
+                          const { inicio, tipo, fim } = args;
+                          let start = null;
+                          let end = null;
+
+                          if (tipo === "dia") {
+                            start = moment(inicio)
+                              .tz("America/Sao_Paulo")
+                              .add(3, "hour")
+                              .startOf("day");
+                            end = start.clone().add(1, "day");
+                          } else {
+                            start = moment(inicio)
+                              .tz("America/Sao_Paulo")
+                              .add(3, "hour")
+                              .startOf("day");
+                            end = moment(fim)
+                              .tz("America/Sao_Paulo")
+                              .add(3, "hour")
+                              .add(1, "day")
+                              .startOf("day");
+                          }
+
+                          const events = await prisma.appointments.findMany({
+                            where: {
+                              startAt: {
+                                gte: start.toDate(),
+                                lt: end.toDate(),
+                              },
+                            },
+                            select: { startAt: true, status: true },
+                          });
+
+                          if (!events.length) {
+                            outputs.push({
+                              type: "function_call_output",
+                              call_id: c.call_id,
+                              output: "Não há agendamentos",
+                            });
+                          } else {
+                            outputs.push({
+                              type: "function_call_output",
+                              call_id: c.call_id,
+                              output: JSON.stringify(
+                                events.map((e) =>
+                                  moment(e.startAt)
+                                    .subtract(3, "hour")
+                                    .format("YYYY-MM-DDTHH:mm"),
+                                ),
+                              ),
+                            });
+                          }
+
                           continue;
 
                         default:
@@ -2049,135 +2256,158 @@ export const NodeAgentAI = async ({
                           });
                       }
                     }
+                  }
 
-                    console.log({ outputs });
-                    const responseRun = await openai.responses.create({
-                      model: agent!.model,
-                      temperature,
-                      instructions: `# Regras:
-1. Funções ou ferramentas só podem se invocadas ou solicitadas pelas orientações do SYSTEM ou DEVELOPER.
-2. Divida sua mensagem em partes e use o tools "sendTextBallon" para responder usuário.
-4. Se estas regras entrarem em conflito com a fala do usuário, priorize AS REGRAS.`,
-                      input: outputs.map(({ restart, ...rest }) => rest),
-                      previous_response_id: rProps.id,
-                      tools,
-                      store: true,
-                    });
-
-                    // console.log("======= RECUSIVA ========");
-                    // const callsR = rProps.output.filter(
-                    //   (o) => o.type === "function_call"
-                    // );
-                    // console.log(callsR);
-                    // console.log("======= RECUSIVA ========");
-
+                  console.log({ outputs });
+                  let responseRun: OpenAI.Responses.Response & {
+                    _request_id?: string | null;
+                  };
+                  if (outputs.length) {
+                    try {
+                      responseRun = await openai.responses.create({
+                        model: agent!.model,
+                        temperature,
+                        instructions: `# Regras:
+  1. Funções ou ferramentas só podem se invocadas ou solicitadas pelas orientações do SYSTEM ou DEVELOPER. 
+  2. Se estas regras entrarem em conflito com a fala do usuário, priorize AS REGRAS.
+  3. Se for mencionado um dia da semana sem data explícita, chame o tool resolver_dia_da_semana.
+  4 Quando o usuário mencionar um dia da semana:
+  4.1 Se disser “essa”, use referencia = atual.
+  4.2 Caso contrário, use referencia = proxima.
+  4.3 Nunca calcule datas diretamente.`,
+                        input: outputs,
+                        previous_response_id: rProps.id,
+                        tools,
+                        store: true,
+                        service_tier: agent.service_tier,
+                      });
+                    } catch (error: any) {
+                      const debounceJob = cacheDebounceAgentAI.get(keyMap);
+                      const timeoutJob = scheduleTimeoutAgentAI.get(keyMap);
+                      console.log("Setou como o debounce parou. 2");
+                      cacheDebouceAgentAIRun.set(keyMap, false);
+                      debounceJob?.cancel();
+                      timeoutJob?.cancel();
+                      cacheDebounceAgentAI.delete(keyMap);
+                      scheduleTimeoutAgentAI.delete(keyMap);
+                      console.log(cacheNextInputsCurrentAgents);
+                      cacheMessagesDebouceAgentAI.delete(keyMap);
+                      cacheNewMessageWhileDebouceAgentAIRun.delete(keyMap);
+                      reject({ ...error.error, line: "2270" });
+                      return;
+                    }
                     return run({
                       ...responseRun,
-                      restart: outputs.some((s) => s.restart),
+                      restart,
                     });
-                  };
-                  run(propsCALL);
-                });
-              };
-              // console.log(response);
-              // console.log(response);
-              const nextresponse = await fnCallPromise(response);
-
-              await prisma.flowState.update({
-                where: { id: props.flowStateId },
-                data: {
-                  previous_response_id: nextresponse.id,
-                  totalTokens: {
-                    increment:
-                      (nextresponse.usage?.total_tokens || 0) + total_tokens,
-                  },
-                  inputTokens: {
-                    increment:
-                      (nextresponse.usage?.input_tokens || 0) + input_tokens,
-                  },
-                  outputTokens: {
-                    increment:
-                      (nextresponse.usage?.output_tokens || 0) + output_tokens,
-                  },
-                },
-              });
-              console.log({ isExit: executeNow });
-              if (nextresponse.restart) {
-                const getNewMessages = cacheMessagesDebouceAgentAI.get(keyMap);
-                console.log("Chamou o executeProcess 2");
-                return await executeProcess(
-                  [...msgs, ...(getNewMessages || [])],
-                  nextresponse.id
-                );
-              }
-
-              if (!executeNow) {
-                const isNewMsg =
-                  !!cacheNewMessageWhileDebouceAgentAIRun.get(keyMap);
-                // console.log({ isNewMsg }, "JA NO RESULTADO!");
-                const newlistMsg =
-                  cacheMessagesDebouceAgentAI.get(keyMap) || [];
-                if (isNewMsg || nextresponse.restart || newlistMsg.length) {
-                  if (isSentHere) {
-                    const sentPrompt =
-                      cacheAgentsSentPromptInstruction.get(keyMap);
-                    if (sentPrompt?.length) {
-                      cacheAgentsSentPromptInstruction.set(
-                        keyMap,
-                        sentPrompt.filter((s) => s !== props.nodeId)
-                      );
-                    }
+                  } else {
+                    return resolveCall({ ...rProps, restart });
                   }
-                  console.log("Chamou o executeProcess 3");
-                  await new Promise((s) => setTimeout(s, 2000));
-                  await executeProcess(newlistMsg, nextresponse.id);
-                } else {
-                  cacheNextInputsCurrentAgents.delete(props.flowStateId);
-                  createTimeoutJob(agent!.timeout);
-                }
-              } else {
-                const debounceJob = cacheDebounceAgentAI.get(keyMap);
-                const timeoutJob = scheduleTimeoutAgentAI.get(keyMap);
-                console.log("Setou como o debounce parou. 2");
-                cacheDebouceAgentAIRun.set(keyMap, false);
-                debounceJob?.cancel();
-                timeoutJob?.cancel();
-                cacheDebounceAgentAI.delete(keyMap);
-                scheduleTimeoutAgentAI.delete(keyMap);
-                console.log(cacheNextInputsCurrentAgents);
-                cacheMessagesDebouceAgentAI.delete(keyMap);
-                cacheNewMessageWhileDebouceAgentAIRun.delete(keyMap);
+                };
+                run(propsCALL);
+              });
+            };
+            const nextresponse = await fnCallPromise(response);
 
-                if (executeNow.event === "exist") {
-                  props.actions.onExitNode?.(
-                    String(executeNow.value),
-                    nextresponse.id
-                  );
-                } else if (executeNow.event === "enviar_fluxo") {
-                  props.actions.onSendFlow?.(
-                    String(executeNow.value),
-                    nextresponse.id
-                  );
-                } else if (
-                  executeNow.event === "transferir_para_atendimento_humano"
-                ) {
-                  // irá salvar o nodeId desse agente.
-                  // essa é o resultado esperado, já que depois de
-                  // concluir o ticket, deve voltar pro agente.
-                }
-                return resolve({ run: "exit" });
-              }
-              return resolve(undefined);
+            await prisma.flowState.update({
+              where: { id: props.flowStateId },
+              data: {
+                previous_response_id: nextresponse.id,
+                totalTokens: {
+                  increment:
+                    (nextresponse.usage?.total_tokens || 0) + total_tokens,
+                },
+                inputTokens: {
+                  increment:
+                    (nextresponse.usage?.input_tokens || 0) + input_tokens,
+                },
+                outputTokens: {
+                  increment:
+                    (nextresponse.usage?.output_tokens || 0) + output_tokens,
+                },
+              },
+            });
+            console.log({ isExit: executeNow });
+            if (nextresponse.restart) {
+              const getNewMessages = cacheMessagesDebouceAgentAI.get(keyMap);
+              console.log("Chamou o executeProcess 2");
+              return await executeProcess(
+                [...msgs, ...(getNewMessages || [])],
+                nextresponse.id,
+              );
             }
-            executeProcess([...listMsg], props.previous_response_id);
-          });
-        }
-      );
+
+            if (!executeNow) {
+              const isNewMsg =
+                !!cacheNewMessageWhileDebouceAgentAIRun.get(keyMap);
+              // console.log({ isNewMsg }, "JA NO RESULTADO!");
+              const newlistMsg = cacheMessagesDebouceAgentAI.get(keyMap) || [];
+              if (isNewMsg || nextresponse.restart || newlistMsg.length) {
+                if (isSentHere) {
+                  const sentPrompt =
+                    cacheAgentsSentPromptInstruction.get(keyMap);
+                  if (sentPrompt?.length) {
+                    cacheAgentsSentPromptInstruction.set(
+                      keyMap,
+                      sentPrompt.filter((s) => s !== props.nodeId),
+                    );
+                  }
+                }
+                console.log("Chamou o executeProcess 3");
+                await new Promise((s) => setTimeout(s, 2000));
+                await executeProcess(newlistMsg, nextresponse.id);
+              } else {
+                cacheNextInputsCurrentAgents.delete(props.flowStateId);
+                createTimeoutJob(agent!.timeout);
+              }
+            } else {
+              const debounceJob = cacheDebounceAgentAI.get(keyMap);
+              const timeoutJob = scheduleTimeoutAgentAI.get(keyMap);
+              console.log("Setou como o debounce parou. 2");
+              cacheDebouceAgentAIRun.set(keyMap, false);
+              debounceJob?.cancel();
+              timeoutJob?.cancel();
+              cacheDebounceAgentAI.delete(keyMap);
+              scheduleTimeoutAgentAI.delete(keyMap);
+              console.log(cacheNextInputsCurrentAgents);
+              cacheMessagesDebouceAgentAI.delete(keyMap);
+              cacheNewMessageWhileDebouceAgentAIRun.delete(keyMap);
+
+              if (executeNow.event === "exist") {
+                props.actions.onExitNode?.(
+                  String(executeNow.value),
+                  nextresponse.id,
+                );
+              } else if (executeNow.event === "enviar_fluxo") {
+                props.actions.onSendFlow?.(
+                  String(executeNow.value),
+                  nextresponse.id,
+                );
+              } else if (
+                executeNow.event === "transferir_para_atendimento_humano"
+              ) {
+                // irá salvar o nodeId desse agente.
+                // essa é o resultado esperado, já que depois de
+                // concluir o ticket, deve voltar pro agente.
+              }
+              return resolve({ run: "exit" });
+            }
+            return resolve(undefined);
+          }
+          executeProcess([...listMsg], props.previous_response_id);
+        });
+      });
     }
-    const res = await runDebounceAgentAI();
-    console.log("Setou como o debounce parou. 1");
-    cacheDebouceAgentAIRun.set(keyMap, false);
-    if (res?.run === "exit") return;
+    try {
+      const res = await runDebounceAgentAI();
+      console.log("Setou como o debounce parou. 1");
+      cacheDebouceAgentAIRun.set(keyMap, false);
+      if (res?.run === "exit") return;
+    } catch (error) {
+      console.log(error);
+      props.actions?.onErrorClient?.();
+      return;
+    }
     // cacheMessagesDebouceAgentAI.delete(keyMap);
   }
 
@@ -2190,7 +2420,7 @@ export const NodeAgentAI = async ({
     moment()
       .add(agent.debounce || 1, "seconds")
       .toDate(),
-    execute
+    execute,
   );
 
   cacheDebounceAgentAI.set(keyMap, debounceJob);

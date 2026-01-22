@@ -35,6 +35,9 @@ services:
       dockerfile: Dockerfile.dev
     container_name: junplid
     image: junplid-core:dev
+    env_file:
+      - .env.pg
+      - .env.mongo
     depends_on:
       postgres_junplid:
         condition: service_healthy

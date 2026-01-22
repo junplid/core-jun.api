@@ -4,7 +4,7 @@ import { NodeTimerData } from "../Payload";
 
 type PropsNodeTime = {
   data: NodeTimerData;
-  nodeId: string;
+  nodeId?: string;
 };
 
 export const NodeTimer = (props: PropsNodeTime): Promise<boolean> =>

@@ -5,7 +5,7 @@ import { CreateAgentAIDTO_I } from "./DTO";
 export const createAgentAIValidation = (
   req: Request<any, any, CreateAgentAIDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
@@ -24,6 +24,13 @@ export const createAgentAIValidation = (
     instructions: Joi.string().allow("").optional(),
     timeout: Joi.number().min(1).max(14400).optional(),
     debounce: Joi.number().min(0).max(9).optional(),
+    service_tier: Joi.valid(
+      "default",
+      "flex",
+      "auto",
+      "scale",
+      "priority",
+    ).optional(),
   });
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });

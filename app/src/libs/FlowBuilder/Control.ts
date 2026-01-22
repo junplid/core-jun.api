@@ -20,7 +20,7 @@ export type IPropsControler = {
     }): Promise<void>;
     onExecutedNode?(
       props: { id: string; flowId: string },
-      isShots?: boolean
+      isShots?: boolean,
     ): Promise<void>;
     onFinish?(vl?: string): Promise<void>;
     onErrorNumber?(): void;
@@ -362,7 +362,7 @@ export const NodeControler = ({
           contactsWAOnAccountId: props.contactsWAOnAccountId,
           async onExecuteSchedule() {
             const nextNodeId = nextEdgesIds?.find((nd) =>
-              nd.sourceHandle?.includes("timeout")
+              nd.sourceHandle?.includes("timeout"),
             );
             if (!nextNodeId) {
               cacheFlowInExecution.delete(keyMap);
@@ -397,7 +397,7 @@ export const NodeControler = ({
             }
             if (d.action === "NEXT") {
               const isNextNodeMain = nextEdgesIds.find(
-                (nh) => !nh.sourceHandle || nh.sourceHandle === "main"
+                (nh) => !nh.sourceHandle || nh.sourceHandle === "main",
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
@@ -459,7 +459,7 @@ export const NodeControler = ({
           },
           async onExecuteSchedule() {
             const nextNodeId = nextEdgesIds?.find((nd) =>
-              nd.sourceHandle?.includes("timeout")
+              nd.sourceHandle?.includes("timeout"),
             );
             if (!nextNodeId) {
               if (props.forceFinish) await props.actions?.onFinish?.("110");
@@ -493,7 +493,7 @@ export const NodeControler = ({
             }
             if (d.action === "sucess") {
               const isNextNodeMain = nextEdgesIds.find(
-                (nh) => nh.sourceHandle === d.sourceHandle
+                (nh) => nh.sourceHandle === d.sourceHandle,
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
@@ -521,7 +521,7 @@ export const NodeControler = ({
             }
             if (d.action === "failed") {
               const isNextNodeMain = nextEdgesIds.find((nh) =>
-                nh.sourceHandle?.includes("failed")
+                nh.sourceHandle?.includes("failed"),
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
@@ -808,7 +808,7 @@ export const NodeControler = ({
             }
 
             const nextNodeId = nextEdgesIds.find((nd) =>
-              nd.sourceHandle?.includes(JSON.stringify(d))
+              nd.sourceHandle?.includes(JSON.stringify(d)),
             );
             if (!nextNodeId) {
               cacheFlowInExecution.delete(keyMap);
@@ -1221,33 +1221,31 @@ export const NodeControler = ({
                       value: /\[order-\d+\]/.test(props.action)
                         ? `${props.action.replace(
                             /(.*)\s\[order-(\d)+\]/,
-                            "ROOT solicitou que $1 do pedido $2(ID)"
+                            "ROOT solicitou que $1 do pedido $2(ID)",
                           )}`
                         : /\[appointment-\d+\]/.test(props.action)
-                        ? `${props.action.replace(
-                            /(.*)\s\[appointment-(\d)+\]/,
-                            "ROOT solicitou que $1 do evento $2(ID)"
-                          )}`
-                        : /\[ticket-\d+\]/.test(props.action)
-                        ? `${props.action.replace(
-                            /(.*)\s\[appointment-(\d)+\]/,
-                            "$1"
-                          )}`
-                        : props.action,
+                          ? `${props.action.replace(
+                              /(.*)\s\[appointment-(\d)+\]/,
+                              "ROOT solicitou que $1 do evento $2(ID)",
+                            )}`
+                          : /\[ticket-\d+\]/.test(props.action)
+                            ? `${props.action.replace(
+                                /(.*)\s\[appointment-(\d)+\]/,
+                                "$1",
+                              )}`
+                            : props.action,
                     }
                   : { value: props.message, isDev: false },
               }),
           connectionWhatsId: props.connectionWhatsId,
           actions: {
             onErrorClient: async () => {
-              if (props.oldNodeId === "0") {
-                props.actions?.onErrorClient &&
-                  props.actions?.onErrorClient(currentNode.id);
-              }
+              props.actions?.onErrorClient &&
+                props.actions?.onErrorClient(currentNode.id);
             },
             onExecuteTimeout: async () => {
               const nextNodeId = nextEdgesIds?.find((nd) =>
-                nd.sourceHandle?.includes("timeout")
+                nd.sourceHandle?.includes("timeout"),
               );
               if (!nextNodeId) {
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
@@ -1281,7 +1279,7 @@ export const NodeControler = ({
               //   data: { previous_response_id: null },
               // });
               const nextNodeId = nextEdgesIds?.find((nd) =>
-                nd.sourceHandle?.includes(NAME_HANDLE)
+                nd.sourceHandle?.includes(NAME_HANDLE),
               );
               if (!nextNodeId) {
                 cacheFlowInExecution.delete(keyMap);
@@ -1354,7 +1352,7 @@ export const NodeControler = ({
             }
             if (d.action === "sucess") {
               const isNextNodeMain = nextEdgesIds.find(
-                (nh) => nh.sourceHandle === d.sourceHandle
+                (nh) => nh.sourceHandle === d.sourceHandle,
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
@@ -1382,7 +1380,7 @@ export const NodeControler = ({
             }
             if (d.action === "failed") {
               const isNextNodeMain = nextEdgesIds.find((nh) =>
-                nh.sourceHandle?.includes("failed")
+                nh.sourceHandle?.includes("failed"),
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
@@ -1447,7 +1445,7 @@ export const NodeControler = ({
                 });
               }
               const isNextNodeMain = nextEdgesIds.find((nh) =>
-                nh.sourceHandle?.includes("failed")
+                nh.sourceHandle?.includes("failed"),
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
@@ -1563,7 +1561,7 @@ export const NodeControler = ({
               });
             }
             const nextNodeIdMain = nextEdgesIds.find(
-              (nd) => nd.sourceHandle === "main"
+              (nd) => nd.sourceHandle === "main",
             );
             if (nextNodeIdMain?.id) {
               execute({
@@ -1574,7 +1572,7 @@ export const NodeControler = ({
               });
             }
             const nextNodeIdParallel = nextEdgesIds.find(
-              (nd) => nd.sourceHandle === "parallel"
+              (nd) => nd.sourceHandle === "parallel",
             );
 
             if (nextNodeIdParallel?.id && props.contactsWAOnAccountReactionId) {
@@ -1618,7 +1616,7 @@ export const NodeControler = ({
             }
             if (!d.handleId) {
               const isNextNodeMain = nextEdgesIds.find((nh) =>
-                nh.sourceHandle?.includes("failed")
+                nh.sourceHandle?.includes("failed"),
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
@@ -1639,7 +1637,7 @@ export const NodeControler = ({
               });
             }
             const isNextNodeMain = nextEdgesIds.find(
-              (nh) => nh.sourceHandle === d.handleId
+              (nh) => nh.sourceHandle === d.handleId,
             );
             if (!isNextNodeMain) {
               cacheFlowInExecution.delete(keyMap);
@@ -1734,7 +1732,7 @@ export const NodeControler = ({
               });
             }
             const isNextNodeMain = nextEdgesIds.find((nh) =>
-              nh.sourceHandle?.includes(d)
+              nh.sourceHandle?.includes(d),
             );
             if (!isNextNodeMain) {
               cacheFlowInExecution.delete(keyMap);
@@ -1890,7 +1888,7 @@ export const NodeControler = ({
         })
           .then(async (action) => {
             const nextNode = nextEdgesIds.find(
-              (s) => s.sourceHandle === "main"
+              (s) => s.sourceHandle === "main",
             );
             if (!nextNode) {
               cacheFlowInExecution.delete(keyMap);
@@ -1982,7 +1980,7 @@ export const NodeControler = ({
               });
             } else {
               const isNextNodeMain = nextEdgesIds.find((nh) =>
-                nh.sourceHandle?.includes("action")
+                nh.sourceHandle?.includes("action"),
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
@@ -2027,7 +2025,7 @@ export const NodeControler = ({
           nodeId: currentNode.id,
           executeDebounce: async () => {
             const nextNodeId = nextEdgesIds?.find(
-              (nd) => nd.sourceHandle === "debounce"
+              (nd) => nd.sourceHandle === "debounce",
             );
             if (!nextNodeId) {
               if (props.forceFinish) await props.actions?.onFinish?.("110");
@@ -2053,7 +2051,7 @@ export const NodeControler = ({
           },
         });
         const nextNodeId = nextEdgesIds?.find(
-          (nd) => nd.sourceHandle === "main"
+          (nd) => nd.sourceHandle === "main",
         );
         if (!nextNodeId) {
           if (props.forceFinish) await props.actions?.onFinish?.("110");
@@ -2096,7 +2094,7 @@ export const NodeControler = ({
           contactsWAOnAccountId: props.contactsWAOnAccountId,
         });
         const nextNodeId = nextEdgesIds?.find(
-          (nd) => nd.sourceHandle === "main"
+          (nd) => nd.sourceHandle === "main",
         );
         if (!nextNodeId) {
           if (props.forceFinish) await props.actions?.onFinish?.("110");
@@ -2428,7 +2426,7 @@ export const NodeControler = ({
         });
 
         const nextNodeId = nextEdgesIds?.find((nd) =>
-          nd.sourceHandle?.includes(saida)
+          nd.sourceHandle?.includes(saida),
         );
         if (!nextNodeId) {
           if (props.forceFinish) await props.actions?.onFinish?.("110");
@@ -2479,7 +2477,7 @@ export const NodeControler = ({
         })
           .then(async (action) => {
             const nextNode = nextEdgesIds.find(
-              (s) => s.sourceHandle === "main"
+              (s) => s.sourceHandle === "main",
             );
             if (!nextNode) {
               cacheFlowInExecution.delete(keyMap);
@@ -2582,7 +2580,7 @@ export const NodeControler = ({
 
             if (action.n === "no_transfer" || action.n === "transfer") {
               const currentNode2 = props.nodes.find(
-                (f) => f.id === action.nodeId
+                (f) => f.id === action.nodeId,
               );
 
               if (!currentNode) {
@@ -2605,7 +2603,7 @@ export const NodeControler = ({
                   };
                 });
               const nextNode = nextEdgesIds2.find((s) =>
-                s.sourceHandle?.includes(action.status)
+                s.sourceHandle?.includes(action.status),
               );
               if (!nextNode) {
                 if (action.n === "transfer") {

@@ -322,6 +322,7 @@ export type NodeCreateAppointmentData = {
   // endAt: string;
   varId_save_nAppointment?: number;
   actionChannels: { key: string; text: string }[];
+  reminders?: Date[];
 };
 
 export type NodeUpdateAppointmentData = {

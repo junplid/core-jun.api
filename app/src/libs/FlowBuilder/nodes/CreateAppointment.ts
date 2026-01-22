@@ -23,15 +23,20 @@ interface PropsCreateOrder {
 }
 
 export const NodeCreateAppointment = async (
-  props: PropsCreateOrder
+  props: PropsCreateOrder,
 ): Promise<string | undefined> => {
   try {
     if (props.action) return props.action;
 
     const n_appointment = genNumCode(7);
     props.actions?.onCodeAppointment(n_appointment);
-    const { actionChannels, varId_save_nAppointment, startAt, ...restData } =
-      props.data;
+    const {
+      actionChannels,
+      varId_save_nAppointment,
+      reminders,
+      startAt,
+      ...restData
+    } = props.data;
 
     if (restData.title) {
       restData.title = await resolveTextVariables({
@@ -47,7 +52,7 @@ export const NodeCreateAppointment = async (
     if (startAt) {
       nextStart = await resolveTextVariables({
         accountId: props.accountId,
-        text: nextStart,
+        text: startAt,
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
@@ -64,36 +69,43 @@ export const NodeCreateAppointment = async (
       });
     }
 
-    const startAt2 = moment(nextStart).tz("America/Sao_Paulo").add(3, "hour");
-    const current = moment().tz("America/Sao_Paulo");
-    const min = startAt2.subtract(30, "minute");
-    const diffMin = min.diff(current, "minute");
     let dateReminders: { notify_at: Date; moment: string }[] = [];
 
-    if (diffMin >= 0) {
-      dateReminders.push({
-        notify_at: min.toDate(),
-        moment: "minute",
-      });
-
-      const hour = startAt2.subtract(2, "hour");
-      const diffHour = hour.diff(current, "minute") / 60;
-      if (diffHour >= 0) {
+    if (!reminders?.length) {
+      const startAt2 = moment(nextStart).tz("America/Sao_Paulo").add(3, "hour");
+      const current = moment().tz("America/Sao_Paulo");
+      const min = startAt2.subtract(30, "minute");
+      const diffMin = min.diff(current, "minute");
+      if (diffMin >= 0) {
         dateReminders.push({
-          notify_at: hour.toDate(),
-          moment: "hour",
+          notify_at: min.toDate(),
+          moment: "minute",
         });
 
-        const day = startAt2.subtract(1, "day").add(2, "hour");
-        const diffDay = day.diff(current, "hour");
-
-        if (diffDay >= 0) {
+        const hour = startAt2.subtract(2, "hour");
+        const diffHour = hour.diff(current, "minute") / 60;
+        if (diffHour >= 0) {
           dateReminders.push({
-            notify_at: day.toDate(),
-            moment: "day",
+            notify_at: hour.toDate(),
+            moment: "hour",
           });
+
+          const day = startAt2.subtract(1, "day").add(2, "hour");
+          const diffDay = day.diff(current, "hour");
+
+          if (diffDay >= 0) {
+            dateReminders.push({
+              notify_at: day.toDate(),
+              moment: "day",
+            });
+          }
         }
       }
+    } else {
+      dateReminders = reminders.map((s) => ({
+        moment: "feito_por_agente",
+        notify_at: moment(s).tz("America/Sao_Paulo").add(3, "hour").toDate(),
+      }));
     }
     const nextStartAt = moment(nextStart)
       .tz("America/Sao_Paulo")
@@ -176,6 +188,7 @@ export const NodeCreateAppointment = async (
 
     return;
   } catch (error) {
+    console.log(error);
     throw "Error";
   }
 };

@@ -16,7 +16,7 @@ if (process.env.NODE_ENV === "production") {
 export async function ensureFileByName(
   openai: OpenAI,
   fileName: string,
-  absPath: string
+  absPath: string,
 ): Promise<string> {
   for await (const file of openai.files.list({ purpose: "assistants" })) {
     if (file.filename === fileName) return file.id;
@@ -28,6 +28,8 @@ export async function ensureFileByName(
 
   return id;
 }
+
+const modelNotFlex = ["gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o3-mini"];
 
 export class CreateAgentAIUseCase {
   constructor() {}
@@ -153,6 +155,9 @@ export class CreateAgentAIUseCase {
           knowledgeBase: dto.knowledgeBase,
           personality: dto.personality,
           temperature: dto.temperature || 1,
+          service_tier: modelNotFlex.some((f) => f === dto.model)
+            ? undefined
+            : dto.service_tier,
         },
         select: {
           id: true,

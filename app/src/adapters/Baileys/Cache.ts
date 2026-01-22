@@ -1,4 +1,4 @@
-import { TypeEmojiLevel } from "@prisma/client";
+import { TypeEmojiLevel, TypeServiceTier } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 import NodeCache from "node-cache";
 import { Job } from "node-schedule";
@@ -43,6 +43,7 @@ export const cacheInfoAgentAI: Map<
     temperature: Decimal;
     debounce: number;
     apiKey: string;
+    service_tier?: TypeServiceTier | null;
   }
 > = new Map();
 

@@ -1,3 +1,5 @@
+import { TypeServiceTier } from "@prisma/client";
+
 export interface CreateAgentAIDTO_I {
   accountId: number;
   providerCredentialId?: number;
@@ -15,4 +17,5 @@ export interface CreateAgentAIDTO_I {
   instructions?: string;
   timeout?: number;
   debounce?: number;
+  service_tier?: TypeServiceTier;
 }

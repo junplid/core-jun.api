@@ -1,3 +1,5 @@
+import { TypeServiceTier } from "@prisma/client";
+
 export interface UpdateAgentAIParamsDTO_I {
   id: number;
 }
@@ -18,6 +20,7 @@ export interface UpdateAgentAIBodyDTO_I {
   instructions?: string;
   timeout?: number;
   debounce?: number;
+  service_tier?: TypeServiceTier;
 }
 
 export type UpdateAgentAIDTO_I = UpdateAgentAIBodyDTO_I &

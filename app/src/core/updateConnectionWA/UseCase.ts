@@ -54,7 +54,7 @@ export class UpdateConnectionWAUseCase {
             "../../../",
             "static",
             "image",
-            ConnectionConfig?.fileNameImgPerfil
+            ConnectionConfig?.fileNameImgPerfil,
           );
           await remove(path).catch((error) => {
             console.log("Não foi possivel deletar a imagem antiga", error);
@@ -90,7 +90,8 @@ export class UpdateConnectionWAUseCase {
                 const botIsReset = cacheConnectionsWAOnline.get(id);
                 const bot = sessionsBaileysWA.get(id);
 
-                if (!!botIsReset) {
+                if (!botIsReset) {
+                  console.log("botIsReset");
                   await new Promise((r) => setTimeout(r, 4000));
                   return run();
                 } else {
@@ -104,7 +105,7 @@ export class UpdateConnectionWAUseCase {
                     await bot!.updateOnlinePrivacy(dto.onlinePrivacy);
                   if (dto.readReceiptsPrivacy)
                     await bot!.updateReadReceiptsPrivacy(
-                      dto.readReceiptsPrivacy
+                      dto.readReceiptsPrivacy,
                     );
                   if (dto.groupsAddPrivacy)
                     await bot!.updateGroupsAddPrivacy(dto.groupsAddPrivacy);
@@ -112,7 +113,7 @@ export class UpdateConnectionWAUseCase {
                     await bot!.updateStatusPrivacy(dto.statusPrivacy);
                   if (dto.imgPerfilPrivacy)
                     await bot!.updateProfilePicturePrivacy(
-                      dto.imgPerfilPrivacy
+                      dto.imgPerfilPrivacy,
                     );
                   res();
                 }
@@ -120,6 +121,7 @@ export class UpdateConnectionWAUseCase {
                 const botIsReset = cacheConnectionsWAOnline.get(id);
                 if (!!botIsReset) {
                   await new Promise((r) => setTimeout(r, 4000));
+                  console.log("error");
                   return run();
                 }
                 res();
@@ -137,14 +139,14 @@ export class UpdateConnectionWAUseCase {
         connectionWA: { business: Business, fileImage: fileNameImage },
       };
     } catch (error) {
-      console.log(error);
+      console.log(error, "ERRROR");
       if (dto.fileNameImage) {
         const path = resolve(
           __dirname,
           "../../../",
           "static",
           "image",
-          dto.fileNameImage
+          dto.fileNameImage,
         );
         await remove(path).catch((error) => {
           console.log("Não foi possivel deletar a imagem antiga", error);

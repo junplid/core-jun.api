@@ -25,6 +25,7 @@ export class GetAgentsAIUseCase {
         const isConnected = !!cacheConnectionsWAOnline.get(connectionWAId);
         return {
           ...r,
+          connectionWAId,
           status: !!isConnected ? "open" : "close",
           businesses: AgentAIOnBusiness.map((item) => item.Business),
         };
@@ -32,6 +33,7 @@ export class GetAgentsAIUseCase {
         return {
           ...r,
           status: "close",
+          connectionWAId,
           businesses: AgentAIOnBusiness.map((item) => item.Business),
         };
       }

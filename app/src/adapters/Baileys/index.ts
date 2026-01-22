@@ -1762,6 +1762,37 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                     accountId: props.accountId,
                     action: null,
                     actions: {
+                      onErrorClient: async (vl) => {
+                        if (currentIndexNodeLead) {
+                          const scheduleExecutionCache =
+                            scheduleExecutionsReply.get(
+                              numberConnection +
+                                "@s.whatsapp.net" +
+                                body.messages[0].key.remoteJid!
+                            );
+                          if (scheduleExecutionCache) {
+                            scheduleExecutionCache.cancel();
+                          }
+                          console.log("TA CAINDO AQUI, finalizando fluxo");
+                          await prisma.flowState.update({
+                            where: { id: currentIndexNodeLead.id },
+                            data: { isFinish: true },
+                          });
+                          if (chatbot.TimeToRestart) {
+                            const nextDate = moment()
+                              .tz("America/Sao_Paulo")
+                              .add(
+                                chatbot.TimeToRestart.value,
+                                chatbot.TimeToRestart.type
+                              )
+                              .toDate();
+                            chatbotRestartInDate.set(
+                              `${numberConnection}+${identifierLead}`,
+                              nextDate
+                            );
+                          }
+                        }
+                      },
                       onFinish: async (vl) => {
                         if (currentIndexNodeLead) {
                           const scheduleExecutionCache =
@@ -1853,6 +1884,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                           });
                         }
                       },
+                      
                     },
                   }).finally(() => {
                     leadAwaiting.set(keyMapLeadAwaiting, false);

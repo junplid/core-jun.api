@@ -14,11 +14,12 @@ if (process.env.NODE_ENV === "production") {
 } else {
   path = resolve(__dirname, `../../../static/storage`);
 }
+const modelNotFlex = ["gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o3-mini"];
 
 export async function ensureFileByName(
   openai: OpenAI,
   fileName: string,
-  absPath: string
+  absPath: string,
 ): Promise<string> {
   for await (const file of openai.files.list({ purpose: "assistants" })) {
     if (file.filename === fileName) return file.id;
@@ -111,6 +112,9 @@ export class UpdateAgentAIUseCase {
         where: { id },
         data: {
           ...rest,
+          service_tier: modelNotFlex.some((f) => f === dto.service_tier)
+            ? undefined
+            : dto.service_tier,
           ...(businessIds?.length && {
             AgentAIOnBusiness: {
               deleteMany: { agentId: id },
@@ -155,10 +159,10 @@ export class UpdateAgentAIUseCase {
         const isEqual = deepEqual(filesInAgent, files);
         if (!isEqual) {
           const newFileIds = nextFiles.filter(
-            (f) => !filesInAgent.some((e) => e.id === f.id)
+            (f) => !filesInAgent.some((e) => e.id === f.id),
           );
           const removedFileIds = filesInAgent.filter(
-            (fileAg) => !dto.files?.some((f) => f === fileAg.id)
+            (fileAg) => !dto.files?.some((f) => f === fileAg.id),
           );
           if (newFileIds.length) {
             await Promise.all(
@@ -166,11 +170,11 @@ export class UpdateAgentAIUseCase {
                 const fId = await ensureFileByName(
                   openai,
                   f.fileName,
-                  resolve(path, f.fileName)
+                  resolve(path, f.fileName),
                 );
                 await openai.vectorStores.files.createAndPoll(
                   agentVectorStoreId,
-                  { file_id: fId }
+                  { file_id: fId },
                 );
                 await prisma.storagePathOnAgentAI.create({
                   data: {
@@ -179,7 +183,7 @@ export class UpdateAgentAIUseCase {
                     fileId: fId,
                   },
                 });
-              })
+              }),
             );
           }
           if (removedFileIds.length) {
@@ -192,7 +196,7 @@ export class UpdateAgentAIUseCase {
                 } catch (error: any) {
                   if (error.status === 404) {
                     console.log(
-                      `File ${element.fileId} not found on OpenAI, but deleted from local storage.`
+                      `File ${element.fileId} not found on OpenAI, but deleted from local storage.`,
                     );
                   }
                 }
@@ -201,7 +205,7 @@ export class UpdateAgentAIUseCase {
                 } catch (error: any) {
                   if (error.status === 404) {
                     console.log(
-                      `File ${element.fileId} not found on OpenAI, but deleted from local storage.`
+                      `File ${element.fileId} not found on OpenAI, but deleted from local storage.`,
                     );
                   }
                 }
@@ -243,7 +247,7 @@ export class UpdateAgentAIUseCase {
                 } catch (error: any) {
                   if (error.status === 404) {
                     console.log(
-                      `File ${file.fileId} not found on OpenAI, but deleted from local storage.`
+                      `File ${file.fileId} not found on OpenAI, but deleted from local storage.`,
                     );
                   }
                 }
