@@ -98,7 +98,7 @@ export class CreateChatbotUseCase {
             oldChatbot.OperatingDays.map((day) => ({
               dayOfWeek: day.dayOfWeek,
               workingTimes: day.WorkingTimes,
-            }))
+            })),
           );
 
           if (conflicts.length) {
@@ -131,7 +131,7 @@ export class CreateChatbotUseCase {
         ...(agentId && { AgentAI: { connect: { id: agentId } } }),
       },
       select: {
-        // cbj: true, poderá vizualizar o link de redirecionamento para
+        // cbj: true, poderá Visualizar o link de redirecionamento para
         //            o anuncio no modal de view do chatbot
         Business: { select: { name: true, id: true } },
         id: true,

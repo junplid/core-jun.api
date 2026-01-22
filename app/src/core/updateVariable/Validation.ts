@@ -15,7 +15,7 @@ export const updateVariableValidation = (
     UpdateVariableQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
@@ -28,7 +28,7 @@ export const updateVariableValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {

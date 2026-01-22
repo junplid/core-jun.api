@@ -65,13 +65,13 @@ export class CreateAgentAIUseCase {
       if (!dto.apiKey) {
         throw new ErrorResponse(400).input({
           path: "apiKey",
-          text: "Campo obrigatório",
+          text: "Campo obrigatório.",
         });
       }
       if (!dto.nameProvider) {
         throw new ErrorResponse(400).input({
           path: "nameProvider",
-          text: "Campo obrigatório",
+          text: "Campo obrigatório.",
         });
       }
 

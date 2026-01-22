@@ -271,7 +271,7 @@ const tools: OpenAI.Responses.Tool[] = [
         },
         text: {
           type: "string",
-          description: "Subtitulo enviado com o arquivo.",
+          description: "Subtítulo enviado com o arquivo.",
         },
       },
       required: ["id"],
@@ -281,18 +281,18 @@ const tools: OpenAI.Responses.Tool[] = [
   {
     type: "function",
     name: "enviar_video",
-    description: "Use para enviar video",
+    description: "Use para enviar vídeo",
     parameters: {
       type: "object",
       additionalProperties: false,
       properties: {
         id: {
           type: "number",
-          description: "Id do video.",
+          description: "Id do vídeo.",
         },
         text: {
           type: "string",
-          description: "Subtitulo enviado com o video.",
+          description: "Subtítulo enviado com o vídeo.",
         },
       },
       required: ["id"],
@@ -313,7 +313,7 @@ const tools: OpenAI.Responses.Tool[] = [
         },
         text: {
           type: "string",
-          description: "Subtitulo enviado com a imagem.",
+          description: "Subtítulo enviado com a imagem.",
         },
       },
       required: ["id"],
@@ -386,7 +386,7 @@ const tools: OpenAI.Responses.Tool[] = [
       properties: {
         title: {
           type: "string",
-          description: "Titulo do evento.",
+          description: "Título do evento.",
         },
         desc: {
           type: "string",
@@ -431,7 +431,7 @@ const tools: OpenAI.Responses.Tool[] = [
         },
         title: {
           type: "string",
-          description: "Titulo do evento. (pode ser nome de variável)",
+          description: "Título do evento. (pode ser nome de variável)",
         },
         desc: {
           type: "string",
@@ -1574,7 +1574,7 @@ export const NodeAgentAI = async ({
                           outputs.push({
                             type: "function_call_output",
                             call_id: c.call_id,
-                            output: "Tempo de espera concluido.",
+                            output: "Tempo de espera concluído.",
                           });
                           continue;
 

@@ -6,7 +6,7 @@ import { ErrorResponse } from "../../utils/ErrorResponse";
 export const createVariableValidation = (
   req: Request<any, any, CreateVariableDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     type: Joi.string().valid("dynamics", "constant").required(),

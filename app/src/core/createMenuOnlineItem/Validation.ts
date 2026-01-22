@@ -13,7 +13,7 @@ export const createMenuOnlineItemValidation = (
     CreateMenuOnlineItemBodyDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     name: Joi.string().required(),
@@ -29,7 +29,7 @@ export const createMenuOnlineItemValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, fileNameImage: req.file?.filename, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {

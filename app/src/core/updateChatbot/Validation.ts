@@ -15,7 +15,7 @@ export const updateChatbotValidation = (
     UpdateChatbotBodyQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
@@ -46,9 +46,9 @@ export const updateChatbotValidation = (
               "string.empty": `Campo obrigatório.`,
               "string.required": `Campo obrigatório.`,
             }),
-          }).optional()
+          }).optional(),
         ),
-      })
+      }),
     ),
     trigger: Joi.string().allow("").optional(),
     flowBId: Joi.string().allow("").optional(),
@@ -57,7 +57,7 @@ export const updateChatbotValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {

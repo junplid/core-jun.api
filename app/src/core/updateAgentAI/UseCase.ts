@@ -64,7 +64,7 @@ export class UpdateAgentAIUseCase {
       if (!dto.nameProvider) {
         throw new ErrorResponse(400).input({
           path: "nameProvider",
-          text: "Campo obrigatório",
+          text: "Campo obrigatório.",
         });
       }
       const existingCredential = await prisma.providerCredential.findFirst({

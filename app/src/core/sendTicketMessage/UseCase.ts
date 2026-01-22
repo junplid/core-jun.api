@@ -47,14 +47,14 @@ export class SendTicketMessageUseCase {
 
     if (!exist) {
       throw new ErrorResponse(400).container(
-        "Não foi possivel encontrar o ticket."
+        "Não foi possivel encontrar o ticket.",
       );
     }
 
     const { InboxDepartment, ContactsWAOnAccount, updateAt } = exist;
 
     const nameSpace = socketIo.of(
-      `/business-${InboxDepartment.businessId}/inbox`
+      `/business-${InboxDepartment.businessId}/inbox`,
     );
 
     if (dto.type === "text") {
@@ -140,7 +140,7 @@ export class SendTicketMessageUseCase {
       const files = dto.files || [];
       if (!files.length) {
         throw new ErrorResponse(400).container(
-          "É necessário enviar pelo menos um arquivo."
+          "É necessário enviar pelo menos um arquivo.",
         );
       }
 
@@ -249,7 +249,7 @@ export class SendTicketMessageUseCase {
             try {
               if (!mimetype) {
                 throw new ErrorResponse(400).container(
-                  "Tipo de arquivo inválido. Por favor, envie uma imagem."
+                  "Tipo de arquivo inválido. Por favor, envie uma imagem.",
                 );
               }
               if (/^image\//.test(mimetype)) {
@@ -331,8 +331,8 @@ export class SendTicketMessageUseCase {
                 });
                 if (!msg?.key?.id) {
                   throw new ErrorResponse(500).toast({
-                    title: "Erro ao enviar video.",
-                    description: "Não foi possível enviar a video.",
+                    title: "Erro ao enviar vídeo.",
+                    description: "Não foi possível enviar a vídeo.",
                     type: "error",
                   });
                 }
@@ -575,7 +575,7 @@ export class SendTicketMessageUseCase {
             try {
               if (!mimetype) {
                 throw new ErrorResponse(400).container(
-                  "Tipo de arquivo inválido. Por favor, envie uma imagem."
+                  "Tipo de arquivo inválido. Por favor, envie uma imagem.",
                 );
               }
               if (/^image\//.test(mimetype)) {
@@ -658,7 +658,7 @@ export class SendTicketMessageUseCase {
                 if (!msg?.key?.id) {
                   throw new ErrorResponse(500).toast({
                     title: "Erro ao enviar video.",
-                    description: "Não foi possível enviar a video.",
+                    description: "Não foi possível enviar a vídeo.",
                     type: "error",
                   });
                 }
