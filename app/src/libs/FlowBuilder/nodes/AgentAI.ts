@@ -771,7 +771,7 @@ interface PropsNodeAgentAI {
   contactAccountId: number;
   actions: {
     onErrorClient?(): void;
-    onExecuteTimeout?: () => Promise<void>;
+    onExecuteTimeout?: (pre_res_id: string) => Promise<void>;
     onExitNode?(name: string, previous_response_id?: string | null): void;
     onSendFlow?(flowIs: string, previous_response_id?: string | null): void;
     onTransferDepartment?(previous_response_id?: string | null): void;
@@ -838,25 +838,25 @@ export const NodeAgentAI = async ({
   message = { isDev: false, value: "" },
   ...props
 }: PropsNodeAgentAI): Promise<ResultPromise> => {
-  if (!message && !!props.data.exist) {
-    // alimentar a instrução e sair imediatamente.
-    const agent = await getAgent(props.data.agentId, props.accountId);
-    const openai = new OpenAI({ apiKey: agent.apiKey });
-  }
+  // if (!message && !!props.data.exist) {
+  //   // alimentar a instrução e sair imediatamente.
+  //   const agent = await getAgent(props.data.agentId, props.accountId);
+  //   const openai = new OpenAI({ apiKey: agent.apiKey });
+  // }
 
   const keyMap =
     props.numberConnection + props.numberLead + String(props.data.agentId);
 
-  function createTimeoutJob(timeout: number) {
+  function createTimeoutJob(timeout: number, pre_res_id: string) {
     if (!timeout) {
-      props.actions?.onExecuteTimeout?.();
+      props.actions?.onExecuteTimeout?.(pre_res_id);
       return;
     }
 
     /// o adm solicita que execute o tools "..." valor: "..."
     const nextTimeout = getNextTimeOut("seconds", timeout);
     const timeoutJob = scheduleJob(nextTimeout, async () =>
-      props.actions?.onExecuteTimeout?.(),
+      props.actions?.onExecuteTimeout?.(pre_res_id),
     );
     scheduleTimeoutAgentAI.set(keyMap, timeoutJob);
   }
@@ -2364,7 +2364,7 @@ export const NodeAgentAI = async ({
                 await executeProcess(newlistMsg, nextresponse.id);
               } else {
                 cacheNextInputsCurrentAgents.delete(props.flowStateId);
-                createTimeoutJob(agent!.timeout);
+                createTimeoutJob(agent!.timeout, nextresponse.id);
               }
             } else {
               const debounceJob = cacheDebounceAgentAI.get(keyMap);

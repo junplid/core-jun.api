@@ -13,3 +13,5 @@ export const currentNodeFlow = new Map<string, string | false>();
 export const cacheWaitForCompletionChatAI = new Map<string, boolean>();
 
 export const cacheControllers = new Map<number, string>();
+
+export const cacheExecuteTimeoutAgentAI = new Map<string, boolean>();

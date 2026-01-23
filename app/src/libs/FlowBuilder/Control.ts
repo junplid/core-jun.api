@@ -3,6 +3,7 @@ import { prisma } from "../../adapters/Prisma/client";
 import { LibraryNodes } from "./nodes";
 import { NodePayload, TypeNodesPayload } from "./Payload";
 import { cacheFlowInExecution } from "../../adapters/Baileys/Cache";
+import { cacheExecuteTimeoutAgentAI } from "./cache";
 
 interface Edges {
   source: string;
@@ -1243,22 +1244,37 @@ export const NodeControler = ({
               props.actions?.onErrorClient &&
                 props.actions?.onErrorClient(currentNode.id);
             },
-            onExecuteTimeout: async () => {
+            onExecuteTimeout: async (pre_res_id) => {
               const nextNodeId = nextEdgesIds?.find((nd) =>
                 nd.sourceHandle?.includes("timeout"),
               );
               if (!nextNodeId) {
-                if (props.forceFinish) await props.actions?.onFinish?.("110");
-                await props.actions?.onExecutedNode?.({
-                  id: "0",
-                  flowId: props.flowId,
-                });
-                cacheFlowInExecution.delete(keyMap);
-                await prisma.flowState.update({
-                  where: { id: props.flowStateId },
-                  data: { agentId: null },
-                });
-                return res();
+                if (!cacheExecuteTimeoutAgentAI.get(keyMap)) {
+                  cacheFlowInExecution.delete(keyMap);
+                  cacheExecuteTimeoutAgentAI.set(`${keyMap}`, true);
+                  return execute({
+                    ...props,
+                    previous_response_id: pre_res_id || undefined,
+                    type: "running",
+                    action: "O usuário está ausente ou parou de responder",
+                    message: "O usuário está ausente ou parou de responder",
+                    currentNodeId: currentNode.id,
+                    oldNodeId: currentNode.id,
+                  });
+                } else {
+                  cacheExecuteTimeoutAgentAI.delete(keyMap);
+                  if (props.forceFinish) await props.actions?.onFinish?.("110");
+                  await props.actions?.onExecutedNode?.({
+                    id: "0",
+                    flowId: props.flowId,
+                  });
+                  cacheFlowInExecution.delete(keyMap);
+                  await prisma.flowState.update({
+                    where: { id: props.flowStateId },
+                    data: { agentId: null },
+                  });
+                  return res();
+                }
               }
               if (props.actions?.onExecutedNode) {
                 await props.actions.onExecutedNode({
