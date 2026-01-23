@@ -14,18 +14,18 @@ export class UpdateMenuOnlineUseCase {
   constructor() {}
 
   async run({ accountId, id, fileNameImage, ...dto }: UpdateMenuOnlineDTO_I) {
-    const getAccount = await prisma.account.findFirst({
-      where: { id: accountId },
-      select: { isPremium: true },
-    });
-    if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
+    // const getAccount = await prisma.account.findFirst({
+    //   where: { id: accountId },
+    //   select: { isPremium: true },
+    // });
+    // if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
 
-    if (!getAccount.isPremium) {
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Cardápios on-line exclusivos para usuários Premium.",
-      });
-    }
+    // if (!getAccount.isPremium) {
+    //   throw new ErrorResponse(400).input({
+    //     path: "name",
+    //     text: "Cardápios on-line exclusivos para usuários Premium.",
+    //   });
+    // }
 
     const exist = await prisma.menusOnline.findFirst({
       where: { id, accountId },

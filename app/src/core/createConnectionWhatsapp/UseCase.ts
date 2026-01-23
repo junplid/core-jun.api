@@ -102,22 +102,22 @@ export class CreateConnectionWAUseCase {
     //     });
     //   }
     // }
-    const getAccount = await prisma.account.findFirst({
-      where: { id: accountId },
-      select: { isPremium: true },
-    });
-    if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
+    // const getAccount = await prisma.account.findFirst({
+    //   where: { id: accountId },
+    //   select: { isPremium: true },
+    // });
+    // if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
 
-    const countResource = await prisma.connectionWA.count({
-      where: { Business: { accountId } },
-    });
+    // const countResource = await prisma.connectionWA.count({
+    //   where: { Business: { accountId } },
+    // });
 
-    if (!getAccount.isPremium && countResource > 1) {
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Limite de conexões atingido.",
-      });
-    }
+    // if (!getAccount.isPremium && countResource > 1) {
+    //   throw new ErrorResponse(400).input({
+    //     path: "name",
+    //     text: "Limite de conexões atingido.",
+    //   });
+    // }
 
     try {
       const exist = await prisma.connectionWA.findFirst({
@@ -179,7 +179,7 @@ export class CreateConnectionWAUseCase {
           "../../../",
           "static",
           "image",
-          dto.fileNameImage
+          dto.fileNameImage,
         );
         await remove(path).catch((error) => {
           console.log("Não foi possivel deletar a imagem antiga", error);

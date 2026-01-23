@@ -35,15 +35,15 @@ export class CreateAgentAIUseCase {
   constructor() {}
 
   async run({ accountId, ...dto }: CreateAgentAIDTO_I) {
-    const isPremium = await prisma.account.findFirst({
-      where: { id: accountId, isPremium: true },
-    });
-    if (!isPremium) {
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Agentes de IA ilimitados — exclusivos para usuários Premium.",
-      });
-    }
+    // const isPremium = await prisma.account.findFirst({
+    //   where: { id: accountId, isPremium: true },
+    // });
+    // if (!isPremium) {
+    //   throw new ErrorResponse(400).input({
+    //     path: "name",
+    //     text: "Agentes de IA ilimitados — exclusivos para usuários Premium.",
+    //   });
+    // }
 
     let providerCredentialId: number | undefined = undefined;
     let apiKey: string | undefined = undefined;

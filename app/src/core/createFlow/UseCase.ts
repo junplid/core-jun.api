@@ -10,22 +10,22 @@ export class CreateFlowUseCase {
 
   async run({ businessIds, agentId: agentIdDto, ...dto }: CreateFlowDTO_I) {
     await mongo();
-    const getAccount = await prisma.account.findFirst({
-      where: { id: dto.accountId },
-      select: { isPremium: true },
-    });
-    if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
+    // const getAccount = await prisma.account.findFirst({
+    //   where: { id: dto.accountId },
+    //   select: { isPremium: true },
+    // });
+    // if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
 
-    const countResource = await ModelFlows.count({
-      accountId: dto.accountId,
-    });
+    // const countResource = await ModelFlows.count({
+    //   accountId: dto.accountId,
+    // });
 
-    if (!getAccount.isPremium && countResource > 1) {
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Limite de construtores de fluxo atingido.",
-      });
-    }
+    // if (!getAccount.isPremium && countResource > 1) {
+    //   throw new ErrorResponse(400).input({
+    //     path: "name",
+    //     text: "Limite de construtores de fluxo atingido.",
+    //   });
+    // }
 
     const existName = await ModelFlows.count({
       name: dto.name,

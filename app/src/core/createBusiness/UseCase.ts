@@ -79,22 +79,22 @@ export class CreateBusinessUseCase {
     //   }
     // }
 
-    const getAccount = await prisma.account.findFirst({
-      where: { id: dto.accountId },
-      select: { isPremium: true },
-    });
-    if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
+    // const getAccount = await prisma.account.findFirst({
+    //   where: { id: dto.accountId },
+    //   select: { isPremium: true },
+    // });
+    // if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
 
-    const countResource = await prisma.business.count({
-      where: { accountId: dto.accountId },
-    });
+    // const countResource = await prisma.business.count({
+    //   where: { accountId: dto.accountId },
+    // });
 
-    if (!getAccount.isPremium && countResource >= 1) {
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Limite de projetos atingido.",
-      });
-    }
+    // if (!getAccount.isPremium && countResource >= 1) {
+    //   throw new ErrorResponse(400).input({
+    //     path: "name",
+    //     text: "Limite de projetos atingido.",
+    //   });
+    // }
 
     const exist = await prisma.business.findFirst({
       where: { accountId: dto.accountId, name: dto.name },

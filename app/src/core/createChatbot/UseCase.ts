@@ -8,22 +8,22 @@ export class CreateChatbotUseCase {
   constructor() {}
 
   async run({ agentId, ...dto }: CreateChatbotDTO_I) {
-    const getAccount = await prisma.account.findFirst({
-      where: { id: dto.accountId },
-      select: { isPremium: true },
-    });
-    if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
+    // const getAccount = await prisma.account.findFirst({
+    //   where: { id: dto.accountId },
+    //   select: { isPremium: true },
+    // });
+    // if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
 
-    const countResource = await prisma.chatbot.count({
-      where: { accountId: dto.accountId },
-    });
+    // const countResource = await prisma.chatbot.count({
+    //   where: { accountId: dto.accountId },
+    // });
 
-    if (!getAccount.isPremium && countResource > 1) {
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Limite de bot receptivo atingido.",
-      });
-    }
+    // if (!getAccount.isPremium && countResource > 1) {
+    //   throw new ErrorResponse(400).input({
+    //     path: "name",
+    //     text: "Limite de bot receptivo atingido.",
+    //   });
+    // }
 
     const exist = await prisma.chatbot.findFirst({
       where: {

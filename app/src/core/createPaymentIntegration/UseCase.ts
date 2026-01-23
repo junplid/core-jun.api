@@ -6,15 +6,15 @@ export class CreatePaymentIntegrationUseCase {
   constructor() {}
 
   async run({ accountId, ...dto }: CreatePaymentIntegrationDTO_I) {
-    const isPremium = await prisma.account.findFirst({
-      where: { id: accountId, isPremium: true },
-    });
-    if (!isPremium) {
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Integrações de pagamento — exclusivos para usuários Premium.",
-      });
-    }
+    // const isPremium = await prisma.account.findFirst({
+    //   where: { id: accountId, isPremium: true },
+    // });
+    // if (!isPremium) {
+    //   throw new ErrorResponse(400).input({
+    //     path: "name",
+    //     text: "Integrações de pagamento — exclusivos para usuários Premium.",
+    //   });
+    // }
 
     const exist = await prisma.paymentIntegrations.findFirst({
       where: { accountId, name: dto.name, provider: dto.provider },
@@ -41,7 +41,7 @@ export class CreatePaymentIntegrationUseCase {
     } catch (error) {
       console.error("Erro ao criar integração pagamento.", error);
       throw new ErrorResponse(500).container(
-        "Erro ao tentar criar integração de pagamento."
+        "Erro ao tentar criar integração de pagamento.",
       );
     }
   }

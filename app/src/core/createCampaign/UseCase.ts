@@ -30,17 +30,17 @@ export class CreateCampaignUseCase {
       }
     }
 
-    const isPremium = await prisma.account.findFirst({
-      where: { id: accountId, isPremium: true },
-      select: { id: true },
-    });
+    // const isPremium = await prisma.account.findFirst({
+    //   where: { id: accountId, isPremium: true },
+    //   select: { id: true },
+    // });
 
-    if (!isPremium) {
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Campanhas ilimitadas — exclusivos para usuários Premium.",
-      });
-    }
+    // if (!isPremium) {
+    //   throw new ErrorResponse(400).input({
+    //     path: "name",
+    //     text: "Campanhas ilimitadas — exclusivos para usuários Premium.",
+    //   });
+    // }
     const existName = await prisma.campaign.findFirst({
       where: {
         accountId,
@@ -270,7 +270,7 @@ export class CreateCampaignUseCase {
             socketIo.to(sockId.id).emit(`status-campaign`, {
               id,
               status: "running",
-            })
+            }),
           );
           startCampaign({ id });
         })();
@@ -279,7 +279,7 @@ export class CreateCampaignUseCase {
       createInstruction();
     } catch (error) {
       throw new ErrorResponse(400).container(
-        "Error interno ao criar campanha. Nossa equipe já foi notificada!"
+        "Error interno ao criar campanha. Nossa equipe já foi notificada!",
       );
     }
 

@@ -6,15 +6,15 @@ export class CreateTrelloIntegrationUseCase {
   constructor() {}
 
   async run({ accountId, ...dto }: CreateTrelloIntegrationDTO_I) {
-    const isPremium = await prisma.account.findFirst({
-      where: { id: accountId, isPremium: true },
-    });
-    if (!isPremium) {
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Integrações de trello — exclusivos para usuários Premium.",
-      });
-    }
+    // const isPremium = await prisma.account.findFirst({
+    //   where: { id: accountId, isPremium: true },
+    // });
+    // if (!isPremium) {
+    //   throw new ErrorResponse(400).input({
+    //     path: "name",
+    //     text: "Integrações de trello — exclusivos para usuários Premium.",
+    //   });
+    // }
 
     const exist = await prisma.trelloIntegration.findFirst({
       where: { accountId, name: dto.name },
@@ -38,7 +38,7 @@ export class CreateTrelloIntegrationUseCase {
     } catch (error) {
       console.error("Erro ao criar integração pagamento.", error);
       throw new ErrorResponse(500).container(
-        "Erro ao tentar criar integração de pagamento."
+        "Erro ao tentar criar integração de pagamento.",
       );
     }
   }

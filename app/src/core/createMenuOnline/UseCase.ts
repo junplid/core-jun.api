@@ -8,29 +8,29 @@ export class CreateMenuOnlineUseCase {
   constructor() {}
 
   async run({ fileNameImage, ...dto }: CreateMenuOnlineDTO_I) {
-    const getAccount = await prisma.account.findFirst({
-      where: { id: dto.accountId },
-      select: { isPremium: true },
-    });
-    if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
+    // const getAccount = await prisma.account.findFirst({
+    //   where: { id: dto.accountId },
+    //   select: { isPremium: true },
+    // });
+    // if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
 
-    const countResource = await prisma.menusOnline.count({
-      where: { accountId: dto.accountId },
-    });
+    // const countResource = await prisma.menusOnline.count({
+    //   where: { accountId: dto.accountId },
+    // });
 
-    if (!getAccount.isPremium) {
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Cardápios on-line exclusivos para usuários Premium.",
-      });
-    }
+    // if (!getAccount.isPremium) {
+    //   throw new ErrorResponse(400).input({
+    //     path: "name",
+    //     text: "Cardápios on-line exclusivos para usuários Premium.",
+    //   });
+    // }
 
-    if (!getAccount.isPremium && countResource >= 1) {
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Limite de cardápios on-line atingido.",
-      });
-    }
+    // if (!getAccount.isPremium && countResource >= 1) {
+    //   throw new ErrorResponse(400).input({
+    //     path: "name",
+    //     text: "Limite de cardápios on-line atingido.",
+    //   });
+    // }
 
     const exist = await prisma.menusOnline.findFirst({
       where: {
@@ -76,7 +76,7 @@ export class CreateMenuOnlineUseCase {
         console.log("Error ao remover arquivo: ");
       });
       throw new ErrorResponse(400).container(
-        "Error ao tentar criar cardápio on-line."
+        "Error ao tentar criar cardápio on-line.",
       );
     }
   }

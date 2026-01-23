@@ -7,17 +7,17 @@ export class CreateMenuOnlineItemUseCase {
   constructor() {}
 
   async run({ fileNameImage, uuid, ...dto }: CreateMenuOnlineItemDTO_I) {
-    const getAccount = await prisma.account.findFirst({
-      where: { id: dto.accountId },
-      select: { isPremium: true },
-    });
-    if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
-    if (!getAccount.isPremium) {
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Cardápios on-line exclusivos para usuários Premium.",
-      });
-    }
+    // const getAccount = await prisma.account.findFirst({
+    //   where: { id: dto.accountId },
+    //   select: { isPremium: true },
+    // });
+    // if (!getAccount) throw new ErrorResponse(400).container("Não autorizado.");
+    // if (!getAccount.isPremium) {
+    //   throw new ErrorResponse(400).input({
+    //     path: "name",
+    //     text: "Cardápios on-line exclusivos para usuários Premium.",
+    //   });
+    // }
 
     const menu = await prisma.menusOnline.findFirst({
       where: { accountId: dto.accountId, uuid },
@@ -58,7 +58,7 @@ export class CreateMenuOnlineItemUseCase {
         console.log("Error ao remover arquivo: ");
       });
       throw new ErrorResponse(400).container(
-        "Error ao tentar criar cardápio on-line."
+        "Error ao tentar criar cardápio on-line.",
       );
     }
   }

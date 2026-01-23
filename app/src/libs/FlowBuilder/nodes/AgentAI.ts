@@ -788,7 +788,13 @@ async function getAgent(id: number, accountId: number) {
   let agentAIf = cacheInfoAgentAI.get(id);
   if (!agentAIf) {
     const agent = await prisma.agentAI.findFirst({
-      where: { id: id, Account: { isPremium: true, id: accountId } },
+      where: {
+        id: id,
+        Account: {
+          // isPremium: true,
+          id: accountId,
+        },
+      },
       select: {
         timeout: true,
         model: true,
