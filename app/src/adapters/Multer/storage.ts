@@ -16,7 +16,7 @@ export const storageMulter = (props: PropsStorageMulter) =>
     },
     filename: function (req, file, cb) {
       const nextName = removeAccents(
-        Buffer.from(file.originalname, "latin1").toString("utf8").toLowerCase()
+        Buffer.from(file.originalname, "latin1").toString("utf8").toLowerCase(),
       ).replace(/\s+/g, "-");
       cb(null, `${v4()}-${nextName}`);
     },

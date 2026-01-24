@@ -5,5 +5,10 @@ export interface CreatePaymentIntegrationDTO_I {
   name: string;
   provider: TypeProviderPayment;
   status?: boolean;
-  access_token: string;
+  access_token?: string;
+  clientId?: string;
+  clientSecret?: string;
+  certificateBuffer?: Buffer;
+  pixKey?: string;
+  certPassword?: string;
 }

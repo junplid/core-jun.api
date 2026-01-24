@@ -12,7 +12,7 @@ export class GetChargesUseCase {
         createAt: true,
         status: true,
         total: true,
-        transactionId: true,
+        txid: true,
         updatedAt: true,
         provider: true,
         ContactsWAOnAccount: {

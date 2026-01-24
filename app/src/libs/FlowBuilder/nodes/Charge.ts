@@ -14,7 +14,7 @@ interface PropsNodeCharge {
 }
 
 export const NodeCharge = async (
-  props: PropsNodeCharge
+  props: PropsNodeCharge,
 ): Promise<"error" | "success"> => {
   const getIntegration = await prisma.paymentIntegrations.findFirst({
     where: { id: props.data.paymentIntegrationId },
@@ -36,7 +36,7 @@ export const NodeCharge = async (
   if (varEmail?.value) email = varEmail.value;
 
   const client = new MercadoPagoConfig({
-    accessToken: getIntegration.access_token,
+    accessToken: getIntegration.access_token!,
     options: { timeout: 5000 },
   });
   const payment = new Payment(client);
@@ -46,7 +46,7 @@ export const NodeCharge = async (
         accountId: props.accountId,
         text: String(props.data.total),
         contactsWAOnAccountId: props.contactsWAOnAccountId,
-      })
+      }),
     );
     const description = await resolveTextVariables({
       accountId: props.accountId,
@@ -77,7 +77,7 @@ export const NodeCharge = async (
     if (charge.id) {
       await prisma.charges.create({
         data: {
-          transactionId: String(charge.id),
+          txid: String(charge.id),
           total: props.data.total,
           net_total: charge.net_amount || props.data.total,
           currency: props.data.currency || "BRL",

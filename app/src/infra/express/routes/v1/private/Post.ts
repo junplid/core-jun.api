@@ -82,7 +82,7 @@ RouterV1Private_Post.post(
     next();
   },
   createConnectionWAValidation,
-  createConnectionWAController
+  createConnectionWAController,
 );
 
 RouterV1Private_Post.post("/tags", createTagValidation, createTagController);
@@ -90,7 +90,7 @@ RouterV1Private_Post.post("/tags", createTagValidation, createTagController);
 RouterV1Private_Post.post(
   "/businesses",
   createBusinessValidation,
-  createBusinessController
+  createBusinessController,
 );
 
 RouterV1Private_Post.post("/flows", createFlowValidation, createFlowController);
@@ -98,19 +98,19 @@ RouterV1Private_Post.post("/flows", createFlowValidation, createFlowController);
 RouterV1Private_Post.post(
   "/variables",
   createVariableValidation,
-  createVariableController
+  createVariableController,
 );
 
 RouterV1Private_Post.post(
   "/chatbots",
   createChatbotValidation,
-  createChatbotController
+  createChatbotController,
 );
 
 RouterV1Private_Post.post(
   "/campaigns",
   createCampaignValidation,
-  createCampaignController
+  createCampaignController,
 );
 
 RouterV1Private_Post.post(
@@ -122,91 +122,103 @@ RouterV1Private_Post.post(
     next();
   },
   createStorageFileValidation,
-  createStorageFileController
+  createStorageFileController,
 );
 
 RouterV1Private_Post.post(
   "/agents-ai/test",
   testAgentAIValidation,
-  testAgentAIController
+  testAgentAIController,
 );
 
 RouterV1Private_Post.post(
   "/agents-ai",
   createAgentAIValidation,
-  createAgentAIController
+  createAgentAIController,
 );
 
 RouterV1Private_Post.post(
   "/inbox-users",
   createInboxUsersValidation,
-  createInboxUsersController
+  createInboxUsersController,
 );
 
 RouterV1Private_Post.post(
   "/inbox-departments",
   createInboxDepartmentValidation,
-  createInboxDepartmentController
+  createInboxDepartmentController,
 );
 
 RouterV1Private_Post.post(
   "/tickets/:id/pick",
   pickTicketValidation,
-  pickTicketController
+  pickTicketController,
 );
 
 RouterV1Private_Post.post(
   "/tickets/:id/return",
   returnTicketValidation,
-  returnTicketController
+  returnTicketController,
 );
 
 RouterV1Private_Post.post(
   "/tickets/:id/resolve",
   resolveTicketValidation,
-  resolveTicketController
+  resolveTicketController,
 );
 
 RouterV1Private_Post.post(
   "/tickets/:id/message",
   sendTicketMessageValidation,
-  sendTicketMessageController
+  sendTicketMessageController,
 );
 
 RouterV1Private_Post.post(
   "/tags/:id/contact-wa",
   createTagOnContactWAValidation,
-  createTagOnContactWAController
+  createTagOnContactWAController,
 );
 
 RouterV1Private_Post.post(
   "/fb-pixels",
   createFbPixelsValidation,
-  createFbPixelsController
+  createFbPixelsController,
 );
 
 RouterV1Private_Post.post(
   "/fb-pixels/test",
   testFbPixelValidation,
-  testFbPixelController
+  testFbPixelController,
 );
+
+// const uploadCert = multer({
+//   storage: multer.memoryStorage(),
+//   limits: { fileSize: 2 * 1024 * 1024 },
+//   fileFilter(_, file, cb) {
+//     if (!file.originalname.endsWith(".pfx")) {
+//       return cb(new Error("Invalid certificate format"));
+//     }
+//     cb(null, true);
+//   },
+// });
 
 RouterV1Private_Post.post(
   "/integration/payments",
+  // uploadCert.single("certificate"),
   createPaymentIntegrationValidation,
-  createPaymentIntegrationController
+  createPaymentIntegrationController,
 );
 
 RouterV1Private_Post.post(
   "/orders/action/:id/:action",
   runActionChannelOrderValidation,
-  runActionChannelOrderController
+  runActionChannelOrderController,
 );
 
 RouterV1Private_Post.post(
   "/integration/trello",
   createTrelloIntegrationValidation,
-  createTrelloIntegrationController
+  createTrelloIntegrationController,
 );
 
 RouterV1Private_Post.post(
@@ -218,7 +230,7 @@ RouterV1Private_Post.post(
     next();
   },
   createMenuOnlineValidation,
-  createMenuOnlineController
+  createMenuOnlineController,
 );
 
 RouterV1Private_Post.post(
@@ -230,19 +242,19 @@ RouterV1Private_Post.post(
     next();
   },
   createMenuOnlineItemValidation,
-  createMenuOnlineItemController
+  createMenuOnlineItemController,
 );
 
 RouterV1Private_Post.post(
   "/menus-online/:uuid/sizes-pizza",
   createMenuOnlineSizePizzaValidation,
-  createMenuOnlineSizePizzaController
+  createMenuOnlineSizePizzaController,
 );
 
 RouterV1Private_Post.post(
   "/push-token",
   createPushTokenValidation,
-  createPushTokenController
+  createPushTokenController,
 );
 
 export default RouterV1Private_Post;

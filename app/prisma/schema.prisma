@@ -153,6 +153,7 @@ model Account {
   notifications       Notifications[]
   pushTokens          PushTokens[]
   Appointments        Appointments[]
+  followUps           FollowUp[]
 
   @@index([id, email, hash, status, available, isUsedFreeTrialTime])
 }
@@ -973,6 +974,7 @@ model FlowState {
   Orders                Orders[]
   Charges               Charges[]
   Appointments          Appointments[]
+  FollowUps             FollowUp[]
 
   @@index([id, flowId, campaignId, contactsWAOnAccountId, connectionWAId, audienceId, isSent, isFinish, createAt])
 }
@@ -1894,6 +1896,7 @@ model StoragePathOnAgentAI {
 
 enum TypeProviderPayment {
   mercadopago
+  itau
 }
 
 model PaymentIntegrations {
@@ -1901,14 +1904,31 @@ model PaymentIntegrations {
   name         String              @db.VarChar(150)
   provider     TypeProviderPayment @default(mercadopago)
   status       Boolean             @default(true)
-  access_token String              @db.VarChar(240)
+  access_token String?             @db.VarChar(240)
+  clientId     String?
+  clientSecret String?
+  // certPfxEncrypted  Bytes?
+  // certPasswordEnc   Bytes?
   createAt     DateTime            @default(now())
   updateAt     DateTime            @default(now()) @updatedAt
   accountId    Int
   Account      Account             @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Charges      Charges[]
+  pixKeys      PixKey[]
 
   @@index([id, name, accountId, status])
+}
+
+model PixKey {
+  id                   Int                 @id @default(autoincrement())
+  key                  String
+  webhookRegisteredAt  DateTime? // usado no banco ITAU 
+  createdAt            DateTime            @default(now())
+  paymentIntegrationId Int
+  PaymentIntegration   PaymentIntegrations @relation(fields: [paymentIntegrationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Charges              Charges[]
+
+  @@index([id, paymentIntegrationId])
 }
 
 model TrelloIntegration {
@@ -2029,15 +2049,19 @@ enum TypeMethodCharge {
 
 model Charges {
   id                    Int                  @id @default(autoincrement())
-  hash                  String               @default(uuid()) // prevenir alterar status de pagamento pelo id ou transactionId, as atualizações devem ser feitas pelo hash
+  txid                  String?              @unique
   provider              TypeProviderPayment  @default(mercadopago)
-  transactionId         String
   total                 Decimal              @db.Decimal(10, 2)
   net_total             Decimal              @db.Decimal(10, 2)
   currency              String               @db.VarChar(10)
   status                PaymentStatus        @default(created)
   deleted               Boolean              @default(false)
   method_type           TypeMethodCharge
+  pix_link              String?              @db.Text
+  pix_emv               String?              @db.Text
+  expires_at            DateTime?
+  paid_at               DateTime?
+  e2e_id                String? // codigo do pagamento.
   content               String?              @db.Text
   metadata              Json?
   flowNodeId            String?
@@ -2047,6 +2071,7 @@ model Charges {
   accountId             Int
   paymentIntegrationId  Int?
   orderId               Int?
+  pixKeyId              Int?
   flowStateId           Int?
   inboxUserId           Int?
   ticketId              Int?
@@ -2059,8 +2084,9 @@ model Charges {
   Order                 Orders?              @relation(fields: [orderId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   PaymentIntegration    PaymentIntegrations? @relation(fields: [paymentIntegrationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   FlowState             FlowState?           @relation(fields: [flowStateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  PixKey                PixKey?              @relation(fields: [pixKeyId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
-  @@index([provider, transactionId, ticketId, inboxUserId, status, deleted])
+  @@index([provider, txid, paid_at, ticketId, inboxUserId, status, deleted])
 }
 
 model LogSystem {
@@ -2243,4 +2269,30 @@ model AppointmentReminders {
   updateAt      DateTime                   @default(now())
   createAt      DateTime                   @default(now())
   Appointment   Appointments               @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+enum StatusFollowUp {
+  pending
+  sent
+  failed
+  canceled
+}
+
+model FollowUp {
+  id          Int                        @id @default(autoincrement())
+  code        String
+  body        String                     @db.Text
+  notify_at   DateTime
+  deleted     Boolean                    @default(false)
+  status      StatusAppointmentReminders @default(pending)
+  flowNodeId  String
+  flowStateId Int
+  accountId   Int
+  updateAt    DateTime                   @default(now())
+  createAt    DateTime                   @default(now())
+
+  FlowState FlowState @relation(fields: [flowStateId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Account   Account   @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([code, flowStateId])
 }

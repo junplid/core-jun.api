@@ -9,7 +9,7 @@ import { loginRootValidation } from "../../../../../core/loginRoot/Validation";
 import { loginRootController } from "../../../../../core/loginRoot";
 import { createRootValidation } from "../../../../../core/createRoot/Validation";
 import { createRootController } from "../../../../../core/createRoot";
-import { webhookMercadopago } from "../../../../../core/webhookMercadopago";
+import { mercadopagoWebhook } from "../../../../../core/webhookMercadopago";
 // import { registerIntentValidation } from "../../../../../core/registerIntent/Validation";
 // import { registerIntentController } from "../../../../../core/registerIntent";
 import { prisma } from "../../../../../adapters/Prisma/client";
@@ -20,6 +20,7 @@ import { sessionsBaileysWA } from "../../../../../adapters/Baileys";
 import { createMenuOnlineOrderValidation } from "../../../../../core/createMenuOnlineOrder/Validation";
 import { createMenuOnlineOrderController } from "../../../../../core/createMenuOnlineOrder";
 import { mongo } from "../../../../../adapters/mongo/connection";
+import { itauPixWebhook } from "../../../../../services/itau/itau.pix.webhook";
 
 const RouterV1Public_Post = Router();
 
@@ -32,13 +33,13 @@ const RouterV1Public_Post = Router();
 RouterV1Public_Post.post(
   "/register/account",
   createAccountValidation,
-  createAccountController
+  createAccountController,
 );
 
 RouterV1Public_Post.post(
   "/login-account",
   loginAccountValidation,
-  loginAccountController
+  loginAccountController,
 );
 
 RouterV1Public_Post.post("/login", loginRootValidation, loginRootController);
@@ -46,22 +47,23 @@ RouterV1Public_Post.post("/login", loginRootValidation, loginRootController);
 RouterV1Public_Post.post(
   "/register-root",
   createRootValidation,
-  createRootController
+  createRootController,
 );
 
 RouterV1Public_Post.post(
   "/send-password-recovery-email/:type",
   sendPasswordRecoveryEmailValidation,
-  sendPasswordRecoveryEmailController
+  sendPasswordRecoveryEmailController,
 );
 
 RouterV1Public_Post.post(
   "/menu/:uuid/order",
   createMenuOnlineOrderValidation,
-  createMenuOnlineOrderController
+  createMenuOnlineOrderController,
 );
 
-RouterV1Public_Post.post("/webhook/mercadopago", webhookMercadopago);
+RouterV1Public_Post.post("/webhook/mercadopago", mercadopagoWebhook);
+RouterV1Public_Post.post("/webhook/itau", itauPixWebhook);
 
 RouterV1Public_Post.post("/webhook/trello", (req: Request, res: Response) => {
   const action = req.body.action;
@@ -171,7 +173,7 @@ RouterV1Public_Post.post("/webhook/trello", (req: Request, res: Response) => {
       }
 
       const nodes = flow.nodes.filter(
-        (n: any) => n.type === "NodeWebhookTrelloCard"
+        (n: any) => n.type === "NodeWebhookTrelloCard",
       ) as any[];
       if (!nodes?.length) return;
 

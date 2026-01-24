@@ -11,7 +11,7 @@ import { mongo } from "../../adapters/mongo/connection";
 import { NotificationApp } from "../../utils/notificationApp";
 import { formatToBRL } from "brazilian-values";
 
-export const webhookMercadopago = async (req: Request, res: Response) => {
+export const mercadopagoWebhook = async (req: Request, res: Response) => {
   try {
     // const xSignature = req.header("x-signature");
     // const xRequestId = req.header("x-request-id");
@@ -73,7 +73,7 @@ export const webhookMercadopago = async (req: Request, res: Response) => {
     (async () => {
       try {
         const getCharge = await prisma.charges.findFirst({
-          where: { transactionId: paymentId },
+          where: { txid: paymentId },
           select: {
             id: true,
             accountId: true,
@@ -88,7 +88,7 @@ export const webhookMercadopago = async (req: Request, res: Response) => {
         if (!getCharge?.PaymentIntegration) return;
 
         const client = new MercadoPagoConfig({
-          accessToken: getCharge.PaymentIntegration.access_token,
+          accessToken: getCharge.PaymentIntegration.access_token!,
           options: { timeout: 5000 },
         });
 
@@ -186,7 +186,7 @@ export const webhookMercadopago = async (req: Request, res: Response) => {
         }
 
         const chargeNode = flow.nodes.find(
-          (n: any) => n.id === getCharge.flowNodeId
+          (n: any) => n.id === getCharge.flowNodeId,
         ) as any[];
 
         if (!chargeNode) return;
@@ -211,7 +211,7 @@ export const webhookMercadopago = async (req: Request, res: Response) => {
 </span>
 <span className="text-xs font-light">
   Valor: <span className="text-green-300 font-medium">${formatToBRL(
-    getCharge.total.toNumber()
+    getCharge.total.toNumber(),
   )}</span>
 </span>`,
 
