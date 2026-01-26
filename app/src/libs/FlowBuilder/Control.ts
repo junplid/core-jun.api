@@ -1256,8 +1256,10 @@ export const NodeControler = ({
                     ...props,
                     previous_response_id: pre_res_id || undefined,
                     type: "running",
-                    action: "O usuário está ausente ou parou de responder",
-                    message: "O usuário está ausente ou parou de responder",
+                    action:
+                      "Notificação do sistema: O usuário está ausente ou parou de responder",
+                    message:
+                      "Notificação do sistema: O usuário está ausente ou parou de responder",
                     currentNodeId: currentNode.id,
                     oldNodeId: currentNode.id,
                   });

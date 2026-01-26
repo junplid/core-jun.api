@@ -1,6 +1,7 @@
 import { DeletePaymentIntegrationDTO_I } from "./DTO";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { prisma } from "../../adapters/Prisma/client";
+import { encrypt } from "../../libs/encryption";
 
 export class DeletePaymentIntegrationUseCase {
   constructor() {}
@@ -18,11 +19,13 @@ export class DeletePaymentIntegrationUseCase {
       });
     }
 
-    await prisma.paymentIntegrations.delete({ where: dto });
+    // re-escreve as credenciais com lixo
+    const nextCreds = encrypt({ revoked: true });
+    await prisma.paymentIntegrations.update({
+      where: dto,
+      data: { deleted: true, credentials: nextCreds },
+    });
 
-    return {
-      message: "OK!",
-      status: 200,
-    };
+    return { message: "OK!", status: 200 };
   }
 }

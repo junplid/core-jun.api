@@ -1,12 +1,11 @@
 import axios from "axios";
-import { ItauCredentials } from "./itau.types";
 
-export function createItauHttpClient(creds: ItauCredentials) {
+export function createItauHttpClient(environment: "PROD" | "HOMOLOG") {
   return axios.create({
     baseURL:
-      creds.environment === "PROD"
+      environment === "PROD"
         ? "https://secure.api.itau"
-        : "https://secure.api.itau/hml",
+        : "https://sandbox.devportal.itau.com.br",
     timeout: 10000,
   });
 }

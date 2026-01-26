@@ -1,38 +1,39 @@
-import crypto from "crypto";
+import {
+  randomBytes,
+  createCipheriv,
+  createDecipheriv,
+  createHmac,
+} from "crypto";
 
-const ALGORITHM = "aes-256-gcm";
-const IV_LENGTH = 12;
+const MASTER_KEY = Buffer.from(process.env.MASTER_KEY!, "hex");
+const HASH_SECRET = Buffer.from(process.env.HASH_SECRET!, "hex");
 
-// MASTER KEY (32 bytes)
-const MASTER_KEY = Buffer.from(process.env.ENCRYPTION_KEY!, "hex");
+export function encrypt(data: any) {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", MASTER_KEY, iv);
 
-export function encrypt(text: string) {
-  const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv(ALGORITHM, MASTER_KEY, iv);
-
-  let encrypted = cipher.update(text, "utf8", "base64");
-  encrypted += cipher.final("base64");
-
+  const encrypted = Buffer.concat([
+    cipher.update(JSON.stringify(data), "utf-8"),
+    cipher.final(),
+  ]);
   const tag = cipher.getAuthTag();
 
-  return {
-    iv: iv.toString("base64"),
-    content: encrypted,
-    tag: tag.toString("base64"),
-  };
+  return Buffer.concat([iv, tag, encrypted]).toString("base64");
 }
 
-export function decrypt(payload: { iv: string; content: string; tag: string }) {
-  const decipher = crypto.createDecipheriv(
-    ALGORITHM,
-    MASTER_KEY,
-    Buffer.from(payload.iv, "base64"),
-  );
+export function decrypte(data: string) {
+  const buffer = Buffer.from(data, "base64");
+  const iv = buffer.subarray(0, 12);
+  const tag = buffer.subarray(12, 28);
+  const encrypted = buffer.subarray(28);
 
-  decipher.setAuthTag(Buffer.from(payload.tag, "base64"));
+  const decipher = createDecipheriv("aes-256-gcm", MASTER_KEY, iv);
+  decipher.setAuthTag(tag);
 
-  let decrypted = decipher.update(payload.content, "base64", "utf8");
-  decrypted += decipher.final("utf8");
+  let decrypted = decipher.update(encrypted, undefined, "utf-8");
+  return JSON.parse((decrypted += decipher.final("utf-8")));
+}
 
-  return decrypted;
+export function hashForLookup(value: string) {
+  return createHmac("sha256", HASH_SECRET).update(value).digest("hex");
 }

@@ -2,6 +2,7 @@ import { UpdateAccountDTO_I } from "./DTO";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { prisma } from "../../adapters/Prisma/client";
 import { compare, genSalt, hash as hashBcrypt } from "bcrypt";
+import { hashForLookup } from "../../libs/encryption";
 
 export class UpdateAccountUseCase {
   constructor() {}
@@ -11,11 +12,15 @@ export class UpdateAccountUseCase {
     number,
     currentPassword,
     nextPassword,
+    email,
     ...dto
   }: UpdateAccountDTO_I) {
     const alreadyExists = await prisma.account.findFirst({
       where: {
-        OR: [{ email: dto.email }, { ContactsWA: { completeNumber: number } }],
+        OR: [
+          { emailHash: email ? hashForLookup(email) : undefined },
+          { ContactsWA: { completeNumber: number } },
+        ],
       },
     });
 
@@ -76,7 +81,12 @@ export class UpdateAccountUseCase {
 
     await prisma.account.update({
       where: { id: accountId },
-      data: { ...dto, password: newPassword, contactWAId },
+      data: {
+        ...dto,
+        ...(email && { emailHash: hashForLookup(email) }),
+        password: newPassword,
+        contactWAId,
+      },
     });
 
     return { status: 200, message: "OK" };

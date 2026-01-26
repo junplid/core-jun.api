@@ -3,11 +3,12 @@ import { genSalt, hash as hashBcrypt } from "bcrypt";
 import { createTokenAuth } from "../../helpers/authToken";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { encrypt, hashForLookup } from "../../libs/encryption";
 
 export class CreateAccountUseCase {
   constructor() {}
 
-  async run({ number, affiliate, ...dto }: CreateAccountDTO_I) {
+  async run({ number, email, cpfCnpj, affiliate, ...dto }: CreateAccountDTO_I) {
     try {
       const { id: contactWAId } = await prisma.contactsWA.upsert({
         where: { completeNumber: number },
@@ -19,7 +20,7 @@ export class CreateAccountUseCase {
       const exist = !!(await prisma.account.findFirst({
         where: {
           OR: [
-            { email: dto.email },
+            { emailHash: hashForLookup(email) },
             { ContactsWA: { completeNumber: number } },
           ],
         },
@@ -47,6 +48,12 @@ export class CreateAccountUseCase {
       const { id, hash: hashAccount } = await prisma.account.create({
         data: {
           ...dto,
+          ...(cpfCnpj && {
+            cpfCnpjHash: hashForLookup(cpfCnpj),
+            cpfCnpjEncrypted: encrypt(cpfCnpj),
+          }),
+          emailHash: hashForLookup(email),
+          emailEncrypted: encrypt(email),
           password: nextPassword,
           contactWAId,
           assetsUsedId: assetsUsedId.id,
@@ -57,7 +64,7 @@ export class CreateAccountUseCase {
 
       const token = await createTokenAuth(
         { id, type: "adm", hash: hashAccount },
-        "secret123"
+        process.env.SECRET_TOKEN_AUTH!,
       );
 
       return { status: 201, token };

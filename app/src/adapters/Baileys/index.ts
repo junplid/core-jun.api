@@ -35,6 +35,7 @@ import {
   chatbotRestartInDate,
   cachePendingReactionsList,
   cacheRunningQueueReaction,
+  cacheSendMessageSuportText,
 } from "./Cache";
 import { startChatbotQueue } from "../../utils/startChatbotQueue";
 import mime from "mime-types";
@@ -92,7 +93,7 @@ interface PropsBaileys {
   socket?: Socket;
   onConnection?(
     connection: WAConnectionState | "connectionLost" | undefined,
-    bot?: WASocket
+    bot?: WASocket,
   ): void;
   maxConnectionAttempts?: number;
   number?: string;
@@ -105,7 +106,7 @@ export type CacheSessionsBaileysWA = Omit<
 
 export const killConnectionWA = async (
   connectionId: number,
-  accountId: number
+  accountId: number,
 ) => {
   let path = "";
   if (process.env.NODE_ENV === "production") {
@@ -114,10 +115,10 @@ export const killConnectionWA = async (
     path = resolve(__dirname, `../../../bin/connections.json`);
   }
   const connectionsList: CacheSessionsBaileysWA[] = JSON.parse(
-    readFileSync(path).toString()
+    readFileSync(path).toString(),
   );
   const newConnectionsList = connectionsList.filter(
-    (c) => c.connectionWhatsId !== connectionId
+    (c) => c.connectionWhatsId !== connectionId,
   );
   writeFileSync(path, JSON.stringify(newConnectionsList));
   const alreadyExist = !!(await prisma.connectionWA.findFirst({
@@ -195,7 +196,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               socketIo.to(sockId.id).emit(`status-connection`, {
                 connectionId: props.connectionWhatsId,
                 connection: status,
-              })
+              }),
             );
         }
 
@@ -214,7 +215,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
         ensureDirSync(pathDataBaseWA);
 
         const { state, saveCreds } = await useMultiFileAuthState(
-          pathDataBaseWA + `/${props.connectionWhatsId}`
+          pathDataBaseWA + `/${props.connectionWhatsId}`,
         );
 
         if (!saveCreds) {
@@ -225,7 +226,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               entity: "baileys",
               type: "ERROR",
               value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | saveCreds no cliente da conexão WA não encontrado`,
-            })
+            }),
           );
           await prisma.geralLogDate.create({
             data: {
@@ -250,7 +251,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               entity: "baileys",
               type: "ERROR",
               value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Erro ao recuperar o nome da conexão WA`,
-            })
+            }),
           );
           await prisma.geralLogDate.create({
             data: {
@@ -261,7 +262,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
             },
           });
           console.error(
-            "Erro ao recuperar o nome da conexão WhatsApp, verifique se a conexão existe."
+            "Erro ao recuperar o nome da conexão WhatsApp, verifique se a conexão existe.",
           );
           return;
         }
@@ -382,13 +383,13 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
             if (connection) {
               cacheConnectionsWAOnline.set(
                 props.connectionWhatsId,
-                connection === "open"
+                connection === "open",
               );
             }
             if (!!qr && socketIds?.length && !restart) {
               if (!!props.number) {
                 const paircode = await bot.requestPairingCode(
-                  props.number.replace(/\D/g, "")
+                  props.number.replace(/\D/g, ""),
                 );
                 const code = paircode.split("");
                 code.splice(4, 0, "-");
@@ -397,7 +398,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     .to(socketId.id)
                     .emit(
                       `pairing-code-${props.connectionWhatsId}`,
-                      code.join("").split("-")
+                      code.join("").split("-"),
                     );
                 });
               } else {
@@ -420,7 +421,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
                   await killAndClean(
                     props.connectionWhatsId,
-                    "Sessão corrompida - limpando credenciais."
+                    "Sessão corrompida - limpando credenciais.",
                   );
                   break;
 
@@ -439,7 +440,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       entity: "baileys",
                       type: "ERROR",
                       value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Conexão perdida, tentativa: ${attempts} de se reconectar.`,
-                    })
+                    }),
                   );
                   await prisma.geralLogDate.create({
                     data: {
@@ -455,7 +456,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
                   await killAndClean(
                     props.connectionWhatsId,
-                    "Sessão substituída em outro dispositivo."
+                    "Sessão substituída em outro dispositivo.",
                   );
                   cacheRootSocket.forEach((sockId) =>
                     socketIo.to(sockId).emit(`geral-logs`, {
@@ -463,7 +464,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       entity: "baileys",
                       type: "ERROR",
                       value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Substituída em outro dispositivo.`,
-                    })
+                    }),
                   );
                   await prisma.geralLogDate.create({
                     data: {
@@ -479,7 +480,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
                   await killAndClean(
                     props.connectionWhatsId,
-                    "Conta foi deslogada do WhatsApp."
+                    "Conta foi deslogada do WhatsApp.",
                   );
                   cacheRootSocket.forEach((sockId) =>
                     socketIo.to(sockId).emit(`geral-logs`, {
@@ -487,7 +488,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       entity: "baileys",
                       type: "ERROR",
                       value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Deslogada do WhatsApp.`,
-                    })
+                    }),
                   );
                   await prisma.geralLogDate.create({
                     data: {
@@ -514,7 +515,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       entity: "baileys",
                       type: "ERROR",
                       value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Número bloqueado / banido.`,
-                    })
+                    }),
                   );
                   await prisma.geralLogDate.create({
                     data: {
@@ -530,7 +531,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
                   await killAndClean(
                     props.connectionWhatsId,
-                    "Sessão corrompida - limpando credenciais."
+                    "Sessão corrompida - limpando credenciais.",
                   );
                   cacheRootSocket.forEach((sockId) =>
                     socketIo.to(sockId).emit(`geral-logs`, {
@@ -538,7 +539,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       entity: "baileys",
                       type: "ERROR",
                       value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Corrompida - limpando credenciais.`,
-                    })
+                    }),
                   );
                   await prisma.geralLogDate.create({
                     data: {
@@ -560,7 +561,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
             if (connection === "open") {
               const all = await bot.groupFetchAllParticipating();
               await Promise.all(
-                Object.values(all).map((g) => bot.groupMetadata(g.id))
+                Object.values(all).map((g) => bot.groupMetadata(g.id)),
               );
               attempts = 0;
               try {
@@ -585,9 +586,9 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       bot.updateProfilePicture(`${number}@s.whatsapp.net`, {
                         url: resolve(
                           __dirname,
-                          `../../../static/image/${cfg.fileNameImgPerfil}`
+                          `../../../static/image/${cfg.fileNameImgPerfil}`,
                         ),
-                      })
+                      }),
                     );
                   }
                   if (cfg.profileStatus) {
@@ -601,7 +602,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   }
                   if (cfg.readReceiptsPrivacy) {
                     tasks.push(
-                      bot.updateReadReceiptsPrivacy(cfg.readReceiptsPrivacy)
+                      bot.updateReadReceiptsPrivacy(cfg.readReceiptsPrivacy),
                     );
                   }
                   if (cfg.statusPrivacy) {
@@ -609,7 +610,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   }
                   if (cfg.imgPerfilPrivacy) {
                     tasks.push(
-                      bot.updateProfilePicturePrivacy(cfg.imgPerfilPrivacy)
+                      bot.updateProfilePicturePrivacy(cfg.imgPerfilPrivacy),
                     );
                   }
                   console.log("4");
@@ -633,9 +634,9 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     value: `Conexão: #${props.connectionWhatsId} - Account: #${
                       props.accountId
                     } | Error tentando atualizar perfil da WA. >> ${JSON.stringify(
-                      error
+                      error,
                     )}`,
-                  })
+                  }),
                 );
                 await prisma.geralLogDate.create({
                   data: {
@@ -645,7 +646,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     value: `Conexão: #${props.connectionWhatsId} - Account: #${
                       props.accountId
                     } | Error tentando atualizar perfil da WA. >> ${JSON.stringify(
-                      error
+                      error,
                     )}`,
                   },
                 });
@@ -653,7 +654,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               }
               res();
             }
-          }
+          },
         );
 
         bot.ev.on("creds.update", saveCreds);
@@ -775,7 +776,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
             }
 
             const reactionNodes = flow.nodes.filter(
-              (n: any) => n.type === "NodeListenReaction"
+              (n: any) => n.type === "NodeListenReaction",
             ) as any[];
 
             if (!reactionNodes?.length) {
@@ -860,7 +861,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     onErrorNumber: async () => {
                       console.error(
                         "Erro no número do contato",
-                        identifierLead
+                        identifierLead,
                       );
                       cacheRunningQueueReaction.set(keyMap, false);
                       cachePendingReactionsList.delete(keyMap);
@@ -1012,18 +1013,18 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               let fileNameOriginal = "";
               if (messageAudio) {
                 const ext = mime.extension(
-                  messageAudio.mimetype || "audio/mpeg"
+                  messageAudio.mimetype || "audio/mpeg",
                 );
                 fileName = `image_inbox_${Date.now()}.${ext}`;
                 try {
                   const buffer = await downloadMediaMessage(
                     body.messages[0],
                     "buffer",
-                    {}
+                    {},
                   );
                   writeFileSync(
                     pathStatic + `/${fileName}`,
-                    new Uint8Array(buffer)
+                    new Uint8Array(buffer),
                   );
                   leadAwaiting.set(keyMapLeadAwaiting, false);
                 } catch (error) {
@@ -1038,9 +1039,9 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       } - Account: #${
                         props.accountId
                       } | Error ao tentar salvar AUDIO recebido, line: 934. >> ${JSON.stringify(
-                        error
+                        error,
                       )}`,
-                    })
+                    }),
                   );
                   await prisma.geralLogDate.create({
                     data: {
@@ -1052,7 +1053,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       } - Account: #${
                         props.accountId
                       } | Error ao tentar salvar AUDIO recebido, line: 934. >> ${JSON.stringify(
-                        error
+                        error,
                       )}`,
                     },
                   });
@@ -1061,19 +1062,19 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               }
               if (messageImage) {
                 const ext = mime.extension(
-                  messageImage.mimetype || "image/jpeg"
+                  messageImage.mimetype || "image/jpeg",
                 );
                 fileName = `image_inbox_${Date.now()}.${ext}`;
                 try {
                   const buffer = await downloadMediaMessage(
                     body.messages[0],
                     "buffer",
-                    {}
+                    {},
                   );
 
                   await writeFile(
                     pathStatic + `/${fileName}`,
-                    new Uint8Array(buffer)
+                    new Uint8Array(buffer),
                   );
                 } catch (error) {
                   const hash = ulid();
@@ -1087,9 +1088,9 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       } - Account: #${
                         props.accountId
                       } | Error ao tentar salvar IMAGEM recebido >> ${JSON.stringify(
-                        error
+                        error,
                       )}`,
-                    })
+                    }),
                   );
                   await prisma.geralLogDate.create({
                     data: {
@@ -1101,7 +1102,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       } - Account: #${
                         props.accountId
                       } | Error ao tentar salvar IMAGEM recebido >> ${JSON.stringify(
-                        error
+                        error,
                       )}`,
                     },
                   });
@@ -1110,7 +1111,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               }
               if (doc) {
                 const ext = mime.extension(
-                  doc?.mimetype || "text/html; charset=utf-8"
+                  doc?.mimetype || "text/html; charset=utf-8",
                 );
                 fileName = `file_inbox_${Date.now()}.${ext}`;
                 fileNameOriginal = doc.fileName || "";
@@ -1118,7 +1119,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   const buffer = await downloadMediaMessage(
                     body.messages[0],
                     "buffer",
-                    {}
+                    {},
                   );
                   if (!buffer || buffer.length === 0) {
                     console.log("Buffer de mídia vazio.");
@@ -1126,7 +1127,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   }
                   await writeFile(
                     pathStatic + `/${fileName}`,
-                    new Uint8Array(buffer)
+                    new Uint8Array(buffer),
                   );
                 } catch (error) {
                   const hash = ulid();
@@ -1140,9 +1141,9 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       } - Account: #${
                         props.accountId
                       } | Error ao tentar salvar FILE recebido >> ${JSON.stringify(
-                        error
+                        error,
                       )}`,
-                    })
+                    }),
                   );
                   await prisma.geralLogDate.create({
                     data: {
@@ -1154,7 +1155,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       } - Account: #${
                         props.accountId
                       } | Error ao tentar salvar FILE recebido >> ${JSON.stringify(
-                        error
+                        error,
                       )}`,
                     },
                   });
@@ -1163,7 +1164,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               }
               if (docWithCaption) {
                 const ext = mime.extension(
-                  doc?.mimetype || "text/html; charset=utf-8"
+                  doc?.mimetype || "text/html; charset=utf-8",
                 );
                 fileName = `file_inbox_${Date.now()}.${ext}`;
                 fileNameOriginal = docWithCaption.fileName || "";
@@ -1171,7 +1172,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   const buffer = await downloadMediaMessage(
                     body.messages[0],
                     "buffer",
-                    {}
+                    {},
                   );
                   if (!buffer || buffer.length === 0) {
                     console.log("Buffer de mídia vazio.");
@@ -1179,7 +1180,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   }
                   await writeFile(
                     pathStatic + `/${fileName}`,
-                    new Uint8Array(buffer)
+                    new Uint8Array(buffer),
                   );
                 } catch (error) {
                   const hash = ulid();
@@ -1193,9 +1194,9 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       } - Account: #${
                         props.accountId
                       } | Error ao tentar salvar FILE-COM-CAPTION recebido >> ${JSON.stringify(
-                        error
+                        error,
                       )}`,
-                    })
+                    }),
                   );
                   await prisma.geralLogDate.create({
                     data: {
@@ -1207,7 +1208,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       } - Account: #${
                         props.accountId
                       } | Error ao tentar salvar FILE-COM-CAPTION recebido >> ${JSON.stringify(
-                        error
+                        error,
                       )}`,
                     },
                   });
@@ -1288,7 +1289,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               });
 
               const inboxSpace = socketIo.of(
-                `/business-${ticket.InboxDepartment.businessId}/inbox`
+                `/business-${ticket.InboxDepartment.businessId}/inbox`,
               );
 
               await NotificationApp({
@@ -1307,7 +1308,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                 onFilterSocket(sockets) {
                   return sockets
                     .filter(
-                      (s) => s.focused !== `modal-player-chat-${ticket.id}`
+                      (s) => s.focused !== `modal-player-chat-${ticket.id}`,
                     )
                     .map((s) => s.id);
                 },
@@ -1439,6 +1440,21 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
               },
             });
 
+            if (!messageText) {
+              const isSendMessageSuportText =
+                cacheSendMessageSuportText.get(keyMapLeadAwaiting);
+              if (!isSendMessageSuportText) {
+                await SendMessageText({
+                  connectionId: props.connectionWhatsId,
+                  text: "*Mensagem automática*\nEste chat ainda só oferece suporte a mensagens de texto.",
+                  toNumber: identifierLead,
+                });
+                return;
+              }
+              return;
+            }
+            cacheSendMessageSuportText.delete(keyMapLeadAwaiting);
+
             if (chatbot) {
               let currentIndexNodeLead = await prisma.flowState.findFirst({
                 where: {
@@ -1479,7 +1495,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                 },
               });
               const isToRestartChatbot = chatbotRestartInDate.get(
-                `${numberConnection}+${identifierLead}`
+                `${numberConnection}+${identifierLead}`,
               );
               if (!!isToRestartChatbot) {
                 const isbefore = moment()
@@ -1490,7 +1506,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                   return;
                 } else {
                   chatbotRestartInDate.delete(
-                    `${numberConnection}+${identifierLead}`
+                    `${numberConnection}+${identifierLead}`,
                   );
                 }
               }
@@ -1570,7 +1586,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                             entity: "flows",
                             type: "WARN",
                             value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
-                          })
+                          }),
                         );
                         await prisma.geralLogDate.create({
                           data: {
@@ -1634,7 +1650,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                             entity: "flows",
                             type: "WARN",
                             value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
-                          })
+                          }),
                         );
                         await prisma.geralLogDate.create({
                           data: {
@@ -1660,7 +1676,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                         entity: "flows",
                         type: "WARN",
                         value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
-                      })
+                      }),
                     );
                     await prisma.geralLogDate.create({
                       data: {
@@ -1686,7 +1702,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                         entity: "connectionWA",
                         type: "WARN",
                         value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Tentou buscar o nome do projeto pela tabela de conexão`,
-                      })
+                      }),
                     );
                     await prisma.geralLogDate.create({
                       data: {
@@ -1702,18 +1718,18 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                   let fileName = "";
                   if (messageAudio) {
                     const ext = mime.extension(
-                      messageAudio.mimetype || "audio/mpeg"
+                      messageAudio.mimetype || "audio/mpeg",
                     );
                     fileName = `audio_inbox_${Date.now()}.${ext}`;
                     try {
                       const buffer = await downloadMediaMessage(
                         body.messages[0],
                         "buffer",
-                        {}
+                        {},
                       );
                       writeFileSync(
                         pathStatic + `/${fileName}`,
-                        new Uint8Array(buffer)
+                        new Uint8Array(buffer),
                       );
                       leadAwaiting.set(keyMapLeadAwaiting, false);
                     } catch (error) {
@@ -1724,7 +1740,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                           entity: "baileys",
                           type: "WARN",
                           value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Error ao tentar salvar AUDIO recebido no chatbot`,
-                        })
+                        }),
                       );
                       await prisma.geralLogDate.create({
                         data: {
@@ -1768,7 +1784,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                             scheduleExecutionsReply.get(
                               numberConnection +
                                 "@s.whatsapp.net" +
-                                body.messages[0].key.remoteJid!
+                                body.messages[0].key.remoteJid!,
                             );
                           if (scheduleExecutionCache) {
                             scheduleExecutionCache.cancel();
@@ -1783,12 +1799,12 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                               .tz("America/Sao_Paulo")
                               .add(
                                 chatbot.TimeToRestart.value,
-                                chatbot.TimeToRestart.type
+                                chatbot.TimeToRestart.type,
                               )
                               .toDate();
                             chatbotRestartInDate.set(
                               `${numberConnection}+${identifierLead}`,
-                              nextDate
+                              nextDate,
                             );
                           }
                         }
@@ -1799,7 +1815,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                             scheduleExecutionsReply.get(
                               numberConnection +
                                 "@s.whatsapp.net" +
-                                body.messages[0].key.remoteJid!
+                                body.messages[0].key.remoteJid!,
                             );
                           if (scheduleExecutionCache) {
                             scheduleExecutionCache.cancel();
@@ -1814,12 +1830,12 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                               .tz("America/Sao_Paulo")
                               .add(
                                 chatbot.TimeToRestart.value,
-                                chatbot.TimeToRestart.type
+                                chatbot.TimeToRestart.type,
                               )
                               .toDate();
                             chatbotRestartInDate.set(
                               `${numberConnection}+${identifierLead}`,
-                              nextDate
+                              nextDate,
                             );
                           }
                         }
@@ -1841,7 +1857,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                                 entity: "flowState",
                                 type: "WARN",
                                 value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flowState: #${currentIndexNodeLead.id} | Error ao atualizar flowState`,
-                              })
+                              }),
                             );
                             await prisma.geralLogDate.create({
                               data: {
@@ -1884,7 +1900,6 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                           });
                         }
                       },
-                      
                     },
                   }).finally(() => {
                     leadAwaiting.set(keyMapLeadAwaiting, false);
@@ -1904,7 +1919,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                       const valid = day.WorkingTimes.some(({ end, start }) => {
                         const isbet = nowTime.isBetween(
                           getTimeBR(start),
-                          getTimeBR(end)
+                          getTimeBR(end),
                         );
                         console.log({ isbet, end, start, nowTime });
                         return isbet;
@@ -1931,7 +1946,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                     console.log({ flowState });
                     if (!flowState) {
                       await new Promise((resolve) =>
-                        setTimeout(resolve, 1000 * 4)
+                        setTimeout(resolve, 1000 * 4),
                       );
                       await TypingDelay({
                         connectionId: props.connectionWhatsId,
@@ -1956,7 +1971,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                     } else {
                       if (!flowState.fallbackSent) {
                         await new Promise((resolve) =>
-                          setTimeout(resolve, 1000 * 4)
+                          setTimeout(resolve, 1000 * 4),
                         );
                         await TypingDelay({
                           connectionId: props.connectionWhatsId,
@@ -1994,7 +2009,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                       });
 
                       return Math.min(...listNextWeeks);
-                    }).filter((s) => s >= 0)
+                    }).filter((s) => s >= 0),
                   );
 
                   console.log({ minutesToNextExecutionInQueue });
@@ -2027,7 +2042,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                         JSON.stringify({
                           "next-execution": dateNextExecution,
                           queue: [dataLeadQueue],
-                        } as ChatbotQueue)
+                        } as ChatbotQueue),
                       );
                     } catch (error) {
                       console.error("======= Error ao tentar escrever path");
@@ -2040,7 +2055,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                       const JSONQueue: ChatbotQueue = JSON.parse(chatbotQueue);
                       if (
                         !JSONQueue.queue.some(
-                          (s) => s.number === identifierLead
+                          (s) => s.number === identifierLead,
                         )
                       ) {
                         JSONQueue.queue.push(dataLeadQueue);
@@ -2048,7 +2063,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                       try {
                         await writeFile(
                           pathOriginal,
-                          JSON.stringify(JSONQueue)
+                          JSON.stringify(JSONQueue),
                         );
                       } catch (error) {
                         console.log(error);
@@ -2060,7 +2075,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                           JSON.stringify({
                             "next-execution": dateNextExecution,
                             queue: [dataLeadQueue],
-                          } as ChatbotQueue)
+                          } as ChatbotQueue),
                         );
                       } catch (error) {
                         console.log(error);
@@ -2069,7 +2084,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                     console.log("AQUI 2");
                   }
                   const cacheThisChatbot = cacheJobsChatbotQueue.get(
-                    chatbot.id
+                    chatbot.id,
                   );
                   if (!cacheThisChatbot) {
                     await startChatbotQueue(chatbot.id);
@@ -2128,7 +2143,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                     entity: "flowState",
                     type: "ERROR",
                     value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${campaignOfConnection?.id} | Flow state da campanha não encontrada`,
-                  })
+                  }),
                 );
                 await prisma.geralLogDate.create({
                   data: {
@@ -2190,7 +2205,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                         entity: "flow",
                         type: "ERROR",
                         value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${campaignOfConnection?.id} - flowId: #${flowId} | Flow não encontrado`,
-                      })
+                      }),
                     );
                     await prisma.geralLogDate.create({
                       data: {
@@ -2352,7 +2367,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                         entity: "flow",
                         type: "ERROR",
                         value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${id} | Error no cliente da conexão WA`,
-                      })
+                      }),
                     );
                     await prisma.geralLogDate.create({
                       data: {
@@ -2363,7 +2378,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                       },
                     });
                     console.log(
-                      "Erro no cliente, não foi possível enviar a mensagem"
+                      "Erro no cliente, não foi possível enviar a mensagem",
                     );
                   },
                   onErrorNumber: async () => {
@@ -2374,7 +2389,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                         entity: "flow",
                         type: "ERROR",
                         value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${id} | Error no número do LEAD`,
-                      })
+                      }),
                     );
                     await prisma.geralLogDate.create({
                       data: {
@@ -2385,7 +2400,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                       },
                     });
                     console.log(
-                      "Erro no número, não foi possível enviar a mensagem"
+                      "Erro no número, não foi possível enviar a mensagem",
                     );
                   },
                   onExecutedNode: async (node, isShots) => {
@@ -2418,7 +2433,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
             value: `Conexão: #${props.connectionWhatsId} - Account: #${
               props.accountId
             } | Error na conexão WA >> ${JSON.stringify(error)}`,
-          })
+          }),
         );
         await prisma.geralLogDate.create({
           data: {

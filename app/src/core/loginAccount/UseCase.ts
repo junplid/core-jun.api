@@ -4,6 +4,7 @@ import { LoginAccountRepository_I } from "./Repository";
 import { compare } from "bcrypt";
 import { createTokenAuth } from "../../helpers/authToken";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { hashForLookup } from "../../libs/encryption";
 
 export class LoginAccountUseCase {
   constructor(private repository: LoginAccountRepository_I) {}
@@ -15,7 +16,7 @@ export class LoginAccountUseCase {
 
     if (!account) {
       throw new ErrorResponse(400)
-        .container("Dados de acesso incorretos.")
+        .container("Dados de acesso incorretos. 1")
         .toast({ title: "Dados de acesso incorretos.", type: "error" });
     }
 
@@ -23,7 +24,7 @@ export class LoginAccountUseCase {
 
     if (!comparePassword) {
       throw new ErrorResponse(400)
-        .container("Dados de acesso incorretos.")
+        .container("Dados de acesso incorretos. 2")
         .toast({ title: "Dados de acesso incorretos.", type: "error" });
     }
 
@@ -50,7 +51,7 @@ export class LoginAccountUseCase {
         type: account.type,
         hash: account.hash,
       },
-      "secret123"
+      process.env.SECRET_TOKEN_AUTH!,
     );
 
     return {

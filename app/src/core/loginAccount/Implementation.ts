@@ -1,10 +1,15 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { DefaultArgs } from "@prisma/client/runtime/library";
 import { LoginAccountRepository_I } from "./Repository";
+import { hashForLookup } from "../../libs/encryption";
 
 export class LoginAccountImplementation implements LoginAccountRepository_I {
   constructor(
-    private prisma: PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>
+    private prisma: PrismaClient<
+      Prisma.PrismaClientOptions,
+      never,
+      DefaultArgs
+    >,
   ) {}
 
   async findAccount(props: { email: string }): Promise<{
@@ -15,7 +20,7 @@ export class LoginAccountImplementation implements LoginAccountRepository_I {
   } | null> {
     try {
       const data = await this.prisma.account.findFirst({
-        where: { email: props.email },
+        where: { emailHash: hashForLookup(props.email) },
         select: { id: true, password: true, hash: true },
       });
 

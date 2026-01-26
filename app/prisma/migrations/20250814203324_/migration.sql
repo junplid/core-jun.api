@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "FlowState" ADD COLUMN     "inputTokens" INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN     "outputTokens" INTEGER NOT NULL DEFAULT 0;

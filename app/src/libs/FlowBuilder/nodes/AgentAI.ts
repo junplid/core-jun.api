@@ -35,6 +35,7 @@ import { nanoid } from "nanoid";
 import { NodeUpdateAppointment } from "./UpdateAppointment";
 import { NodeCreateOrder } from "./CreateOrder";
 import { NodeUpdateOrder } from "./UpdateOrder";
+import { NodeCharge } from "./Charge";
 
 const tools: OpenAI.Responses.Tool[] = [
   {
@@ -686,6 +687,50 @@ const tools: OpenAI.Responses.Tool[] = [
     },
     strict: false,
   },
+  {
+    type: "function",
+    name: "criar_cobranca",
+    description: "Use para criar uma cobrança Pix.",
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        paymentIntegrationId: {
+          type: "number",
+          description: "ID da integração de pagamento.",
+        },
+        total: {
+          type: "number",
+          description: "Valor da cobrança.",
+        },
+        content: {
+          type: "string",
+          description: "Descrição da cobrança. (opcional)",
+        },
+        varId_email: {
+          type: "number",
+          description: "ID da variável que tem o email do usuário (opcional)",
+        },
+        varId_save_transactionId: {
+          type: "number",
+          description:
+            "ID da variável que salvará o Codigo/ID da transação (opcional)",
+        },
+        varId_save_qrCode: {
+          type: "number",
+          description:
+            "ID da variável que salvará o QR Code para o pagamento (opcional)",
+        },
+        varId_save_linkPayment: {
+          type: "number",
+          description:
+            "ID da variável que salvará o Link de pagamento (opcional)",
+        },
+      },
+      // required: [],
+    },
+    strict: false,
+  },
 ];
 
 type ResultDebounceAgentAI =
@@ -990,7 +1035,7 @@ export const NodeAgentAI = async ({
             if (sentPrompt?.length && sentPrompt.includes(props.nodeId)) {
               for (const ms of msgs) {
                 input.push({
-                  role: ms.isDev ? "system" : "user",
+                  role: ms.isDev ? "developer" : "user",
                   content: ms.value,
                 });
               }
@@ -998,7 +1043,7 @@ export const NodeAgentAI = async ({
               if (property) input.push(buildInput(property));
               for (const ms of msgs) {
                 input.push({
-                  role: ms.isDev ? "system" : "user",
+                  role: ms.isDev ? "developer" : "user",
                   content: ms.value,
                 });
               }
@@ -1134,6 +1179,7 @@ export const NodeAgentAI = async ({
 
                           const texts = item.text.split("\n\n");
                           for await (const text of texts) {
+                            if (!text.trim()) continue;
                             try {
                               await TypingDelay({
                                 connectionId: props.connectionWhatsId,
@@ -2243,8 +2289,59 @@ export const NodeAgentAI = async ({
                               ),
                             });
                           }
+                          continue;
+
+                        case "criar_cobranca": {
+                          let codeOrder: any = {};
+                          const pickBusiness3 = await prisma.business.findFirst(
+                            {
+                              where: {
+                                name: props.businessName,
+                                accountId: props.accountId,
+                              },
+                              select: { id: true },
+                            },
+                          );
+                          if (!pickBusiness3) {
+                            outputs.push({
+                              type: "function_call_output",
+                              call_id: c.call_id,
+                              output: `Não foi possivel criar a cobrança. Projeto(${props.businessName}) não encontrado. Error interno!`,
+                            });
+                            continue;
+                          }
+                          const status = await NodeCharge({
+                            accountId: props.accountId,
+                            actions: {
+                              onDataCharge(code) {
+                                codeOrder = code;
+                              },
+                            },
+                            data: { ...args, businessId: pickBusiness3.id },
+                            contactsWAOnAccountId: props.contactAccountId,
+                            flowStateId: props.flowStateId,
+                            nodeId: props.nodeId,
+                          });
+
+                          if (status === "success") {
+                            outputs.push({
+                              type: "function_call_output",
+                              call_id: c.call_id,
+                              output: JSON.stringify({
+                                ...codeOrder,
+                                // text: `Criado com sucesso, codigo da cobrança: ${codeOrder}`,
+                              }),
+                            });
+                          } else {
+                            outputs.push({
+                              type: "function_call_output",
+                              call_id: c.call_id,
+                              output: `Error interno! Não foi possivel criar a cobrança.`,
+                            });
+                          }
 
                           continue;
+                        }
 
                         default:
                           if (executeNow) {

@@ -25,7 +25,7 @@ interface PropsCreateOrder {
 }
 
 export const NodeCreateOrder = async (
-  props: PropsCreateOrder
+  props: PropsCreateOrder,
 ): Promise<string | undefined> => {
   try {
     if (props.action) return props.action;
@@ -33,8 +33,15 @@ export const NodeCreateOrder = async (
     let chargeId: number | null = null;
 
     if (props.data.charge_transactionId) {
+      const charge_transactionId = await resolveTextVariables({
+        accountId: props.accountId,
+        text: props.data.charge_transactionId,
+        contactsWAOnAccountId: props.contactsWAOnAccountId,
+        numberLead: props.numberLead,
+        nodeId: props.nodeId,
+      });
       const getcharge = await prisma.charges.findFirst({
-        where: { transactionId: props.data.charge_transactionId },
+        where: { txid: charge_transactionId },
         select: { id: true },
       });
       chargeId = getcharge?.id || null;
@@ -98,8 +105,8 @@ export const NodeCreateOrder = async (
             contactsWAOnAccountId: props.contactsWAOnAccountId,
             numberLead: props.numberLead,
             nodeId: props.nodeId,
-          })
-        )
+          }),
+        ),
       );
     } else {
       restData.total = undefined;
@@ -260,7 +267,7 @@ export const NodeCreateOrder = async (
             ticket:
               ContactsWAOnAccount?.Tickets.map((tk) => {
                 const isConnected = !!cacheConnectionsWAOnline.get(
-                  tk.ConnectionWA.id
+                  tk.ConnectionWA.id,
                 );
                 return {
                   connection: { ...tk.ConnectionWA, s: isConnected },

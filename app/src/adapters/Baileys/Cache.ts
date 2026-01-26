@@ -71,3 +71,9 @@ export const cacheAgentsSentPromptInstruction = new Map<string, string[]>();
  * Retorna uma lista de informações para inserir no agent em questão;
  */
 export const cacheNextInputsCurrentAgents = new Map<number, string[]>();
+
+/**
+ * key = `{conexão id}+{numero do contato}`
+ * Retorna uma lista de nodes agent que foram executados;
+ */
+export const cacheSendMessageSuportText = new Map<string, boolean>();

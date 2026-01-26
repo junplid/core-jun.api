@@ -11,6 +11,7 @@ import {
 import { resolve } from "path";
 import OpenAI from "openai";
 import "./cronReminders";
+import "./cronFollowUps";
 
 interface VectorStoreTest {
   apiKey: string;
@@ -46,7 +47,7 @@ if (!existsSync(pathFilesTest)) {
       } catch (error: any) {
         console.log("Error deleting vector store:", error.status);
       }
-    })
+    }),
   );
 
   await writeFile(resolve(pathFilesTest), JSON.stringify([]));

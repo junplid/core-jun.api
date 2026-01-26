@@ -12,7 +12,7 @@ export class UpdatePaymentIntegrationUseCase {
     });
     if (!exist) {
       throw new ErrorResponse(400).container(
-        "Integração de pagamento não encontrada!"
+        "Integração de pagamento não encontrada!",
       );
     }
 
@@ -22,7 +22,7 @@ export class UpdatePaymentIntegrationUseCase {
           accountId,
           id: { not: id },
           name: dto.name,
-          provider: dto.provider || exist.provider,
+          provider: exist.provider,
         },
         select: { id: true },
       });
@@ -30,7 +30,7 @@ export class UpdatePaymentIntegrationUseCase {
         throw new ErrorResponse(400).input({
           path: "name",
           text:
-            "Já existe uma integração com esse nome para: " + dto.provider ||
+            "Já existe uma integração com esse nome para: " + exist.provider ||
             exist.provider,
         });
       }

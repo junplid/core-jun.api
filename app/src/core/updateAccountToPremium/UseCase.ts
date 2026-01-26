@@ -2,15 +2,16 @@ import { UpdateAccountToPremiumDTO_I } from "./DTO";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { prisma } from "../../adapters/Prisma/client";
 import { compare, genSalt, hash as hashBcrypt } from "bcrypt";
+import { hashForLookup } from "../../libs/encryption";
 
 export class UpdateAccountToPremiumUseCase {
   constructor() {}
 
-  async run({ rootId, ...dto }: UpdateAccountToPremiumDTO_I) {
+  async run({ rootId, email, ...dto }: UpdateAccountToPremiumDTO_I) {
     const alreadyExists = await prisma.account.findFirst({
       where: {
         OR: [
-          { email: dto.email },
+          { emailHash: email ? hashForLookup(email) : undefined },
           { ContactsWA: { completeNumber: dto.number } },
         ],
       },

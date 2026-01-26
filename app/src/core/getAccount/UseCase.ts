@@ -1,6 +1,7 @@
 import { prisma } from "../../adapters/Prisma/client";
 import { GetAccountDTO_I } from "./DTO";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { decrypte } from "../../libs/encryption";
 
 export class GetAccountUseCase {
   constructor() {}
@@ -11,7 +12,7 @@ export class GetAccountUseCase {
         where: { id: dto.accountId },
         select: {
           name: true,
-          email: true,
+          emailEncrypted: true,
           emailVerified: true,
           onboarded: true,
           isPremium: true,
@@ -55,7 +56,7 @@ export class GetAccountUseCase {
           ...rest,
           isPremium: !!rest.isPremium,
           id: dto.accountId,
-          name: rest.name ?? rest.email,
+          name: rest.name ?? decrypte(rest.emailEncrypted),
           businessId: Business[0].id,
         },
       };

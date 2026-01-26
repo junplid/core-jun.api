@@ -11,106 +11,69 @@ import { mongo } from "../../adapters/mongo/connection";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
 import { NodeControler } from "../../libs/FlowBuilder/Control";
 import momentLib from "moment-timezone";
-import { NotificationApp } from "../../utils/notificationApp";
 
-cron.schedule("*/4 * * * *", () => {
+cron.schedule("*/1 * * * *", () => {
   (async () => {
     try {
-      const reminders = await prisma.appointmentReminders.findMany({
+      const followUps = await prisma.followUp.findMany({
         where: {
           notify_at: { lt: new Date() },
           deleted: false,
           status: "pending",
-          Appointment: {
-            deleted: false,
-            status: {
-              notIn: ["canceled", "expired", "suggested", "completed"],
-            },
-          },
         },
         select: {
           id: true,
-          moment: true,
-          Appointment: {
+          body: true,
+          code: true,
+          accountId: true,
+          FlowState: {
             select: {
-              startAt: true,
-              title: true,
-              FlowState: {
-                select: {
-                  id: true,
-                  chatbotId: true,
-                  campaignId: true,
-                  previous_response_id: true,
-                  Chatbot: {
-                    select: {
-                      TimeToRestart: { select: { type: true, value: true } },
-                    },
-                  },
-                },
-              },
-              flowNodeId: true,
-              accountId: true,
+              id: true,
+              chatbotId: true,
+              campaignId: true,
               flowId: true,
               ConnectionWA: { select: { number: true, id: true } },
+              previous_response_id: true,
               ContactsWAOnAccount: {
                 select: {
                   id: true,
                   ContactsWA: { select: { completeNumber: true } },
                 },
               },
+              Chatbot: {
+                select: {
+                  TimeToRestart: { select: { type: true, value: true } },
+                },
+              },
             },
           },
+          flowNodeId: true,
         },
       });
-      if (reminders.length) {
-        reminders.forEach(async ({ Appointment, moment, id }) => {
-          if (
-            !Appointment.flowId ||
-            !Appointment.FlowState ||
-            !Appointment.ConnectionWA
-          ) {
-            await prisma.appointmentReminders.update({
-              where: { id },
+      if (followUps.length) {
+        followUps.forEach(async ({ FlowState, ...followup }) => {
+          if (!FlowState.flowId || !FlowState.ConnectionWA) {
+            await prisma.followUp.update({
+              where: { id: followup.id },
               data: { status: "failed" },
             });
             return;
           }
 
-          await prisma.appointmentReminders.update({
-            where: { id },
+          await prisma.followUp.update({
+            where: { id: followup.id },
             data: { status: "sent" },
           });
-          let body_txt = "";
 
-          // isso nao pode ser assim. pq a ia não salva o formato momeny em day/hour/...
-          if (moment === "day") {
-            body_txt = `Amanhã às ${momentLib(Appointment.startAt).format(
-              "HH:mm",
-            )}`;
-          } else if (moment === "hour") {
-            body_txt = `Começa em 2 horas, às ${momentLib(
-              Appointment.startAt,
-            ).format("HH:mm")}`;
-          } else {
-            body_txt = `Compromisso "${Appointment.title}" começa em 30 minutos`;
-          }
-
-          await NotificationApp({
-            accountId: Appointment.accountId,
-            title_txt: "Lembrete de agendamento",
-            body_txt,
-            onFilterSocket: () => [],
-            url_redirect: "/auth/appointments",
-          });
           let flow: any = null;
-          flow = cacheFlowsMap.get(Appointment.flowId);
+          flow = cacheFlowsMap.get(FlowState.flowId);
           if (!flow) {
             await mongo();
             const flowFetch = await ModelFlows.aggregate([
               {
                 $match: {
-                  accountId: Appointment.accountId,
-                  _id: Appointment.flowId,
+                  accountId: followup.accountId,
+                  _id: FlowState.flowId,
                 },
               },
               {
@@ -141,25 +104,31 @@ cron.schedule("*/4 * * * *", () => {
               },
             ]);
             if (!flowFetch?.length) {
-              await prisma.appointmentReminders.update({
-                where: { id },
+              await prisma.followUp.update({
+                where: { id: followup.id },
                 data: { status: "failed" },
               });
               return;
             }
             const { edges, nodes, businessIds } = flowFetch[0];
             flow = { edges, nodes, businessIds };
-            cacheFlowsMap.set(Appointment.flowId, flow);
+            cacheFlowsMap.set(FlowState.flowId, flow);
           }
 
-          const orderNode = flow.nodes.find(
-            (n: any) => n.id === Appointment.flowNodeId,
+          const pickNode = flow.nodes.find(
+            (n: any) => n.id === followup.flowNodeId,
           ) as any;
 
-          if (!orderNode) return;
+          if (!pickNode) {
+            await prisma.followUp.update({
+              where: { id: followup.id },
+              data: { status: "failed" },
+            });
+            return;
+          }
 
           const nextEdgesIds = flow.edges
-            .filter((f: any) => orderNode?.id === f.source)
+            .filter((f: any) => pickNode?.id === f.source)
             ?.map((nn: any) => {
               return {
                 id: nn.target,
@@ -168,27 +137,27 @@ cron.schedule("*/4 * * * *", () => {
             });
 
           let nextNode: any = null;
-          if (orderNode.type === "NodeAgentAI") {
-            nextNode = orderNode.id;
+          if (pickNode.type === "NodeAgentAI") {
+            nextNode = pickNode.id;
           } else {
             nextNode = nextEdgesIds?.find((nd: any) =>
-              nd.sourceHandle?.includes(moment),
+              nd.sourceHandle?.includes("follow-up"),
             );
           }
           if (nextNode) {
             const businessInfo = await prisma.connectionWA.findFirst({
-              where: { id: Appointment.ConnectionWA.id },
+              where: { id: FlowState.ConnectionWA.id },
               select: { Business: { select: { name: true } } },
             });
-            const bot = sessionsBaileysWA.get(Appointment.ConnectionWA.id);
+            const bot = sessionsBaileysWA.get(FlowState.ConnectionWA.id);
 
             if (
               !businessInfo?.Business ||
               !bot ||
-              !Appointment.ContactsWAOnAccount
+              !FlowState.ContactsWAOnAccount
             ) {
-              await prisma.appointmentReminders.update({
-                where: { id },
+              await prisma.followUp.update({
+                where: { id: followup.id },
                 data: { status: "failed" },
               });
               return;
@@ -196,42 +165,40 @@ cron.schedule("*/4 * * * *", () => {
 
             NodeControler({
               businessName: businessInfo.Business.name,
-              flowId: Appointment.flowId,
+              flowId: FlowState.flowId,
               flowBusinessIds: flow.businessIds,
-              ...(orderNode.type === "NodeAgentAI"
+              ...(pickNode.type === "NodeAgentAI"
                 ? {
                     type: "running",
-                    action: `Lembrete de agendamento automatico: ${body_txt}`,
-                    message: `Lembrete de agendamento automatico: ${body_txt}`,
+                    action: `Follow-up executado: ${followup.body}`,
+                    message: `Follow-up executado: ${followup.body}`,
                   }
                 : { type: "initial", action: null }),
-              connectionWhatsId: Appointment.ConnectionWA.id,
-              chatbotId: Appointment.FlowState.chatbotId || undefined,
-              campaignId: Appointment.FlowState.campaignId || undefined,
+              connectionWhatsId: FlowState.ConnectionWA.id,
+              chatbotId: FlowState.chatbotId || undefined,
+              campaignId: FlowState.campaignId || undefined,
               oldNodeId: nextNode.id,
-              previous_response_id:
-                Appointment.FlowState.previous_response_id || undefined,
+              previous_response_id: FlowState.previous_response_id || undefined,
               clientWA: bot,
               isSavePositionLead: true,
-              flowStateId: Appointment.FlowState.id,
-              contactsWAOnAccountId: Appointment.ContactsWAOnAccount.id,
+              flowStateId: FlowState.id,
+              contactsWAOnAccountId: FlowState.ContactsWAOnAccount.id,
               lead: {
                 number:
-                  Appointment.ContactsWAOnAccount!.ContactsWA.completeNumber,
+                  FlowState.ContactsWAOnAccount!.ContactsWA.completeNumber,
               },
               currentNodeId: nextNode.id,
               edges: flow.edges,
               nodes: flow.nodes,
               numberConnection:
-                Appointment.ConnectionWA.number + "@s.whatsapp.net",
-              accountId: Appointment.accountId,
+                FlowState.ConnectionWA.number + "@s.whatsapp.net",
+              accountId: followup.accountId,
               actions: {
                 onFinish: async (vl) => {
                   const scheduleExecutionCache = scheduleExecutionsReply.get(
-                    Appointment.ConnectionWA!.number +
+                    FlowState.ConnectionWA!.number +
                       "@s.whatsapp.net" +
-                      Appointment.ContactsWAOnAccount!.ContactsWA
-                        .completeNumber +
+                      FlowState.ContactsWAOnAccount!.ContactsWA.completeNumber +
                       "@s.whatsapp.net",
                   );
                   if (scheduleExecutionCache) {
@@ -239,24 +206,23 @@ cron.schedule("*/4 * * * *", () => {
                   }
                   console.log("TA CAINDO AQUI, finalizando fluxo");
                   await prisma.flowState.update({
-                    where: { id: Appointment.FlowState!.id! },
+                    where: { id: FlowState!.id! },
                     data: { isFinish: true },
                   });
                   if (
-                    Appointment.FlowState!.chatbotId &&
-                    Appointment.FlowState!.Chatbot?.TimeToRestart
+                    FlowState!.chatbotId &&
+                    FlowState!.Chatbot?.TimeToRestart
                   ) {
                     const nextDate = momentLib()
                       .tz("America/Sao_Paulo")
                       .add(
-                        Appointment.FlowState!.Chatbot.TimeToRestart.value,
-                        Appointment.FlowState!.Chatbot.TimeToRestart.type,
+                        FlowState!.Chatbot.TimeToRestart.value,
+                        FlowState!.Chatbot.TimeToRestart.type,
                       )
                       .toDate();
                     chatbotRestartInDate.set(
-                      `${Appointment.ConnectionWA!.number}+${
-                        Appointment.ContactsWAOnAccount?.ContactsWA
-                          .completeNumber
+                      `${FlowState.ConnectionWA!.number}+${
+                        FlowState.ContactsWAOnAccount?.ContactsWA.completeNumber
                       }`,
                       nextDate,
                     );
@@ -265,7 +231,7 @@ cron.schedule("*/4 * * * *", () => {
                 onExecutedNode: async (node) => {
                   await prisma.flowState
                     .update({
-                      where: { id: Appointment.FlowState!.id },
+                      where: { id: FlowState!.id },
                       data: { indexNode: node.id },
                     })
                     .catch((err) => console.log(err));
@@ -274,9 +240,9 @@ cron.schedule("*/4 * * * *", () => {
                   const indexCurrentAlreadyExist =
                     await prisma.flowState.findFirst({
                       where: {
-                        connectionWAId: Appointment.ConnectionWA?.id,
+                        connectionWAId: FlowState.ConnectionWA?.id,
                         contactsWAOnAccountId:
-                          Appointment.ContactsWAOnAccount?.id,
+                          FlowState.ContactsWAOnAccount?.id,
                       },
                       select: { id: true },
                     });
@@ -285,9 +251,9 @@ cron.schedule("*/4 * * * *", () => {
                       data: {
                         indexNode: node.id,
                         flowId: node.flowId,
-                        connectionWAId: Appointment.ConnectionWA?.id,
+                        connectionWAId: FlowState.ConnectionWA?.id,
                         contactsWAOnAccountId:
-                          Appointment.ContactsWAOnAccount?.id,
+                          FlowState.ContactsWAOnAccount?.id,
                       },
                     });
                   } else {
@@ -304,7 +270,7 @@ cron.schedule("*/4 * * * *", () => {
               },
             }).finally(() => {
               leadAwaiting.set(
-                `${Appointment.ConnectionWA?.id}+${Appointment.ContactsWAOnAccount?.ContactsWA.completeNumber}`,
+                `${FlowState.ConnectionWA?.id}+${FlowState.ContactsWAOnAccount?.ContactsWA.completeNumber}`,
                 false,
               );
             });

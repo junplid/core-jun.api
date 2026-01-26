@@ -12,23 +12,17 @@ export const updatePaymentIntegrationValidation = (
     UpdatePaymentIntegrationBodyDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     accountId: Joi.number().required(),
     id: Joi.number().required(),
     name: Joi.string().optional(),
-    access_token: Joi.string().optional(),
-    status: Joi.boolean().optional(),
-    provider: Joi.string()
-      .valid("mercadopago")
-      .optional()
-      .default("mercadopago"),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {

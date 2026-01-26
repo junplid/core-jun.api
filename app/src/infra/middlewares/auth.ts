@@ -40,7 +40,7 @@ export const MiddlewareAuth = async ({
 
   let tokenDecoded: Result | null = null;
   try {
-    tokenDecoded = await decodeTokenAuth(token, "secret123");
+    tokenDecoded = await decodeTokenAuth(token, process.env.SECRET_TOKEN_AUTH!);
   } catch (error) {
     return res.status(401).json({ message: "Não autorizado! 40" });
   }
@@ -57,7 +57,7 @@ export const MiddlewareAuth = async ({
   if (tokenDecoded.type === "root") {
   }
   if (tokenDecoded.type === "adm") {
-    const accountExist = await prisma.account.count({
+    const accountExist = await prisma.account.findFirst({
       where: { id: tokenDecoded.id, hash: tokenDecoded.hash },
     });
 

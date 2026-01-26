@@ -109,12 +109,16 @@ model RootConnectionWA {
 // }
 
 model Account {
-  id                  Int                   @id @default(autoincrement())
-  isUsedFreeTrialTime Boolean               @default(false)
-  name                String?               @db.VarChar(50)
-  email               String                @unique @db.VarChar(200)
-  cpfCnpj             String?               @unique
-  hash                String                @default(uuid())
+  id                  Int     @id @default(autoincrement())
+  hash                String  @unique @default(uuid())
+  isUsedFreeTrialTime Boolean @default(false)
+
+  name             String? @db.VarChar(50)
+  cpfCnpjEncrypted String? @unique
+  cpfCnpjHash      String? @unique
+  emailEncrypted   String  @unique
+  emailHash        String  @unique
+
   isPremium           Boolean?              @default(false)
   emailVerified       Boolean               @default(false)
   password            String
@@ -155,7 +159,7 @@ model Account {
   Appointments        Appointments[]
   followUps           FollowUp[]
 
-  @@index([id, email, hash, status, available, isUsedFreeTrialTime])
+  @@index([id, emailHash, hash, cpfCnpjHash, status, available, isUsedFreeTrialTime])
 }
 
 model InboxUsers {
@@ -1900,21 +1904,20 @@ enum TypeProviderPayment {
 }
 
 model PaymentIntegrations {
-  id           Int                 @id @default(autoincrement())
-  name         String              @db.VarChar(150)
-  provider     TypeProviderPayment @default(mercadopago)
-  status       Boolean             @default(true)
-  access_token String?             @db.VarChar(240)
-  clientId     String?
-  clientSecret String?
+  id          Int                 @id @default(autoincrement())
+  name        String              @db.VarChar(150)
+  provider    TypeProviderPayment @default(mercadopago)
+  status      Boolean             @default(true)
+  credentials String              @db.Text
+  deleted     Boolean             @default(false)
   // certPfxEncrypted  Bytes?
   // certPasswordEnc   Bytes?
-  createAt     DateTime            @default(now())
-  updateAt     DateTime            @default(now()) @updatedAt
-  accountId    Int
-  Account      Account             @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Charges      Charges[]
-  pixKeys      PixKey[]
+  createAt    DateTime            @default(now())
+  updateAt    DateTime            @default(now()) @updatedAt
+  accountId   Int
+  Account     Account             @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Charges     Charges[]
+  pixKeys     PixKey[]
 
   @@index([id, name, accountId, status])
 }
@@ -1923,6 +1926,7 @@ model PixKey {
   id                   Int                 @id @default(autoincrement())
   key                  String
   webhookRegisteredAt  DateTime? // usado no banco ITAU 
+  deleted              Boolean             @default(false)
   createdAt            DateTime            @default(now())
   paymentIntegrationId Int
   PaymentIntegration   PaymentIntegrations @relation(fields: [paymentIntegrationId], references: [id], onDelete: Cascade, onUpdate: Cascade)

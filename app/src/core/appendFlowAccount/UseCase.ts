@@ -5,13 +5,14 @@ import { ulid } from "ulid";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { NodePayload } from "../../libs/FlowBuilder/Payload";
 import { mongo } from "../../adapters/mongo/connection";
+import { hashForLookup } from "../../libs/encryption";
 
 export class AppendFlowAccountUseCase {
   constructor() {}
 
   async run({ rootId, ...dto }: AppendFlowAccountDTO_I) {
     const alreadyExists = await prisma.account.findFirst({
-      where: { email: dto.email },
+      where: { emailHash: hashForLookup(dto.email) },
       select: { id: true },
     });
 
@@ -61,7 +62,7 @@ export class AppendFlowAccountUseCase {
               const variables = hasVariable.map((s) => s.replace(/{{|}}/g, ""));
               if (!variables.length) return;
               await syncVariables(variables);
-            })
+            }),
           );
         }
       } else if (node.type === "NodeSendImages") {
@@ -98,7 +99,7 @@ export class AppendFlowAccountUseCase {
               }
             }
             return tag;
-          })
+          }),
         );
         node.data.list = newList;
       } else if (node.type === "NodeAgentAI") {
@@ -296,7 +297,7 @@ export class AppendFlowAccountUseCase {
               }
             }
             return variable;
-          })
+          }),
         );
         node.data.list = newList;
       } else if (node.type === "NodeListenReaction") {
@@ -424,7 +425,7 @@ export class AppendFlowAccountUseCase {
               }
             }
             return varId;
-          })
+          }),
         );
         node.data.list = newList;
       } else if (node.type === "NodeReply") {
@@ -456,7 +457,7 @@ export class AppendFlowAccountUseCase {
               }
             }
             return varId;
-          })
+          }),
         );
         node.data.list = newList;
       } else if (node.type === "NodeSendFiles") {
@@ -560,7 +561,7 @@ export class AppendFlowAccountUseCase {
               }
             }
             return tag;
-          })
+          }),
         );
         node.data.list = newList;
       }

@@ -1,12 +1,15 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { DefaultArgs } from "@prisma/client/runtime/library";
 import { SendPasswordRecoveryEmailRepository_I } from "./Repository";
+import { hashForLookup } from "../../libs/encryption";
 
-export class SendPasswordRecoveryEmailImplementation
-  implements SendPasswordRecoveryEmailRepository_I
-{
+export class SendPasswordRecoveryEmailImplementation implements SendPasswordRecoveryEmailRepository_I {
   constructor(
-    private prisma: PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>
+    private prisma: PrismaClient<
+      Prisma.PrismaClientOptions,
+      never,
+      DefaultArgs
+    >,
   ) {}
 
   async findAccount(props: {
@@ -14,7 +17,7 @@ export class SendPasswordRecoveryEmailImplementation
   }): Promise<{ id: number; hash: string } | null> {
     try {
       return await this.prisma.account.findFirst({
-        where: { email: props.email },
+        where: { emailHash: hashForLookup(props.email) },
         select: { id: true, hash: true },
       });
     } catch (error) {

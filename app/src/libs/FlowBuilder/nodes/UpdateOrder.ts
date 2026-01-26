@@ -16,7 +16,7 @@ interface PropsUpdateOrder {
 }
 
 export const NodeUpdateOrder = async (
-  props: PropsUpdateOrder
+  props: PropsUpdateOrder,
 ): Promise<"not_found" | "ok"> => {
   try {
     let chargeId: number | null = null;
@@ -24,8 +24,15 @@ export const NodeUpdateOrder = async (
       props.data;
 
     if (charge_transactionId) {
+      const transactionId = await resolveTextVariables({
+        accountId: props.accountId,
+        text: charge_transactionId,
+        contactsWAOnAccountId: props.contactsWAOnAccountId,
+        numberLead: props.numberLead,
+        nodeId: props.nodeId,
+      });
       const getcharge = await prisma.charges.findFirst({
-        where: { transactionId: charge_transactionId },
+        where: { txid: transactionId },
         select: { id: true },
       });
       chargeId = getcharge?.id || null;

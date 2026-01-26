@@ -3,72 +3,88 @@ import crypto from "crypto";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { prisma } from "../../adapters/Prisma/client";
 import { PaymentStatus } from "@prisma/client";
-import { cacheFlowsMap } from "../../adapters/Baileys/Cache";
+import {
+  cacheFlowsMap,
+  chatbotRestartInDate,
+  leadAwaiting,
+  scheduleExecutionsReply,
+} from "../../adapters/Baileys/Cache";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { NodeControler } from "../../libs/FlowBuilder/Control";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
 import { mongo } from "../../adapters/mongo/connection";
 import { NotificationApp } from "../../utils/notificationApp";
 import { formatToBRL } from "brazilian-values";
+import { decrypte } from "../../libs/encryption";
+import moment from "moment-timezone";
 
 export const mercadopagoWebhook = async (req: Request, res: Response) => {
   try {
-    // const xSignature = req.header("x-signature");
-    // const xRequestId = req.header("x-request-id");
-    // if (!xSignature || !xRequestId) {
-    //   return res.status(400).send("Headers missing");
-    // }
+    if (req.body.action !== "payment.updated") {
+      return res.status(200).send("OK");
+    }
+    const paymentId = req.body.data.id;
+    console.log({ paymentId });
+    if (!paymentId) {
+      return res.status(400).send("Missing payload.data.id");
+    }
+    console.log(1);
+    const getCredentials = await prisma.charges.findFirst({
+      where: { txid: paymentId },
+      select: { PaymentIntegration: { select: { credentials: true } } },
+    });
+    console.log(2);
+    if (!getCredentials || !getCredentials.PaymentIntegration) {
+      return res.status(200).send("OK");
+    }
+    console.log(3);
+    const credentials = decrypte(
+      getCredentials.PaymentIntegration?.credentials,
+    );
+    console.log(4);
+    const xSignature = req.header("x-signature");
+    const xRequestId = req.header("x-request-id");
+    if (!xSignature || !xRequestId) {
+      return res.status(400).send("Headers missing");
+    }
+    console.log(5);
+    const parts = xSignature.split(",");
+    let ts: string | undefined;
+    let signatureHash: string | undefined;
+    for (const part of parts) {
+      const [key, val] = part.trim().split("=");
+      if (key === "ts") ts = val;
+      else if (key === "v1") signatureHash = val;
+    }
+    if (!ts || !signatureHash) {
+      return res.status(400).send("Invalid x-signature format");
+    }
+    console.log(6);
 
-    // const parts = xSignature.split(",");
-    // let ts: string | undefined;
-    // let signatureHash: string | undefined;
-    // for (const part of parts) {
-    //   const [key, val] = part.trim().split("=");
-    //   if (key === "ts") ts = val;
-    //   else if (key === "v1") signatureHash = val;
-    // }
-    // if (!ts || !signatureHash) {
-    //   return res.status(400).send("Invalid x-signature format");
-    // }
+    const manifest = `id:${paymentId};request-id:${xRequestId};ts:${ts};`;
 
-    // const payload = req.body;
-    // if (!payload?.data?.id) {
-    //   return res.status(400).send("Missing payload.data.id");
-    // }
+    const hmac = crypto.createHmac("sha256", credentials.webhook_secret);
+    hmac.update(manifest);
+    const computedHash = hmac.digest("hex");
 
-    // const manifest = `id:${payload.id};request-id:${xRequestId};ts:${ts};`;
-
-    // // aqui precisa pegar o access_token do adm
-    // const secret = process.env.!;
-    // const hmac = crypto.createHmac("sha256", secret);
-    // hmac.update(manifest);
-    // const computedHash = hmac.digest("hex");
-
-    // const received = Buffer.from(signatureHash, "hex");
-    // const expected = Buffer.from(computedHash, "hex");
-    // if (
-    //   received.length !== expected.length ||
-    //   !crypto.timingSafeEqual(received, expected)
-    // ) {
-    //   return res.status(401).send("Invalid signature");
-    // }
+    const received = Buffer.from(signatureHash, "hex");
+    const expected = Buffer.from(computedHash, "hex");
+    if (
+      received.length !== expected.length ||
+      !crypto.timingSafeEqual(received, expected)
+    ) {
+      return res.status(401).send("Invalid signature");
+    }
+    console.log(7);
 
     // const nowSec = Math.floor(Date.now() / 1000);
-    // const tsSec = parseInt(ts, 10);
+    // const tsSec = Math.floor(parseInt(ts, 10) / 1000);
     // const tolerance = 5 * 60; // 5 minutos
     // if (Math.abs(nowSec - tsSec) > tolerance) {
     //   return res.status(400).send("Timestamp outside of tolerance");
     // }
 
-    console.log(req.body);
-    if (req.body.action !== "payment.updated") {
-      return res.status(200).send("OK");
-    }
-
-    const paymentId = req.body.data.id;
-    if (!paymentId) {
-      return res.status(400).send("Missing payment ID");
-    }
+    console.log("2");
 
     (async () => {
       try {
@@ -78,25 +94,28 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
             id: true,
             accountId: true,
             status: true,
-            flowNodeId: true, // continuar daqui no canal de status
+            flowNodeId: true,
             flowStateId: true,
-            PaymentIntegration: { select: { access_token: true } },
             total: true,
           },
         });
 
-        if (!getCharge?.PaymentIntegration) return;
+        if (!getCharge) return;
 
         const client = new MercadoPagoConfig({
-          accessToken: getCharge.PaymentIntegration.access_token!,
+          accessToken: credentials.access_token,
           options: { timeout: 5000 },
         });
 
         const getpayment = new Payment(client);
         const payment = await getpayment.get({ id: paymentId });
+        console.log("3");
 
-        // garante que seja um status diferente antes de atualizar e chamar o fluxo
         if (payment.status === getCharge.status) return;
+        console.log("4");
+
+        if (payment.status === "pending") return;
+        console.log("5");
 
         await prisma.charges.update({
           where: { id: getCharge.id },
@@ -105,6 +124,7 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
             net_total: payment.net_amount || 0,
           },
         });
+        console.log("6");
 
         if (!getCharge.flowStateId) return;
 
@@ -112,7 +132,6 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
           where: { id: getCharge.flowStateId },
           select: {
             flowId: true,
-            chatbotId: true,
             previous_response_id: true,
             ContactsWAOnAccount: {
               select: {
@@ -126,6 +145,14 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
                 id: true,
                 number: true,
                 Business: { select: { name: true } },
+              },
+            },
+            Chatbot: {
+              select: {
+                id: true,
+                TimeToRestart: {
+                  select: { value: true, type: true },
+                },
               },
             },
           },
@@ -187,55 +214,64 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
 
         const chargeNode = flow.nodes.find(
           (n: any) => n.id === getCharge.flowNodeId,
-        ) as any[];
+        );
 
         if (!chargeNode) return;
 
-        if (payment.status === "pending") return;
+        const nextEdgesIds = flow.edges
+          .filter((f: any) => chargeNode?.id === f.source)
+          ?.map((nn: any) => {
+            return {
+              id: nn.target,
+              sourceHandle: nn.sourceHandle,
+            };
+          });
 
-        const nextNode = flow.edges.find((e: any) => {
-          if (e.sourceHandle.includes(payment.status)) {
-            console.log({ e, nodeId: getCharge.flowNodeId });
-            return e.source === getCharge.flowNodeId;
-          }
-        });
+        let nextNode: any = null;
+        if (chargeNode.type === "NodeAgentAI") {
+          nextNode = chargeNode.id;
+        } else {
+          nextNode = nextEdgesIds?.find((nd: any) =>
+            nd.sourceHandle?.includes(payment.status),
+          );
+        }
 
-        if (nextNode.sourceHandle.includes("approved")) {
+        if (payment.status === "approved") {
           await NotificationApp({
             accountId: getCharge.accountId,
-            title_txt: `Venda confirmada`,
-            title_html: `Venda confirmada`,
+            title_txt: `Pagamento confirmado`,
+            title_html: `Pagamento confirmado`,
             body_txt: `Valor: ${formatToBRL(getCharge.total.toNumber())}`,
             body_html: `<span className="font-medium text-sm line-clamp-1">
-  Venda confirmada
+  Pagamento confirmado
 </span>
 <span className="text-xs font-light">
   Valor: <span className="text-green-300 font-medium">${formatToBRL(
     getCharge.total.toNumber(),
   )}</span>
 </span>`,
-
-            // notificar apenas o android
             onFilterSocket: (sockets) => [],
           });
         }
 
-        console.log("18");
         if (!nextNode) return;
-        console.log("19");
         const bot = sessionsBaileysWA.get(flowState.ConnectionWA.id);
         if (!bot) return;
-        console.log("20");
         await NodeControler({
-          action: null,
           businessName: flowState.ConnectionWA.Business.name,
           flowId: flowState.flowId,
           flowBusinessIds: flow.businessIds,
-          type: "initial",
+          ...(chargeNode.type === "NodeAgentAI"
+            ? {
+                type: "running",
+                action: `Cobrança(codigo=${paymentId}), atualizada para: ${payment.status}`,
+                message: `Cobrança(codigo=${paymentId}), atualizada para: ${payment.status}`,
+              }
+            : { type: "initial", action: null }),
           connectionWhatsId: flowState.ConnectionWA.id,
-          chatbotId: flowState.chatbotId || undefined,
+          chatbotId: flowState.Chatbot?.id || undefined,
           campaignId: flowState.campaignId || undefined,
-          oldNodeId: nextNode.target,
+          oldNodeId: nextNode.id,
           previous_response_id: flowState.previous_response_id || undefined,
           clientWA: bot,
           isSavePositionLead: true,
@@ -244,11 +280,85 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
           lead: {
             number: flowState.ContactsWAOnAccount.ContactsWA.completeNumber,
           },
-          currentNodeId: nextNode.target,
+          currentNodeId: nextNode.id,
           edges: flow.edges,
           nodes: flow.nodes,
           numberConnection: flowState.ConnectionWA.number + "@s.whatsapp.net",
           accountId: getCharge.accountId,
+          actions: {
+            onFinish: async (vl) => {
+              const scheduleExecutionCache = scheduleExecutionsReply.get(
+                flowState.ConnectionWA!.number +
+                  "@s.whatsapp.net" +
+                  flowState.ContactsWAOnAccount!.ContactsWA.completeNumber +
+                  "@s.whatsapp.net",
+              );
+              if (scheduleExecutionCache) scheduleExecutionCache.cancel();
+              console.log("TA CAINDO AQUI, finalizando fluxo");
+              await prisma.flowState.update({
+                where: { id: getCharge.flowStateId! },
+                data: { isFinish: true },
+              });
+              if (flowState.Chatbot?.id && flowState.Chatbot?.TimeToRestart) {
+                const nextDate = moment()
+                  .tz("America/Sao_Paulo")
+                  .add(
+                    flowState!.Chatbot.TimeToRestart.value,
+                    flowState!.Chatbot.TimeToRestart.type,
+                  )
+                  .toDate();
+                chatbotRestartInDate.set(
+                  `${flowState.ConnectionWA!.number}+${
+                    flowState.ContactsWAOnAccount?.ContactsWA.completeNumber
+                  }`,
+                  nextDate,
+                );
+              }
+            },
+            onExecutedNode: async (node) => {
+              await prisma.flowState
+                .update({
+                  where: { id: getCharge.flowStateId! },
+                  data: { indexNode: node.id },
+                })
+                .catch((err) => console.log(err));
+            },
+            onEnterNode: async (node) => {
+              const indexCurrentAlreadyExist = await prisma.flowState.findFirst(
+                {
+                  where: {
+                    connectionWAId: flowState.ConnectionWA?.id,
+                    contactsWAOnAccountId: flowState.ContactsWAOnAccount?.id,
+                  },
+                  select: { id: true },
+                },
+              );
+              if (!indexCurrentAlreadyExist) {
+                await prisma.flowState.create({
+                  data: {
+                    indexNode: node.id,
+                    flowId: node.flowId,
+                    connectionWAId: flowState.ConnectionWA?.id,
+                    contactsWAOnAccountId: flowState.ContactsWAOnAccount?.id,
+                  },
+                });
+              } else {
+                await prisma.flowState.update({
+                  where: { id: indexCurrentAlreadyExist.id },
+                  data: {
+                    indexNode: node.id,
+                    flowId: node.flowId,
+                    agentId: node.agentId || null,
+                  },
+                });
+              }
+            },
+          },
+        }).finally(() => {
+          leadAwaiting.set(
+            `${flowState.ConnectionWA!.id}+${flowState.ContactsWAOnAccount!.ContactsWA.completeNumber}`,
+            false,
+          );
         });
       } catch (error) {
         console.error("Error processing Mercado Pago webhook:", error);
