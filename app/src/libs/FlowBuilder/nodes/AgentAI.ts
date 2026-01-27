@@ -1105,6 +1105,8 @@ export const NodeAgentAI = async ({
                 service_tier: agent.service_tier,
               });
             } catch (error: any) {
+              console.log(error);
+              // tratar aqui
               const debounceJob = cacheDebounceAgentAI.get(keyMap);
               const timeoutJob = scheduleTimeoutAgentAI.get(keyMap);
               cacheDebouceAgentAIRun.set(keyMap, false);

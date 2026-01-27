@@ -1,4 +1,5 @@
 import { Boom } from "@hapi/boom";
+import pino from "pino";
 import makeWASocket, {
   DisconnectReason,
   WAConnectionState,
@@ -46,7 +47,6 @@ import NodeCache from "node-cache";
 import { ulid } from "ulid";
 import { mongo } from "../mongo/connection";
 import { NotificationApp } from "../../utils/notificationApp";
-import { resolveJid } from "../../utils/resolveJid";
 
 function CalculeTypingDelay(text: string, ms = 150) {
   const delay = text.split(" ").length * (ms / 1000);
@@ -184,6 +184,10 @@ if (process.env.NODE_ENV === "production") {
 const groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false });
 export const messageCache = new NodeCache({ stdTTL: 0, useClones: false });
 
+const logger = pino({
+  level: "warn", // error + warn
+});
+
 export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
   let attempts = 0;
   return new Promise((res, rej) => {
@@ -207,6 +211,12 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
         }
 
         async function killAndClean(id: number, msg: string) {
+          await NotificationApp({
+            accountId: props.accountId,
+            title_txt: "🚨🚨🚨",
+            body_txt: "Uma conexão caiu.",
+            onFilterSocket: () => [],
+          });
           await killConnectionWA(id, props.accountId);
           emitStatus(id, "close");
         }
@@ -270,6 +280,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
         const bot = makeWASocket({
           auth: state,
           version: baileysVersion.version,
+          logger,
           defaultQueryTimeoutMs: undefined,
           qrTimeout: 40000,
           browser: [`Junplid - ${nameCon.name}`, "Chrome", "114.0.5735.198"],
@@ -657,7 +668,13 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
           },
         );
 
-        bot.ev.on("creds.update", saveCreds);
+        bot.ev.on("creds.update", async () => {
+          try {
+            await saveCreds();
+          } catch (err: any) {
+            console.error("Erro ao salvar credenciais:", err);
+          }
+        });
 
         bot.ev.on("messages.reaction", async (body) => {
           if (

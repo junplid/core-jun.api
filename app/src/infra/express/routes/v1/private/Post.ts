@@ -116,7 +116,12 @@ RouterV1Private_Post.post(
 RouterV1Private_Post.post(
   "/storage-files",
   // @ts-expect-error
-  multer({ storage: uploadFiles }).single("file"),
+  multer({
+    storage: uploadFiles,
+    limits: {
+      fileSize: 13 * 1024 * 1024, // 13 MB
+    },
+  }).single("file"),
   (req: Request, _, next: NextFunction) => {
     req.body.accountId = Number(req.headers.authorization);
     next();

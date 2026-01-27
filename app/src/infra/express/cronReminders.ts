@@ -81,18 +81,18 @@ cron.schedule("*/4 * * * *", () => {
             data: { status: "sent" },
           });
           let body_txt = "";
+          const now = momentLib();
+          const start = momentLib(Appointment.startAt);
+          const diffMinutes = start.diff(now, "minutes");
 
-          // isso nao pode ser assim. pq a ia não salva o formato momeny em day/hour/...
-          if (moment === "day") {
-            body_txt = `Amanhã às ${momentLib(Appointment.startAt).format(
-              "HH:mm",
-            )}`;
-          } else if (moment === "hour") {
-            body_txt = `Começa em 2 horas, às ${momentLib(
-              Appointment.startAt,
-            ).format("HH:mm")}`;
+          if (diffMinutes >= 1440) {
+            const days = Math.floor(diffMinutes / 1440);
+            body_txt = `Em ${days} dia${days > 1 ? "s" : ""}, às ${start.format("HH:mm")}`;
+          } else if (diffMinutes >= 60) {
+            const hours = Math.floor(diffMinutes / 60);
+            body_txt = `Em ${hours} hora${hours > 1 ? "s" : ""}, às ${start.format("HH:mm")}`;
           } else {
-            body_txt = `Compromisso "${Appointment.title}" começa em 30 minutos`;
+            body_txt = `Em ${diffMinutes} minuto${diffMinutes > 1 ? "s" : ""}`;
           }
 
           await NotificationApp({
