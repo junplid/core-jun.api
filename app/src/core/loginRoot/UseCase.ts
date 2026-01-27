@@ -49,7 +49,7 @@ export class LoginRootUseCase {
 
     const token = await createTokenAuth(
       { type: "root", id: user.id, hash: user.hash },
-      "secret123"
+      process.env.SECRET_TOKEN_AUTH!,
     );
 
     return {

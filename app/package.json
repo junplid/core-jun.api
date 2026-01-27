@@ -77,7 +77,7 @@
   "scripts": {
     "dev": "node main.js && nodemon ./src/infra/express/index.ts --watch ./src",
     "start:obf": "node dist/index.obf.js",
-    "start": "node main.js && npx prisma migrate deploy && node dist/index.js",
+    "start": "node main.js && node dist/index.js",
     "build": "tsup",
     "obfuscate": "javascript-obfuscator dist/index.js -o dist/index.obf.js --compact true --rename-globals true"
   },
