@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
-import router from "./routes";
+import { router } from "./routes";
+import cookieParser from "cookie-parser";
 import {
   ensureFileSync,
   existsSync,
@@ -54,11 +55,19 @@ if (!existsSync(pathFilesTest)) {
 })();
 
 const app = express();
+const corsOptions = {
+  origin:
+    process.env.NODE_ENV === "production"
+      ? ["https://app.junplid.com.br", "https://root.junplid.com.br"]
+      : ["http://localhost:5173", "http://localhost:3000"],
+  credentials: true,
+};
 
 app.use(express.json());
-if (process.env.NODE_ENV !== "production") {
-  app.use(cors());
-}
+app.use(cookieParser());
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
 app.use(router);
 
 export { app as App };

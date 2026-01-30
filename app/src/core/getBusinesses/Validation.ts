@@ -5,17 +5,16 @@ import { Joi } from "express-validation";
 export const getBusinessValidation = (
   req: Request<any, any, GetBusinessesBodyDTO_I, GetBusinessesQueryDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     page: Joi.number(),
     name: Joi.string().allow(""),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -28,6 +27,7 @@ export const getBusinessValidation = (
   }
 
   if (req.query.page) req.query.page = Number(req.query.page);
+  req.body.accountId = req.user?.id!;
 
   next();
 };

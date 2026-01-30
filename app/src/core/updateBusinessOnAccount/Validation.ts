@@ -14,11 +14,10 @@ export const updateBusinessOnAccountValidation = (
     UpdateBusinessOnAccountQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
-    accountId: Joi.number().required(),
     name: Joi.string().messages({
       "string.empty": "Campo não pode ser vazio",
     }),
@@ -28,7 +27,7 @@ export const updateBusinessOnAccountValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -41,6 +40,6 @@ export const updateBusinessOnAccountValidation = (
   }
 
   req.params.id = Number(req.params.id);
-
+  req.body.accountId = req.user?.id!;
   next();
 };

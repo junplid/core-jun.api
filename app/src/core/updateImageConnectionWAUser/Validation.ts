@@ -12,19 +12,17 @@ export const createImageConnectionUserValidation = (
     CreateImageConnectionUserBodyDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   console.log("AQUI 1");
 
   const schemaValidation = Joi.object({
     fileName: Joi.string().required(),
-    accountId: Joi.number().optional(),
     id: Joi.number().optional(),
   });
-  console.log("AQUI 2");
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -35,8 +33,7 @@ export const createImageConnectionUserValidation = (
     }));
     return res.status(400).json({ errors });
   }
-  console.log("AQUI 3");
   req.params.id = Number(req.params.id);
-  console.log("AQUI 4");
+  req.body.accountId = req.user?.id!;
   next();
 };

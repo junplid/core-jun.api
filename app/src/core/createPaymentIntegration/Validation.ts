@@ -8,7 +8,6 @@ export const createPaymentIntegrationValidation = (
   next: NextFunction,
 ) => {
   const baseSchema = Joi.object({
-    accountId: Joi.number().required(),
     name: Joi.string().max(150).required(),
     status: Joi.boolean().optional(),
     provider: Joi.string().valid("mercadopago", "itau").required(),
@@ -49,6 +48,7 @@ export const createPaymentIntegrationValidation = (
   }
 
   req.body = validation.value;
+  req.body.accountId = req.user?.id!;
 
   next();
 };

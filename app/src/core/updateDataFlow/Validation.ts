@@ -5,17 +5,16 @@ import { UpdateDataFlowBodyDTO_I, UpdateDataFlowParamsDTO_I } from "./DTO";
 export const updateDataFlowValidation = (
   req: Request<UpdateDataFlowParamsDTO_I, any, UpdateDataFlowBodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     id: Joi.string().required(),
     nodes: Joi.array()
       .items(
         Joi.object({
           type: Joi.valid("upset", "delete"),
           node: Joi.object(),
-        })
+        }),
       )
       .optional(),
     edges: Joi.array()
@@ -23,14 +22,14 @@ export const updateDataFlowValidation = (
         Joi.object({
           type: Joi.valid("upset", "delete"),
           edge: Joi.object(),
-        })
+        }),
       )
       .optional(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -41,6 +40,6 @@ export const updateDataFlowValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
+  req.body.accountId = req.user?.id!;
   next();
 };

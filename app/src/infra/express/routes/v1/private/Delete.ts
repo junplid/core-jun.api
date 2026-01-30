@@ -35,115 +35,134 @@ import { deleteMenuOnlineItemValidation } from "../../../../../core/deleteMenuOn
 import { deleteMenuOnlineItemController } from "../../../../../core/deleteMenuOnlineItem";
 import { deleteAppointmentValidation } from "../../../../../core/deleteAppointment/Validation";
 import { deleteAppointmentController } from "../../../../../core/deleteAppointment";
+import { csrfMiddleware } from "../../../../middlewares/csrf";
 
 const RouterV1Private_Delete = Router();
 
 RouterV1Private_Delete.delete(
   "/tags/:id",
+  csrfMiddleware,
   deleteTagValidation,
-  deleteTagController
+  deleteTagController,
 );
 
 RouterV1Private_Delete.delete(
   "/business/:id",
+  csrfMiddleware,
   deleteBusinessOnAccountValidation,
-  deleteBusinessOnAccountController
+  deleteBusinessOnAccountController,
 );
 
 RouterV1Private_Delete.delete(
   "/variables/:id",
+  csrfMiddleware,
   deleteVariableValidation,
-  deleteVariableController
+  deleteVariableController,
 );
 
 RouterV1Private_Delete.delete(
   "/flows/:flowId",
+  csrfMiddleware,
   deleteFlowValidation,
-  deleteFlowController
+  deleteFlowController,
 );
 
 RouterV1Private_Delete.delete(
   "/connections-wa/:id",
+  csrfMiddleware,
   deleteConnectionWAValidation,
-  deleteConnectionWAController
+  deleteConnectionWAController,
 );
 
 RouterV1Private_Delete.delete(
   "/chatbots/:id",
+  csrfMiddleware,
   deleteChatbotValidation,
-  deleteChatbotController
+  deleteChatbotController,
 );
 
 RouterV1Private_Delete.delete(
   "/campaigns/:id",
+  csrfMiddleware,
   deleteCampaignValidation,
-  deleteCampaignController
+  deleteCampaignController,
 );
 
 RouterV1Private_Delete.delete(
   "/storage-files/:id",
+  csrfMiddleware,
   deleteStorageFileValidation,
-  deleteStorageFileController
+  deleteStorageFileController,
 );
 
 RouterV1Private_Delete.delete(
   "/agents-ai/:id",
+  csrfMiddleware,
   deleteAgentAIValidation,
-  deleteAgentAIController
+  deleteAgentAIController,
 );
 
 RouterV1Private_Delete.delete(
   "/inbox-users/:id",
+  csrfMiddleware,
   deleteInboxUsersValidation,
-  deleteInboxUsersController
+  deleteInboxUsersController,
 );
 
 RouterV1Private_Delete.delete(
   "/inbox-departments/:id",
+  csrfMiddleware,
   deleteInboxDepartmentValidation,
-  deleteInboxDepartmentController
+  deleteInboxDepartmentController,
 );
 
 RouterV1Private_Delete.delete(
   "/tags/:id/contact-wa",
+  csrfMiddleware,
   deleteTagOnContactWAValidation,
-  deleteTagOnContactWAController
+  deleteTagOnContactWAController,
 );
 
 RouterV1Private_Delete.delete(
   "/fb-pixels/:id",
+  csrfMiddleware,
   deleteFbPixelValidation,
-  deleteFbPixelController
+  deleteFbPixelController,
 );
 
 RouterV1Private_Delete.delete(
   "/integration/payments/:id",
+  csrfMiddleware,
   deletePaymentIntegrationValidation,
-  deletePaymentIntegrationController
+  deletePaymentIntegrationController,
 );
 
 RouterV1Private_Delete.delete(
   "/integration/trello/:id",
+  csrfMiddleware,
   deleteTrelloIntegrationValidation,
-  deleteTrelloIntegrationController
+  deleteTrelloIntegrationController,
 );
 
 RouterV1Private_Delete.delete(
   "/menus-online/:uuid",
+  csrfMiddleware,
   deleteMenuOnlineValidation,
-  deleteMenuOnlineController
+  deleteMenuOnlineController,
 );
 
 RouterV1Private_Delete.delete(
   "/menus-online/item/:uuid",
+  csrfMiddleware,
   deleteMenuOnlineItemValidation,
-  deleteMenuOnlineItemController
+  deleteMenuOnlineItemController,
 );
 
 RouterV1Private_Delete.delete(
   "/appointments/:id",
+  csrfMiddleware,
   deleteAppointmentValidation,
-  deleteAppointmentController
+  deleteAppointmentController,
 );
 
 export default RouterV1Private_Delete;

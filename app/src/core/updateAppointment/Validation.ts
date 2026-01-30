@@ -14,11 +14,10 @@ export const updateAppointmentValidation = (
     UpdateAppointmentQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
-    accountId: Joi.number().required(),
     title: Joi.string().optional(),
     desc: Joi.string().optional(),
     startAt: Joi.date().optional(),
@@ -34,7 +33,7 @@ export const updateAppointmentValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -47,6 +46,6 @@ export const updateAppointmentValidation = (
   }
 
   req.params.id = Number(req.params.id);
-
+  req.body.accountId = req.user?.id!;
   next();
 };

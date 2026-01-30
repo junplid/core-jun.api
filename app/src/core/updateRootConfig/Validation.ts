@@ -5,10 +5,9 @@ import { UpdateRootConfigBodyDTO_I } from "./DTO";
 export const updateRootConfigValidation = (
   req: Request<any, any, UpdateRootConfigBodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    rootId: Joi.number().required(),
     "token-asaas": Joi.string().allow(""),
     "endpoint-asaas": Joi.string().allow(""),
     host: Joi.string().allow(""),
@@ -29,6 +28,6 @@ export const updateRootConfigValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
+  req.body.rootId = req.user?.id!;
   next();
 };

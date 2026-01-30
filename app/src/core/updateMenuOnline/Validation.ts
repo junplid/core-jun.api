@@ -5,11 +5,10 @@ import { UpdateMenuOnlineBodyDTO_I, UpdateMenuOnlineParamsDTO_I } from "./DTO";
 export const updateMenuOnlineValidation = (
   req: Request<UpdateMenuOnlineParamsDTO_I, any, UpdateMenuOnlineBodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
-    accountId: Joi.number().required(),
     identifier: Joi.string().optional(),
     desc: Joi.string().allow(""),
     fileNameImage: Joi.string().allow(""),
@@ -29,7 +28,7 @@ export const updateMenuOnlineValidation = (
       fileNameImage: req.file?.filename,
       ...req.query,
     },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -43,6 +42,6 @@ export const updateMenuOnlineValidation = (
 
   req.params.id = Number(req.params.id);
   req.body.fileNameImage = req.file?.filename;
-
+  req.body.accountId = req.user?.id!;
   next();
 };

@@ -14,11 +14,10 @@ export const updateFlowValidation = (
     UpdateFlowQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.string().required(),
-    accountId: Joi.number().required(),
     businessIds: Joi.array().items(Joi.number()).optional(),
     name: Joi.string(),
     type: Joi.string().valid("chatbot", "marketing", "universal"),
@@ -26,7 +25,7 @@ export const updateFlowValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -41,6 +40,6 @@ export const updateFlowValidation = (
   if (req.query.businessIds?.length) {
     req.query.businessIds = req.query.businessIds.map((id) => Number(id));
   }
-
+  req.body.accountId = req.user?.id!;
   next();
 };

@@ -5,17 +5,16 @@ import { Joi } from "express-validation";
 export const getTicketValidation = (
   req: Request<GetTicketParamsDTO_I, any, GetTicketBodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     userId: Joi.number().optional(),
     id: Joi.number().required(),
-  }).or("accountId", "userId");
+  });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -28,6 +27,6 @@ export const getTicketValidation = (
   }
 
   req.params.id = Number(req.params.id);
-
+  req.body.accountId = req.user?.id!;
   next();
 };

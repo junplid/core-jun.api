@@ -4,14 +4,13 @@ import { AppendFlowAccountUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
 export const AppendFlowAccountController = (
-  useCase: AppendFlowAccountUseCase
+  useCase: AppendFlowAccountUseCase,
 ) => {
   const execute = async (
     req: Request<any, any, AppendFlowAccountDTO_I>,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
-      //
       const data = await useCase.run(req.body);
       return res.status(200).json(data);
     } catch (error: any) {

@@ -5,10 +5,9 @@ import { UpdatePasswordAccountDTO_I } from "./DTO";
 export const updatePasswordAccountValidation = (
   req: Request<any, any, UpdatePasswordAccountDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     password: Joi.string().required().messages({
       "any.required": "Campo é obrigatório",
       "string.empty": "Campo não pode ser vazio",
@@ -21,7 +20,7 @@ export const updatePasswordAccountValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -49,6 +48,6 @@ export const updatePasswordAccountValidation = (
       ],
     });
   }
-
+  req.body.accountId = req.user?.id!;
   next();
 };

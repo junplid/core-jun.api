@@ -6,13 +6,12 @@ import { ErrorResponse } from "../../utils/ErrorResponse";
 export const testFbPixelValidation = (
   req: Request<any, any, TestFbPixelDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     pixel_id: Joi.string().required(),
     access_token: Joi.string().required(),
     test_event_code: Joi.string().optional(),
-    accountId: Joi.number().required(),
   });
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });
@@ -25,6 +24,6 @@ export const testFbPixelValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
+  req.body.accountId = req.user?.id!;
   next();
 };

@@ -15,11 +15,10 @@ export const updateShootingSpeedValidation = (
     UpdateShootingSpeedBodyQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
-    rootId: Joi.number().required(),
     name: Joi.string().allow("").optional(),
     timeBetweenShots: Joi.number().optional(),
     timeRest: Joi.number().optional(),
@@ -30,7 +29,7 @@ export const updateShootingSpeedValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -41,11 +40,11 @@ export const updateShootingSpeedValidation = (
     return res.status(400).json({ input: errors });
   }
 
-  const { id, rootId, ...query } = validation.value;
+  const { id, ...query } = validation.value;
 
   req.params.id = Number(req.params.id);
   req.body.rootId = Number(req.body.rootId);
   req.query = query as UpdateShootingSpeedBodyQueryDTO_I;
-
+  req.body.rootId = req.user?.id!;
   next();
 };

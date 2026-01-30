@@ -12,17 +12,16 @@ export const runActionChannelOrderValidation = (
     RunActionChannelOrderBodyDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     id: Joi.number().required(),
     action: Joi.string().required(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -36,6 +35,6 @@ export const runActionChannelOrderValidation = (
 
   const { account, ...rest } = validation.value;
   req.params = rest;
-
+  req.body.accountId = req.user?.id!;
   next();
 };

@@ -5,10 +5,9 @@ import { Joi } from "express-validation";
 export const getFlowsValidation = (
   req: Request<any, any, GetFlowsBodyDTO_I, GetFlowsQueryDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     name: Joi.string().optional(),
     page: Joi.number().optional(),
   });
@@ -25,6 +24,7 @@ export const getFlowsValidation = (
   }
 
   if (req.query.page) req.query.page = Number(req.query.page);
+  req.body.accountId = req.user?.id!;
 
   next();
 };

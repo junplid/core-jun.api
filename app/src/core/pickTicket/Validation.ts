@@ -5,18 +5,17 @@ import { PickTicketBodyDTO_I, PickTicketParamsDTO_I } from "./DTO";
 export const pickTicketValidation = (
   req: Request<PickTicketParamsDTO_I, any, PickTicketBodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().optional(),
     userId: Joi.number().optional(),
     orderId: Joi.number().optional(),
     id: Joi.number().required(),
-  }).or("accountId", "userId");
+  });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -29,6 +28,6 @@ export const pickTicketValidation = (
   }
 
   req.params.id = Number(req.params.id);
-
+  req.body.accountId = req.user?.id!;
   next();
 };

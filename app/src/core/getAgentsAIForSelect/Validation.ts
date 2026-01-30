@@ -13,17 +13,16 @@ export const getAgentsAIForSelectValidation = (
     GetAgentsAIForSelectQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     name: Joi.string().allow(""),
     businessIds: Joi.array().items(Joi.number()).optional(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -36,6 +35,7 @@ export const getAgentsAIForSelectValidation = (
   }
 
   req.query.businessIds = req.query.businessIds?.map((b) => Number(b));
+  req.body.accountId = req.user?.id!;
 
   next();
 };

@@ -13,16 +13,15 @@ export const getBusinessOnAccountForSelectValidation = (
     GetBusinessOnAccountForSelectQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     filterIds: Joi.string(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -39,6 +38,7 @@ export const getBusinessOnAccountForSelectValidation = (
       .split("-")
       .map((id) => Number(id));
   }
+  req.body.accountId = req.user?.id!;
 
   next();
 };

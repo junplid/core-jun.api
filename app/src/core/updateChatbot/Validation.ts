@@ -19,7 +19,6 @@ export const updateChatbotValidation = (
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
-    accountId: Joi.number().required(),
     name: Joi.string().optional(),
     businessId: Joi.number().optional(),
     flowId: Joi.string(),
@@ -70,8 +69,7 @@ export const updateChatbotValidation = (
 
   const { accountId, id, ...rest } = validation.value as UpdateChatbotDTO_I;
 
-  console.log(rest);
-
+  req.body.accountId = req.user?.id!;
   req.params.id = id;
   req.query = rest;
   req.body.accountId = accountId;

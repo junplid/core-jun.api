@@ -14,18 +14,17 @@ export const updateStorageFileValidation = (
     UpdateStorageFileQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.string().required(),
-    accountId: Joi.number().required(),
     businessIds: Joi.array().items(Joi.number()).optional(),
     originalName: Joi.string(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -41,6 +40,6 @@ export const updateStorageFileValidation = (
     req.query.businessIds = req.query.businessIds.map((id) => Number(id));
   }
   req.params.id = Number(req.params.id);
-
+  req.body.accountId = req.user?.id!;
   next();
 };

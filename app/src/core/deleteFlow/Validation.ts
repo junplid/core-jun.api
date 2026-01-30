@@ -5,17 +5,16 @@ import { DeleteFlowBodyDTO_I, DeleteFlowParamsDTO_I } from "./DTO";
 export const deleteFlowValidation = (
   req: Request<DeleteFlowParamsDTO_I, any, DeleteFlowBodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     flowId: Joi.string().required(),
     subUserUid: Joi.string().optional(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -26,6 +25,7 @@ export const deleteFlowValidation = (
     }));
     return res.status(400).json({ errors });
   }
+  req.body.accountId = req.user?.id!;
 
   next();
 };

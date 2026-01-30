@@ -5,10 +5,9 @@ import { Joi } from "express-validation";
 export const getAppointmentsValidation = (
   req: Request<any, any, GetAppointmentsBodyDTO_I, GetAppointmentsQueryDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     limit: Joi.number().min(1).optional(),
     status: Joi.array()
       .items(
@@ -18,15 +17,15 @@ export const getAppointmentsValidation = (
           "confirmed",
           "canceled",
           "completed",
-          "expired"
-        )
+          "expired",
+        ),
       )
       .optional(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -40,6 +39,7 @@ export const getAppointmentsValidation = (
 
   const { account, ...rest } = validation.value;
   req.query = rest;
+  req.body.accountId = req.user?.id!;
 
   next();
 };

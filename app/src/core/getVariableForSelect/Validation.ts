@@ -14,10 +14,9 @@ export const getVariableForSelectValidation = (
     GetVariableForSelectQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     type: Joi.array()
       .items(Joi.string().valid("dynamics", "constant", "system"))
       .optional(),
@@ -27,7 +26,7 @@ export const getVariableForSelectValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -40,6 +39,6 @@ export const getVariableForSelectValidation = (
   }
 
   req.query.businessIds = req.query.businessIds?.map((b) => Number(b));
-
+  req.body.accountId = req.user?.id!;
   next();
 };

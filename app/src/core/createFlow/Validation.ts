@@ -5,10 +5,9 @@ import { CreateFlowDTO_I } from "./DTO";
 export const createFlowValidation = (
   req: Request<any, any, CreateFlowDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     agentId: Joi.number().optional(),
     subUserUid: Joi.string().optional(),
     businessIds: Joi.array().items(Joi.number()).optional(),
@@ -28,6 +27,6 @@ export const createFlowValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
+  req.body.accountId = req.user?.id!;
   next();
 };

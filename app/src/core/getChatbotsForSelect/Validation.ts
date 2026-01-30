@@ -13,11 +13,10 @@ export const getChabotsForSelectValidation = (
     GetChabotsForSelectQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     businessIds: Joi.string().optional(),
-    accountId: Joi.number().required(),
     status: Joi.string()
       .regex(/^(0|1)$/)
       .optional(),
@@ -25,7 +24,7 @@ export const getChabotsForSelectValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -46,6 +45,7 @@ export const getChabotsForSelectValidation = (
   if (req.query.status) {
     req.query.status = !!Number(req.query.status);
   }
+  req.body.accountId = req.user?.id!;
 
   next();
 };

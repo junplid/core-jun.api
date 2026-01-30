@@ -5,19 +5,18 @@ import { CreateMenuOnlineDTO_I } from "./DTO";
 export const createMenuOnlineValidation = (
   req: Request<any, any, CreateMenuOnlineDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     identifier: Joi.string().required(),
     desc: Joi.string().allow(""),
-    accountId: Joi.number().required(),
     connectionWAId: Joi.number().required(),
     fileNameImage: Joi.string().required(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, fileNameImage: req.file?.filename },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -31,6 +30,6 @@ export const createMenuOnlineValidation = (
 
   req.body.fileNameImage = req.file!.filename;
   req.body.connectionWAId = validation.value.connectionWAId;
-
+  req.body.accountId = req.user?.id!;
   next();
 };

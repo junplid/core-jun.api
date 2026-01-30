@@ -5,25 +5,26 @@ import { Joi } from "express-validation";
 export const getGeralLogsValidation = (
   req: Request<GetGeralLogsParamsDTO_I, any, GetGeralLogsBodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
-  const schemaValidation = Joi.object({
-    rootId: Joi.number().required(),
-  });
+  // const schemaValidation = Joi.object({
+  //   rootId: Joi.number().required(),
+  // });
 
-  const validation = schemaValidation.validate(
-    { ...req.body, ...req.params },
-    { abortEarly: false }
-  );
+  // const validation = schemaValidation.validate(
+  //   { ...req.body, ...req.params },
+  //   { abortEarly: false }
+  // );
 
-  if (validation.error) {
-    const errors = validation.error.details.map((detail) => ({
-      message: detail.message,
-      path: detail.path,
-      type: detail.type,
-    }));
-    return res.status(400).json({ errors });
-  }
+  // if (validation.error) {
+  //   const errors = validation.error.details.map((detail) => ({
+  //     message: detail.message,
+  //     path: detail.path,
+  //     type: detail.type,
+  //   }));
+  //   return res.status(400).json({ errors });
+  // }
+  // req.body.userId = req.user?.id!;
 
   next();
 };

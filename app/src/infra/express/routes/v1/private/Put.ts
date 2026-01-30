@@ -40,6 +40,7 @@ import { updateMenuOnlineValidation } from "../../../../../core/updateMenuOnline
 import { updateMenuOnlineController } from "../../../../../core/updateMenuOnline";
 import { updateAppointmentValidation } from "../../../../../core/updateAppointment/Validation";
 import { updateAppointmentController } from "../../../../../core/updateAppointment";
+import { csrfMiddleware } from "../../../../middlewares/csrf";
 
 const RouterV1Private_Put = Router();
 
@@ -47,20 +48,23 @@ RouterV1Private_Put.put("/tags/:id", updateTagValidation, updateTagController);
 
 RouterV1Private_Put.put(
   "/businesses/:id",
+  csrfMiddleware,
   updateBusinessOnAccountValidation,
-  updateBusinessOnAccountController
+  updateBusinessOnAccountController,
 );
 
 RouterV1Private_Put.put(
   "/flows/:id/data",
+  csrfMiddleware,
   updateDataFlowValidation,
-  updateDataFlowController
+  updateDataFlowController,
 );
 
 RouterV1Private_Put.put(
   "/disconnect-connection-whatsapp/:id",
+  csrfMiddleware,
   updateDisconnectConnectionWhatsappValidation,
-  updateDisconnectConnectionWhatsappController
+  updateDisconnectConnectionWhatsappController,
 );
 
 let pathOfDestiny = "";
@@ -76,104 +80,111 @@ const uploadImage = storageMulter({
 
 RouterV1Private_Put.put(
   "/connections-wa/:id",
+  csrfMiddleware,
   // @ts-expect-error
   multer({ storage: uploadImage }).single("fileImage"),
-  (req: Request, _, next: NextFunction) => {
-    req.body.accountId = Number(req.headers.authorization);
-    next();
-  },
   updateConnectionWAValidation,
-  updateConnectionWAController
+  updateConnectionWAController,
 );
 
 RouterV1Private_Put.put(
   "/flows/:id",
+  csrfMiddleware,
   updateFlowValidation,
-  updateFlowController
+  updateFlowController,
 );
 
 RouterV1Private_Put.put(
   "/variables/:id",
+  csrfMiddleware,
   updateVariableValidation,
-  updateVariableController
+  updateVariableController,
 );
 
 RouterV1Private_Put.put(
   "/chatbots/:id",
+  csrfMiddleware,
   updateChatbotValidation,
-  updateChatbotController
+  updateChatbotController,
 );
 
 RouterV1Private_Put.put(
   "/account",
+  csrfMiddleware,
   updateAccountValidation,
-  updateAccountController
+  updateAccountController,
 );
 
 RouterV1Private_Put.put(
   "/campaigns/:id",
+  csrfMiddleware,
   updateCampaignValidation,
-  updateCampaignController
+  updateCampaignController,
 );
 
 RouterV1Private_Put.put(
   "/storage-files/:id",
+  csrfMiddleware,
   updateStorageFileValidation,
-  updateStorageFileController
+  updateStorageFileController,
 );
 
 RouterV1Private_Put.put(
   "/agents-ai/:id",
+  csrfMiddleware,
   updateAgentAIValidation,
-  updateAgentAIController
+  updateAgentAIController,
 );
 
 RouterV1Private_Put.put(
   "/inbox-users/:id",
+  csrfMiddleware,
   updateInboxUserValidation,
-  updateInboxUserController
+  updateInboxUserController,
 );
 
 RouterV1Private_Put.put(
   "/inbox-departments/:id",
+  csrfMiddleware,
   updateInboxDepartmentValidation,
-  updateInboxDepartmentController
+  updateInboxDepartmentController,
 );
 
 RouterV1Private_Put.put(
   "/fb-pixels/:id",
+  csrfMiddleware,
   updateFbPixelValidation,
-  updateFbPixelController
+  updateFbPixelController,
 );
 
 RouterV1Private_Put.put(
   "/integration/payments/:id",
+  csrfMiddleware,
   updatePaymentIntegrationValidation,
-  updatePaymentIntegrationController
+  updatePaymentIntegrationController,
 );
 
 RouterV1Private_Put.put(
   "/integration/trello/:id",
+  csrfMiddleware,
   updateTrelloIntegrationValidation,
-  updateTrelloIntegrationController
+  updateTrelloIntegrationController,
 );
 
 RouterV1Private_Put.put(
   "/menus-online/:id",
+  csrfMiddleware,
   // @ts-expect-error
   multer({ storage: uploadImage }).single("fileImage"),
-  (req: Request, _, next: NextFunction) => {
-    req.body.accountId = Number(req.headers.authorization);
-    next();
-  },
   updateMenuOnlineValidation,
-  updateMenuOnlineController
+  updateMenuOnlineController,
 );
 
 RouterV1Private_Put.put(
   "/appointments/:id",
+  csrfMiddleware,
   updateAppointmentValidation,
-  updateAppointmentController
+  updateAppointmentController,
 );
 
 export default RouterV1Private_Put;

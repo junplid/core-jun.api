@@ -19,33 +19,25 @@ routerv1.use(
   "/public",
   RouterV1Public_Put,
   RouterV1Public_Post,
-  RouterV1Public_Get
+  RouterV1Public_Get,
 );
 
 routerv1.use(
   "/private",
-  async (req, res, next) =>
-    await MiddlewareAuth({
-      expected: ["adm"],
-      express: { next, req, res },
-    }),
+  MiddlewareAuth(["adm"]),
   RouterV1Private_Post,
   RouterV1Private_Get,
   RouterV1Private_Delete,
-  RouterV1Private_Put
+  RouterV1Private_Put,
 );
 
 routerv1.use(
   "/root",
-  async (req, res, next) =>
-    await MiddlewareAuth({
-      expected: ["root"],
-      express: { next, req, res },
-    }),
+  MiddlewareAuth(["root"]),
   RouterV1Root_Post,
   RouterV1Root_Get,
   RouterV1Root_Delete,
-  RouterV1Root_Put
+  RouterV1Root_Put,
 );
 
 export default routerv1;

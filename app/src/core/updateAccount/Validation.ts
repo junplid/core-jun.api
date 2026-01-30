@@ -7,10 +7,9 @@ import { ErrorResponse } from "../../utils/ErrorResponse";
 export const updateAccountValidation = (
   req: Request<any, any, UpdateAccountDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     name: Joi.string(),
     number: Joi.string(),
     email: Joi.string().email().optional(),
@@ -50,6 +49,6 @@ export const updateAccountValidation = (
   }
 
   req.body = rest;
-
+  req.body.accountId = req.user?.id!;
   next();
 };

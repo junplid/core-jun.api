@@ -15,7 +15,6 @@ export const updatePaymentIntegrationValidation = (
   next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     id: Joi.number().required(),
     name: Joi.string().optional(),
   });
@@ -35,6 +34,6 @@ export const updatePaymentIntegrationValidation = (
   }
 
   req.params.id = Number(req.params.id);
-
+  req.body.accountId = req.user?.id!;
   next();
 };

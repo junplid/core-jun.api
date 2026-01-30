@@ -14,11 +14,10 @@ export const updateInboxDepartmentValidation = (
     UpdateInboxDepartmentQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
-    accountId: Joi.number().required(),
     name: Joi.string().optional(),
     businessId: Joi.number().optional(),
     signBusiness: Joi.boolean().optional(),
@@ -31,7 +30,7 @@ export const updateInboxDepartmentValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -44,8 +43,8 @@ export const updateInboxDepartmentValidation = (
   }
 
   req.params.id = Number(req.params.id);
-  const { id, accountId, ...rest } = validation.value;
+  const { id, ...rest } = validation.value;
   req.query = rest;
-
+  req.body.accountId = req.user?.id!;
   next();
 };

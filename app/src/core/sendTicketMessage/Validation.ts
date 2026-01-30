@@ -8,13 +8,12 @@ import {
 export const sendTicketMessageValidation = (
   req: Request<SendTicketMessageParamsDTO_I, any, SendTicketMessageBodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const base = Joi.object({
     id: Joi.number().required(),
-    accountId: Joi.number().integer().positive(),
     userId: Joi.number().integer().positive(),
-  }).or("accountId", "userId");
+  });
 
   const schemaValidation = Joi.alternatives().try(
     base.keys({
@@ -43,12 +42,12 @@ export const sendTicketMessageValidation = (
       text: Joi.string().max(2048).allow(""),
       files: Joi.array().items(Joi.any()).min(1).required(),
       ptt: Joi.forbidden(),
-    })
+    }),
   );
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -61,6 +60,6 @@ export const sendTicketMessageValidation = (
   }
 
   req.params.id = Number(req.params.id);
-
+  req.body.accountId = req.user?.id!;
   next();
 };

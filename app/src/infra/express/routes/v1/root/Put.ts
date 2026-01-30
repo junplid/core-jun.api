@@ -7,31 +7,36 @@ import { updateShootingSpeedValidation } from "../../../../../core/updateShootin
 import { updateShootingSpeedController } from "../../../../../core/updateShootingSpeed";
 import { updateAccountToPremiumValidation } from "../../../../../core/updateAccountToPremium/Validation";
 import { updateAccountToPremiumController } from "../../../../../core/updateAccountToPremium";
+import { csrfMiddleware } from "../../../../middlewares/csrf";
 
 const RouterV1Root_Put = Router();
 
 RouterV1Root_Put.put(
   "/data",
+  csrfMiddleware,
   updateRootUserValidation,
-  updateRootUserController
+  updateRootUserController,
 );
 
 RouterV1Root_Put.put(
   "/root-config",
+  csrfMiddleware,
   updateRootConfigValidation,
-  updateRootConfigController
+  updateRootConfigController,
 );
 
 RouterV1Root_Put.put(
   "/shooting-speed/:id",
+  csrfMiddleware,
   updateShootingSpeedValidation,
-  updateShootingSpeedController
+  updateShootingSpeedController,
 );
 
 RouterV1Root_Put.put(
   "/account-to-premium",
+  csrfMiddleware,
   updateAccountToPremiumValidation,
-  updateAccountToPremiumController
+  updateAccountToPremiumController,
 );
 
 export default RouterV1Root_Put;

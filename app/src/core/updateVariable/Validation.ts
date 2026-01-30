@@ -18,7 +18,6 @@ export const updateVariableValidation = (
   next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     id: Joi.number().required(),
     value: Joi.string(),
     name: Joi.string(),
@@ -55,5 +54,6 @@ export const updateVariableValidation = (
   if (req.query.businessIds?.length) {
     req.query.businessIds = req.query.businessIds.map((s) => Number(s));
   }
+  req.body.accountId = req.user?.id!;
   next();
 };

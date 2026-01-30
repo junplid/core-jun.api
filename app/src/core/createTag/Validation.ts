@@ -5,11 +5,10 @@ import { CreateTagDTO_I } from "./DTO";
 export const createTagValidation = (
   req: Request<any, any, CreateTagDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     name: Joi.string().required(),
-    accountId: Joi.number().required(),
     businessIds: Joi.array().items(Joi.number()).optional(),
     type: Joi.string().valid("audience", "contactwa").required(),
     targetId: Joi.number().optional(),
@@ -25,6 +24,7 @@ export const createTagValidation = (
     }));
     return res.status(400).json({ errors });
   }
+  req.body.accountId = req.user?.id!;
 
   next();
 };

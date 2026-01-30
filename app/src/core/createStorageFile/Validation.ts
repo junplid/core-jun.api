@@ -6,11 +6,10 @@ import { remove } from "fs-extra";
 export const createStorageFileValidation = async (
   req: Request<any, any, CreateStorageFileDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     mimetype: Joi.string().required(),
-    accountId: Joi.number().required(),
     fileName: Joi.string().required(),
     size: Joi.number().required(),
     originalName: Joi.string().required(),
@@ -28,7 +27,7 @@ export const createStorageFileValidation = async (
       size: req.file?.size,
       originalName: req.file?.originalname,
     },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -42,6 +41,7 @@ export const createStorageFileValidation = async (
   }
 
   req.body = validation.value;
+  req.body.accountId = req.user?.id!;
 
   next();
 };

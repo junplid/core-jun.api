@@ -5,12 +5,11 @@ import { CreateBusinessDTO_I } from "./DTO";
 export const createBusinessValidation = (
   req: Request<any, any, CreateBusinessDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     name: Joi.string().required(),
     description: Joi.string(),
-    accountId: Joi.number().required(),
   });
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });
@@ -23,6 +22,7 @@ export const createBusinessValidation = (
     }));
     return res.status(400).json({ errors });
   }
+  req.body.accountId = req.user?.id!;
 
   next();
 };

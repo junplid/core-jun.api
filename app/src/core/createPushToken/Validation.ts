@@ -5,12 +5,11 @@ import { CreatePushTokenDTO_I } from "./DTO";
 export const createPushTokenValidation = (
   req: Request<any, any, CreatePushTokenDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     token: Joi.string().required(),
     platform: Joi.string().required(),
-    accountId: Joi.number().required(),
   });
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });
@@ -23,6 +22,8 @@ export const createPushTokenValidation = (
     }));
     return res.status(400).json({ errors });
   }
+
+  req.body.accountId = req.user?.id!;
 
   next();
 };

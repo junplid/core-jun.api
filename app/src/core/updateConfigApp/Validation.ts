@@ -5,11 +5,10 @@ import { UpdateConfigAppDTO_I } from "./DTO";
 export const updateConfigAppValidation = (
   req: Request<any, any, UpdateConfigAppDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const data = { ...req.body, ...req.query, ...req.params };
   const schemaValidation = Joi.object({
-    rootId: Joi.number().required(),
     name: Joi.string().optional().allow("").messages({
       "string.base": "O campo name deve ser uma string",
     }),
@@ -39,6 +38,6 @@ export const updateConfigAppValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
+  req.body.rootId = req.user?.id!;
   next();
 };

@@ -5,16 +5,15 @@ import { Joi } from "express-validation";
 export const getStorageFileValidation = (
   req: Request<GetStorageFileParamsDTO_I, any, GetStorageFileBodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     id: Joi.number().required(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.params, ...req.body },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -27,6 +26,6 @@ export const getStorageFileValidation = (
   }
 
   req.params.id = Number(req.params.id);
-
+  req.body.accountId = req.user?.id!;
   next();
 };

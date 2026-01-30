@@ -5,16 +5,15 @@ import { Joi } from "express-validation";
 export const getMenuOnlineValidation = (
   req: Request<GetMenuOnlineParamsDTO_I, any, GetMenuOnlineBodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     uuid: Joi.string().required(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -25,6 +24,7 @@ export const getMenuOnlineValidation = (
     }));
     return res.status(400).json({ errors });
   }
+  req.body.accountId = req.user?.id!;
 
   next();
 };

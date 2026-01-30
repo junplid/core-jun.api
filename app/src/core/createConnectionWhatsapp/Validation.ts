@@ -5,10 +5,9 @@ import { CreateConnectionWADTO_I } from "./DTO";
 export const createConnectionWAValidation = (
   req: Request<any, any, CreateConnectionWADTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     agentId: Joi.number().optional(),
     businessId: Joi.number().required(),
     description: Joi.string().allow(""),
@@ -20,25 +19,25 @@ export const createConnectionWAValidation = (
       "all",
       "contacts",
       "contact_blacklist",
-      "none"
+      "none",
     ),
     onlinePrivacy: Joi.string().valid("all", "match_last_seen"),
     imgPerfilPrivacy: Joi.string().valid(
       "all",
       "contacts",
       "contact_blacklist",
-      "none"
+      "none",
     ),
     statusPrivacy: Joi.string().valid(
       "all",
       "contacts",
       "contact_blacklist",
-      "none"
+      "none",
     ),
     groupsAddPrivacy: Joi.string().valid(
       "all",
       "contacts",
-      "contact_blacklist"
+      "contact_blacklist",
     ),
     readReceiptsPrivacy: Joi.string().valid("all", "none").allow(""),
     fileNameImage: Joi.string().allow(""),
@@ -46,7 +45,7 @@ export const createConnectionWAValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, fileNameImage: req.file?.filename },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -59,5 +58,6 @@ export const createConnectionWAValidation = (
   }
 
   req.body = validation.value;
+  req.body.accountId = req.user?.id!;
   next();
 };

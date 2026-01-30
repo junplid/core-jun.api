@@ -8,11 +8,10 @@ import {
 export const updateConnectionWAValidation = (
   req: Request<UpdateConnectionWAParamsDTO_I, any, UpdateConnectionWABodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
-    accountId: Joi.number().required(),
     businessId: Joi.number().optional(),
     description: Joi.string().allow(""),
     name: Joi.string().optional(),
@@ -23,25 +22,25 @@ export const updateConnectionWAValidation = (
       "all",
       "contacts",
       "contact_blacklist",
-      "none"
+      "none",
     ),
     onlinePrivacy: Joi.string().valid("all", "match_last_seen"),
     imgPerfilPrivacy: Joi.string().valid(
       "all",
       "contacts",
       "contact_blacklist",
-      "none"
+      "none",
     ),
     statusPrivacy: Joi.string().valid(
       "all",
       "contacts",
       "contact_blacklist",
-      "none"
+      "none",
     ),
     groupsAddPrivacy: Joi.string().valid(
       "all",
       "contacts",
-      "contact_blacklist"
+      "contact_blacklist",
     ),
     readReceiptsPrivacy: Joi.string().valid("all", "none").allow(""),
     fileNameImage: Joi.string().allow(""),
@@ -49,7 +48,7 @@ export const updateConnectionWAValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -66,6 +65,6 @@ export const updateConnectionWAValidation = (
     req.body.businessId = Number(req.body.businessId);
   }
   req.body.fileNameImage = req.file?.filename;
-
+  req.body.accountId = req.user?.id!;
   next();
 };

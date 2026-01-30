@@ -5,10 +5,9 @@ import { CreateChatbotDTO_I } from "./DTO";
 export const createChatbotValidation = (
   req: Request<any, any, CreateChatbotDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     agentId: Joi.number().optional(),
     name: Joi.string().required(),
     businessId: Joi.number().required(),
@@ -32,9 +31,9 @@ export const createChatbotValidation = (
           Joi.object({
             start: Joi.string().optional(),
             end: Joi.string().optional(),
-          }).optional()
+          }).optional(),
         ),
-      })
+      }),
     ),
     trigger: Joi.string().allow("").optional(),
     flowBId: Joi.string().allow("").optional(),
@@ -51,6 +50,8 @@ export const createChatbotValidation = (
     }));
     return res.status(400).json({ errors });
   }
+
+  req.body.accountId = req.user?.id!;
 
   next();
 };

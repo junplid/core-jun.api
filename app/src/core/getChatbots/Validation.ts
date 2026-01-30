@@ -5,10 +5,9 @@ import { Joi } from "express-validation";
 export const getChabotsValidation = (
   req: Request<any, any, GetChabotsBodyDTO_I, GetChabotsQueryDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     type: Joi.string()
       .regex(/^(link|message|qrcode)+(-(link|message|qrcode)+)*$/)
       .optional(),
@@ -16,7 +15,7 @@ export const getChabotsValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -27,6 +26,7 @@ export const getChabotsValidation = (
     }));
     return res.status(400).json({ errors });
   }
+  req.body.accountId = req.user?.id!;
 
   next();
 };

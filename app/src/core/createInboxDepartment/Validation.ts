@@ -5,7 +5,7 @@ import { CreateInboxDepartmentDTO_I } from "./DTO";
 export const createInboxDepartmentValidation = (
   req: Request<any, any, CreateInboxDepartmentDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     name: Joi.string().required(),
@@ -15,7 +15,6 @@ export const createInboxDepartmentValidation = (
     previewNumber: Joi.boolean().required(),
     previewPhoto: Joi.boolean().required(),
     businessId: Joi.number().required(),
-    accountId: Joi.number().required(),
     inboxUserIds: Joi.array().items(Joi.number()).optional(),
   });
 
@@ -29,6 +28,6 @@ export const createInboxDepartmentValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
+  req.body.accountId = req.user?.id!;
   next();
 };

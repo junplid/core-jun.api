@@ -1,20 +1,22 @@
 import { NextFunction, Request, Response } from "express";
-import { GetInboxDepartmentBodyDTO_I, GetInboxDepartmentParamsDTO_I } from "./DTO";
+import {
+  GetInboxDepartmentBodyDTO_I,
+  GetInboxDepartmentParamsDTO_I,
+} from "./DTO";
 import { Joi } from "express-validation";
 
 export const getInboxDepartmentValidation = (
   req: Request<GetInboxDepartmentParamsDTO_I, any, GetInboxDepartmentBodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     id: Joi.number().required(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -27,6 +29,7 @@ export const getInboxDepartmentValidation = (
   }
 
   req.params.id = Number(req.params.id);
+  req.body.accountId = req.user?.id!;
 
   next();
 };

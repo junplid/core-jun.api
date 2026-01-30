@@ -13,11 +13,10 @@ export const getConnectionsWAForSelectValidation = (
     GetConnectionsWAForSelectQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     businessIds: Joi.string().optional(),
-    accountId: Joi.number().required(),
     type: Joi.string()
       .regex(/^(chatbot|marketing)$/)
       .optional(),
@@ -25,7 +24,7 @@ export const getConnectionsWAForSelectValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -42,6 +41,7 @@ export const getConnectionsWAForSelectValidation = (
       .split("-")
       .map((e) => Number(e));
   }
+  req.body.accountId = req.user?.id!;
 
   next();
 };

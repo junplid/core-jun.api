@@ -12,10 +12,9 @@ export const updateTrelloIntegrationValidation = (
     UpdateTrelloIntegrationBodyDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     id: Joi.number().required(),
     name: Joi.string().optional(),
     token: Joi.string().max(240).optional(),
@@ -25,7 +24,7 @@ export const updateTrelloIntegrationValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -38,6 +37,6 @@ export const updateTrelloIntegrationValidation = (
   }
 
   req.params.id = Number(req.params.id);
-
+  req.body.accountId = req.user?.id!;
   next();
 };

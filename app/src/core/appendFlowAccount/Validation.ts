@@ -5,10 +5,9 @@ import { AppendFlowAccountDTO_I } from "./DTO";
 export const appendFlowAccountValidation = (
   req: Request<any, any, AppendFlowAccountDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    rootId: Joi.number().required(),
     email: Joi.string().email().required(),
     data: Joi.string().required(),
   });
@@ -23,6 +22,8 @@ export const appendFlowAccountValidation = (
     }));
     return res.status(400).json({ errors });
   }
+
+  req.body.rootId = req.user?.id!;
 
   next();
 };

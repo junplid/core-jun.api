@@ -5,10 +5,9 @@ import { UpdateCampaignBodyDTO_I, UpdateCampaignParamsDTO_I } from "./DTO";
 export const updateCampaignValidation = (
   req: Request<UpdateCampaignParamsDTO_I, any, UpdateCampaignBodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     id: Joi.number().required(),
     name: Joi.string().optional(),
     description: Joi.string().allow("").optional(),
@@ -16,7 +15,7 @@ export const updateCampaignValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -29,6 +28,6 @@ export const updateCampaignValidation = (
   }
 
   req.params.id = Number(req.params.id);
-
+  req.body.accountId = req.user?.id!;
   next();
 };

@@ -12,17 +12,16 @@ export const getListsOnBoardTrelloForSelectValidation = (
     GetListsOnBoardTrelloForSelectBodyDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     id: Joi.number().required(),
     boardId: Joi.string().required(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -35,6 +34,7 @@ export const getListsOnBoardTrelloForSelectValidation = (
   }
 
   req.params.id = Number(req.params.id);
+  req.body.accountId = req.user?.id!;
 
   next();
 };

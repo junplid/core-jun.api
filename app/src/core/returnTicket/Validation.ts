@@ -5,10 +5,9 @@ import { ReturnTicketBodyDTO_I, ReturnTicketParamsDTO_I } from "./DTO";
 export const returnTicketValidation = (
   req: Request<ReturnTicketParamsDTO_I, any, ReturnTicketBodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().optional(),
     userId: Joi.number().optional(),
     orderId: Joi.number().optional(),
     id: Joi.number().required(),
@@ -16,7 +15,7 @@ export const returnTicketValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -29,6 +28,6 @@ export const returnTicketValidation = (
   }
 
   req.params.id = Number(req.params.id);
-
+  req.body.accountId = req.user?.id!;
   next();
 };

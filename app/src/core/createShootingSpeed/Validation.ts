@@ -5,7 +5,7 @@ import { CreateShootingSpeedDTO_I } from "./DTO";
 export const createShootingSpeedValidation = (
   req: Request<any, any, CreateShootingSpeedDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     name: Joi.string().required(),
@@ -14,7 +14,6 @@ export const createShootingSpeedValidation = (
     numberShots: Joi.number().required(),
     sequence: Joi.number().required(),
     status: Joi.boolean().optional(),
-    rootId: Joi.number().required(),
   });
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });
@@ -27,6 +26,8 @@ export const createShootingSpeedValidation = (
     }));
     return res.status(400).json({ errors });
   }
+
+  req.body.rootId = req.user?.id!;
 
   next();
 };

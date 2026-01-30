@@ -9,7 +9,6 @@ export const updateAgentAIValidation = (
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
-    accountId: Joi.number().required(),
     providerCredentialId: Joi.number().optional(),
     apiKey: Joi.string().allow("").optional(),
     nameProvider: Joi.string().allow("").optional(),
@@ -49,6 +48,6 @@ export const updateAgentAIValidation = (
   }
 
   req.params.id = Number(req.params.id);
-
+  req.body.accountId = req.user?.id!;
   next();
 };

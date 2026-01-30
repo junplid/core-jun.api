@@ -8,16 +8,15 @@ import {
 export const deleteStorageFileValidation = (
   req: Request<DeleteStorageFileParamsDTO_I, any, DeleteStorageFileBodyDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
-    accountId: Joi.number().required(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -30,6 +29,7 @@ export const deleteStorageFileValidation = (
   }
 
   req.params.id = Number(req.params.id);
+  req.body.accountId = req.user?.id!;
 
   next();
 };

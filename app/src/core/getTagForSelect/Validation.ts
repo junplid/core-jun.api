@@ -5,10 +5,9 @@ import { Joi } from "express-validation";
 export const getTagForSelectValidation = (
   req: Request<any, any, GetTagForSelectBodyDTO_I, GetTagForSelectQueryDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     type: Joi.string().valid("contactwa", "audience"),
     businessIds: Joi.array().items(Joi.number()),
     name: Joi.string(),
@@ -16,7 +15,7 @@ export const getTagForSelectValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -31,6 +30,6 @@ export const getTagForSelectValidation = (
   if (req.query.businessIds?.length) {
     req.query.businessIds = req.query.businessIds.map((b) => Number(b));
   }
-
+  req.body.accountId = req.user?.id!;
   next();
 };

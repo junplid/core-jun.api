@@ -52,9 +52,9 @@ import { createMenuOnlineSizePizzaValidation } from "../../../../../core/createM
 import { createMenuOnlineSizePizzaController } from "../../../../../core/createMenuOnlineSizePizza";
 import { createCampaignValidation } from "../../../../../core/createCampaign/Validation";
 import { createCampaignController } from "../../../../../core/createCampaign";
-import { createMenuOnlineOrderValidation } from "../../../../../core/createMenuOnlineOrder/Validation";
 import { createPushTokenValidation } from "../../../../../core/createPushToken/Validation";
 import { createPushTokenController } from "../../../../../core/createPushToken";
+import { csrfMiddleware } from "../../../../middlewares/csrf";
 
 const RouterV1Private_Post = Router();
 
@@ -75,46 +75,58 @@ const uploadImage = storageMulter({
 
 RouterV1Private_Post.post(
   "/connections-wa",
+  csrfMiddleware,
   // @ts-expect-error
   multer({ storage: uploadImage }).single("fileImage"),
-  (req: Request, _, next: NextFunction) => {
-    req.body.accountId = Number(req.headers.authorization);
-    next();
-  },
   createConnectionWAValidation,
   createConnectionWAController,
 );
 
-RouterV1Private_Post.post("/tags", createTagValidation, createTagController);
+RouterV1Private_Post.post(
+  "/tags",
+  csrfMiddleware,
+  createTagValidation,
+  createTagController,
+);
 
 RouterV1Private_Post.post(
   "/businesses",
+  csrfMiddleware,
   createBusinessValidation,
   createBusinessController,
 );
 
-RouterV1Private_Post.post("/flows", createFlowValidation, createFlowController);
+RouterV1Private_Post.post(
+  "/flows",
+  csrfMiddleware,
+  createFlowValidation,
+  createFlowController,
+);
 
 RouterV1Private_Post.post(
   "/variables",
+  csrfMiddleware,
   createVariableValidation,
   createVariableController,
 );
 
 RouterV1Private_Post.post(
   "/chatbots",
+  csrfMiddleware,
   createChatbotValidation,
   createChatbotController,
 );
 
 RouterV1Private_Post.post(
   "/campaigns",
+  csrfMiddleware,
   createCampaignValidation,
   createCampaignController,
 );
 
 RouterV1Private_Post.post(
   "/storage-files",
+  csrfMiddleware,
   // @ts-expect-error
   multer({
     storage: uploadFiles,
@@ -122,76 +134,83 @@ RouterV1Private_Post.post(
       fileSize: 13 * 1024 * 1024, // 13 MB
     },
   }).single("file"),
-  (req: Request, _, next: NextFunction) => {
-    req.body.accountId = Number(req.headers.authorization);
-    next();
-  },
   createStorageFileValidation,
   createStorageFileController,
 );
 
 RouterV1Private_Post.post(
   "/agents-ai/test",
+  csrfMiddleware,
   testAgentAIValidation,
   testAgentAIController,
 );
 
 RouterV1Private_Post.post(
   "/agents-ai",
+  csrfMiddleware,
   createAgentAIValidation,
   createAgentAIController,
 );
 
 RouterV1Private_Post.post(
   "/inbox-users",
+  csrfMiddleware,
   createInboxUsersValidation,
   createInboxUsersController,
 );
 
 RouterV1Private_Post.post(
   "/inbox-departments",
+  csrfMiddleware,
   createInboxDepartmentValidation,
   createInboxDepartmentController,
 );
 
 RouterV1Private_Post.post(
   "/tickets/:id/pick",
+  csrfMiddleware,
   pickTicketValidation,
   pickTicketController,
 );
 
 RouterV1Private_Post.post(
   "/tickets/:id/return",
+  csrfMiddleware,
   returnTicketValidation,
   returnTicketController,
 );
 
 RouterV1Private_Post.post(
   "/tickets/:id/resolve",
+  csrfMiddleware,
   resolveTicketValidation,
   resolveTicketController,
 );
 
 RouterV1Private_Post.post(
   "/tickets/:id/message",
+  csrfMiddleware,
   sendTicketMessageValidation,
   sendTicketMessageController,
 );
 
 RouterV1Private_Post.post(
   "/tags/:id/contact-wa",
+  csrfMiddleware,
   createTagOnContactWAValidation,
   createTagOnContactWAController,
 );
 
 RouterV1Private_Post.post(
   "/fb-pixels",
+  csrfMiddleware,
   createFbPixelsValidation,
   createFbPixelsController,
 );
 
 RouterV1Private_Post.post(
   "/fb-pixels/test",
+  csrfMiddleware,
   testFbPixelValidation,
   testFbPixelController,
 );
@@ -209,6 +228,7 @@ RouterV1Private_Post.post(
 
 RouterV1Private_Post.post(
   "/integration/payments",
+  csrfMiddleware,
   // uploadCert.single("certificate"),
   createPaymentIntegrationValidation,
   createPaymentIntegrationController,
@@ -216,50 +236,63 @@ RouterV1Private_Post.post(
 
 RouterV1Private_Post.post(
   "/orders/action/:id/:action",
+  csrfMiddleware,
   runActionChannelOrderValidation,
   runActionChannelOrderController,
 );
 
 RouterV1Private_Post.post(
   "/integration/trello",
+  csrfMiddleware,
   createTrelloIntegrationValidation,
   createTrelloIntegrationController,
 );
 
 RouterV1Private_Post.post(
   "/menus-online",
+  csrfMiddleware,
   // @ts-expect-error
   multer({ storage: uploadImage }).single("fileImage"),
-  (req: Request, _, next: NextFunction) => {
-    req.body.accountId = Number(req.headers.authorization);
-    next();
-  },
   createMenuOnlineValidation,
   createMenuOnlineController,
 );
 
 RouterV1Private_Post.post(
   "/menus-online/:uuid/items",
+  csrfMiddleware,
   // @ts-expect-error
   multer({ storage: uploadImage }).single("fileImage"),
-  (req: Request, _, next: NextFunction) => {
-    req.body.accountId = Number(req.headers.authorization);
-    next();
-  },
   createMenuOnlineItemValidation,
   createMenuOnlineItemController,
 );
 
 RouterV1Private_Post.post(
   "/menus-online/:uuid/sizes-pizza",
+  csrfMiddleware,
   createMenuOnlineSizePizzaValidation,
   createMenuOnlineSizePizzaController,
 );
 
 RouterV1Private_Post.post(
   "/push-token",
+  csrfMiddleware,
   createPushTokenValidation,
   createPushTokenController,
 );
+
+RouterV1Private_Post.post("/logout", (_, res) => {
+  const prod = process.env.NODE_ENV === "production";
+  res.clearCookie("access_token", {
+    domain: prod ? "api.junplid.com.br" : undefined,
+    path: "/",
+  });
+
+  res.clearCookie("XSRF-TOKEN", {
+    domain: prod ? "api.junplid.com.br" : undefined,
+    path: "/",
+  });
+
+  return res.sendStatus(204);
+});
 
 export default RouterV1Private_Post;

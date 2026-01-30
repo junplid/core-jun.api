@@ -22,7 +22,6 @@ export const createMenuOnlineItemValidation = (
     desc: Joi.string().allow(""),
     beforePrice: Joi.number(),
     afterPrice: Joi.number(),
-    accountId: Joi.number().required(),
     fileNameImage: Joi.string().required(),
     qnt: Joi.number().min(0),
   });
@@ -52,6 +51,6 @@ export const createMenuOnlineItemValidation = (
   req.body.beforePrice = validation.value.beforePrice;
   req.body.afterPrice = validation.value.afterPrice;
   req.body.fileNameImage = req.file!.filename;
-
+  req.body.accountId = req.user?.id!;
   next();
 };

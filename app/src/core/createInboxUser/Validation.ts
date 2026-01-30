@@ -5,7 +5,7 @@ import { CreateInboxUsersDTO_I } from "./DTO";
 export const createInboxUsersValidation = (
   req: Request<any, any, CreateInboxUsersDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     name: Joi.string().required(),
@@ -14,7 +14,6 @@ export const createInboxUsersValidation = (
       .required(),
     password: Joi.string().min(8).required(),
     inboxDepartmentId: Joi.number().optional(),
-    accountId: Joi.number().required(),
   });
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });
@@ -27,6 +26,6 @@ export const createInboxUsersValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
+  req.body.accountId = req.user?.id!;
   next();
 };

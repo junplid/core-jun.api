@@ -14,11 +14,10 @@ export const updateFbPixelValidation = (
     UpdateFbPixelQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
-    accountId: Joi.number().required(),
     name: Joi.string().optional(),
     pixel_id: Joi.string().optional(),
     access_token: Joi.string().optional(),
@@ -28,7 +27,7 @@ export const updateFbPixelValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -44,6 +43,6 @@ export const updateFbPixelValidation = (
   if (req.query.businessId) {
     req.query.businessId = Number(req.query.businessId);
   }
-
+  req.body.accountId = req.user?.id!;
   next();
 };

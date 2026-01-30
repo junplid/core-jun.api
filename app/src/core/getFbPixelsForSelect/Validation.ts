@@ -13,16 +13,15 @@ export const getFbPixelsForSelectValidation = (
     GetFbPixelsForSelectQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     businessId: Joi.array().items(Joi.number()).optional(),
-    accountId: Joi.number().required(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -35,6 +34,7 @@ export const getFbPixelsForSelectValidation = (
   }
 
   req.query.businessId = validation.value.businessId || [];
+  req.body.accountId = req.user?.id!;
 
   next();
 };

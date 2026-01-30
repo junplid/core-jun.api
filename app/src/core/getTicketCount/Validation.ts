@@ -14,18 +14,17 @@ export const getTicketCountValidation = (
     GetTicketCountQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     userId: Joi.number().optional(),
     id: Joi.number().required(),
     type: Joi.string().valid("NEW", "OPEN", "RESOLVED").optional(),
-  }).or("accountId", "userId");
+  });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -38,6 +37,6 @@ export const getTicketCountValidation = (
   }
 
   req.params.id = Number(req.params.id);
-
+  req.body.accountId = req.user?.id!;
   next();
 };

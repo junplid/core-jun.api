@@ -5,10 +5,9 @@ import { CreateCampaignDTO_I } from "./DTO";
 export const createCampaignValidation = (
   req: Request<any, any, CreateCampaignDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     name: Joi.string().required(),
     flowId: Joi.string().required(),
     tagsIds: Joi.array().items(Joi.number()).optional(),
@@ -26,10 +25,10 @@ export const createCampaignValidation = (
               Joi.object({
                 start: Joi.string().required(),
                 end: Joi.string().required(),
-              })
+              }),
             )
             .optional(),
-        })
+        }),
       )
       .optional(),
     contacts: Joi.array()
@@ -37,7 +36,7 @@ export const createCampaignValidation = (
         Joi.object({
           name: Joi.string(),
           number: Joi.string().required(),
-        })
+        }),
       )
       .optional(),
   });
@@ -52,6 +51,8 @@ export const createCampaignValidation = (
     }));
     return res.status(400).json({ errors });
   }
+
+  req.body.accountId = req.user?.id!;
 
   next();
 };

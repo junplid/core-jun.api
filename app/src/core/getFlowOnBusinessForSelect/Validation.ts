@@ -13,14 +13,13 @@ export const getFlowOnBusinessForSelectValidation = (
     GetFlowOnBusinessForSelectQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     businessIds: Joi.string().optional(),
-    accountId: Joi.number().required(),
     type: Joi.string()
       .regex(
-        /^(marketing|chatbot|universal)(?:-(marketing|chatbot|universal)+)*$/
+        /^(marketing|chatbot|universal)(?:-(marketing|chatbot|universal)+)*$/,
       )
       .optional(),
     name: Joi.string().optional(),
@@ -28,7 +27,7 @@ export const getFlowOnBusinessForSelectValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -53,6 +52,7 @@ export const getFlowOnBusinessForSelectValidation = (
       | "universal"
     )[];
   }
+  req.body.accountId = req.user?.id!;
 
   next();
 };

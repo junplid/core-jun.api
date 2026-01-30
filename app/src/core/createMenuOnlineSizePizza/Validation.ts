@@ -12,20 +12,19 @@ export const createMenuOnlineSizePizzaValidation = (
     CreateMenuOnlineSizePizzaBodyDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     uuid: Joi.string().required(),
     name: Joi.string().required(),
     price: Joi.number().required(),
     flavors: Joi.number().required(),
-    accountId: Joi.number().required(),
     slices: Joi.number(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -38,6 +37,7 @@ export const createMenuOnlineSizePizzaValidation = (
   }
 
   req.body.price = validation.value.price;
+  req.body.accountId = req.user?.id!;
 
   next();
 };

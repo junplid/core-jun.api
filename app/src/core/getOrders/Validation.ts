@@ -5,10 +5,9 @@ import { Joi } from "express-validation";
 export const getOrdersValidation = (
   req: Request<any, any, GetOrdersBodyDTO_I, GetOrdersQueryDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     limit: Joi.number().min(1).optional(),
     status: Joi.array()
       .items(
@@ -25,8 +24,8 @@ export const getOrdersValidation = (
           "failed",
           "on_way",
           "ready",
-          "completed"
-        )
+          "completed",
+        ),
       )
       .default(["pending", "confirmed", "processing", "on_way", "completed"])
       .optional(),
@@ -35,7 +34,7 @@ export const getOrdersValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -49,6 +48,7 @@ export const getOrdersValidation = (
 
   const { account, ...rest } = validation.value;
   req.query = rest;
+  req.body.accountId = req.user?.id!;
 
   next();
 };

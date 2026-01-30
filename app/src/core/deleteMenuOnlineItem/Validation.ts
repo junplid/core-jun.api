@@ -12,16 +12,15 @@ export const deleteMenuOnlineItemValidation = (
     DeleteMenuOnlineItemBodyDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     uuid: Joi.string().required(),
-    accountId: Joi.number().required(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -32,6 +31,7 @@ export const deleteMenuOnlineItemValidation = (
     }));
     return res.status(400).json({ errors });
   }
+  req.body.accountId = req.user?.id!;
 
   next();
 };

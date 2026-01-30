@@ -5,10 +5,9 @@ import { CreateTrelloIntegrationDTO_I } from "./DTO";
 export const createTrelloIntegrationValidation = (
   req: Request<any, any, CreateTrelloIntegrationDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     name: Joi.string().max(150).required(),
     status: Joi.boolean().optional(),
     token: Joi.string().max(240).required(),
@@ -27,6 +26,7 @@ export const createTrelloIntegrationValidation = (
   }
 
   req.body = validation.value;
+  req.body.accountId = req.user?.id!;
 
   next();
 };

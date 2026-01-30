@@ -11,7 +11,6 @@ export const testAgentAIValidation = (
     content: Joi.string().required(),
     providerCredentialId: Joi.number().optional(),
     apiKey: Joi.string().allow("").optional(),
-    accountId: Joi.number().required(),
     tokenTest: Joi.string().required(),
     name: Joi.string().required(),
     emojiLevel: Joi.string().valid("none", "low", "medium", "high").optional(),
@@ -41,6 +40,6 @@ export const testAgentAIValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
+  req.body.accountId = req.user?.id!;
   next();
 };

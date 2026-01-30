@@ -5,17 +5,16 @@ import { UpdateRootUserBodyDTO_I, UpdateRootUserQueryDTO_I } from "./DTO";
 export const updateRootUserValidation = (
   req: Request<any, any, UpdateRootUserBodyDTO_I, UpdateRootUserQueryDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    rootId: Joi.number().required(),
     email: Joi.string().email(),
     password: Joi.string(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -26,6 +25,6 @@ export const updateRootUserValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
+  req.body.rootId = req.user?.id!;
   next();
 };

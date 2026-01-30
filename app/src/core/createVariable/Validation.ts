@@ -13,7 +13,6 @@ export const createVariableValidation = (
     name: Joi.string().required(),
     value: Joi.string().allow(""),
     targetId: Joi.number(),
-    accountId: Joi.number().required(),
     businessIds: Joi.array().items(Joi.number()).optional(),
   });
 
@@ -38,6 +37,7 @@ export const createVariableValidation = (
 
     return res.status(statusCode).json(rest);
   }
+  req.body.accountId = req.user?.id!;
 
   next();
 };

@@ -13,10 +13,9 @@ export const getPaymentIntegrationsForSelectValidation = (
     GetPaymentIntegrationsForSelectQueryDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    accountId: Joi.number().required(),
     page: Joi.number(),
     name: Joi.string().allow(""),
     provider: Joi.string().valid("mercadopago").allow(""),
@@ -24,7 +23,7 @@ export const getPaymentIntegrationsForSelectValidation = (
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {
@@ -37,6 +36,7 @@ export const getPaymentIntegrationsForSelectValidation = (
   }
 
   if (req.query.page) req.query.page = Number(req.query.page);
+  req.body.accountId = req.user?.id!;
 
   next();
 };
