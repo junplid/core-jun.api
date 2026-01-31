@@ -63,11 +63,10 @@ const corsOptions = {
   credentials: true,
 };
 
-app.use(express.json());
-app.use(cookieParser());
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
-
+app.use(cookieParser());
+app.use(express.json());
+// app.options("*", cors(corsOptions));
 app.use(router);
 
 export { app as App };

@@ -15,7 +15,13 @@ config();
 const server = http.createServer(app);
 const io =
   process.env.NODE_ENV === "production"
-    ? new Server(server)
+    ? new Server(server, {
+        cors: {
+          origin: ["https://app.junplid.com.br", "https://root.junplid.com.br"],
+          methods: ["GET", "POST"],
+          credentials: true,
+        },
+      })
     : new Server(server, { cors: { origin: "*" } });
 
 const startServer = async (): Promise<void> => {
