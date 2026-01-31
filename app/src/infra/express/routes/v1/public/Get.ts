@@ -12,6 +12,8 @@ import crypto from "crypto";
 import { listFbChatbot } from "../../../../../utils/cachesMap";
 import { getMenuOnlinePublicValidation } from "../../../../../core/getMenuOnlinePublic/Validation";
 import { getMenuOnlinePublicController } from "../../../../../core/getMenuOnlinePublic";
+import axios, { AxiosError } from "axios";
+import Business from "facebook-nodejs-business-sdk";
 
 const RouterV1Public_Get = Router();
 
@@ -67,14 +69,14 @@ RouterV1Public_Get.use(
 
         const ntoken = await createTokenAuth(
           { id: result.id, type: "adm", hash: find.hash },
-          "recover-password-whabot-confirm"
+          "recover-password-whabot-confirm",
         );
         return res.status(200).json({ message: "Não autorizado.", ntoken });
       })
       .catch(() => {
         return res.status(401).json({ message: "Não autorizado." });
       });
-  }
+  },
 );
 
 RouterV1Public_Get.get("/av", async (_, res) => {
@@ -182,27 +184,116 @@ RouterV1Public_Get.head("/webhook/trello", (req: Request, res: Response) => {
 RouterV1Public_Get.get(
   "/menu/:identifier",
   getMenuOnlinePublicValidation,
-  getMenuOnlinePublicController
+  getMenuOnlinePublicController,
 );
 
-// start API Oficial WhatsApp
-// RouterV1Public_Get.get("/wa/test", (req, res) => {
-//   const {
-//     "hub.mode": mode,
-//     "hub.challenge": challenge,
-//     "hub.verify_token": token,
-//   } = req.query;
+RouterV1Public_Get.get("/meta/webhook", (req, res) => {
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
 
-//   console.log(req);
+  if (mode === "subscribe" && token === "instagram_webhook_token_123") {
+    return res.status(200).send(challenge);
+  }
 
-//   return res.status(200).send(challenge);
-// });
+  return res.sendStatus(403);
+});
 
-// RouterV1Public_Get.post("/wa/test", (req, res) => {
-//   const timestamp = new Date().toISOString().replace("T", " ").slice(0, 19);
-//   console.log(`\n\nWebhook received ${timestamp}\n`);
-//   console.log(JSON.stringify(req.body, null, 2));
-//   res.status(200).end();
-// });
+let credentials: { access_token: string; instagram_id: string } | null = null;
+
+RouterV1Public_Get.post("/meta/webhook", (req, res) => {
+  console.log("INSTAGRAM WEBHOOK:", JSON.stringify(req.body, null, 2));
+  res.sendStatus(200);
+});
+
+RouterV1Public_Get.get("/meta/auth/instagram/callback", async (req, res) => {
+  const { code } = req.query;
+
+  if (!code) {
+    return res.status(400).send("Missing code");
+  }
+
+  try {
+    const { data } = await axios.get(
+      "https://graph.facebook.com/v19.0/oauth/access_token",
+      {
+        params: {
+          client_id: process.env.META_APP_ID,
+          client_secret: process.env.META_APP_SECRET,
+          redirect_uri:
+            "https://9e160f295563.ngrok-free.app/v1/public/meta/auth/instagram/callback",
+          code: code,
+        },
+      },
+    );
+
+    // data.access_token;
+    const accounts = await axios.get(
+      "https://graph.facebook.com/v19.0/me/accounts",
+      {
+        params: { access_token: data.access_token },
+      },
+    );
+    const page = accounts.data.data[0];
+    const pageToken = page.access_token;
+    const pageId = page.id;
+
+    const igAccount = await axios.get(
+      `https://graph.facebook.com/v19.0/${pageId}?fields=instagram_business_account`,
+      { params: { access_token: pageToken } },
+    );
+
+    const instagramId = igAccount.data.instagram_business_account.id;
+    credentials = {
+      access_token: data.access_token,
+      instagram_id: instagramId,
+    };
+
+    await axios.post(
+      `https://graph.facebook.com/v19.0/${pageId}/subscribed_apps`,
+      null,
+      {
+        params: {
+          subscribed_fields: "messages,messaging_postbacks",
+          access_token: pageToken,
+        },
+      },
+    );
+
+    const subscribe = await axios.post(
+      `https://graph.facebook.com/v19.0/${pageId}/subscribed_apps`,
+      null,
+      {
+        params: {
+          subscribed_fields: "messages,messaging_postbacks",
+          access_token: pageToken,
+        },
+      },
+    );
+    console.log("Inscrição da Página realizada:", subscribe.data);
+
+    // 2. Verifica se a inscrição foi salva com sucesso
+    const verify = await axios.get(
+      `https://graph.facebook.com/v19.0/${pageId}/subscribed_apps`,
+      { params: { access_token: pageToken } },
+    );
+    console.log(
+      "Configurações atuais da Página:",
+      JSON.stringify(verify.data, null, 2),
+    );
+
+    return res.json({
+      access_token: data.access_token,
+      instagram_id: instagramId,
+      pageToken,
+      pageId,
+    });
+  } catch (error: any) {
+    console.log(error);
+    if (error instanceof AxiosError) {
+      res.json(error.response?.data);
+    }
+  }
+});
 
 export default RouterV1Public_Get;
