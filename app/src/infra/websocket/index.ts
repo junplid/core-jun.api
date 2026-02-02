@@ -29,6 +29,7 @@ import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { mongo } from "../../adapters/mongo/connection";
 import { NodeControler } from "../../libs/FlowBuilder/Control";
 import moment from "moment-timezone";
+import { metaAccountsCache } from "../../services/meta/cache";
 
 interface PropsCreateSessionWA_I {
   connectionWhatsId: number;
@@ -110,7 +111,7 @@ export const WebSocketIo = (io: Server) => {
         onConnection: async (connection) => {
           socket.emit(
             `status-session-${data.connectionWhatsId}`,
-            connection ?? "close"
+            connection ?? "close",
           );
           socket.emit(`status-connection`, {
             connectionId: data.connectionWhatsId,
@@ -135,12 +136,12 @@ export const WebSocketIo = (io: Server) => {
               return console.log(err);
             }
             const listConnections: CacheSessionsBaileysWA[] = JSON.parse(
-              file.toString()
+              file.toString(),
             );
 
             const alreadyExists = listConnections.some(
               ({ connectionWhatsId }) =>
-                connectionWhatsId === data.connectionWhatsId
+                connectionWhatsId === data.connectionWhatsId,
             );
 
             if (!alreadyExists) {
@@ -179,14 +180,14 @@ export const WebSocketIo = (io: Server) => {
     socket.on("agent-ai:clear-tokenTest", async (tokenTest: string) => {
       cacheTestAgentAI.delete(tokenTest);
       const vsTest: VectorStoreTest[] = JSON.parse(
-        (await readFile(resolve(pathFilesTest), "utf-8")) || "[]"
+        (await readFile(resolve(pathFilesTest), "utf-8")) || "[]",
       );
 
       const existingTokenTest = vsTest.find((v) => v.tokenTest === tokenTest);
       if (existingTokenTest) {
         const openai = new OpenAI({ apiKey: existingTokenTest.apiKey });
         const filesVs = await openai.vectorStores.files.list(
-          existingTokenTest.vectorStoreId
+          existingTokenTest.vectorStoreId,
         );
         await openai.vectorStores.delete(existingTokenTest.vectorStoreId);
         for (const file of filesVs.data) {
@@ -195,7 +196,7 @@ export const WebSocketIo = (io: Server) => {
         const updatedVsTest = vsTest.filter((v) => v.tokenTest !== tokenTest);
         await writeFile(
           resolve(pathFilesTest),
-          JSON.stringify(updatedVsTest, null, 2)
+          JSON.stringify(updatedVsTest, null, 2),
         );
       }
     });
@@ -204,7 +205,7 @@ export const WebSocketIo = (io: Server) => {
       const stateUser = cacheAccountSocket.get(auth.accountId);
       if (stateUser) {
         stateUser.listSocket = stateUser.listSocket.filter(
-          (ids) => ids.id !== socket.id
+          (ids) => ids.id !== socket.id,
         );
         if (stateUser.listSocket.length === 0) {
           cacheAccountSocket.delete(auth.accountId);
@@ -236,7 +237,7 @@ export const WebSocketIo = (io: Server) => {
           where: { id: props.orderId, accountId: auth.accountId },
           data: { rank: props.rank },
         });
-      }
+      },
     );
 
     socket.on(
@@ -338,7 +339,7 @@ export const WebSocketIo = (io: Server) => {
         }
 
         const orderNode = flow.nodes.find(
-          (n: any) => n.id === order.flowNodeId
+          (n: any) => n.id === order.flowNodeId,
         ) as any;
 
         const nextEdgesIds = flow.edges
@@ -356,7 +357,7 @@ export const WebSocketIo = (io: Server) => {
           nextNodeId = orderNode.id;
         } else {
           nextNodeId = nextEdgesIds?.find((nd: any) =>
-            nd.sourceHandle?.includes(props.nextStatus)
+            nd.sourceHandle?.includes(props.nextStatus),
           );
         }
         if (nextNodeId) {
@@ -437,7 +438,7 @@ export const WebSocketIo = (io: Server) => {
                   flowState.ConnectionWA!.number +
                     "@s.whatsapp.net" +
                     order.ContactsWAOnAccount!.ContactsWA.completeNumber +
-                    "@s.whatsapp.net"
+                    "@s.whatsapp.net",
                 );
                 if (scheduleExecutionCache) {
                   scheduleExecutionCache.cancel();
@@ -452,14 +453,14 @@ export const WebSocketIo = (io: Server) => {
                     .tz("America/Sao_Paulo")
                     .add(
                       flowState.Chatbot.TimeToRestart.value,
-                      flowState.Chatbot.TimeToRestart.type
+                      flowState.Chatbot.TimeToRestart.type,
                     )
                     .toDate();
                   chatbotRestartInDate.set(
                     `${flowState.ConnectionWA!.number}+${
                       order.ContactsWAOnAccount?.ContactsWA.completeNumber
                     }`,
-                    nextDate
+                    nextDate,
                   );
                 }
               },
@@ -506,12 +507,21 @@ export const WebSocketIo = (io: Server) => {
               `${order.connectionWAId}+${
                 order.ContactsWAOnAccount!.ContactsWA.completeNumber
               }`,
-              false
+              false,
             );
           });
         }
-      }
+      },
     );
+
+    socket.on("join_modal", (modalId) => {
+      socket.join(modalId);
+      const paginasNoCache = metaAccountsCache.get(modalId);
+      if (paginasNoCache) {
+        io.to(modalId).emit("facebook_pages_list", paginasNoCache);
+        metaAccountsCache.del(modalId);
+      }
+    });
 
     // atualizar status do evento.
   });

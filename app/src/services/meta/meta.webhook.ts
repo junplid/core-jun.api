@@ -1,20 +1,20 @@
 // src/controllers/whatsapp.controller.ts
 import { Request, Response } from "express";
-import { exchangeCodeForToken, getBusinesses, getWabas } from "./meta.service";
+// import { exchangeCodeForToken, getBusinesses, getWabas } from "./meta.service";
 
 export async function whatsappOAuthCallback(req: Request, res: Response) {
   try {
-    const { code } = req.query;
+    // const { code } = req.query;
 
-    if (!code) {
-      return res.status(400).json({ error: "Code não informado" });
-    }
+    // if (!code) {
+    //   return res.status(400).json({ error: "Code não informado" });
+    // }
 
-    // 1️⃣ troca code por token
-    console.log("1");
-    const tokenData = await exchangeCodeForToken(code as string);
-    console.log("2");
-    const wabas = await getWabas(tokenData.access_token);
+    // // 1️⃣ troca code por token
+    // console.log("1");
+    // const tokenData = await exchangeCodeForToken(code as string);
+    // console.log("2");
+    // const wabas = await getWabas(tokenData.access_token);
 
     // 2️⃣ busca WABAs
     // const businesses = await getBusinesses(tokenData.access_token);
@@ -30,12 +30,12 @@ export async function whatsappOAuthCallback(req: Request, res: Response) {
     //     }
     //   }),
     // );
-    console.log("4");
+    // console.log("4");
 
     return res.json({
       success: true,
-      token: tokenData,
-      wabas,
+      // token: tokenData,
+      // wabas,
     });
   } catch (err: any) {
     console.error(err.response?.data || err.message);

@@ -1,32 +1,45 @@
-import axios from "axios";
+import { createMetaHttpClient } from "./meta.client";
 
-const graph = axios.create({
-  baseURL: `https://graph.facebook.com/${process.env.META_GRAPH_VERSION}`,
-});
+export async function getMetaAccounts(
+  access_token: string,
+): Promise<{ account_access_token: string; account_id: string }[]> {
+  const client = createMetaHttpClient();
+  const { data } = await client.get("/me/accounts", {
+    params: { access_token: access_token },
+  });
+  console.log(data);
+  return data.data?.map((s: any) => ({
+    account_access_token: s.access_token,
+    account_id: s.id,
+  }));
+}
 
-export async function exchangeCodeForToken(code: string) {
-  const { data } = await graph.get("/oauth/access_token", {
-    params: {
-      client_id: process.env.META_APP_ID,
-      client_secret: process.env.META_APP_SECRET,
-      redirect_uri: process.env.META_REDIRECT_URI,
-      code,
+export async function getMetaIstagramId(props: {
+  account_access_token: string;
+  account_id: string;
+}) {
+  const client = createMetaHttpClient();
+  const { data } = await client.get(
+    `/${props.account_id}?fields=instagram_business_account`,
+    { params: { access_token: props.account_access_token } },
+  );
+  return data.instagram_business_account.id as string;
+}
+
+export async function metaSubscribedApps(props: {
+  account_access_token: string;
+  account_id: string;
+}) {
+  const client = createMetaHttpClient();
+  const { data } = await client.post(
+    `/${props.account_id}/subscribed_apps`,
+    null,
+    {
+      params: {
+        subscribed_fields: "messages,messaging_postbacks",
+        access_token: props.account_access_token,
+      },
     },
-  });
-
-  return data;
-}
-
-export async function getBusinesses(accessToken: string) {
-  const { data } = await graph.get("/me/businesses", {
-    params: { access_token: accessToken },
-  });
-  return data;
-}
-
-export async function getWabas(accessToken: string) {
-  const { data } = await graph.get(`/me/whatsapp_business_accounts`, {
-    params: { access_token: accessToken },
-  });
+  );
   return data;
 }

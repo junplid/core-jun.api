@@ -12,8 +12,18 @@ import crypto from "crypto";
 import { listFbChatbot } from "../../../../../utils/cachesMap";
 import { getMenuOnlinePublicValidation } from "../../../../../core/getMenuOnlinePublic/Validation";
 import { getMenuOnlinePublicController } from "../../../../../core/getMenuOnlinePublic";
-import axios, { AxiosError } from "axios";
-import Business from "facebook-nodejs-business-sdk";
+import { AxiosError } from "axios";
+import {
+  getMetaAccessToken,
+  getMetaLongAccessToken,
+} from "../../../../../services/meta/meta.auth";
+import {
+  getMetaAccounts,
+  getMetaIstagramId,
+  metaSubscribedApps,
+} from "../../../../../services/meta/meta.service";
+import NodeCache from "node-cache";
+import { metaAccountsCache } from "../../../../../services/meta/cache";
 
 const RouterV1Public_Get = Router();
 
@@ -207,87 +217,38 @@ RouterV1Public_Get.post("/meta/webhook", (req, res) => {
 });
 
 RouterV1Public_Get.get("/meta/auth/instagram/callback", async (req, res) => {
-  const { code } = req.query;
+  // const { code, modal_id } = req.query;
 
-  if (!code) {
-    return res.status(400).send("Missing code");
-  }
+  // if (!code) {
+  //   return res.redirect(
+  //     `http://localhost:573/auth/?fb_success=false&modal_id=${modal_id}`,
+  //   );
+  // }
 
   try {
-    const { data } = await axios.get(
-      "https://graph.facebook.com/v19.0/oauth/access_token",
-      {
-        params: {
-          client_id: process.env.META_APP_ID,
-          client_secret: process.env.META_APP_SECRET,
-          redirect_uri:
-            "https://9e160f295563.ngrok-free.app/v1/public/meta/auth/instagram/callback",
-          code: code,
-        },
-      },
-    );
+    // const access_token = await getMetaAccessToken(code as string);
+    // const long_access_token = await getMetaLongAccessToken(access_token);
+    // const accounts = await getMetaAccounts(long_access_token);
+    // metaAccountsCache.set(modal_id as string, accounts);
 
-    // data.access_token;
-    const accounts = await axios.get(
-      "https://graph.facebook.com/v19.0/me/accounts",
-      {
-        params: { access_token: data.access_token },
-      },
-    );
-    const page = accounts.data.data[0];
-    const pageToken = page.access_token;
-    const pageId = page.id;
-
-    const igAccount = await axios.get(
-      `https://graph.facebook.com/v19.0/${pageId}?fields=instagram_business_account`,
-      { params: { access_token: pageToken } },
-    );
-
-    const instagramId = igAccount.data.instagram_business_account.id;
-    credentials = {
-      access_token: data.access_token,
-      instagram_id: instagramId,
-    };
-
-    await axios.post(
-      `https://graph.facebook.com/v19.0/${pageId}/subscribed_apps`,
-      null,
-      {
-        params: {
-          subscribed_fields: "messages,messaging_postbacks",
-          access_token: pageToken,
-        },
-      },
-    );
-
-    const subscribe = await axios.post(
-      `https://graph.facebook.com/v19.0/${pageId}/subscribed_apps`,
-      null,
-      {
-        params: {
-          subscribed_fields: "messages,messaging_postbacks",
-          access_token: pageToken,
-        },
-      },
-    );
-    console.log("Inscrição da Página realizada:", subscribe.data);
+    // const instagram_id = await getMetaIstagramId(accounts[0]);
+    // await metaSubscribedApps(accounts[0]);
 
     // 2. Verifica se a inscrição foi salva com sucesso
-    const verify = await axios.get(
-      `https://graph.facebook.com/v19.0/${pageId}/subscribed_apps`,
-      { params: { access_token: pageToken } },
-    );
-    console.log(
-      "Configurações atuais da Página:",
-      JSON.stringify(verify.data, null, 2),
-    );
+    // const verify = await axios.get(
+    //   `https://graph.facebook.com/v19.0/${pageId}/subscribed_apps`,
+    //   { params: { access_token: pageToken } },
+    // );
+    // console.log(
+    //   "Configurações atuais da Página:",
+    //   JSON.stringify(verify.data, null, 2),
+    // );
 
-    return res.json({
-      access_token: data.access_token,
-      instagram_id: instagramId,
-      pageToken,
-      pageId,
-    });
+    // return res.redirect(
+    //   `http://localhost:573/auth/?fb_success=true&modal_id=${modal_id}`,
+    // );
+
+    return res.send("<script>window.close();</script>");
   } catch (error: any) {
     console.log(error);
     if (error instanceof AxiosError) {
