@@ -24,6 +24,7 @@ import {
 } from "../../../../../services/meta/meta.service";
 import NodeCache from "node-cache";
 import { metaAccountsCache } from "../../../../../services/meta/cache";
+import { socketIo } from "../../..";
 
 const RouterV1Public_Get = Router();
 
@@ -217,7 +218,7 @@ RouterV1Public_Get.post("/meta/webhook", (req, res) => {
 });
 
 RouterV1Public_Get.get("/meta/auth/instagram/callback", async (req, res) => {
-  // const { code, modal_id } = req.query;
+  const { code, modal_id } = req.query;
 
   // if (!code) {
   //   return res.redirect(
@@ -230,6 +231,17 @@ RouterV1Public_Get.get("/meta/auth/instagram/callback", async (req, res) => {
     // const long_access_token = await getMetaLongAccessToken(access_token);
     // const accounts = await getMetaAccounts(long_access_token);
     // metaAccountsCache.set(modal_id as string, accounts);
+    console.log({ modal_id_WEBHOOK: modal_id });
+    socketIo.to(modal_id as string).emit("receber_accounts", [
+      {
+        name: "Conta 1",
+        id: "1",
+      },
+      {
+        name: "Conta 2",
+        id: "2",
+      },
+    ]);
 
     // const instagram_id = await getMetaIstagramId(accounts[0]);
     // await metaSubscribedApps(accounts[0]);

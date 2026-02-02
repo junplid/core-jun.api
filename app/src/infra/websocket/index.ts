@@ -514,13 +514,25 @@ export const WebSocketIo = (io: Server) => {
       },
     );
 
-    socket.on("join_modal", (modalId) => {
-      socket.join(modalId);
-      const paginasNoCache = metaAccountsCache.get(modalId);
-      if (paginasNoCache) {
-        io.to(modalId).emit("facebook_pages_list", paginasNoCache);
-        metaAccountsCache.del(modalId);
-      }
+    socket.on("join_modal:create_agentai", (modal_id: string) => {
+      console.log("entrou na sala", modal_id);
+      socket.join(modal_id);
+      // const paginasNoCache = metaAccountsCache.get(modal_id);
+      // if (paginasNoCache) {
+      //   io.to(modal_id).emit("facebook_pages_list", paginasNoCache);
+      //   metaAccountsCache.del(modal_id);
+      // }
+    });
+
+    socket.on("exit_modal:create_agentai", (modal_id: string) => {
+      socket.leave(modal_id);
+      console.log("saiu da sala", modal_id);
+      metaAccountsCache.del(modal_id);
+      // const paginasNoCache = metaAccountsCache.get(modal_id);
+      // if (paginasNoCache) {
+      //   io.to(modal_id).emit("facebook_pages_list", paginasNoCache);
+      //   metaAccountsCache.del(modal_id);
+      // }
     });
 
     // atualizar status do evento.
