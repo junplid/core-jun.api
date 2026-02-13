@@ -36,16 +36,21 @@ export class GetOrdersUseCase {
             orderBy: { id: "asc" },
             select: {
               ...select,
+              connectionIgId: true,
+              connectionWAId: true,
               businessId: true,
               description: true,
               origin: true,
               ContactsWAOnAccount: {
                 select: {
-                  ContactsWA: { select: { completeNumber: true } },
+                  ContactsWA: {
+                    select: { completeNumber: true, username: true },
+                  },
                   Tickets: {
                     where: { status: { notIn: ["DELETED", "RESOLVED"] } },
                     select: {
                       ConnectionWA: { select: { name: true, id: true } },
+                      ConnectionIg: { select: { ig_username: true } },
                       id: true,
                       InboxDepartment: { select: { name: true } },
                       status: true,
@@ -59,37 +64,70 @@ export class GetOrdersUseCase {
                 },
               },
             },
-          })
-        )
+          }),
+        ),
       );
 
       const nextOrders = dto.status.reduce(
         (ac, cr, index) => ({
           ...ac,
           [cr]: orders[index]
-            .map(({ ContactsWAOnAccount, rank, ...order }) => {
-              return {
-                ...order,
-                sequence: rank.toNumber(),
-                contact: ContactsWAOnAccount?.ContactsWA.completeNumber,
-                ticket:
-                  ContactsWAOnAccount?.Tickets.map((tk) => {
-                    const isConnected = !!cacheConnectionsWAOnline.get(
-                      tk.ConnectionWA.id
-                    );
-                    return {
-                      connection: { ...tk.ConnectionWA, s: isConnected },
-                      id: tk.id,
-                      // lastMessage: tk.Messages[0].by,
-                      departmentName: tk.InboxDepartment.name,
-                      status: tk.status,
-                    };
-                  }) || [],
-              };
-            })
+            .map(
+              ({
+                ContactsWAOnAccount,
+                connectionIgId,
+                connectionWAId,
+                rank,
+                ...order
+              }) => {
+                return {
+                  ...order,
+
+                  ...(connectionIgId && {
+                    channel: "baileys",
+                    contact: ContactsWAOnAccount?.ContactsWA.completeNumber,
+                  }),
+                  ...(connectionIgId && {
+                    channel: "instagram",
+                    contact: ContactsWAOnAccount?.ContactsWA.username,
+                  }),
+
+                  sequence: rank.toNumber(),
+                  ticket:
+                    ContactsWAOnAccount?.Tickets.map((tk) => {
+                      let connection: any = {};
+
+                      if (tk.ConnectionWA?.name) {
+                        connection = {
+                          s: !!cacheConnectionsWAOnline.get(
+                            tk.ConnectionWA?.id,
+                          ),
+                          name: tk.ConnectionWA.name,
+                          channel: "baileys",
+                        };
+                      }
+                      if (tk.ConnectionIg?.ig_username) {
+                        connection = {
+                          s: true,
+                          name: tk.ConnectionIg.ig_username,
+                          channel: "instagram",
+                        };
+                      }
+
+                      return {
+                        connection,
+                        id: tk.id,
+                        // lastMessage: tk.Messages[0].by,
+                        departmentName: tk.InboxDepartment.name,
+                        status: tk.status,
+                      };
+                    }) || [],
+                };
+              },
+            )
             .sort((a, b) => a.sequence - b.sequence),
         }),
-        {} as { [x: string]: any }
+        {} as { [x: string]: any },
       );
 
       return {

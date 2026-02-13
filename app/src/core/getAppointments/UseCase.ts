@@ -18,6 +18,7 @@ export class GetAppointmentsUseCase {
           desc: true,
           title: true,
           startAt: true,
+          connectionIgId: true,
           // endAt: true,
           // tickets
           // ContactsWAOnAccount: {
@@ -43,9 +44,10 @@ export class GetAppointmentsUseCase {
         orderBy: { id: "desc" },
       });
 
-      const nextAppointments = appointments.map(({ ...ap }) => {
+      const nextAppointments = appointments.map(({ connectionIgId, ...ap }) => {
         return {
           ...ap,
+          channel: connectionIgId ? "instagram" : "baileys",
           // contact: ContactsWAOnAccount?.ContactsWA.completeNumber,
           // ticket:
           //   ContactsWAOnAccount?.Tickets.map((tk) => {

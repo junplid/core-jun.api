@@ -20,6 +20,10 @@ interface PropsCreateOrder {
   actions?: {
     onCodeAppointment(code: string): void;
   };
+
+  external_adapter:
+    | { type: "baileys" }
+    | { type: "instagram"; page_token: string };
 }
 
 export const NodeCreateAppointment = async (
@@ -118,9 +122,13 @@ export const NodeCreateAppointment = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         flowStateId: props.flowStateId,
         flowNodeId: props.nodeId,
-        connectionWAId: props.connectionWhatsId,
         flowId: props.flowId,
+
         n_appointment,
+        ...(props.external_adapter.type === "baileys"
+          ? { connectionWAId: props.connectionWhatsId }
+          : { connectionIgId: props.connectionWhatsId }),
+
         ...restData,
         startAt: nextStartAt,
         endAt: nextStartAt,
@@ -177,11 +185,12 @@ export const NodeCreateAppointment = async (
       ?.listSocket?.forEach(async (sockId) => {
         socketIo.to(sockId.id).emit(`appointment:new`, {
           accountId: props.accountId,
-          order: {
+          appointment: {
             id,
             title: restData.title,
             desc: restData.desc,
             startAt: nextStartAt,
+            channel: props.external_adapter.type,
           },
         });
       });

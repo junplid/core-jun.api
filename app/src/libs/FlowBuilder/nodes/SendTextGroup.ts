@@ -1,4 +1,3 @@
-import { WASocket } from "baileys";
 import { NodeSendTextGroupData } from "../Payload";
 import { TypingDelay } from "../../../adapters/Baileys/modules/typing";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
@@ -8,9 +7,8 @@ import { NodeAddVariables } from "./AddVariables";
 
 interface PropsNodeMessage {
   numberLead: string;
-  botWA: WASocket;
-  contactsWAOnAccountId: number;
-  connectionWhatsId: number;
+  contactAccountId: number;
+  connectionId: number;
   data: NodeSendTextGroupData;
   accountId: number;
   businessName: string;
@@ -30,7 +28,7 @@ export const NodeSendTextGroup = (props: PropsNodeMessage): Promise<void> => {
           await TypingDelay({
             delay: Number(message.interval || 0),
             toNumber: props.numberLead,
-            connectionId: props.connectionWhatsId,
+            connectionId: props.connectionId,
           });
         } catch (error) {
           props.action.onErrorClient?.();
@@ -41,18 +39,18 @@ export const NodeSendTextGroup = (props: PropsNodeMessage): Promise<void> => {
       try {
         const nextText = await resolveTextVariables({
           accountId: props.accountId,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactsWAOnAccountId: props.contactAccountId,
           text: message.text,
           ticketProtocol: props.ticketProtocol,
           numberLead: props.numberLead,
           nodeId: props.nodeId,
         });
         const msg = await SendTextGroup({
-          connectionId: props.connectionWhatsId,
+          connectionId: props.connectionId,
           text: nextText,
           groupName: props.data.groupName,
         });
-        if (!msg) return rej("Error ao enviar mensagem");
+        if (!msg?.key) return rej("Error ao enviar mensagem");
         await prisma.messages.create({
           data: {
             by: "bot",
@@ -65,7 +63,7 @@ export const NodeSendTextGroup = (props: PropsNodeMessage): Promise<void> => {
         if (message.varId && msg.key.id) {
           await NodeAddVariables({
             data: { list: [{ id: message.varId, value: msg.key.id }] },
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            contactAccountId: props.contactAccountId,
             flowStateId: props.flowStateId,
             nodeId: props.nodeId,
             accountId: props.accountId,
@@ -77,7 +75,7 @@ export const NodeSendTextGroup = (props: PropsNodeMessage): Promise<void> => {
             data: {
               list: [{ id: message.varId_groupJid, value: msg.key.remoteJid }],
             },
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            contactAccountId: props.contactAccountId,
             flowStateId: props.flowStateId,
             nodeId: props.nodeId,
             accountId: props.accountId,

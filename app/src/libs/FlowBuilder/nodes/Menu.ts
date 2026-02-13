@@ -3,16 +3,14 @@ import {
   scheduleExecutionsMenu,
 } from "../../../adapters/Baileys/Cache";
 import { NodeMenuData } from "../Payload";
-import { TypingDelay } from "../../../adapters/Baileys/modules/typing";
-import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { remove } from "remove-accents";
 import moment from "moment-timezone";
 import { scheduleJob } from "node-schedule";
-import { prisma } from "../../../adapters/Prisma/client";
+import { NodeMessage } from "./Message";
 
 const getNextTimeOut = (
   type: "minutes" | "hours" | "days" | "seconds",
-  value: number
+  value: number,
 ) => {
   try {
     if (type === "seconds" && value > 1440) value = 1440;
@@ -28,14 +26,20 @@ const getNextTimeOut = (
 };
 
 interface PropsNodeReply {
-  numberLead: string;
-  numberConnection: string;
+  lead_id: string;
+  contactAccountId: number;
+  connectionId: number;
+  external_adapter:
+    | { type: "baileys" }
+    | { type: "instagram"; page_token: string };
+
   data: NodeMenuData;
   message?: string;
-  connectionWhatsId: number;
   onExecuteSchedule?: () => Promise<void>;
   action: { onErrorClient?(): void };
   flowStateId: number;
+  accountId: number;
+  nodeId: string;
 }
 
 type ResultPromise =
@@ -45,9 +49,9 @@ type ResultPromise =
   | { action: "sucess"; sourceHandle: string };
 
 export const NodeMenu = async (
-  props: PropsNodeReply
+  props: PropsNodeReply,
 ): Promise<ResultPromise> => {
-  const keyMap = props.numberConnection + props.numberLead;
+  const keyMap = `${props.connectionId}+${props.lead_id}`;
   const scheduleExecution = scheduleExecutionsMenu.get(keyMap);
   let countAttempts = countAttemptsMenu.get(keyMap) || 0;
 
@@ -63,37 +67,38 @@ export const NodeMenu = async (
     }
     if (props.data.footer) text += `\n_${props.data.footer}_`;
 
-    const msg = await SendMessageText({
-      connectionId: props.connectionWhatsId,
-      text,
-      toNumber: props.numberLead,
-    }).catch((error) => {
-      console.error("Error sending message:", error);
-      props.action.onErrorClient?.();
-      throw new Error("Failed to send message");
-    });
-
-    if (!msg) throw new Error("Failed to send message");
-
-    await prisma.messages.create({
+    await NodeMessage({
+      accountId: props.accountId,
+      action: props.action,
+      sendBy: "bot",
+      connectionId: props.connectionId,
+      contactAccountId: props.contactAccountId,
       data: {
-        by: "bot",
-        message: text,
-        type: "text",
-        messageKey: msg.key.id,
-        flowStateId: props.flowStateId,
+        messages: [
+          {
+            key: "1",
+            text,
+            interval: props.data.interval
+              ? Number(props.data.interval)
+              : undefined,
+          },
+        ],
       },
+      external_adapter: props.external_adapter,
+      flowStateId: props.flowStateId,
+      lead_id: props.lead_id,
+      nodeId: props.nodeId,
     });
 
     if (props.onExecuteSchedule) {
       const { type, value } = props.data.timeout || {};
       const nextTimeStart = getNextTimeOut(
         type?.length ? type[0] : "minutes",
-        Math.max(value || 1, 0)
+        Math.max(value || 1, 0),
       );
       const timeOnExecuteActionTimeOut = scheduleJob(
         nextTimeStart,
-        props.onExecuteSchedule
+        props.onExecuteSchedule,
       );
       scheduleExecutionsMenu.set(keyMap, timeOnExecuteActionTimeOut);
     }
@@ -121,27 +126,27 @@ export const NodeMenu = async (
 
       if (messageErrorAttempts?.value) {
         try {
-          await TypingDelay({
-            delay: props.data.interval
-              ? Number(props.data.interval)
-              : undefined,
-            toNumber: props.numberLead,
-            connectionId: props.connectionWhatsId,
-          });
-          const msg = await SendMessageText({
-            connectionId: props.connectionWhatsId,
-            text: messageErrorAttempts.value,
-            toNumber: props.numberLead,
-          });
-          if (!msg) throw new Error("Failed to send message");
-          await prisma.messages.create({
+          await NodeMessage({
+            accountId: props.accountId,
+            action: props.action,
+            connectionId: props.connectionId,
+            contactAccountId: props.contactAccountId,
+            sendBy: "bot",
             data: {
-              by: "bot",
-              message: messageErrorAttempts.value,
-              type: "text",
-              messageKey: msg.key.id,
-              flowStateId: props.flowStateId,
+              messages: [
+                {
+                  key: "1",
+                  text: messageErrorAttempts.value,
+                  interval: messageErrorAttempts.interval
+                    ? Number(messageErrorAttempts.interval)
+                    : undefined,
+                },
+              ],
             },
+            external_adapter: props.external_adapter,
+            flowStateId: props.flowStateId,
+            lead_id: props.lead_id,
+            nodeId: props.nodeId,
           });
         } catch (error) {
           console.log(error);
@@ -179,27 +184,27 @@ export const NodeMenu = async (
 
       if (messageErrorAttempts?.value) {
         try {
-          await TypingDelay({
-            delay: props.data.interval
-              ? Number(props.data.interval)
-              : undefined,
-            toNumber: props.numberLead,
-            connectionId: props.connectionWhatsId,
-          });
-          const msg = await SendMessageText({
-            connectionId: props.connectionWhatsId,
-            text: messageErrorAttempts.value,
-            toNumber: props.numberLead,
-          });
-          if (!msg) throw new Error("Failed to send message");
-          await prisma.messages.create({
+          await NodeMessage({
+            accountId: props.accountId,
+            action: props.action,
+            connectionId: props.connectionId,
+            contactAccountId: props.contactAccountId,
             data: {
-              by: "bot",
-              message: messageErrorAttempts.value,
-              type: "text",
-              messageKey: msg.key.id,
-              flowStateId: props.flowStateId,
+              messages: [
+                {
+                  key: "1",
+                  text: messageErrorAttempts.value,
+                  interval: messageErrorAttempts.interval
+                    ? Number(messageErrorAttempts.interval)
+                    : undefined,
+                },
+              ],
             },
+            external_adapter: props.external_adapter,
+            flowStateId: props.flowStateId,
+            lead_id: props.lead_id,
+            nodeId: props.nodeId,
+            sendBy: "bot",
           });
         } catch (error) {
           props.action.onErrorClient?.();

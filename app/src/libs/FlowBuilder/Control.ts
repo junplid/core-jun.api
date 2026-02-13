@@ -4,6 +4,8 @@ import { LibraryNodes } from "./nodes";
 import { NodePayload, TypeNodesPayload } from "./Payload";
 import { cacheFlowInExecution } from "../../adapters/Baileys/Cache";
 import { cacheExecuteTimeoutAgentAI } from "./cache";
+import { webSocketEmitToRoom } from "../../infra/websocket";
+import { resolveHourAndMinute } from "../../utils/resolveHour:mm";
 
 interface Edges {
   source: string;
@@ -31,21 +33,26 @@ export type IPropsControler = {
   nodes: NodePayload[];
   ticketProtocol?: string;
   edges: Edges[];
-  clientWA: WASocket;
-  lead: { number: string };
   flowId: string;
   flowStateId: number;
   currentNodeId?: string;
   campaignId?: number;
   chatbotId?: number;
-  connectionWhatsId: number;
-  contactsWAOnAccountId: number;
+
+  lead_id: string;
+  contactAccountId: number;
+  connectionId: number;
+
+  external_adapter:
+    | { clientWA: WASocket; type: "baileys" }
+    | { type: "instagram"; page_token: string };
+
   isSavePositionLead?: boolean;
-  numberConnection: string;
   accountId: number;
   previous_response_id?: string;
   businessName: string;
   flowBusinessIds?: number[];
+  businessId: number;
   forceFinish?: boolean;
   action: string | null;
 } & (
@@ -69,7 +76,7 @@ export const NodeControler = ({
   oldNodeId = "0",
   ...propsC
 }: IPropsControler): Promise<void> => {
-  const keyMap = `${propsC.connectionWhatsId}-${propsC.lead.number}`;
+  const keyMap = `${propsC.connectionId}-${propsC.lead_id}`;
 
   return new Promise((res, rej) => {
     if (cacheFlowInExecution.has(keyMap)) {
@@ -185,7 +192,7 @@ export const NodeControler = ({
       //     message: props.message,
       //     data: nodesInterruption.map((nod) => nod.data),
       //     connectionWhatsId: props.connectionWhatsId,
-      //     contactsWAOnAccountId: props.contactsWAOnAccountId,
+      //     contactsWAOnAccountId: props.contactAccountId,
       //   })
       //     .then(async ({ handleId }) => {
       //       if (handleId) {
@@ -215,7 +222,7 @@ export const NodeControler = ({
       //           return res();
       //         }
 
-      //         const key = `${props.contactsWAOnAccountId}-${props.connectionWhatsId}`;
+      //         const key = `${props.contactAccountId}-${props.connectionWhatsId}`;
       //         currentNodeFlow.set(key, targetNode.id);
 
       //         const isDepend = targetNode.type === "NodeReply";
@@ -278,8 +285,14 @@ export const NodeControler = ({
         if (props.forceFinish) {
           await prisma.flowState.update({
             where: { id: props.flowStateId },
-            data: { isFinish: true },
+            data: { isFinish: true, finishedAt: new Date() },
           });
+          webSocketEmitToRoom()
+            .account(props.accountId)
+            .dashboard.dashboard_services({
+              delta: -1,
+              hour: resolveHourAndMinute(),
+            });
         }
         props.actions?.onFinish?.();
         return;
@@ -292,14 +305,14 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeMessage({
-          botWA: props.clientWA,
-          numberLead: props.lead.number,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          external_adapter: props.external_adapter,
+          connectionId: props.connectionId,
+          contactAccountId: props.contactAccountId,
+          lead_id: props.lead_id,
+          sendBy: "bot",
           data: currentNode.data,
           accountId: props.accountId,
-          businessName: props.businessName,
           ticketProtocol: props.ticketProtocol,
-          connectionWhatsId: props.connectionWhatsId,
           nodeId: currentNode.id,
           flowStateId: props.flowStateId,
           action: {
@@ -353,14 +366,14 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeReply({
-          numberLead: props.lead.number,
-          numberConnection: props.numberConnection,
+          lead_id: props.lead_id,
+          connectionId: props.connectionId,
+          contactAccountId: props.contactAccountId,
           data: currentNode.data,
           message: props.type === "initial" ? undefined : props.message,
           flowBusinessIds: props.flowBusinessIds,
           flowStateId: props.flowStateId,
           accountId: props.accountId,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
           async onExecuteSchedule() {
             const nextNodeId = nextEdgesIds?.find((nd) =>
               nd.sourceHandle?.includes("timeout"),
@@ -444,11 +457,14 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeMenu({
-          numberLead: props.lead.number,
-          numberConnection: props.numberConnection,
+          lead_id: props.lead_id,
+          connectionId: props.connectionId,
+          contactAccountId: props.contactAccountId,
+          accountId: props.accountId,
+          external_adapter: props.external_adapter,
           data: currentNode.data,
+          nodeId: currentNode.id,
           message: props.type === "initial" ? undefined : props.message,
-          connectionWhatsId: props.connectionWhatsId,
           flowStateId: props.flowStateId,
           action: {
             onErrorClient: () => {
@@ -557,7 +573,7 @@ export const NodeControler = ({
         await LibraryNodes.NodeAddTags({
           data: currentNode.data,
           flowStateId: props.flowStateId,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactAccountId: props.contactAccountId,
           nodeId: currentNodeId,
         })
           .then(async () => {
@@ -604,7 +620,7 @@ export const NodeControler = ({
         await LibraryNodes.NodeRemoveTags({
           data: currentNode.data,
           flowStateId: props.flowStateId,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactAccountId: props.contactAccountId,
           nodeId: currentNodeId,
         })
           .then(async () => {
@@ -652,10 +668,10 @@ export const NodeControler = ({
         await LibraryNodes.NodeAddVariables({
           data: currentNode.data,
           flowStateId: props.flowStateId,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactAccountId: props.contactAccountId,
           nodeId: currentNodeId,
           accountId: props.accountId,
-          numberLead: props.lead.number,
+          numberLead: props.lead_id,
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
@@ -701,7 +717,7 @@ export const NodeControler = ({
         await LibraryNodes.NodeRemoveVariables({
           data: currentNode.data,
           flowStateId: props.flowStateId,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactAccountId: props.contactAccountId,
           nodeId: currentNodeId,
         })
           .then(async () => {
@@ -787,9 +803,9 @@ export const NodeControler = ({
           data: currentNode.data,
           accountId: props.accountId,
           flowStateId: props.flowStateId,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactAccountId: props.contactAccountId,
           nodeId: currentNodeId,
-          numberLead: props.lead.number,
+          numberLead: props.lead_id,
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
@@ -890,14 +906,22 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeNotifyWA({
-          botWA: props.clientWA,
-          numberLead: props.lead.number,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          action: {
+            onErrorClient: () => {
+              if (props.oldNodeId === "0") {
+                props.actions?.onErrorClient &&
+                  props.actions?.onErrorClient(currentNode.id);
+              }
+            },
+          },
+          connectionId: props.connectionId,
+          contactAccountId: props.contactAccountId,
+          external_adapter: props.external_adapter,
+          lead_id: props.lead_id,
           data: currentNode.data,
           accountId: props.accountId,
           businessName: props.businessName,
           ticketProtocol: props.ticketProtocol,
-          connectionWhatsId: props.connectionWhatsId,
           nodeId: currentNode.id,
           flowStateId: props.flowStateId,
         })
@@ -943,13 +967,21 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeSendFiles({
-          numberLead: props.lead.number,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          lead_id: props.lead_id,
+          connectionId: props.connectionId,
+          contactAccountId: props.contactAccountId,
+          external_adapter: props.external_adapter,
           data: currentNode.data,
           accountId: props.accountId,
           ticketProtocol: props.ticketProtocol,
-          connectionWAId: props.connectionWhatsId,
-          action: {},
+          action: {
+            onErrorClient: () => {
+              if (props.oldNodeId === "0") {
+                props.actions?.onErrorClient &&
+                  props.actions?.onErrorClient(currentNode.id);
+              }
+            },
+          },
           nodeId: currentNode.id,
           flowStateId: props.flowStateId,
         })
@@ -995,15 +1027,23 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeSendVideos({
-          botWA: props.clientWA,
-          numberLead: props.lead.number,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          lead_id: props.lead_id,
+          connectionId: props.connectionId,
+          contactAccountId: props.contactAccountId,
+          external_adapter: props.external_adapter,
+          action: {
+            onErrorClient: () => {
+              if (props.oldNodeId === "0") {
+                props.actions?.onErrorClient &&
+                  props.actions?.onErrorClient(currentNode.id);
+              }
+            },
+          },
           data: currentNode.data,
           accountId: props.accountId,
           ticketProtocol: props.ticketProtocol,
-          connectionWAId: props.connectionWhatsId,
-          action: {},
           nodeId: currentNode.id,
+          flowStateId: props.flowStateId,
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
@@ -1047,14 +1087,21 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeSendImages({
-          botWA: props.clientWA,
-          numberLead: props.lead.number,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          lead_id: props.lead_id,
+          connectionId: props.connectionId,
+          contactAccountId: props.contactAccountId,
+          external_adapter: props.external_adapter,
+          action: {
+            onErrorClient: () => {
+              if (props.oldNodeId === "0") {
+                props.actions?.onErrorClient &&
+                  props.actions?.onErrorClient(currentNode.id);
+              }
+            },
+          },
           data: currentNode.data,
           accountId: props.accountId,
           ticketProtocol: props.ticketProtocol,
-          connectionWAId: props.connectionWhatsId,
-          action: {},
           nodeId: currentNode.id,
           flowStateId: props.flowStateId,
         })
@@ -1100,16 +1147,23 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeSendAudiosLive({
-          botWA: props.clientWA,
-          numberLead: props.lead.number,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          lead_id: props.lead_id,
+          connectionId: props.connectionId,
+          external_adapter: props.external_adapter,
+          action: {
+            onErrorClient: () => {
+              if (props.oldNodeId === "0") {
+                props.actions?.onErrorClient &&
+                  props.actions?.onErrorClient(currentNode.id);
+              }
+            },
+          },
           data: currentNode.data,
           accountId: props.accountId,
           ticketProtocol: props.ticketProtocol,
-          connectionWAId: props.connectionWhatsId,
-          action: {},
           flowStateId: props.flowStateId,
           nodeId: currentNode.id,
+          contactAccountId: props.contactAccountId,
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
@@ -1153,16 +1207,23 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeSendAudios({
-          botWA: props.clientWA,
-          numberLead: props.lead.number,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          lead_id: props.lead_id,
+          connectionId: props.connectionId,
+          external_adapter: props.external_adapter,
+          action: {
+            onErrorClient: () => {
+              if (props.oldNodeId === "0") {
+                props.actions?.onErrorClient &&
+                  props.actions?.onErrorClient(currentNode.id);
+              }
+            },
+          },
           data: currentNode.data,
           accountId: props.accountId,
           ticketProtocol: props.ticketProtocol,
-          connectionWAId: props.connectionWhatsId,
-          action: {},
           nodeId: currentNode.id,
           flowStateId: props.flowStateId,
+          contactAccountId: props.contactAccountId,
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
@@ -1207,12 +1268,15 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeAgentAI({
-          numberLead: props.lead.number,
-          numberConnection: props.numberConnection,
+          lead_id: props.lead_id,
+          connectionId: props.connectionId,
+          contactAccountId: props.contactAccountId,
+          external_adapter: props.external_adapter,
           data: currentNode.data,
           nodeId: currentNode.id,
           flowId: props.flowId,
           businessName: props.businessName,
+          businessId: props.businessId,
           ...(props.type === "initial"
             ? { message: undefined }
             : {
@@ -1238,7 +1302,6 @@ export const NodeControler = ({
                     }
                   : { value: props.message, isDev: false },
               }),
-          connectionWhatsId: props.connectionWhatsId,
           actions: {
             onErrorClient: async () => {
               props.actions?.onErrorClient &&
@@ -1355,9 +1418,25 @@ export const NodeControler = ({
                   return res();
                 });
             },
+            onFinishService: async (previous_response_id) => {
+              await prisma.flowState.update({
+                where: { id: props.flowStateId },
+                data: {
+                  isFinish: true,
+                  finishedAt: new Date(),
+                  ...(previous_response_id && { previous_response_id }),
+                },
+              });
+              webSocketEmitToRoom()
+                .account(props.accountId)
+                .dashboard.dashboard_services({
+                  delta: -1,
+                  hour: resolveHourAndMinute(),
+                });
+              return res();
+            },
           },
           accountId: props.accountId,
-          contactAccountId: props.contactsWAOnAccountId,
           previous_response_id: props.previous_response_id,
           flowStateId: props.flowStateId,
         })
@@ -1431,12 +1510,13 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeTransferDepartment({
+          connectionId: props.connectionId,
+          contactAccountId: props.contactAccountId,
           data: currentNode.data,
           flowStateId: props.flowStateId,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
           nodeId: currentNodeId,
           accountId: props.accountId,
-          connectionWAId: props.connectionWhatsId,
+          external_adapter: props.external_adapter,
         })
           .then(async (d) => {
             if (d === "OK") {
@@ -1498,14 +1578,12 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeFbPixel({
-          botWA: props.clientWA,
-          numberLead: props.lead.number,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          lead_id: props.lead_id,
+          contactAccountId: props.contactAccountId,
           data: currentNode.data,
           accountId: props.accountId,
           businessName: props.businessName,
           ticketProtocol: props.ticketProtocol,
-          connectionWhatsId: props.connectionWhatsId,
           nodeId: currentNode.id,
           flowStateId: props.flowStateId,
         })
@@ -1553,7 +1631,7 @@ export const NodeControler = ({
         }
         if (props.type !== "running") return res();
         await LibraryNodes.NodeListenReaction({
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactAccountId: props.contactAccountId,
           data: currentNode.data,
           message: props.message,
           reactionText: props.reactionText || "",
@@ -1596,7 +1674,7 @@ export const NodeControler = ({
             if (nextNodeIdParallel?.id && props.contactsWAOnAccountReactionId) {
               execute({
                 ...props,
-                contactsWAOnAccountId: props.contactsWAOnAccountReactionId,
+                contactAccountId: props.contactsWAOnAccountReactionId,
                 type: "initial",
                 currentNodeId: nextNodeIdParallel.id,
                 oldNodeId: currentNode.id,
@@ -1621,9 +1699,9 @@ export const NodeControler = ({
         }
         await LibraryNodes.NodeSwitchVariable({
           data: currentNode.data,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactsWAOnAccountId: props.contactAccountId,
           accountId: props.accountId,
-          numberLead: props.lead.number,
+          numberLead: props.lead_id,
         })
           .then(async (d) => {
             if (props.actions?.onExecutedNode) {
@@ -1687,11 +1765,11 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeExtractVariable({
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactsWAOnAccountId: props.contactAccountId,
           data: currentNode.data,
           accountId: props.accountId,
           nodeId: currentNodeId,
-          numberLead: props.lead.number,
+          numberLead: props.lead_id,
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
@@ -1736,8 +1814,8 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeCharge({
-          data: currentNode.data,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          data: { ...currentNode.data, businessId: props.businessId },
+          contactsWAOnAccountId: props.contactAccountId,
           accountId: props.accountId,
           nodeId: currentNode.id,
           flowStateId: props.flowStateId,
@@ -1785,7 +1863,7 @@ export const NodeControler = ({
         }
         await LibraryNodes.NodeRandomCode({
           data: currentNode.data,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactsWAOnAccountId: props.contactAccountId,
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
@@ -1829,14 +1907,13 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeSendTextGroup({
-          botWA: props.clientWA,
-          numberLead: props.lead.number,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          numberLead: props.lead_id,
+          contactAccountId: props.contactAccountId,
           data: currentNode.data,
           accountId: props.accountId,
           businessName: props.businessName,
           ticketProtocol: props.ticketProtocol,
-          connectionWhatsId: props.connectionWhatsId,
+          connectionId: props.connectionId,
           nodeId: currentNode.id,
           flowStateId: props.flowStateId,
           action: {
@@ -1891,18 +1968,19 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeCreateOrder({
-          numberLead: props.lead.number,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
-          data: currentNode.data,
+          lead_id: props.lead_id,
+          contactAccountId: props.contactAccountId,
+          connectionId: props.connectionId,
+          data: { ...currentNode.data, businessId: props.businessId },
           accountId: props.accountId,
           businessName: props.businessName,
-          connectionWhatsId: props.connectionWhatsId,
           nodeId: currentNode.id,
           flowStateId: props.flowStateId,
           flowId: props.flowId,
           ...(props.type === "running" && {
             action: props.action?.replace(" [order]", "") || undefined,
           }),
+          external_adapter: props.external_adapter,
         })
           .then(async (action) => {
             const nextNode = nextEdgesIds.find(
@@ -1962,8 +2040,8 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeUpdateOrder({
-          numberLead: props.lead.number,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          numberLead: props.lead_id,
+          contactsWAOnAccountId: props.contactAccountId,
           data: currentNode.data,
           accountId: props.accountId,
           businessName: props.businessName,
@@ -2037,8 +2115,8 @@ export const NodeControler = ({
         }
         console.log("Esta entrando aqui");
         LibraryNodes.NodeTimedQueue({
-          numberLead: props.lead.number,
-          numberConnection: props.numberConnection,
+          numberLead: props.lead_id,
+          connectionId: props.connectionId,
           data: currentNode.data,
           nodeId: currentNode.id,
           executeDebounce: async () => {
@@ -2109,7 +2187,7 @@ export const NodeControler = ({
           data: currentNode.data,
           nodeId: currentNode.id,
           accountId: props.accountId,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactsWAOnAccountId: props.contactAccountId,
         });
         const nextNodeId = nextEdgesIds?.find(
           (nd) => nd.sourceHandle === "main",
@@ -2148,9 +2226,9 @@ export const NodeControler = ({
         await LibraryNodes.NodeAddTrelloCard({
           data: currentNode.data,
           accountId: props.accountId,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactsWAOnAccountId: props.contactAccountId,
           nodeId: currentNode.id,
-          numberLead: props.lead.number,
+          numberLead: props.lead_id,
           flowStateId: props.flowStateId,
         })
           .then(async () => {
@@ -2197,7 +2275,7 @@ export const NodeControler = ({
         await LibraryNodes.NodeRemoveTrelloCard({
           data: currentNode.data,
           accountId: props.accountId,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactsWAOnAccountId: props.contactAccountId,
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
@@ -2243,7 +2321,7 @@ export const NodeControler = ({
         await LibraryNodes.NodeMoveTrelloCard({
           data: currentNode.data,
           accountId: props.accountId,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactsWAOnAccountId: props.contactAccountId,
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
@@ -2289,9 +2367,9 @@ export const NodeControler = ({
         await LibraryNodes.NodeUpdateTrelloCard({
           data: currentNode.data,
           accountId: props.accountId,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactsWAOnAccountId: props.contactAccountId,
           nodeId: currentNode.id,
-          numberLead: props.lead.number,
+          numberLead: props.lead_id,
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
@@ -2343,7 +2421,7 @@ export const NodeControler = ({
           await LibraryNodes.NodeWebhookTrelloCard({
             data: currentNode.data,
             accountId: props.accountId,
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            contactsWAOnAccountId: props.contactAccountId,
             beforeName: props.beforeName,
             afterName: props.afterName,
             cardId: props.cardId,
@@ -2392,10 +2470,10 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeDeleteMessage({
-          numberLead: props.lead.number,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          numberLead: props.lead_id,
+          contactsWAOnAccountId: props.contactAccountId,
           data: currentNode.data,
-          connectionWhatsId: props.connectionWhatsId,
+          connectionWhatsId: props.connectionId,
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
@@ -2480,18 +2558,19 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeCreateAppointment({
-          numberLead: props.lead.number,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
-          data: currentNode.data,
+          numberLead: props.lead_id,
+          contactsWAOnAccountId: props.contactAccountId,
+          data: { ...currentNode.data, businessId: props.businessId },
           accountId: props.accountId,
           businessName: props.businessName,
-          connectionWhatsId: props.connectionWhatsId,
+          connectionWhatsId: props.connectionId,
           nodeId: currentNode.id,
           flowStateId: props.flowStateId,
           flowId: props.flowId,
           ...(props.type === "running" && {
             action: props.action?.replace(" [appointment]", "") || undefined,
           }),
+          external_adapter: props.external_adapter,
         })
           .then(async (action) => {
             const nextNode = nextEdgesIds.find(
@@ -2543,7 +2622,6 @@ export const NodeControler = ({
           });
         return;
       }
-
       if (currentNode.type === "NodeUpdateAppointment") {
         if (props.actions?.onEnterNode) {
           await props.actions?.onEnterNode({
@@ -2552,8 +2630,8 @@ export const NodeControler = ({
           });
         }
         await LibraryNodes.NodeUpdateAppointment({
-          numberLead: props.lead.number,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          numberLead: props.lead_id,
+          contactsWAOnAccountId: props.contactAccountId,
           data: currentNode.data,
           accountId: props.accountId,
           nodeId: currentNode.id,

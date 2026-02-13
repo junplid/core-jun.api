@@ -16,6 +16,7 @@ export class GetAppointmentDetailsUseCase {
           title: true,
           startAt: true,
           ConnectionWA: { select: { name: true, id: true } },
+          ConnectionIg: { select: { ig_username: true, id: true } },
           // endAt: true,
           Business: { select: { name: true, id: true } },
           n_appointment: true,
@@ -32,6 +33,7 @@ export class GetAppointmentDetailsUseCase {
                 where: { status: { notIn: ["DELETED", "RESOLVED"] } },
                 select: {
                   ConnectionWA: { select: { name: true, id: true } },
+                  ConnectionIg: { select: { ig_username: true, id: true } },
                   id: true,
                   InboxDepartment: { select: { name: true } },
                   status: true,
@@ -56,11 +58,32 @@ export class GetAppointmentDetailsUseCase {
 
       const {
         ConnectionWA,
+        ConnectionIg,
         ContactsWAOnAccount,
         Business,
         appointmentReminders,
         ...ap
       } = appointments;
+
+      let connection: any = {};
+
+      if (ConnectionWA?.name) {
+        connection = {
+          s: !!cacheConnectionsWAOnline.get(ConnectionWA?.id),
+          ...ConnectionWA,
+          channel: "baileys",
+        };
+      }
+
+      if (ConnectionIg?.ig_username) {
+        connection = {
+          s: true,
+          name: ConnectionIg.ig_username,
+          id: ConnectionIg.id,
+          channel: "instagram",
+        };
+      }
+
       const nextAppointment = {
         ...ap,
         business: Business,
@@ -71,19 +94,32 @@ export class GetAppointmentDetailsUseCase {
             if (cr.status === "failed") ac.sent += 1;
             return ac;
           },
-          { sent: 0, failed: 0 }
+          { sent: 0, failed: 0 },
         ),
-        connectionWA: ConnectionWA && {
-          ...ConnectionWA,
-          s: !!cacheConnectionsWAOnline.get(ConnectionWA.id),
-        },
+        connection,
         ticket:
           ContactsWAOnAccount?.Tickets.map((tk) => {
-            const isConnected = !!cacheConnectionsWAOnline.get(
-              tk.ConnectionWA.id
-            );
+            let connection2: any = {};
+
+            if (tk.ConnectionWA?.name) {
+              connection2 = {
+                s: !!cacheConnectionsWAOnline.get(tk.ConnectionWA?.id),
+                ...tk.ConnectionWA,
+                channel: "baileys",
+              };
+            }
+
+            if (tk.ConnectionIg?.ig_username) {
+              connection2 = {
+                s: true,
+                name: tk.ConnectionIg.ig_username,
+                id: tk.ConnectionIg.id,
+                channel: "instagram",
+              };
+            }
+
             return {
-              connection: { ...tk.ConnectionWA, s: isConnected },
+              connection: connection2,
               id: tk.id,
               // lastMessage: tk.Messages[0].by,
               departmentName: tk.InboxDepartment.name,

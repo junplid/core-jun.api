@@ -7,11 +7,11 @@ import { SendTicketMessageUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
 export const SendTicketMessageController = (
-  useCase: SendTicketMessageUseCase
+  useCase: SendTicketMessageUseCase,
 ) => {
   const execute = async (
     req: Request<SendTicketMessageParamsDTO_I, any, SendTicketMessageBodyDTO_I>,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const data = await useCase.run({ ...req.body, ...req.params });

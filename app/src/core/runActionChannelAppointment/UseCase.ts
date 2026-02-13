@@ -1,11 +1,15 @@
 import { RunActionChannelOrderDTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
-import { cacheFlowsMap } from "../../adapters/Baileys/Cache";
+import {
+  cacheConnectionsWAOnline,
+  cacheFlowsMap,
+} from "../../adapters/Baileys/Cache";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
-import { NodeControler } from "../../libs/FlowBuilder/Control";
+import { IPropsControler, NodeControler } from "../../libs/FlowBuilder/Control";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
 import { mongo } from "../../adapters/mongo/connection";
+import { decrypte } from "../../libs/encryption";
 
 export class RunActionChannelOrderUseCase {
   constructor() {}
@@ -17,6 +21,9 @@ export class RunActionChannelOrderUseCase {
         flowNodeId: true,
         flowId: true,
         ConnectionWA: { select: { number: true, id: true } },
+        ConnectionIg: {
+          select: { credentials: true, id: true, page_id: true },
+        },
         FlowState: {
           select: { previous_response_id: true },
         },
@@ -27,7 +34,7 @@ export class RunActionChannelOrderUseCase {
           },
         },
         flowStateId: true,
-        Business: { select: { name: true } },
+        Business: { select: { name: true, id: true } },
       },
     });
 
@@ -75,11 +82,64 @@ export class RunActionChannelOrderUseCase {
         type: "error",
       });
     }
-    const bot = sessionsBaileysWA.get(order.ConnectionWA.id);
-    if (!bot) {
+
+    let external_adapter: IPropsControler["external_adapter"] | null = null;
+
+    if (order.ConnectionWA?.id) {
+      let attempt = 0;
+      const botOnline = new Promise<boolean>((resolve, reject) => {
+        function run() {
+          if (attempt >= 5) {
+            return resolve(false);
+          } else {
+            setInterval(async () => {
+              const botWA = cacheConnectionsWAOnline.get(
+                order!.ConnectionWA?.id!,
+              );
+              if (!botWA) {
+                attempt++;
+                return run();
+              } else {
+                return resolve(botWA);
+              }
+            }, 1000 * attempt);
+          }
+        }
+        return run();
+      });
+
+      if (!botOnline) {
+        throw new ErrorResponse(400).toast({
+          title: "Ação não executada.",
+          description: "Conexão WA OFFLINE.",
+          type: "error",
+        });
+      }
+
+      const clientWA = sessionsBaileysWA.get(order.ConnectionWA?.id!)!;
+      external_adapter = { type: "baileys", clientWA: clientWA };
+    }
+    if (order.ConnectionIg?.id) {
+      try {
+        const credential = decrypte(order.ConnectionIg.credentials);
+        external_adapter = {
+          type: "instagram",
+          page_token: credential.account_access_token,
+        };
+      } catch (error) {
+        throw new ErrorResponse(400).toast({
+          title: "Falha ao descriptografar credencias.",
+          description:
+            "Servidor negou o acesso ao dados de Integração do Instagram.",
+          type: "error",
+        });
+      }
+    }
+
+    if (!external_adapter) {
       throw new ErrorResponse(400).toast({
-        title: "Ação não executada.",
-        description: "Conexão WA OFFLINE.",
+        title: "Error interno.",
+        description: "Conexão ou integração não encontrada.",
         type: "error",
       });
     }
@@ -126,7 +186,7 @@ export class RunActionChannelOrderUseCase {
     }
 
     const orderNode = flow.nodes.find(
-      (n: any) => n.type === "NodeCreateOrder" && n.id === order.flowNodeId
+      (n: any) => n.type === "NodeCreateOrder" && n.id === order.flowNodeId,
     ) as any;
 
     if (!orderNode) {
@@ -138,6 +198,7 @@ export class RunActionChannelOrderUseCase {
     }
 
     const number = order.ContactsWAOnAccount.ContactsWA.completeNumber;
+    const connectionId = (order.ConnectionWA?.id || order.ConnectionIg?.id)!;
 
     NodeControler({
       forceFinish: true,
@@ -146,20 +207,22 @@ export class RunActionChannelOrderUseCase {
       flowBusinessIds: flow!.businessIds,
       type: "running",
       action: `${action} [appointment-${dto.id}]`,
-      connectionWhatsId: order.ConnectionWA.id,
+      businessId: order.Business.id,
+
+      external_adapter,
+      connectionId,
+      lead_id: number,
+      contactAccountId: order.ContactsWAOnAccount.id,
+
       oldNodeId: orderNode.id,
       currentNodeId: orderNode.id,
       message: action,
-      clientWA: bot,
       isSavePositionLead: false,
       flowStateId: order.flowStateId,
       // previewus do agent
       previous_response_id: order.FlowState?.previous_response_id || undefined,
-      contactsWAOnAccountId: order.ContactsWAOnAccount.id,
-      lead: { number },
       edges: flow.edges,
       nodes: flow.nodes,
-      numberConnection: order.ConnectionWA.number + "@s.whatsapp.net",
       accountId: dto.accountId,
     });
 

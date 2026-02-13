@@ -13,12 +13,14 @@ export const sendTicketMessageValidation = (
   const base = Joi.object({
     id: Joi.number().required(),
     userId: Joi.number().integer().positive(),
+    sockId_ignore: Joi.string().required(),
   });
 
   const schemaValidation = Joi.alternatives().try(
     base.keys({
       type: Joi.string().valid("text").required(),
       text: Joi.string().trim().min(1).required(),
+      code_uuid: Joi.string().required(),
       files: Joi.array().items(Joi.any()),
       ptt: Joi.forbidden(),
     }),

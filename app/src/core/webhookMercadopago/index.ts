@@ -4,19 +4,22 @@ import { MercadoPagoConfig, Payment } from "mercadopago";
 import { prisma } from "../../adapters/Prisma/client";
 import { PaymentStatus } from "@prisma/client";
 import {
+  cacheConnectionsWAOnline,
   cacheFlowsMap,
   chatbotRestartInDate,
   leadAwaiting,
   scheduleExecutionsReply,
 } from "../../adapters/Baileys/Cache";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
-import { NodeControler } from "../../libs/FlowBuilder/Control";
+import { IPropsControler, NodeControler } from "../../libs/FlowBuilder/Control";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
 import { mongo } from "../../adapters/mongo/connection";
 import { NotificationApp } from "../../utils/notificationApp";
 import { formatToBRL } from "brazilian-values";
 import { decrypte } from "../../libs/encryption";
 import moment from "moment-timezone";
+import { webSocketEmitToRoom } from "../../infra/websocket";
+import { resolveHourAndMinute } from "../../utils/resolveHour:mm";
 
 export const mercadopagoWebhook = async (req: Request, res: Response) => {
   try {
@@ -97,6 +100,7 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
             flowNodeId: true,
             flowStateId: true,
             total: true,
+            businessId: true,
           },
         });
 
@@ -144,6 +148,14 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
               select: {
                 id: true,
                 number: true,
+                Business: { select: { name: true } },
+              },
+            },
+            ConnectionIg: {
+              select: {
+                id: true,
+                credentials: true,
+                page_id: true,
                 Business: { select: { name: true } },
               },
             },
@@ -239,6 +251,7 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
         if (payment.status === "approved") {
           await NotificationApp({
             accountId: getCharge.accountId,
+            tag: `charge-${getCharge.id}`,
             title_txt: `Pagamento confirmado`,
             title_html: `Pagamento confirmado`,
             body_txt: `Valor: ${formatToBRL(getCharge.total.toNumber())}`,
@@ -255,12 +268,66 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
         }
 
         if (!nextNode) return;
-        const bot = sessionsBaileysWA.get(flowState.ConnectionWA.id);
-        if (!bot) return;
+        let external_adapter:
+          | (IPropsControler["external_adapter"] & { businessName: string })
+          | null = null;
+
+        if (flowState.ConnectionWA?.id) {
+          let attempt = 0;
+          const botOnline = new Promise<boolean>((resolve, reject) => {
+            function run() {
+              if (attempt >= 5) {
+                return resolve(false);
+              } else {
+                setInterval(async () => {
+                  const botWA = cacheConnectionsWAOnline.get(
+                    flowState!.ConnectionWA?.id!,
+                  );
+                  if (!botWA) {
+                    attempt++;
+                    return run();
+                  } else {
+                    return resolve(botWA);
+                  }
+                }, 1000 * attempt);
+              }
+            }
+            return run();
+          });
+
+          if (!botOnline) return;
+
+          const clientWA = sessionsBaileysWA.get(flowState.ConnectionWA?.id!)!;
+          external_adapter = {
+            type: "baileys",
+            clientWA: clientWA,
+            businessName: flowState.ConnectionWA.Business.name,
+          };
+        }
+        if (flowState.ConnectionIg?.id) {
+          try {
+            const credential = decrypte(flowState.ConnectionIg.credentials);
+            external_adapter = {
+              type: "instagram",
+              page_token: credential.account_access_token,
+              businessName: flowState.ConnectionIg.Business.name,
+            };
+          } catch (error) {
+            return;
+          }
+        }
+
+        if (!external_adapter) return;
+
+        const connectionId = (flowState.ConnectionWA?.id ||
+          flowState.ConnectionIg?.id)!;
+
         await NodeControler({
-          businessName: flowState.ConnectionWA.Business.name,
+          businessName: external_adapter.businessName,
           flowId: flowState.flowId,
+          businessId: getCharge.businessId!,
           flowBusinessIds: flow.businessIds,
+
           ...(chargeNode.type === "NodeAgentAI"
             ? {
                 type: "running",
@@ -268,22 +335,22 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
                 message: `Cobrança(codigo=${paymentId}), atualizada para: ${payment.status}`,
               }
             : { type: "initial", action: null }),
-          connectionWhatsId: flowState.ConnectionWA.id,
+
+          external_adapter,
+          connectionId,
+          lead_id: flowState.ContactsWAOnAccount.ContactsWA.completeNumber,
+
+          contactAccountId: flowState.ContactsWAOnAccount.id,
+
           chatbotId: flowState.Chatbot?.id || undefined,
           campaignId: flowState.campaignId || undefined,
           oldNodeId: nextNode.id,
           previous_response_id: flowState.previous_response_id || undefined,
-          clientWA: bot,
           isSavePositionLead: true,
           flowStateId: getCharge.flowStateId,
-          contactsWAOnAccountId: flowState.ContactsWAOnAccount.id,
-          lead: {
-            number: flowState.ContactsWAOnAccount.ContactsWA.completeNumber,
-          },
           currentNodeId: nextNode.id,
           edges: flow.edges,
           nodes: flow.nodes,
-          numberConnection: flowState.ConnectionWA.number + "@s.whatsapp.net",
           accountId: getCharge.accountId,
           actions: {
             onFinish: async (vl) => {
@@ -297,8 +364,14 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
               console.log("TA CAINDO AQUI, finalizando fluxo");
               await prisma.flowState.update({
                 where: { id: getCharge.flowStateId! },
-                data: { isFinish: true },
+                data: { isFinish: true, finishedAt: new Date() },
               });
+              webSocketEmitToRoom()
+                .account(getCharge.accountId)
+                .dashboard.dashboard_services({
+                  delta: -1,
+                  hour: resolveHourAndMinute(),
+                });
               if (flowState.Chatbot?.id && flowState.Chatbot?.TimeToRestart) {
                 const nextDate = moment()
                   .tz("America/Sao_Paulo")
@@ -324,34 +397,14 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
                 .catch((err) => console.log(err));
             },
             onEnterNode: async (node) => {
-              const indexCurrentAlreadyExist = await prisma.flowState.findFirst(
-                {
-                  where: {
-                    connectionWAId: flowState.ConnectionWA?.id,
-                    contactsWAOnAccountId: flowState.ContactsWAOnAccount?.id,
-                  },
-                  select: { id: true },
+              await prisma.flowState.update({
+                where: { id: getCharge.flowStateId! },
+                data: {
+                  indexNode: node.id,
+                  flowId: node.flowId,
+                  agentId: node.agentId || null,
                 },
-              );
-              if (!indexCurrentAlreadyExist) {
-                await prisma.flowState.create({
-                  data: {
-                    indexNode: node.id,
-                    flowId: node.flowId,
-                    connectionWAId: flowState.ConnectionWA?.id,
-                    contactsWAOnAccountId: flowState.ContactsWAOnAccount?.id,
-                  },
-                });
-              } else {
-                await prisma.flowState.update({
-                  where: { id: indexCurrentAlreadyExist.id },
-                  data: {
-                    indexNode: node.id,
-                    flowId: node.flowId,
-                    agentId: node.agentId || null,
-                  },
-                });
-              }
+              });
             },
           },
         }).finally(() => {

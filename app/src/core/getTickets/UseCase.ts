@@ -1,5 +1,6 @@
 import { GetTicketsDTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
+import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 
 export class GetTicketsUseCase {
   constructor() {}
@@ -25,6 +26,10 @@ export class GetTicketsUseCase {
       select: {
         id: true,
         status: true,
+
+        ConnectionWA: { select: { name: true, id: true } },
+        ConnectionIg: { select: { ig_username: true } },
+
         inboxDepartmentId: true,
         ContactsWAOnAccount: { select: { name: true } },
         inboxUserId: true,
@@ -35,7 +40,13 @@ export class GetTicketsUseCase {
         Messages: {
           take: 1, // pega apenas a última mensagem
           orderBy: { createAt: "desc" },
-          select: { createAt: true, type: true, message: true },
+          select: {
+            by: true,
+            createAt: true,
+            type: true,
+            message: true,
+            messageKey: true,
+          },
         },
       },
     });
@@ -44,7 +55,15 @@ export class GetTicketsUseCase {
       message: "OK!",
       status: 200,
       tickets: data.map(
-        ({ ContactsWAOnAccount, _count, Messages, createAt, ...r }) => {
+        ({
+          ContactsWAOnAccount,
+          _count,
+          Messages,
+          ConnectionWA,
+          ConnectionIg,
+          createAt,
+          ...r
+        }) => {
           let lastMessage = null;
           if (Messages.length) {
             if (Messages[0].type === "text") {
@@ -53,16 +72,37 @@ export class GetTicketsUseCase {
               lastMessage = "🎤📷 Arquivo de midia.";
             }
           }
+
+          let connection: any = {};
+
+          if (ConnectionWA?.name) {
+            connection = {
+              s: !!cacheConnectionsWAOnline.get(ConnectionWA?.id),
+              name: ConnectionWA.name,
+              channel: "baileys",
+            };
+          }
+          if (ConnectionIg?.ig_username) {
+            connection = {
+              s: true,
+              name: ConnectionIg.ig_username,
+              channel: "instagram",
+            };
+          }
+
           return {
             ...r,
+            connection,
             name: ContactsWAOnAccount?.name || "<Desconhecido(a)>",
             count_unread: _count.Messages,
             lastMessage,
+            by: Messages[0].by,
+            messageKey: Messages.length ? Messages[0].messageKey : undefined,
             lastInteractionDate: Messages.length
               ? Messages[0].createAt
               : createAt,
           };
-        }
+        },
       ),
     };
   }

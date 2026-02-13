@@ -11,7 +11,13 @@ export class CreateAccountUseCase {
   async run({ number, email, cpfCnpj, affiliate, ...dto }: CreateAccountDTO_I) {
     try {
       const { id: contactWAId } = await prisma.contactsWA.upsert({
-        where: { completeNumber: number },
+        where: {
+          completeNumber_page_id_channel: {
+            completeNumber: number,
+            channel: "whatsapp",
+            page_id: "whatsapp_default",
+          },
+        },
         create: { completeNumber: number },
         update: {},
         select: { id: true },

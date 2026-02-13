@@ -3,6 +3,8 @@ import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 import checkConflictOfOperatingDays from "../../helpers/checkConflictOfOperatingDays";
+import { metaSubscribedApps } from "../../services/meta/meta.service";
+import { decrypte } from "../../libs/encryption";
 
 export class CreateChatbotUseCase {
   constructor() {}
@@ -123,6 +125,44 @@ export class CreateChatbotUseCase {
     }
 
     const { operatingDays, timeToRestart, ...data } = dto;
+
+    if (dto.connectionIgId) {
+      const getconnectionig = await prisma.connectionIg.findFirst({
+        where: { id: data.connectionIgId },
+        select: { credentials: true, page_id: true },
+      });
+      if (!getconnectionig) {
+        throw new ErrorResponse(400).toast({
+          title: "Integração com Instagram não encontrada.",
+          type: "error",
+        });
+      }
+      let account_access_token = null;
+      try {
+        const payload = await decrypte(getconnectionig.credentials);
+        account_access_token = payload.account_access_token;
+      } catch (error) {
+        throw new ErrorResponse(400).toast({
+          title: "Falha ao descriptografar credencias.",
+          description:
+            "Servidor negou o acesso ao dados de Integração do Instagram.",
+          type: "error",
+        });
+      }
+
+      try {
+        await metaSubscribedApps({
+          account_access_token,
+          account_id: getconnectionig.page_id,
+        });
+      } catch (error) {
+        throw new ErrorResponse(400).toast({
+          title: "Falha na inscrição de Webhook.",
+          description: "Integração com Instagram.",
+          type: "error",
+        });
+      }
+    }
 
     const { id, Business, createAt } = await prisma.chatbot.create({
       data: {

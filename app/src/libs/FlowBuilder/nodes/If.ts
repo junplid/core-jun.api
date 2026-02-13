@@ -6,7 +6,7 @@ interface PropsNodeIf {
   data: NodeIfData;
   flowStateId: number;
   nodeId: string;
-  contactsWAOnAccountId: number;
+  contactAccountId: number;
   accountId: number;
   numberLead: string;
 }
@@ -35,7 +35,7 @@ export const NodeIf = (props: PropsNodeIf): Promise<boolean> =>
           (await prisma.tagOnContactsWAOnAccount.count({
             where: {
               tagId: { in: item.tagIds },
-              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              contactsWAOnAccountId: props.contactAccountId,
             },
           })) === item.tagIds.length;
 
@@ -51,14 +51,14 @@ export const NodeIf = (props: PropsNodeIf): Promise<boolean> =>
         if (item.operatorComparison !== "regex") {
           const nextValue1 = await resolveTextVariables({
             accountId: props.accountId,
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            contactsWAOnAccountId: props.contactAccountId,
             text: item.value1,
             numberLead: props.numberLead,
             nodeId: props.nodeId,
           });
           const nextValue2 = await resolveTextVariables({
             accountId: props.accountId,
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            contactsWAOnAccountId: props.contactAccountId,
             text: item.value2,
             numberLead: props.numberLead,
             nodeId: props.nodeId,
@@ -111,7 +111,7 @@ export const NodeIf = (props: PropsNodeIf): Promise<boolean> =>
           .join(" ")
           .trim()
           .replace(/(\|\||&&)$/, "")
-          .trim()
+          .trim(),
       );
       return res(result);
     } catch (error) {

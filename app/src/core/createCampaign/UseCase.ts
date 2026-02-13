@@ -20,7 +20,13 @@ export class CreateCampaignUseCase {
         const newNumber = validatePhoneNumber(contact.number);
         if (newNumber) {
           const { id } = await prisma.contactsWA.upsert({
-            where: { completeNumber: newNumber },
+            where: {
+              completeNumber_page_id_channel: {
+                completeNumber: newNumber,
+                channel: "whatsapp",
+                page_id: "whatsapp_default",
+              },
+            },
             create: { completeNumber: newNumber },
             update: {},
             select: { id: true },

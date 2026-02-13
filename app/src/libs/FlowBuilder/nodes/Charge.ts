@@ -1,13 +1,10 @@
 import { prisma } from "../../../adapters/Prisma/client";
 import { NodeChargeData } from "../Payload";
-import MercadoPago, { MercadoPagoConfig, Payment, Order } from "mercadopago";
+import { MercadoPagoConfig, Payment } from "mercadopago";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import moment from "moment-timezone";
 import { parseDirtyStringToNumber } from "../../../utils/parseDirtyStringToNumber";
-import { generatePixForCharge } from "../../../services/itau/pix.service";
 import { decrypte } from "../../encryption";
-import { getItauAccessToken } from "../../../services/itau/itau.auth";
-import axios from "axios";
 
 interface PropsNodeCharge {
   data: NodeChargeData;

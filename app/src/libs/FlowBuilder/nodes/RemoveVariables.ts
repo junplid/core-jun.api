@@ -4,13 +4,13 @@ import { NodeRemoveVariablesData } from "../Payload";
 interface PropsRemoveAction {
   data: NodeRemoveVariablesData;
   flowStateId: number;
-  contactsWAOnAccountId: number;
+  contactAccountId: number;
   nodeId: string;
 }
 
 export const NodeRemoveVariables = (props: PropsRemoveAction): Promise<void> =>
   new Promise(async (res, _rej) => {
-    const { data, contactsWAOnAccountId } = props;
+    const { data, contactAccountId } = props;
 
     for await (const id of data.list || []) {
       const exist = await prisma.variable.findFirst({
@@ -20,7 +20,7 @@ export const NodeRemoveVariables = (props: PropsRemoveAction): Promise<void> =>
 
       if (exist) {
         const picked = await prisma.contactsWAOnAccountVariable.findFirst({
-          where: { contactsWAOnAccountId, variableId: id },
+          where: { contactsWAOnAccountId: contactAccountId, variableId: id },
           select: { id: true },
         });
         if (picked) {

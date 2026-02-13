@@ -10,6 +10,7 @@ type Props = {
   body_txt: string;
   title_html?: string;
   body_html?: string;
+  tag: string;
   toast_position?: string;
   toast_duration?: number;
   url_redirect?: string; // `$self/?open_ticket=1` ///// o self significa que a url deve ser incrementada
@@ -21,7 +22,7 @@ type Props = {
       isMobile: boolean;
       isPWA: boolean;
       focused: null | string;
-    }[]
+    }[],
   ): string[];
 };
 
@@ -51,7 +52,7 @@ export async function NotificationApp({
 
   if (listSocket.length) {
     listSocket.forEach(async (skt) => {
-      socketIo.to(skt).emit("notification", props);
+      socketIo.to(skt).emit("notification", { ...props, tag: undefined });
     });
   } else {
     channel = "push";
@@ -59,6 +60,7 @@ export async function NotificationApp({
       title: props.title_txt,
       body: props.body_txt,
       url: props.url_redirect,
+      tag: props.tag,
     });
   }
 

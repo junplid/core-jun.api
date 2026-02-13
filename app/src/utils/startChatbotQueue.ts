@@ -4,13 +4,17 @@ import { scheduleJob } from "node-schedule";
 import { resolve } from "path";
 import { sessionsBaileysWA } from "../adapters/Baileys";
 import {
+  cacheConnectionsWAOnline,
   cacheJobsChatbotQueue,
   scheduleExecutionsReply,
 } from "../adapters/Baileys/Cache";
 import { prisma } from "../adapters/Prisma/client";
 import { ModelFlows } from "../adapters/mongo/models/flows";
-import { NodeControler } from "../libs/FlowBuilder/Control";
+import { IPropsControler, NodeControler } from "../libs/FlowBuilder/Control";
 import { mongo } from "../adapters/mongo/connection";
+import { decrypte } from "../libs/encryption";
+import { webSocketEmitToRoom } from "../infra/websocket";
+import { resolveHourAndMinute } from "./resolveHour:mm";
 // import { clientRedis } from "../adapters/RedisDB";
 
 export interface ChatbotQueue_I {
@@ -42,35 +46,12 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
     const nextTimeShorts = Math.floor(Math.random() * (400 - 800)) + 400;
     await new Promise((ress) => setTimeout(ress, nextTimeShorts));
 
-    const connectionFind = await prisma.chatbot.findFirst({
-      where: { id: chatbotId, status: true },
-      select: {
-        connectionWAId: true,
-      },
-    });
-
-    if (!connectionFind?.connectionWAId) {
-      console.log(
-        "Chatbot não pode ser iniciado, porque a conexão não foi encontrada ou estava desativada!."
-      );
-      return res();
-    }
-
-    const bot = sessionsBaileysWA.get(connectionFind.connectionWAId);
-
-    if (!bot) {
-      console.log(
-        "Chatbot não pode ser iniciado, porque a conexão estava offline!."
-      );
-      return res();
-    }
-
     const nextExecution = moment(content["next-execution"]).tz(
-      "America/Sao_Paulo"
+      "America/Sao_Paulo",
     );
 
     const isBeforeNextExecution = nextExecution.isBefore(
-      moment().tz("America/Sao_Paulo")
+      moment().tz("America/Sao_Paulo"),
     );
 
     const nextDate = moment().tz("America/Sao_Paulo").add(4, "second").toDate();
@@ -96,216 +77,193 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
           where: { id: chatbotId, status: true },
           select: {
             accountId: true,
-            Business: { select: { name: true } },
+            Business: { select: { name: true, id: true } },
             flowId: true,
             ConnectionWA: { select: { number: true, id: true } },
+            ConnectionIg: { select: { id: true, credentials: true } },
             addToLeadTagsIds: true,
             addLeadToAudiencesIds: true,
           },
         });
+
+        if (!infoChatbot) return;
+
+        let external_adapter: IPropsControler["external_adapter"] | null = null;
+
+        if (infoChatbot.ConnectionWA?.id) {
+          let attempt = 0;
+          const botOnline = new Promise<boolean>((resolve, reject) => {
+            function run() {
+              if (attempt >= 5) {
+                return resolve(false);
+              } else {
+                setInterval(async () => {
+                  const botWA = cacheConnectionsWAOnline.get(
+                    infoChatbot!.ConnectionWA?.id!,
+                  );
+                  if (!botWA) {
+                    attempt++;
+                    return run();
+                  } else {
+                    return resolve(botWA);
+                  }
+                }, 1000 * attempt);
+              }
+            }
+            return run();
+          });
+
+          if (!botOnline) return;
+
+          const clientWA = sessionsBaileysWA.get(
+            infoChatbot.ConnectionWA?.id!,
+          )!;
+          external_adapter = {
+            type: "baileys",
+            clientWA: clientWA,
+          };
+        }
+        if (infoChatbot.ConnectionIg?.id) {
+          try {
+            const credential = decrypte(infoChatbot.ConnectionIg.credentials);
+            external_adapter = {
+              type: "instagram",
+              page_token: credential.account_access_token,
+            };
+          } catch (error) {
+            return;
+          }
+        }
+
+        if (!external_adapter) return;
+
+        const connectionId = (infoChatbot.ConnectionWA?.id ||
+          infoChatbot.ConnectionIg?.id)!;
+
         console.log("9");
 
-        if (infoChatbot?.ConnectionWA?.number) {
-          for (const leadData of content2.queue) {
-            const contactWAAlreadyExists = await prisma.contactsWA.findFirst({
-              where: { completeNumber: leadData.number },
+        for (const leadData of content2.queue) {
+          const ContactsWAOnAccount =
+            await prisma.contactsWAOnAccount.findFirst({
+              where: {
+                ContactsWA: { completeNumber: leadData.number },
+                accountId: infoChatbot.accountId,
+              },
               select: { id: true },
             });
 
-            let ContactsWAOnAccount: {
-              id: number;
-            }[] = [];
-            if (!contactWAAlreadyExists) {
-              const data = await prisma.contactsWA.create({
-                data: {
-                  completeNumber: leadData.number,
-                  ContactsWAOnAccount: {
-                    create: {
-                      accountId: infoChatbot.accountId,
-                      name: leadData.pushName,
+          if (!ContactsWAOnAccount?.id) continue;
+
+          await mongo();
+          const flowFetch = await ModelFlows.aggregate([
+            {
+              $match: {
+                accountId: infoChatbot.accountId,
+                _id: infoChatbot.flowId,
+              },
+            },
+            {
+              $project: {
+                nodes: {
+                  $map: {
+                    input: "$data.nodes",
+                    in: {
+                      id: "$$this.id",
+                      type: "$$this.type",
+                      data: "$$this.data",
                     },
                   },
                 },
-                select: {
-                  ContactsWAOnAccount: {
-                    where: { accountId: infoChatbot.accountId },
-                    select: { id: true },
+                edges: {
+                  $map: {
+                    input: "$data.edges",
+                    in: {
+                      id: "$$this.id",
+                      source: "$$this.source",
+                      target: "$$this.target",
+                      sourceHandle: "$$this.sourceHandle",
+                    },
                   },
                 },
-              });
-              ContactsWAOnAccount = data.ContactsWAOnAccount;
-            } else {
-              const contactWAAccountAlreadyExists =
-                await prisma.contactsWAOnAccount.findFirst({
-                  where: {
-                    accountId: infoChatbot.accountId,
-                    ContactsWA: { completeNumber: leadData.number },
-                  },
-                  select: { id: true },
-                });
-              if (contactWAAccountAlreadyExists) {
-                ContactsWAOnAccount = [
-                  { id: contactWAAccountAlreadyExists.id },
-                ];
-              } else {
-                const contactWAAccountAlreadyExists2 =
-                  await prisma.contactsWAOnAccount.create({
-                    data: {
-                      accountId: infoChatbot.accountId,
-                      name: leadData.pushName,
-                      contactWAId: contactWAAlreadyExists.id,
-                    },
-                    select: { id: true },
+              },
+            },
+          ]);
+          if (!flowFetch) return console.log(`Flow not found.`);
+          console.log("17");
+
+          const { edges, nodes } = flowFetch[0];
+          let currentIndexNodeLead = await prisma.flowState.findFirst({
+            where: {
+              OR: [
+                { connectionWAId: infoChatbot.ConnectionWA?.id },
+                { connectionIgId: infoChatbot.ConnectionIg?.id },
+              ],
+              contactsWAOnAccountId: ContactsWAOnAccount.id,
+            },
+            select: { indexNode: true, id: true, previous_response_id: true },
+          });
+          console.log("18");
+
+          if (!currentIndexNodeLead) return;
+          console.log("19");
+
+          console.log("20");
+          await NodeControler({
+            businessName: infoChatbot.Business.name,
+            flowId: infoChatbot.flowId,
+            type: "running",
+            action: null,
+            businessId: infoChatbot.Business.id,
+
+            external_adapter,
+            connectionId,
+            lead_id: leadData.number,
+            contactAccountId: ContactsWAOnAccount.id,
+
+            oldNodeId: currentIndexNodeLead.indexNode || "0",
+            isSavePositionLead: true,
+            flowStateId: currentIndexNodeLead.id,
+            currentNodeId: currentIndexNodeLead?.indexNode || "0",
+            edges: edges,
+            nodes: nodes,
+            previous_response_id:
+              currentIndexNodeLead.previous_response_id || undefined,
+            message: leadData.messageText ?? "",
+            accountId: infoChatbot.accountId,
+            actions: {
+              onFinish: async (vl) => {
+                if (currentIndexNodeLead) {
+                  const scheduleExecutionCache = scheduleExecutionsReply.get(
+                    infoChatbot.ConnectionWA!.number +
+                      "@s.whatsapp.net" +
+                      leadData.number,
+                  );
+                  if (scheduleExecutionCache) {
+                    scheduleExecutionCache.cancel();
+                  }
+                  console.log("TA CAINDO AQUI");
+                  await prisma.flowState.update({
+                    where: { id: currentIndexNodeLead.id },
+                    data: { isFinish: true, finishedAt: new Date() },
                   });
-                ContactsWAOnAccount = [
-                  { id: contactWAAccountAlreadyExists2.id },
-                ];
-              }
-            }
-            await mongo();
-            const flowFetch = await ModelFlows.aggregate([
-              {
-                $match: {
-                  accountId: infoChatbot.accountId,
-                  _id: infoChatbot.flowId,
-                },
-              },
-              {
-                $project: {
-                  nodes: {
-                    $map: {
-                      input: "$data.nodes",
-                      in: {
-                        id: "$$this.id",
-                        type: "$$this.type",
-                        data: "$$this.data",
-                      },
-                    },
-                  },
-                  edges: {
-                    $map: {
-                      input: "$data.edges",
-                      in: {
-                        id: "$$this.id",
-                        source: "$$this.source",
-                        target: "$$this.target",
-                        sourceHandle: "$$this.sourceHandle",
-                      },
-                    },
-                  },
-                },
-              },
-            ]);
-            if (!flowFetch) return console.log(`Flow not found.`);
-            console.log("17");
-
-            const { edges, nodes } = flowFetch[0];
-            let currentIndexNodeLead = await prisma.flowState.findFirst({
-              where: {
-                connectionWAId: infoChatbot.ConnectionWA.id,
-                contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-              },
-              select: { indexNode: true, id: true, previous_response_id: true },
-            });
-            console.log("18");
-
-            if (!currentIndexNodeLead) {
-              currentIndexNodeLead = await prisma.flowState.create({
-                data: {
-                  connectionWAId: infoChatbot.ConnectionWA.id,
-                  contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                  indexNode: "0",
-                  flowId: infoChatbot.flowId,
-                },
-                select: {
-                  indexNode: true,
-                  id: true,
-                  previous_response_id: true,
-                },
-              });
-            }
-            console.log("19");
-
-            const businessInfo = await prisma.connectionWA.findFirst({
-              where: { id: infoChatbot.ConnectionWA.id },
-              select: { Business: { select: { name: true } } },
-            });
-
-            if (!businessInfo) {
-              console.log("Connection not found");
-              return;
-            }
-
-            console.log("20");
-            await NodeControler({
-              businessName: businessInfo.Business.name,
-              flowId: infoChatbot.flowId,
-              type: "running",
-              action: null,
-              connectionWhatsId: infoChatbot.ConnectionWA.id,
-              clientWA: bot,
-              oldNodeId: currentIndexNodeLead.indexNode || "0",
-              isSavePositionLead: true,
-              flowStateId: currentIndexNodeLead.id,
-              contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-              lead: { number: leadData.number },
-              currentNodeId: currentIndexNodeLead?.indexNode || "0",
-              edges: edges,
-              nodes: nodes,
-              previous_response_id:
-                currentIndexNodeLead.previous_response_id || undefined,
-              numberConnection:
-                infoChatbot.ConnectionWA.number + "@s.whatsapp.net",
-              message: leadData.messageText ?? "",
-              accountId: infoChatbot.accountId,
-              actions: {
-                onFinish: async (vl) => {
-                  if (currentIndexNodeLead) {
-                    const scheduleExecutionCache = scheduleExecutionsReply.get(
-                      infoChatbot.ConnectionWA!.number +
-                        "@s.whatsapp.net" +
-                        leadData.number
-                    );
-                    if (scheduleExecutionCache) {
-                      scheduleExecutionCache.cancel();
-                    }
-                    console.log("TA CAINDO AQUI");
-                    await prisma.flowState.update({
-                      where: { id: currentIndexNodeLead.id },
-                      data: { isFinish: true },
+                  webSocketEmitToRoom()
+                    .account(infoChatbot.accountId)
+                    .dashboard.dashboard_services({
+                      delta: -1,
+                      hour: resolveHourAndMinute(),
                     });
-                  }
-                },
-                onExecutedNode: async (node) => {
-                  const indexCurrentAlreadyExist =
-                    await prisma.flowState.findFirst({
-                      where: {
-                        connectionWAId: infoChatbot.ConnectionWA!.id,
-                        contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                      },
-                      select: { id: true },
-                    });
-                  if (!indexCurrentAlreadyExist) {
-                    await prisma.flowState.create({
-                      data: {
-                        indexNode: node.id,
-                        flowId: node.flowId,
-                        connectionWAId: infoChatbot.ConnectionWA!.id,
-                        contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                      },
-                    });
-                  } else {
-                    await prisma.flowState.update({
-                      where: { id: indexCurrentAlreadyExist.id },
-                      data: { indexNode: node.id, flowId: node.flowId },
-                    });
-                  }
-                },
+                }
               },
-            });
-          }
+              onExecutedNode: async (node) => {
+                await prisma.flowState.update({
+                  where: { id: currentIndexNodeLead.id },
+                  data: { indexNode: node.id, flowId: node.flowId },
+                });
+              },
+            },
+          });
         }
-      }
+      },
     );
     res();
   });

@@ -1,15 +1,19 @@
-import { WASocket } from "baileys";
 import { prisma } from "../../../adapters/Prisma/client";
 import { NodeSendImagesData } from "../Payload";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { SendImage } from "../../../adapters/Baileys/modules/sendImage";
 import { resolve } from "path";
+import { sendMetaMediaOptimized } from "../../../services/meta/modules/sendMidiaMessage";
+import { isWithin24Hours } from "../../../services/meta/modules/checkWindowDay";
 
 interface PropsNodeSendImages {
-  numberLead: string;
-  botWA: WASocket;
-  contactsWAOnAccountId: number;
-  connectionWAId: number;
+  lead_id: string;
+  contactAccountId: number;
+  connectionId: number;
+  external_adapter:
+    | { type: "baileys" }
+    | { type: "instagram"; page_token: string };
+
   data: NodeSendImagesData;
   accountId: number;
   ticketProtocol?: string;
@@ -32,7 +36,7 @@ export const NodeSendImages = (props: PropsNodeSendImages): Promise<void> => {
     if (firstFile) {
       const e = await prisma.storagePaths.findFirst({
         where: { id: firstFile.id, accountId: props.accountId },
-        select: { fileName: true, originalName: true },
+        select: { fileName: true, originalName: true, attachment_id: true },
       });
 
       if (e) {
@@ -42,33 +46,69 @@ export const NodeSendImages = (props: PropsNodeSendImages): Promise<void> => {
         if (props.data.caption) {
           caption = await resolveTextVariables({
             accountId: props.accountId,
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            contactsWAOnAccountId: props.contactAccountId,
             text: props.data.caption,
             ticketProtocol: props.ticketProtocol,
-            numberLead: props.numberLead,
+            numberLead: props.lead_id,
             nodeId: props.nodeId,
           });
         }
 
         try {
-          const msg = await SendImage({
-            connectionId: props.connectionWAId,
-            url: urlStatic,
-            toNumber: props.numberLead,
-            caption,
-          });
-          if (msg) {
-            await prisma.messages.create({
-              data: {
-                by: "bot",
-                type: "image",
-                fileName: e.fileName,
-                message: "",
-                caption,
-                flowStateId: props.flowStateId,
-              },
+          let msgkey: string | null = null;
+
+          if (props.external_adapter.type === "baileys") {
+            const msg = await SendImage({
+              connectionId: props.connectionId,
+              url: urlStatic,
+              toNumber: props.lead_id,
+              caption,
             });
+            if (!msg?.key?.id) return props.action.onErrorClient?.();
+            msgkey = msg?.key?.id;
           }
+
+          if (props.external_adapter.type === "instagram") {
+            const ca = await prisma.contactsWAOnAccount.findFirst({
+              where: { id: props.contactAccountId },
+              select: { last_interaction: true },
+            });
+            if (!ca?.last_interaction) {
+              return props.action.onErrorClient?.();
+            }
+            if (!isWithin24Hours(ca.last_interaction)) {
+              return props.action.onErrorClient?.();
+            }
+            const { attachment_id, message_id } = await sendMetaMediaOptimized({
+              page_token: props.external_adapter.page_token,
+              recipient_id: props.lead_id,
+              type: "image",
+              url: urlStatic,
+              attachmentId: e.attachment_id || undefined,
+            });
+            if (!e.attachment_id) {
+              prisma.storagePaths
+                .update({
+                  where: { id: firstFile.id },
+                  data: { attachment_id },
+                })
+                .then(() => undefined)
+                .catch((err) => undefined);
+            }
+            msgkey = message_id;
+          }
+
+          await prisma.messages.create({
+            data: {
+              by: "bot",
+              type: "image",
+              fileName: e.fileName,
+              message: "",
+              messageKey: msgkey,
+              caption,
+              flowStateId: props.flowStateId,
+            },
+          });
         } catch (error) {
           console.error("Error sending image:", error);
           return props.action.onErrorClient?.();
@@ -79,27 +119,63 @@ export const NodeSendImages = (props: PropsNodeSendImages): Promise<void> => {
     for await (const file of files) {
       const e = await prisma.storagePaths.findFirst({
         where: { id: file.id, accountId: props.accountId },
-        select: { fileName: true },
+        select: { fileName: true, attachment_id: true },
       });
       if (e) {
         const urlStatic = `${path}/${e.fileName}`;
         try {
-          const msg = await SendImage({
-            connectionId: props.connectionWAId,
-            url: urlStatic,
-            toNumber: props.numberLead,
-          });
-          if (msg) {
-            await prisma.messages.create({
-              data: {
-                by: "bot",
-                type: "image",
-                fileName: e.fileName,
-                message: "",
-                flowStateId: props.flowStateId,
-              },
+          let msgkey: string | null = null;
+
+          if (props.external_adapter.type === "baileys") {
+            const msg = await SendImage({
+              connectionId: props.connectionId,
+              url: urlStatic,
+              toNumber: props.lead_id,
             });
+            if (!msg?.key?.id) return props.action.onErrorClient?.();
+            msgkey = msg?.key?.id;
           }
+
+          if (props.external_adapter.type === "instagram") {
+            const ca = await prisma.contactsWAOnAccount.findFirst({
+              where: { id: props.contactAccountId },
+              select: { last_interaction: true },
+            });
+            if (!ca?.last_interaction) {
+              return props.action.onErrorClient?.();
+            }
+            if (!isWithin24Hours(ca.last_interaction)) {
+              return props.action.onErrorClient?.();
+            }
+            const { attachment_id, message_id } = await sendMetaMediaOptimized({
+              page_token: props.external_adapter.page_token,
+              recipient_id: props.lead_id,
+              type: "image",
+              url: urlStatic,
+              attachmentId: e.attachment_id || undefined,
+            });
+            if (!e.attachment_id) {
+              prisma.storagePaths
+                .update({
+                  where: { id: file.id },
+                  data: { attachment_id },
+                })
+                .then(() => undefined)
+                .catch((err) => undefined);
+            }
+            msgkey = message_id;
+          }
+
+          await prisma.messages.create({
+            data: {
+              by: "bot",
+              type: "image",
+              fileName: e.fileName,
+              message: "",
+              messageKey: msgkey,
+              flowStateId: props.flowStateId,
+            },
+          });
         } catch (error) {
           console.error("Error sending image:", error);
 

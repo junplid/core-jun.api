@@ -1,6 +1,6 @@
 import { cacheConnectionsWAOnline } from "../Cache";
 import { sessionsBaileysWA } from "..";
-import { proto } from "baileys";
+import { proto, WAMessage } from "baileys";
 import { lookup } from "mime-types";
 import path from "path";
 import Jimp from "jimp";
@@ -18,9 +18,9 @@ interface Props {
 export const SendImage = async ({
   connectionId,
   ...props
-}: Props): Promise<proto.WebMessageInfo | undefined> => {
+}: Props): Promise<WAMessage | undefined> => {
   const MAX_ATTEMPTS = 5;
-  const tryAtt = async (): Promise<proto.WebMessageInfo | undefined> => {
+  const tryAtt = async (): Promise<WAMessage | undefined> => {
     const bot = sessionsBaileysWA.get(connectionId);
     if (!bot || !cacheConnectionsWAOnline.get(connectionId))
       throw new Error("CONEXÃO OFFLINE");

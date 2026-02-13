@@ -1,17 +1,22 @@
 import { cacheConnectionsWAOnline } from "../../../adapters/Baileys/Cache";
 import { prisma } from "../../../adapters/Prisma/client";
 import { socketIo } from "../../../infra/express";
+import { webSocketEmitToRoom } from "../../../infra/websocket";
 import { cacheAccountSocket } from "../../../infra/websocket/cache";
 import { NotificationApp } from "../../../utils/notificationApp";
 import { NodeTransferDepartmentData } from "../Payload";
 
 interface PropsNodeTransferDepartment {
+  contactAccountId: number;
+  connectionId: number;
   data: NodeTransferDepartmentData;
   flowStateId: number;
-  contactsWAOnAccountId: number;
-  connectionWAId: number;
   nodeId: string;
   accountId: number;
+
+  external_adapter:
+    | { type: "baileys" }
+    | { type: "instagram"; page_token: string };
 }
 
 function getRandomNumber(min: number, max: number) {
@@ -19,7 +24,7 @@ function getRandomNumber(min: number, max: number) {
 }
 
 export const NodeTransferDepartment = async (
-  props: PropsNodeTransferDepartment
+  props: PropsNodeTransferDepartment,
 ): Promise<"OK" | "ERROR"> => {
   try {
     const department = await prisma.inboxDepartments.findUnique({
@@ -49,8 +54,12 @@ export const NodeTransferDepartment = async (
         data: {
           protocol: uniqueProtocol,
           destination: "department",
-          connectionWAId: props.connectionWAId,
-          contactWAOnAccountId: props.contactsWAOnAccountId,
+          contactWAOnAccountId: props.contactAccountId,
+
+          ...(props.external_adapter.type === "baileys"
+            ? { connectionWAId: props.connectionId }
+            : { connectionIgId: props.connectionId }),
+
           inboxDepartmentId: props.data.id,
           goBackFlowStateId: props.flowStateId,
           accountId: props.accountId,
@@ -61,6 +70,7 @@ export const NodeTransferDepartment = async (
           createAt: true,
           ContactsWAOnAccount: { select: { name: true } },
           ConnectionWA: { select: { name: true } },
+          ConnectionIg: { select: { ig_username: true, id: true } },
           InboxDepartment: { select: { name: true } },
         },
       });
@@ -68,18 +78,27 @@ export const NodeTransferDepartment = async (
     const orders = await prisma.orders.findMany({
       where: {
         deleted: false,
-        contactsWAOnAccountId: props.contactsWAOnAccountId,
+        contactsWAOnAccountId: props.contactAccountId,
       },
       select: { id: true, connectionWAId: true, status: true },
     });
 
+    // adiciona o novo ticket a todos os pedidos existentes.
     orders.forEach((order) => {
       if (!order.connectionWAId) return;
       const ticket = {
         connection: {
-          s: !!cacheConnectionsWAOnline.get(order.connectionWAId),
-          id: props.connectionWAId,
-          name: t.ConnectionWA.name,
+          ...(props.external_adapter.type === "baileys"
+            ? {
+                name: t.ConnectionWA!.name,
+                channel: "baileys",
+                s: !!cacheConnectionsWAOnline.get(order.connectionWAId),
+              }
+            : {
+                name: t.ConnectionIg!.ig_username,
+                channel: "instagram",
+                s: true,
+              }),
         },
         id,
         // lastMessage: "system",
@@ -87,16 +106,14 @@ export const NodeTransferDepartment = async (
         status: "NEW",
       };
 
-      cacheAccountSocket
-        .get(props.accountId)
-        ?.listSocket?.forEach(async (sockId) => {
-          socketIo.to(sockId.id).emit(`order:ticket:new`, {
-            accountId: props.accountId,
-            status: order.status,
-            orderId: order.id,
-            ticket,
-          });
-        });
+      webSocketEmitToRoom().account(props.accountId).orders.new_ticket(
+        {
+          status: order.status,
+          orderId: order.id,
+          ticket,
+        },
+        [],
+      );
     });
 
     // aqui tem um problema, notificar o inbox, mas se o ticket estiver atrelado a um pedido?
@@ -110,6 +127,7 @@ export const NodeTransferDepartment = async (
       accountId: props.accountId,
       title_txt: `Novo ticket`,
       title_html: `Novo ticket`,
+      tag: `new-tk-${id}`,
       body_txt: `"${ContactsWAOnAccount.name}" está aguardando`,
       body_html: `<span className="font-medium text-sm line-clamp-1">Novo ticket</span>
 <span className="text-xs font-light">
@@ -125,22 +143,39 @@ export const NodeTransferDepartment = async (
       },
     });
 
-    const isOnline = !!cacheAccountSocket
-      .get(props.accountId)
-      ?.listSocket.some(
-        (s) => s.focused === `modal-department-${props.data.id}`
-      );
-    if (isOnline) {
-      socketIo.of(`/business-${department.businessId}/inbox`).emit("list", {
-        status: "NEW",
+    const socketAccount = webSocketEmitToRoom().account(props.accountId);
+
+    socketAccount.departments.math_new_ticket_count(
+      {
+        departmentId: props.data.id,
+        n: +1,
+      },
+      [],
+    );
+
+    socketAccount.player_department(props.data.id).new_ticket_list(
+      {
         forceOpen: false,
         departmentId: props.data.id,
         name: ContactsWAOnAccount.name,
         lastInteractionDate: createAt,
         id,
-        userId: undefined, // caso seja enviado para um usuário.
-      });
-    }
+        connection: {
+          ...(props.external_adapter.type === "baileys"
+            ? {
+                name: t.ConnectionWA?.name,
+                channel: "baileys",
+                s: !!cacheConnectionsWAOnline.get(props.connectionId),
+              }
+            : {
+                name: t.ConnectionIg?.ig_username,
+                channel: "instagram",
+                s: true,
+              }),
+        },
+      },
+      [],
+    );
 
     return "OK";
   } catch (error) {

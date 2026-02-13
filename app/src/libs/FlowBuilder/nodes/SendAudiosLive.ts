@@ -1,25 +1,29 @@
-import { WASocket } from "baileys";
 import { prisma } from "../../../adapters/Prisma/client";
 import { NodeSendAudiosLiveData } from "../Payload";
 import { lookup } from "mime-types";
 import { SendAudio } from "../../../adapters/Baileys/modules/sendAudio";
 import { resolve } from "path";
+import { sendMetaMediaOptimized } from "../../../services/meta/modules/sendMidiaMessage";
+import { isWithin24Hours } from "../../../services/meta/modules/checkWindowDay";
 
 interface PropsNodeSendAudiosLive {
-  numberLead: string;
-  botWA: WASocket;
-  contactsWAOnAccountId: number;
-  connectionWAId: number;
+  lead_id: string;
+  connectionId: number;
+  external_adapter:
+    | { type: "baileys" }
+    | { type: "instagram"; page_token: string };
+
   data: NodeSendAudiosLiveData;
   accountId: number;
   ticketProtocol?: string;
   nodeId: string;
   action: { onErrorClient?(): void };
   flowStateId: number;
+  contactAccountId: number;
 }
 
 export const NodeSendAudiosLive = (
-  props: PropsNodeSendAudiosLive
+  props: PropsNodeSendAudiosLive,
 ): Promise<void> => {
   return new Promise(async (res, rej) => {
     let path = "";
@@ -33,33 +37,68 @@ export const NodeSendAudiosLive = (
     if (firstFile) {
       const e = await prisma.storagePaths.findFirst({
         where: { id: firstFile.id, accountId: props.accountId },
-        select: { fileName: true, originalName: true },
+        select: { fileName: true, originalName: true, attachment_id: true },
       });
 
       if (e) {
         const urlStatic = `${path}/${e.fileName}`;
 
         try {
-          const mimetype = lookup(urlStatic);
-          const msg = await SendAudio({
-            connectionId: props.connectionWAId,
-            mimetype: mimetype || undefined,
-            toNumber: props.numberLead,
-            urlStatic,
-            ptt: true,
-          });
-          if (msg) {
-            await prisma.messages.create({
-              data: {
-                by: "contact",
-                type: "audio",
-                fileName: e.fileName,
-                message: "",
-                ptt: true,
-                flowStateId: props.flowStateId,
-              },
+          let msgkey: string | null = null;
+
+          if (props.external_adapter.type === "baileys") {
+            const mimetype = lookup(urlStatic);
+            const msg = await SendAudio({
+              connectionId: props.connectionId,
+              mimetype: mimetype || undefined,
+              toNumber: props.lead_id,
+              urlStatic,
+              ptt: true,
             });
+            if (!msg?.key?.id) return props.action.onErrorClient?.();
+            msgkey = msg?.key?.id;
           }
+          if (props.external_adapter.type === "instagram") {
+            const ca = await prisma.contactsWAOnAccount.findFirst({
+              where: { id: props.contactAccountId },
+              select: { last_interaction: true },
+            });
+            if (!ca?.last_interaction) {
+              return props.action.onErrorClient?.();
+            }
+            if (!isWithin24Hours(ca.last_interaction)) {
+              return props.action.onErrorClient?.();
+            }
+            const { attachment_id, message_id } = await sendMetaMediaOptimized({
+              page_token: props.external_adapter.page_token,
+              recipient_id: props.lead_id,
+              type: "audio",
+              url: urlStatic,
+              attachmentId: e.attachment_id || undefined,
+            });
+            if (!e.attachment_id) {
+              prisma.storagePaths
+                .update({
+                  where: { id: firstFile.id },
+                  data: { attachment_id },
+                })
+                .then(() => undefined)
+                .catch((err) => undefined);
+            }
+            msgkey = message_id;
+          }
+
+          await prisma.messages.create({
+            data: {
+              by: "contact",
+              type: "audio",
+              fileName: e.fileName,
+              message: "",
+              ptt: true,
+              messageKey: msgkey,
+              flowStateId: props.flowStateId,
+            },
+          });
         } catch (error) {
           return props.action.onErrorClient?.();
         }
@@ -69,31 +108,66 @@ export const NodeSendAudiosLive = (
     for await (const file of props.data.files) {
       const e = await prisma.storagePaths.findFirst({
         where: { id: file.id, accountId: props.accountId },
-        select: { fileName: true },
+        select: { fileName: true, attachment_id: true },
       });
       if (e) {
         const urlStatic = `${path}/${e.fileName}`;
         const mimetype = lookup(urlStatic);
         try {
-          const msg = await SendAudio({
-            connectionId: props.connectionWAId,
-            mimetype: mimetype || undefined,
-            toNumber: props.numberLead,
-            urlStatic,
-            ptt: true,
-          });
-          if (msg) {
-            await prisma.messages.create({
-              data: {
-                by: "bot",
-                type: "audio",
-                fileName: e.fileName,
-                message: "",
-                ptt: true,
-                flowStateId: props.flowStateId,
-              },
+          let msgkey: string | null = null;
+
+          if (props.external_adapter.type === "baileys") {
+            const msg = await SendAudio({
+              connectionId: props.connectionId,
+              mimetype: mimetype || undefined,
+              toNumber: props.lead_id,
+              urlStatic,
+              ptt: true,
             });
+            if (!msg?.key?.id) return props.action.onErrorClient?.();
+            msgkey = msg?.key?.id;
           }
+          if (props.external_adapter.type === "instagram") {
+            const ca = await prisma.contactsWAOnAccount.findFirst({
+              where: { id: props.contactAccountId },
+              select: { last_interaction: true },
+            });
+            if (!ca?.last_interaction) {
+              return props.action.onErrorClient?.();
+            }
+            if (!isWithin24Hours(ca.last_interaction)) {
+              return props.action.onErrorClient?.();
+            }
+            const { attachment_id, message_id } = await sendMetaMediaOptimized({
+              page_token: props.external_adapter.page_token,
+              recipient_id: props.lead_id,
+              type: "audio",
+              url: urlStatic,
+              attachmentId: e.attachment_id || undefined,
+            });
+            if (!e.attachment_id) {
+              prisma.storagePaths
+                .update({
+                  where: { id: file.id },
+                  data: { attachment_id },
+                })
+                .then(() => undefined)
+                .catch((err) => undefined);
+            }
+            msgkey = message_id;
+          }
+
+          await prisma.messages.create({
+            data: {
+              by: "bot",
+              type: "audio",
+              fileName: e.fileName,
+              messageKey: msgkey,
+              message: "",
+              ptt: true,
+              flowStateId: props.flowStateId,
+            },
+          });
         } catch (error) {
           return props.action.onErrorClient?.();
         }

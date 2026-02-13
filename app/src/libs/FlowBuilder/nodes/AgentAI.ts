@@ -183,6 +183,18 @@ const tools: OpenAI.Responses.Tool[] = [
   },
   {
     type: "function",
+    name: "encerrar_atendimento",
+    description: "Use para finalizar ou encerrar o atendimento.",
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      properties: {},
+      required: [],
+    },
+    strict: false,
+  },
+  {
+    type: "function",
     name: "enviar_fluxo",
     description: "Use para transferir o usuário para outro fluxograma/fluxo.",
     parameters: {
@@ -802,8 +814,13 @@ const getNextTimeOut = (
 };
 
 interface PropsNodeAgentAI {
-  numberLead: string;
-  numberConnection: string;
+  lead_id: string;
+  contactAccountId: number;
+  connectionId: number;
+  external_adapter:
+    | { type: "baileys" }
+    | { type: "instagram"; page_token: string };
+
   data: NodeAgentAIData;
   message?: { value: string; isDev: boolean };
   flowId: string;
@@ -812,14 +829,14 @@ interface PropsNodeAgentAI {
   previous_response_id?: string;
   flowStateId: number;
   businessName: string;
-  connectionWhatsId: number;
-  contactAccountId: number;
+  businessId: number;
   actions: {
     onErrorClient?(): void;
     onExecuteTimeout?: (pre_res_id: string) => Promise<void>;
     onExitNode?(name: string, previous_response_id?: string | null): void;
     onSendFlow?(flowIs: string, previous_response_id?: string | null): void;
     onTransferDepartment?(previous_response_id?: string | null): void;
+    onFinishService?(previous_response_id?: string | null): void;
   };
 }
 
@@ -888,9 +905,7 @@ export const NodeAgentAI = async ({
   //   const agent = await getAgent(props.data.agentId, props.accountId);
   //   const openai = new OpenAI({ apiKey: agent.apiKey });
   // }
-
-  const keyMap =
-    props.numberConnection + props.numberLead + String(props.data.agentId);
+  const keyMap = `${props.connectionId}+${props.lead_id}+${props.data.agentId}`;
 
   function createTimeoutJob(timeout: number, pre_res_id: string) {
     if (!timeout) {
@@ -982,25 +997,25 @@ export const NodeAgentAI = async ({
         const property0 = await resolveTextVariables({
           accountId: props.accountId,
           contactsWAOnAccountId: props.contactAccountId,
-          numberLead: props.numberLead,
+          numberLead: props.lead_id,
           text: props.data.prompt || "",
         });
         const property = await resolveTextVariables({
           accountId: props.accountId,
           contactsWAOnAccountId: props.contactAccountId,
-          numberLead: props.numberLead,
+          numberLead: props.lead_id,
           text: property0 || "",
         });
         const knowledgeBase = await resolveTextVariables({
           accountId: props.accountId,
           contactsWAOnAccountId: props.contactAccountId,
-          numberLead: props.numberLead,
+          numberLead: props.lead_id,
           text: agent.knowledgeBase || "",
         });
         const instructions1 = await resolveTextVariables({
           accountId: props.accountId,
           contactsWAOnAccountId: props.contactAccountId,
-          numberLead: props.numberLead,
+          numberLead: props.lead_id,
           text: agent.instructions || "",
         });
         const instructions = buildInstructions({
@@ -1153,7 +1168,8 @@ export const NodeAgentAI = async ({
               event:
                 | "exist"
                 | "enviar_fluxo"
-                | "transferir_para_atendimento_humano";
+                | "transferir_para_atendimento_humano"
+                | "finish";
               value: string | number;
             };
             // console.log({ isExit: executeNow, msgs, agenteName: agent.name });
@@ -1184,14 +1200,14 @@ export const NodeAgentAI = async ({
                             if (!text.trim()) continue;
                             try {
                               await TypingDelay({
-                                connectionId: props.connectionWhatsId,
-                                toNumber: props.numberLead,
+                                connectionId: props.connectionId,
+                                toNumber: props.lead_id,
                                 delay: CalculeTypingDelay(text),
                               });
                               await SendMessageText({
-                                connectionId: props.connectionWhatsId,
+                                connectionId: props.connectionId,
                                 text: text,
-                                toNumber: props.numberLead,
+                                toNumber: props.lead_id,
                               });
                             } catch (error) {
                               const debounceJob =
@@ -1605,7 +1621,7 @@ export const NodeAgentAI = async ({
                           });
                           continue;
 
-                        case "sair_node":
+                        case "sair_node": {
                           executeNow = { event: "exist", value: args.name };
                           outputs.push({
                             type: "function_call_output",
@@ -1613,6 +1629,17 @@ export const NodeAgentAI = async ({
                             output: "OK!",
                           });
                           continue;
+                        }
+
+                        case "encerrar_atendimento": {
+                          executeNow = { event: "finish", value: "" };
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output: "OK!",
+                          });
+                          continue;
+                        }
 
                         case "aguardar_tempo":
                           if (executeNow) {
@@ -1657,7 +1684,8 @@ export const NodeAgentAI = async ({
                           });
                           continue;
 
-                        case "notificar_whatsapp":
+                        case "notificar_whatsapp": {
+                          let isError = false;
                           if (executeNow) {
                             outputs.push({
                               type: "function_call_output",
@@ -1666,41 +1694,43 @@ export const NodeAgentAI = async ({
                             });
                             continue;
                           }
-                          const botWA = sessionsBaileysWA.get(
-                            props.connectionWhatsId,
-                          );
-                          if (botWA) {
-                            await NodeNotifyWA({
-                              accountId: props.accountId,
-                              botWA,
-                              businessName: props.businessName,
-                              connectionWhatsId: props.connectionWhatsId,
-                              contactsWAOnAccountId: props.contactAccountId,
-                              flowStateId: props.flowStateId,
-                              numberLead: props.numberLead,
-                              nodeId: props.nodeId,
-                              data: {
-                                text: args.text,
-                                numbers: [{ key: "1", number: args.phone }],
-                                tagIds: [],
+                          await NodeNotifyWA({
+                            accountId: props.accountId,
+                            businessName: props.businessName,
+                            connectionId: props.connectionId,
+                            contactAccountId: props.contactAccountId,
+                            flowStateId: props.flowStateId,
+                            lead_id: props.lead_id,
+                            external_adapter: props.external_adapter,
+                            action: {
+                              onErrorClient() {
+                                isError = true;
                               },
-                            });
+                            },
+                            nodeId: props.nodeId,
+                            data: {
+                              text: args.text,
+                              numbers: [{ key: "1", number: args.phone }],
+                              tagIds: [],
+                            },
+                          });
+                          if (isError) {
                             outputs.push({
                               type: "function_call_output",
                               call_id: c.call_id,
-                              output: "Mensagem enviada com sucesso.",
-                            });
-                          } else {
-                            outputs.push({
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output:
-                                "Error, não foi possivel notificar outro whatsapp.",
+                              output: "Error, não foi possivel enviar.",
                             });
                           }
-                          continue;
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output: "Mensagem enviada com sucesso.",
+                          });
 
-                        case "enviar_arquivo":
+                          continue;
+                        }
+
+                        case "enviar_arquivo": {
                           if (executeNow) {
                             outputs.push({
                               type: "function_call_output",
@@ -1709,245 +1739,213 @@ export const NodeAgentAI = async ({
                             });
                             continue;
                           }
-                          const botWA2 = sessionsBaileysWA.get(
-                            props.connectionWhatsId,
-                          );
-                          if (botWA2) {
-                            let isError = false;
-                            await NodeSendFiles({
+
+                          let isError = false;
+                          await NodeSendFiles({
+                            accountId: props.accountId,
+                            action: {
+                              onErrorClient: () => {
+                                isError = true;
+                              },
+                            },
+                            connectionId: props.connectionId,
+                            contactAccountId: props.contactAccountId,
+                            flowStateId: props.flowStateId,
+                            lead_id: props.lead_id,
+                            nodeId: props.nodeId,
+                            external_adapter: props.external_adapter,
+                            data: {
+                              caption: args.text,
+                              files: [
+                                {
+                                  id: args.id,
+                                  mimetype: "",
+                                  originalName: "",
+                                },
+                              ],
+                            },
+                          });
+                          if (isError) {
+                            outputs.push({
+                              type: "function_call_output",
+                              call_id: c.call_id,
+                              output: "Error, não foi possivel enviar.",
+                            });
+                          }
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output: "Arquivo enviado com sucesso.",
+                          });
+
+                          continue;
+                        }
+
+                        case "enviar_video": {
+                          if (executeNow) {
+                            outputs.push({
+                              type: "function_call_output",
+                              call_id: c.call_id,
+                              output: "OK!",
+                            });
+                            continue;
+                          }
+
+                          let isError = false;
+                          await NodeSendVideos({
+                            accountId: props.accountId,
+                            action: {
+                              onErrorClient: () => {
+                                isError = true;
+                              },
+                            },
+                            connectionId: props.connectionId,
+                            contactAccountId: props.contactAccountId,
+                            lead_id: props.lead_id,
+                            external_adapter: props.external_adapter,
+                            nodeId: props.nodeId,
+                            flowStateId: props.flowStateId,
+                            data: {
+                              caption: args.text,
+                              files: [{ id: args.id, originalName: "" }],
+                            },
+                          });
+                          if (isError) {
+                            outputs.push({
+                              type: "function_call_output",
+                              call_id: c.call_id,
+                              output: "Error, não foi possivel enviar.",
+                            });
+                          }
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output: "Video enviado com sucesso.",
+                          });
+
+                          continue;
+                        }
+
+                        case "enviar_imagem": {
+                          if (executeNow) {
+                            outputs.push({
+                              type: "function_call_output",
+                              call_id: c.call_id,
+                              output: "OK!",
+                            });
+                            continue;
+                          }
+                          let isError = false;
+                          await NodeSendImages({
+                            accountId: props.accountId,
+                            action: {
+                              onErrorClient: () => {
+                                isError = true;
+                              },
+                            },
+                            connectionId: props.connectionId,
+                            contactAccountId: props.contactAccountId,
+                            lead_id: props.lead_id,
+                            external_adapter: props.external_adapter,
+                            nodeId: props.nodeId,
+                            flowStateId: props.flowStateId,
+                            data: {
+                              caption: args.text,
+                              files: [{ id: args.id, fileName: "" }],
+                            },
+                          });
+                          if (isError) {
+                            outputs.push({
+                              type: "function_call_output",
+                              call_id: c.call_id,
+                              output: "Error, não foi possivel enviar.",
+                            });
+                          }
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output: "Imagem enviada com sucesso.",
+                          });
+
+                          continue;
+                        }
+
+                        case "enviar_audio": {
+                          if (executeNow) {
+                            outputs.push({
+                              type: "function_call_output",
+                              call_id: c.call_id,
+                              output: "OK!",
+                            });
+                            continue;
+                          }
+
+                          let isError = false;
+                          if (!!args.ppt) {
+                            await NodeSendAudiosLive({
                               accountId: props.accountId,
                               action: {
                                 onErrorClient: () => {
                                   isError = true;
                                 },
                               },
-                              connectionWAId: props.connectionWhatsId,
-                              contactsWAOnAccountId: props.contactAccountId,
-                              flowStateId: props.flowStateId,
-                              numberLead: props.numberLead,
+                              connectionId: props.connectionId,
+                              lead_id: props.lead_id,
+                              external_adapter: props.external_adapter,
                               nodeId: props.nodeId,
+                              flowStateId: props.flowStateId,
+                              contactAccountId: props.contactAccountId,
                               data: {
-                                caption: args.text,
-
                                 files: [
                                   {
                                     id: args.id,
-                                    mimetype: "",
+                                    fileName: "",
                                     originalName: "",
                                   },
                                 ],
                               },
                             });
-                            if (isError) {
-                              outputs.push({
-                                type: "function_call_output",
-                                call_id: c.call_id,
-                                output: "Error, não foi possivel enviar.",
-                              });
-                            }
-                            outputs.push({
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "Arquivo enviado com sucesso.",
-                            });
                           } else {
-                            outputs.push({
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "Error, não foi possivel enviar.",
-                            });
-                          }
-                          continue;
-
-                        case "enviar_video":
-                          if (executeNow) {
-                            outputs.push({
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "OK!",
-                            });
-                            continue;
-                          }
-                          const botWA3 = sessionsBaileysWA.get(
-                            props.connectionWhatsId,
-                          );
-                          if (botWA3) {
-                            let isError = false;
-                            await NodeSendVideos({
+                            await NodeSendAudios({
                               accountId: props.accountId,
                               action: {
                                 onErrorClient: () => {
                                   isError = true;
                                 },
                               },
-                              connectionWAId: props.connectionWhatsId,
-                              contactsWAOnAccountId: props.contactAccountId,
-                              botWA: botWA3,
-                              numberLead: props.numberLead,
-                              nodeId: props.nodeId,
-                              data: {
-                                caption: args.text,
-                                files: [{ id: args.id, originalName: "" }],
-                              },
-                            });
-                            if (isError) {
-                              outputs.push({
-                                type: "function_call_output",
-                                call_id: c.call_id,
-                                output: "Error, não foi possivel enviar.",
-                              });
-                            }
-                            outputs.push({
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "Video enviado com sucesso.",
-                            });
-                          } else {
-                            outputs.push({
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "Error, não foi possivel enviar.",
-                            });
-                          }
-                          continue;
-
-                        case "enviar_imagem":
-                          if (executeNow) {
-                            outputs.push({
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "OK!",
-                            });
-                            continue;
-                          }
-                          const botWA4 = sessionsBaileysWA.get(
-                            props.connectionWhatsId,
-                          );
-                          if (botWA4) {
-                            let isError = false;
-                            await NodeSendImages({
-                              accountId: props.accountId,
-                              action: {
-                                onErrorClient: () => {
-                                  isError = true;
-                                },
-                              },
-                              connectionWAId: props.connectionWhatsId,
-                              contactsWAOnAccountId: props.contactAccountId,
-                              botWA: botWA4,
-                              numberLead: props.numberLead,
+                              connectionId: props.connectionId,
+                              external_adapter: props.external_adapter,
+                              contactAccountId: props.contactAccountId,
+                              lead_id: props.lead_id,
                               nodeId: props.nodeId,
                               flowStateId: props.flowStateId,
                               data: {
-                                caption: args.text,
-                                files: [{ id: args.id, fileName: "" }],
+                                files: [
+                                  {
+                                    id: args.id,
+                                    fileName: "",
+                                    originalName: "",
+                                  },
+                                ],
                               },
                             });
-                            if (isError) {
-                              outputs.push({
-                                type: "function_call_output",
-                                call_id: c.call_id,
-                                output: "Error, não foi possivel enviar.",
-                              });
-                            }
-                            outputs.push({
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "Imagem enviada com sucesso.",
-                            });
-                          } else {
+                          }
+
+                          if (isError) {
                             outputs.push({
                               type: "function_call_output",
                               call_id: c.call_id,
                               output: "Error, não foi possivel enviar.",
                             });
                           }
-                          continue;
+                          outputs.push({
+                            type: "function_call_output",
+                            call_id: c.call_id,
+                            output: "Audio enviado com sucesso.",
+                          });
 
-                        case "enviar_audio":
-                          if (executeNow) {
-                            outputs.push({
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "OK!",
-                            });
-                            continue;
-                          }
-                          const botWA5 = sessionsBaileysWA.get(
-                            props.connectionWhatsId,
-                          );
-                          if (botWA5) {
-                            let isError = false;
-                            if (!!args.ppt) {
-                              await NodeSendAudiosLive({
-                                accountId: props.accountId,
-                                action: {
-                                  onErrorClient: () => {
-                                    isError = true;
-                                  },
-                                },
-                                connectionWAId: props.connectionWhatsId,
-                                contactsWAOnAccountId: props.contactAccountId,
-                                botWA: botWA5,
-                                numberLead: props.numberLead,
-                                nodeId: props.nodeId,
-                                flowStateId: props.flowStateId,
-                                data: {
-                                  files: [
-                                    {
-                                      id: args.id,
-                                      fileName: "",
-                                      originalName: "",
-                                    },
-                                  ],
-                                },
-                              });
-                            } else {
-                              await NodeSendAudios({
-                                accountId: props.accountId,
-                                action: {
-                                  onErrorClient: () => {
-                                    isError = true;
-                                  },
-                                },
-                                connectionWAId: props.connectionWhatsId,
-                                contactsWAOnAccountId: props.contactAccountId,
-                                botWA: botWA5,
-                                numberLead: props.numberLead,
-                                nodeId: props.nodeId,
-                                flowStateId: props.flowStateId,
-                                data: {
-                                  files: [
-                                    {
-                                      id: args.id,
-                                      fileName: "",
-                                      originalName: "",
-                                    },
-                                  ],
-                                },
-                              });
-                            }
-
-                            if (isError) {
-                              outputs.push({
-                                type: "function_call_output",
-                                call_id: c.call_id,
-                                output: "Error, não foi possivel enviar.",
-                              });
-                            }
-                            outputs.push({
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "Audio enviado com sucesso.",
-                            });
-                          } else {
-                            outputs.push({
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: "Error, não foi possivel enviar.",
-                            });
-                          }
                           continue;
+                        }
 
                         case "transferir_para_atendimento_humano":
                           executeNow = {
@@ -1956,11 +1954,12 @@ export const NodeAgentAI = async ({
                           };
                           await NodeTransferDepartment({
                             accountId: props.accountId,
-                            connectionWAId: props.connectionWhatsId,
-                            contactsWAOnAccountId: props.contactAccountId,
+                            connectionId: props.connectionId,
+                            contactAccountId: props.contactAccountId,
                             flowStateId: props.flowStateId,
                             nodeId: props.nodeId,
                             data: { id: args._id },
+                            external_adapter: props.external_adapter,
                           });
                           outputs.push({
                             type: "function_call_output",
@@ -1981,27 +1980,12 @@ export const NodeAgentAI = async ({
                         case "criar_evento":
                           try {
                             let codeAppointment = "";
-                            const pickBusiness =
-                              await prisma.business.findFirst({
-                                where: {
-                                  name: props.businessName,
-                                  accountId: props.accountId,
-                                },
-                                select: { id: true },
-                              });
-                            if (!pickBusiness) {
-                              outputs.push({
-                                type: "function_call_output",
-                                call_id: c.call_id,
-                                output: `Não foi possivel criar evento. Projeto(${props.businessName}) não encontrado. Error interno!`,
-                              });
-                              continue;
-                            }
                             await NodeCreateAppointment({
                               accountId: props.accountId,
-                              connectionWhatsId: props.connectionWhatsId,
+                              connectionWhatsId: props.connectionId,
                               flowId: props.flowId,
-                              numberLead: props.numberLead,
+                              numberLead: props.lead_id,
+                              external_adapter: props.external_adapter,
                               actions: {
                                 onCodeAppointment(code) {
                                   codeAppointment = code;
@@ -2014,7 +1998,7 @@ export const NodeAgentAI = async ({
                                     (text: string) => ({ text, key: nanoid() }),
                                   ),
                                 }),
-                                businessId: pickBusiness.id,
+                                businessId: props.businessId,
                               },
                               contactsWAOnAccountId: props.contactAccountId,
                               flowStateId: props.flowStateId,
@@ -2038,31 +2022,13 @@ export const NodeAgentAI = async ({
                           continue;
 
                         case "atualizar_evento":
-                          const pickBusiness2 = await prisma.business.findFirst(
-                            {
-                              where: {
-                                name: props.businessName,
-                                accountId: props.accountId,
-                              },
-                              select: { id: true },
-                            },
-                          );
-                          if (!pickBusiness2) {
-                            outputs.push({
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: `Não foi possivel criar evento. Projeto(${props.businessName}) não encontrado. Error interno!`,
-                            });
-                            continue;
-                          }
-
                           const { event_code, ...rest } = args;
                           const keys = Object.keys(rest);
 
                           await NodeUpdateAppointment({
                             accountId: props.accountId,
                             isIA: true,
-                            numberLead: props.numberLead,
+                            numberLead: props.lead_id,
                             data: {
                               ...rest,
                               fields: keys,
@@ -2086,28 +2052,12 @@ export const NodeAgentAI = async ({
 
                         case "criar_pedido":
                           let codeOrder = "";
-                          const pickBusiness3 = await prisma.business.findFirst(
-                            {
-                              where: {
-                                name: props.businessName,
-                                accountId: props.accountId,
-                              },
-                              select: { id: true },
-                            },
-                          );
-                          if (!pickBusiness3) {
-                            outputs.push({
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: `Não foi possivel criar o pedido. Projeto(${props.businessName}) não encontrado. Error interno!`,
-                            });
-                            continue;
-                          }
                           await NodeCreateOrder({
                             accountId: props.accountId,
-                            connectionWhatsId: props.connectionWhatsId,
+                            connectionId: props.connectionId,
                             flowId: props.flowId,
-                            numberLead: props.numberLead,
+                            external_adapter: props.external_adapter,
+                            lead_id: props.lead_id,
                             actions: {
                               onCodeAppointment(code) {
                                 codeOrder = code;
@@ -2120,9 +2070,9 @@ export const NodeAgentAI = async ({
                                   (text: string) => ({ text, key: nanoid() }),
                                 ),
                               }),
-                              businessId: pickBusiness3.id,
+                              businessId: props.businessId,
                             },
-                            contactsWAOnAccountId: props.contactAccountId,
+                            contactAccountId: props.contactAccountId,
                             flowStateId: props.flowStateId,
                             nodeId: props.nodeId,
                             businessName: props.businessName,
@@ -2141,7 +2091,7 @@ export const NodeAgentAI = async ({
 
                           await NodeUpdateOrder({
                             accountId: props.accountId,
-                            numberLead: props.numberLead,
+                            numberLead: props.lead_id,
                             businessName: props.businessName,
                             flowStateId: props.flowStateId,
                             data: {
@@ -2295,23 +2245,7 @@ export const NodeAgentAI = async ({
 
                         case "criar_cobranca": {
                           let codeOrder: any = {};
-                          const pickBusiness3 = await prisma.business.findFirst(
-                            {
-                              where: {
-                                name: props.businessName,
-                                accountId: props.accountId,
-                              },
-                              select: { id: true },
-                            },
-                          );
-                          if (!pickBusiness3) {
-                            outputs.push({
-                              type: "function_call_output",
-                              call_id: c.call_id,
-                              output: `Não foi possivel criar a cobrança. Projeto(${props.businessName}) não encontrado. Error interno!`,
-                            });
-                            continue;
-                          }
+
                           const status = await NodeCharge({
                             accountId: props.accountId,
                             actions: {
@@ -2319,7 +2253,7 @@ export const NodeAgentAI = async ({
                                 codeOrder = code;
                               },
                             },
-                            data: { ...args, businessId: pickBusiness3.id },
+                            data: { ...args, businessId: props.businessId },
                             contactsWAOnAccountId: props.contactAccountId,
                             flowStateId: props.flowStateId,
                             nodeId: props.nodeId,
@@ -2488,12 +2422,8 @@ export const NodeAgentAI = async ({
                   String(executeNow.value),
                   nextresponse.id,
                 );
-              } else if (
-                executeNow.event === "transferir_para_atendimento_humano"
-              ) {
-                // irá salvar o nodeId desse agente.
-                // essa é o resultado esperado, já que depois de
-                // concluir o ticket, deve voltar pro agente.
+              } else if (executeNow.event === "finish") {
+                props.actions.onFinishService?.(nextresponse.id);
               }
               return resolve({ run: "exit" });
             }

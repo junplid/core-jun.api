@@ -1,5 +1,6 @@
 import { prisma } from "../../adapters/Prisma/client";
 import { socketIo } from "../../infra/express";
+import { webSocketEmitToRoom } from "../../infra/websocket";
 import { cacheAccountSocket } from "../../infra/websocket/cache";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { ReturnTicketDTO_I } from "./DTO";
@@ -18,7 +19,7 @@ export class ReturnTicketUseCase {
 
     if (!exist) {
       throw new ErrorResponse(400).container(
-        "Não foi possivel encontrar o ticket."
+        "Não foi possivel encontrar o ticket.",
       );
     }
 
@@ -38,34 +39,35 @@ export class ReturnTicketUseCase {
         });
 
       if (dto.accountId) {
-        const isonline = cacheAccountSocket.get(dto.accountId)?.listSocket
-          .length;
+        const { departments, player_department } =
+          webSocketEmitToRoom().account(dto.accountId);
 
-        socketIo
-          .of(`/business-${InboxDepartment.businessId}/inbox`)
-          .emit("list", {
-            status: "RETURN",
+        departments.math_new_ticket_count(
+          {
+            departmentId: InboxDepartment.id,
+            n: +1,
+          },
+          [],
+        );
+        departments.math_open_ticket_count(
+          {
+            departmentId: InboxDepartment.id,
+            n: -1,
+          },
+          [],
+        );
+
+        player_department(InboxDepartment.id).return_ticket_list(
+          {
             forceOpen: false,
             departmentId: InboxDepartment.id,
             name: ContactsWAOnAccount.name,
             lastInteractionDate: updateAt,
             id: dto.id,
-            userId: undefined, // caso seja enviado para um usuário.
-          });
-        if (isonline) {
-          cacheAccountSocket
-            .get(dto.accountId)
-            ?.listSocket?.forEach(async (sockId) => {
-              socketIo.to(sockId.id).emit(`inbox`, {
-                accountId: dto.accountId,
-                departmentId: InboxDepartment.id,
-                departmentName: InboxDepartment.name,
-                status: "RETURN",
-                notifyMsc: false,
-                id: dto.id,
-              });
-            });
-        }
+            userId: undefined,
+          },
+          [],
+        );
 
         if (dto.orderId) {
           const order = await prisma.orders.findFirst({
@@ -77,16 +79,14 @@ export class ReturnTicketUseCase {
           });
 
           if (order?.status) {
-            cacheAccountSocket
-              .get(dto.accountId)
-              ?.listSocket?.forEach(async (sockId) => {
-                socketIo.to(sockId.id).emit(`order:ticket:return`, {
-                  accountId: dto.accountId,
-                  status: order.status,
-                  ticketId: dto.id,
-                  orderId: dto.orderId,
-                });
-              });
+            webSocketEmitToRoom().account(dto.accountId).orders.return_ticket(
+              {
+                status: order.status,
+                ticketId: dto.id,
+                orderId: dto.orderId,
+              },
+              [],
+            );
           }
         }
       }
@@ -96,7 +96,6 @@ export class ReturnTicketUseCase {
         status: 201,
       };
     } catch (error) {
-      console.log(error);
       throw new ErrorResponse(400).toast({
         title: "Não foi possivel puxar ticket.",
         type: "error",

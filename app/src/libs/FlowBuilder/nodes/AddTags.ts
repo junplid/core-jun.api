@@ -4,21 +4,21 @@ import { NodeAddTagsData } from "../Payload";
 interface PropsNodeAction {
   data: NodeAddTagsData;
   flowStateId: number;
-  contactsWAOnAccountId: number;
+  contactAccountId: number;
   nodeId: string;
 }
 
 export const NodeAddTags = (props: PropsNodeAction): Promise<void> =>
   new Promise(async (res, _rej) => {
-    const { data, contactsWAOnAccountId } = props;
+    const { data, contactAccountId } = props;
 
     for await (const tagId of data.list) {
       const isExist = await prisma.tagOnContactsWAOnAccount.findFirst({
-        where: { contactsWAOnAccountId, tagId },
+        where: { contactsWAOnAccountId: contactAccountId, tagId },
       });
       if (!isExist) {
         await prisma.tagOnContactsWAOnAccount.create({
-          data: { contactsWAOnAccountId, tagId },
+          data: { contactsWAOnAccountId: contactAccountId, tagId },
         });
       }
     }

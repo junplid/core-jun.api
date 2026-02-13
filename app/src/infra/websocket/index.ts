@@ -6,7 +6,7 @@ import {
   writeFileSync,
 } from "fs-extra";
 import { resolve } from "path";
-import { Server } from "socket.io";
+import { BroadcastOperator, Server } from "socket.io";
 import {
   Baileys,
   CacheSessionsBaileysWA,
@@ -24,12 +24,19 @@ import {
 } from "../../adapters/Baileys/Cache";
 import { prisma } from "../../adapters/Prisma/client";
 import OpenAI from "openai";
-import { TypeStatusOrder } from "@prisma/client";
+import { TypeStatusMessage, TypeStatusOrder } from "@prisma/client";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { mongo } from "../../adapters/mongo/connection";
-import { NodeControler } from "../../libs/FlowBuilder/Control";
+import { IPropsControler, NodeControler } from "../../libs/FlowBuilder/Control";
 import moment from "moment-timezone";
 import { metaAccountsCache } from "../../services/meta/cache";
+import { decrypte } from "../../libs/encryption";
+import { getSocketIo } from "../express";
+import {
+  DecorateAcknowledgementsWithMultipleResponses,
+  DefaultEventsMap,
+} from "socket.io/dist/typed-events";
+import { resolveHourAndMinute } from "../../utils/resolveHour:mm";
 
 interface PropsCreateSessionWA_I {
   connectionWhatsId: number;
@@ -56,17 +63,10 @@ export const WebSocketIo = (io: Server) => {
     const { auth } = socket.handshake;
 
     if (auth.accountId) {
-      const stateUser = cacheAccountSocket.get(auth.accountId);
-      if (!stateUser) {
-        cacheAccountSocket.set(auth.accountId, {
-          listSocket: [{ id: socket.id, ...auth.clientMeta }],
-        });
-      } else {
-        stateUser.listSocket.push({ id: socket.id, ...auth.clientMeta });
-      }
+      socket.join(`account:${auth.accountId}`);
     }
     if (auth.rootId) {
-      cacheRootSocket.push(socket.id);
+      socket.join(`root:${auth.rootId}`);
     }
 
     if (!auth.accountId && !auth.rootId) return socket.disconnect(true);
@@ -202,37 +202,31 @@ export const WebSocketIo = (io: Server) => {
     });
 
     socket.on("disconnect", async (reason) => {
-      const stateUser = cacheAccountSocket.get(auth.accountId);
-      if (stateUser) {
-        stateUser.listSocket = stateUser.listSocket.filter(
-          (ids) => ids.id !== socket.id,
-        );
-        if (stateUser.listSocket.length === 0) {
-          cacheAccountSocket.delete(auth.accountId);
-        }
-      }
+      socket.leave(`account:${auth.accountId}`);
+      socket.leave(`root:${auth.rootId}`);
+
+      // const stateUser = cacheAccountSocket.get(auth.accountId);
+      // if (stateUser) {
+      //   stateUser.listSocket = stateUser.listSocket.filter(
+      //     (ids) => ids.id !== socket.id,
+      //   );
+      //   if (stateUser.listSocket.length === 0) {
+      //     cacheAccountSocket.delete(auth.accountId);
+      //   }
+      // }
     });
 
     socket.on(
-      "order:update-rank",
+      "order:update_rank",
       async (props: {
-        sourceIndex: number;
-        nextIndex: number;
         rank: number;
-        status: TypeStatusOrder;
         orderId: number;
+        nextIndex: number;
+        status: TypeStatusOrder;
       }) => {
-        cacheAccountSocket
-          .get(auth.accountId)
-          ?.listSocket?.forEach((sockId) => {
-            if (sockId.id !== socket.id) {
-              socket.to(sockId.id).emit(`order:update-rank`, {
-                ...props,
-                accountId: auth.accountId,
-              });
-            }
-          });
-
+        socket
+          .to(`account:${auth.accountId}:orders`)
+          .emit("update_rank", props);
         await prisma.orders.update({
           where: { id: props.orderId, accountId: auth.accountId },
           data: { rank: props.rank },
@@ -241,26 +235,17 @@ export const WebSocketIo = (io: Server) => {
     );
 
     socket.on(
-      "order:update-status",
+      "order:update_status",
       async (props: {
-        sourceIndex: number;
-        nextIndex: number;
         rank: number;
+        orderId: number;
+        nextIndex: number;
         sourceStatus: TypeStatusOrder;
         nextStatus: TypeStatusOrder;
-        orderId: number;
       }) => {
-        cacheAccountSocket
-          .get(auth.accountId)
-          ?.listSocket?.forEach((sockId) => {
-            if (sockId.id !== socket.id) {
-              socket.to(sockId.id).emit(`order:update-status`, {
-                ...props,
-                accountId: auth.accountId,
-              });
-            }
-          });
-
+        socket
+          .to(`account:${auth.accountId}:orders`)
+          .emit("update_status", props);
         await prisma.orders.update({
           where: { id: props.orderId, accountId: auth.accountId },
           data: { rank: props.rank, status: props.nextStatus },
@@ -272,9 +257,9 @@ export const WebSocketIo = (io: Server) => {
             id: true,
             flowNodeId: true,
             flowStateId: true,
+            businessId: true,
             flowId: true,
             n_order: true,
-            connectionWAId: true,
             ContactsWAOnAccount: {
               select: {
                 id: true,
@@ -291,8 +276,7 @@ export const WebSocketIo = (io: Server) => {
           return;
         }
 
-        if (!order.flowId || !order.flowStateId || !order.connectionWAId)
-          return;
+        if (!order.flowId || !order.flowStateId) return;
 
         let flow: any = null;
         flow = cacheFlowsMap.get(order.flowId);
@@ -364,11 +348,23 @@ export const WebSocketIo = (io: Server) => {
           const flowState = await prisma.flowState.findFirst({
             where: { id: order.flowStateId },
             select: {
-              connectionWAId: true,
               chatbotId: true,
               campaignId: true,
               previous_response_id: true,
-              ConnectionWA: { select: { number: true } },
+              ConnectionWA: {
+                select: {
+                  number: true,
+                  id: true,
+                  Business: { select: { name: true } },
+                },
+              },
+              ConnectionIg: {
+                select: {
+                  credentials: true,
+                  id: true,
+                  Business: { select: { name: true } },
+                },
+              },
               Chatbot: {
                 select: {
                   TimeToRestart: { select: { type: true, value: true } },
@@ -376,24 +372,72 @@ export const WebSocketIo = (io: Server) => {
               },
             },
           });
-          const businessInfo = await prisma.connectionWA.findFirst({
-            where: { id: order.connectionWAId },
-            select: { Business: { select: { name: true } } },
-          });
-          const bot = sessionsBaileysWA.get(order.connectionWAId);
+          if (!flowState) return;
+
+          let external_adapter:
+            | (IPropsControler["external_adapter"] & { businessName: string })
+            | null = null;
+
+          if (flowState.ConnectionWA?.id) {
+            let attempt = 0;
+            const botOnline = new Promise<boolean>((resolve, reject) => {
+              function run() {
+                if (attempt >= 5) {
+                  return resolve(false);
+                } else {
+                  setInterval(async () => {
+                    const botWA = cacheConnectionsWAOnline.get(
+                      flowState!.ConnectionWA?.id!,
+                    );
+                    if (!botWA) {
+                      attempt++;
+                      return run();
+                    } else {
+                      return resolve(botWA);
+                    }
+                  }, 1000 * attempt);
+                }
+              }
+              return run();
+            });
+
+            if (!botOnline) return;
+
+            const clientWA = sessionsBaileysWA.get(
+              flowState.ConnectionWA?.id!,
+            )!;
+            external_adapter = {
+              type: "baileys",
+              clientWA: clientWA,
+              businessName: flowState.ConnectionWA.Business.name,
+            };
+          }
+          if (flowState.ConnectionIg?.id) {
+            try {
+              const credential = decrypte(flowState.ConnectionIg.credentials);
+              external_adapter = {
+                type: "instagram",
+                page_token: credential.account_access_token,
+                businessName: flowState.ConnectionIg.Business.name,
+              };
+            } catch (error) {
+              return;
+            }
+          }
+
+          if (!external_adapter) return;
+
+          const connectionId = (flowState.ConnectionWA?.id ||
+            flowState.ConnectionIg?.id)!;
 
           if (
-            !businessInfo?.Business ||
             !flowState ||
-            !bot ||
             !order.ContactsWAOnAccount ||
             !flowState.ConnectionWA
           ) {
             console.log("caiu aqui no error 2");
             console.log([
-              !businessInfo?.Business,
               !flowState,
-              !bot,
               !order.ContactsWAOnAccount,
               !flowState?.ConnectionWA,
             ]);
@@ -402,8 +446,9 @@ export const WebSocketIo = (io: Server) => {
           }
 
           await NodeControler({
-            businessName: businessInfo.Business.name,
+            businessName: external_adapter.businessName,
             flowId: order.flowId,
+            businessId: order.businessId,
             flowBusinessIds: flow.businessIds,
             ...(orderNode.type === "NodeAgentAI"
               ? {
@@ -415,22 +460,21 @@ export const WebSocketIo = (io: Server) => {
                   type: "initial",
                   action: null,
                 }),
-            connectionWhatsId: order.connectionWAId,
+
+            external_adapter,
+            connectionId,
+            lead_id: order.ContactsWAOnAccount!.ContactsWA.completeNumber,
+            contactAccountId: order.ContactsWAOnAccount.id,
+
             chatbotId: flowState.chatbotId || undefined,
             campaignId: flowState.campaignId || undefined,
             oldNodeId: nextNodeId.id,
             previous_response_id: flowState.previous_response_id || undefined,
-            clientWA: bot,
             isSavePositionLead: true,
             flowStateId: order.flowStateId,
-            contactsWAOnAccountId: order.ContactsWAOnAccount.id,
-            lead: {
-              number: order.ContactsWAOnAccount!.ContactsWA.completeNumber,
-            },
             currentNodeId: nextNodeId.id,
             edges: flow.edges,
             nodes: flow.nodes,
-            numberConnection: flowState.ConnectionWA.number + "@s.whatsapp.net",
             accountId: auth.accountId,
             actions: {
               onFinish: async (vl) => {
@@ -446,8 +490,14 @@ export const WebSocketIo = (io: Server) => {
                 console.log("TA CAINDO AQUI, finalizando fluxo");
                 await prisma.flowState.update({
                   where: { id: order.flowStateId! },
-                  data: { isFinish: true },
+                  data: { isFinish: true, finishedAt: new Date() },
                 });
+                webSocketEmitToRoom()
+                  .account(auth.accountId)
+                  .dashboard.dashboard_services({
+                    delta: -1,
+                    hour: resolveHourAndMinute(),
+                  });
                 if (flowState.chatbotId && flowState.Chatbot?.TimeToRestart) {
                   const nextDate = moment()
                     .tz("America/Sao_Paulo")
@@ -473,38 +523,21 @@ export const WebSocketIo = (io: Server) => {
                   .catch((err) => console.log(err));
               },
               onEnterNode: async (node) => {
-                const indexCurrentAlreadyExist =
-                  await prisma.flowState.findFirst({
-                    where: {
-                      connectionWAId: order.connectionWAId,
-                      contactsWAOnAccountId: order.ContactsWAOnAccount?.id,
-                    },
-                    select: { id: true },
-                  });
-                if (!indexCurrentAlreadyExist) {
-                  await prisma.flowState.create({
-                    data: {
-                      indexNode: node.id,
-                      flowId: node.flowId,
-                      connectionWAId: flowState.connectionWAId,
-                      contactsWAOnAccountId: order.ContactsWAOnAccount?.id,
-                    },
-                  });
-                } else {
-                  await prisma.flowState.update({
-                    where: { id: indexCurrentAlreadyExist.id },
+                await prisma.flowState
+                  .update({
+                    where: { id: order.flowStateId! },
                     data: {
                       indexNode: node.id,
                       flowId: node.flowId,
                       agentId: node.agentId || null,
                     },
-                  });
-                }
+                  })
+                  .catch((err) => console.log(err));
               },
             },
           }).finally(() => {
             leadAwaiting.set(
-              `${order.connectionWAId}+${
+              `${connectionId}+${
                 order.ContactsWAOnAccount!.ContactsWA.completeNumber
               }`,
               false,
@@ -515,7 +548,6 @@ export const WebSocketIo = (io: Server) => {
     );
 
     socket.on("join_modal:create_agentai", (modal_id: string) => {
-      console.log("entrou na sala", modal_id);
       socket.join(modal_id);
       // const paginasNoCache = metaAccountsCache.get(modal_id);
       // if (paginasNoCache) {
@@ -526,7 +558,6 @@ export const WebSocketIo = (io: Server) => {
 
     socket.on("exit_modal:create_agentai", (modal_id: string) => {
       socket.leave(modal_id);
-      console.log("saiu da sala", modal_id);
       metaAccountsCache.del(modal_id);
       // const paginasNoCache = metaAccountsCache.get(modal_id);
       // if (paginasNoCache) {
@@ -535,40 +566,164 @@ export const WebSocketIo = (io: Server) => {
       // }
     });
 
+    socket.on("join_orders", () => {
+      socket.join(`account:${auth.accountId}:orders`);
+    });
+
+    socket.on("leave_orders", () => {
+      socket.leave(`account:${auth.accountId}:orders`);
+    });
+
+    socket.on("join_ticket", (args: { id?: number }) => {
+      if (!args.id) {
+        socket.leave(`account:${auth.accountId}:ticket:${args.id}`);
+        return;
+      }
+      socket.join(`account:${auth.accountId}:ticket:${args.id}`);
+    });
+
+    socket.on("leave_ticket", (args: { id?: number }) => {
+      if (!args.id) {
+        console.log("NÃO TINHA TICKET_ID PARA SAIR");
+        return;
+      }
+      socket.leave(`account:${auth.accountId}:ticket:${args.id}`);
+    });
+
+    socket.on("join_departments", () => {
+      socket.join(`account:${auth.accountId}:departments`);
+    });
+
+    socket.on("leave_departments", () => {
+      socket.leave(`account:${auth.accountId}:departments`);
+    });
+
+    socket.on("join_player_department", (args: { id: number }) => {
+      socket.join(`account:${auth.accountId}:department:player:${args.id}`);
+    });
+
+    socket.on("leave_player_department", (args: { id: number }) => {
+      socket.leave(`account:${auth.accountId}:department:player:${args.id}`);
+    });
+
+    socket.on("join_dashboard", () => {
+      socket.join(`account:${auth.accountId}:dashboard`);
+    });
+
+    socket.on("leave_dashboard", () => {
+      socket.leave(`account:${auth.accountId}:dashboard`);
+    });
+
     // atualizar status do evento.
   });
+};
 
-  io.of(/^\/business-\d+\/inbox$/).on("connection", async (socket) => {
-    const {
-      headers,
-      auth,
-      //  query
-    } = socket.handshake;
+export const webSocketEmitToRoom = () => {
+  const io = getSocketIo();
 
-    const stateUser = cacheAccountSocket.get(auth.accountId);
-    if (!headers["user-agent"] || !stateUser) {
-      console.log("Desconectando por falta de informações");
-      return socket.disconnect();
-    }
-
-    socket.on("disconnect", async (reason) => {
-      const stateUser = cacheAccountSocket.get(auth.accountId);
-      if (stateUser) {
-        stateUser.currentTicket = null;
-        cacheAccountSocket.set(auth.accountId, stateUser);
-      }
-    });
-
-    socket.on("join-ticket", async (props: { id: number | null }) => {
-      const stateUser = cacheAccountSocket.get(auth.accountId);
-      if (stateUser) {
-        if (props.id) {
-          stateUser.currentTicket = props.id;
-        } else {
-          stateUser.currentTicket = null;
-        }
-        cacheAccountSocket.set(auth.accountId, stateUser);
-      }
-    });
-  });
+  return {
+    account: (accountId: number) => {
+      let to = `account:${accountId}`;
+      return {
+        user_updated: (args: any, ignore: string[]) => {
+          io.to(to).except(ignore).emit("user_updated", args);
+        },
+        dashboard: {
+          dashboard_services: (args: { delta: number; hour: string }) => {
+            to = `${to}:dashboard`;
+            io.to(to).emit("dashboard_services", args);
+          },
+        },
+        orders: {
+          new_order: (args: any, ignore: string[]) => {
+            to = `${to}:orders`;
+            return io.to(to).except(ignore).emit("new_order", args);
+          },
+          update_order: (args: any, ignore: string[]) => {
+            to = `${to}:orders`;
+            return io.to(to).except(ignore).emit("update_order", args);
+          },
+          new_ticket: (args: any, ignore: string[]) => {
+            to = `${to}:orders`;
+            return io.to(to).except(ignore).emit("new_ticket", args);
+          },
+          update_status: (args: any, ignore: string[]) => {
+            to = `${to}:orders`;
+            return io.to(to).except(ignore).emit("update_status", args);
+          },
+          update_rank: (args: any, ignore: string[]) => {
+            to = `${to}:orders`;
+            return io.to(to).except(ignore).emit("update_rank", args);
+          },
+          open_ticket: (args: any, ignore: string[]) => {
+            to = `${to}:orders`;
+            return io.to(to).except(ignore).emit("open_ticket", args);
+          },
+          return_ticket: (args: any, ignore: string[]) => {
+            to = `${to}:orders`;
+            return io.to(to).except(ignore).emit("return_ticket", args);
+          },
+          remove_ticket: (args: any, ignore: string[]) => {
+            to = `${to}:orders`;
+            return io.to(to).except(ignore).emit("remove_ticket", args);
+          },
+        },
+        ticket_chat: (id: number) => {
+          return {
+            message_eco: (args: any, ignore: string[]) => {
+              to = `${to}:ticket:${id}`;
+              return io.to(to).except(ignore).emit("message_eco", args);
+            },
+            message: (args: any, ignore: string[]) => {
+              to = `${to}:ticket:${id}`;
+              return io.to(to).except(ignore).emit("message", args);
+            },
+          };
+        },
+        departments: {
+          math_open_ticket_count: (args: any, ignore: string[]) => {
+            to = `${to}:departments`;
+            return io
+              .to(to)
+              .except(ignore)
+              .emit("math_open_ticket_count", args);
+          },
+          math_new_ticket_count: (args: any, ignore: string[]) => {
+            to = `${to}:departments`;
+            return io.to(to).except(ignore).emit("math_new_ticket_count", args);
+          },
+        },
+        player_department: (id: number) => {
+          to = `${to}:department:player:${id}`;
+          return {
+            return_ticket_list: (args: any, ignore: string[]) => {
+              return io.to(to).except(ignore).emit("return_ticket_list", args);
+            },
+            resolve_ticket_list: (args: any, ignore: string[]) => {
+              return io.to(to).except(ignore).emit("resolve_ticket_list", args);
+            },
+            new_ticket_list: (args: any, ignore: string[]) => {
+              return io.to(to).except(ignore).emit("new_ticket_list", args);
+            },
+            open_ticket_list: (args: any, ignore: string[]) => {
+              return io.to(to).except(ignore).emit("open_ticket_list", args);
+            },
+            message_ticket_list: (
+              args: {
+                ticketId: number;
+                by: "contact" | "user" | "system";
+                type: "file" | "text" | "image" | "video" | "audio";
+                status: TypeStatusMessage;
+                createAt: Date;
+                text?: string;
+              },
+              ignore: string[],
+            ) => {
+              return io.to(to).except(ignore).emit("message_ticket_list", args);
+            },
+          };
+        },
+      };
+    },
+  };
 };

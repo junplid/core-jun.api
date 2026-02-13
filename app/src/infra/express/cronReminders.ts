@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { prisma } from "../../adapters/Prisma/client";
 import {
+  cacheConnectionsWAOnline,
   cacheFlowsMap,
   chatbotRestartInDate,
   leadAwaiting,
@@ -9,9 +10,12 @@ import {
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { mongo } from "../../adapters/mongo/connection";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
-import { NodeControler } from "../../libs/FlowBuilder/Control";
+import { IPropsControler, NodeControler } from "../../libs/FlowBuilder/Control";
 import momentLib from "moment-timezone";
 import { NotificationApp } from "../../utils/notificationApp";
+import { decrypte } from "../../libs/encryption";
+import { webSocketEmitToRoom } from "../websocket";
+import { resolveHourAndMinute } from "../../utils/resolveHour:mm";
 
 cron.schedule("*/4 * * * *", () => {
   (async () => {
@@ -33,6 +37,7 @@ cron.schedule("*/4 * * * *", () => {
           moment: true,
           Appointment: {
             select: {
+              businessId: true,
               startAt: true,
               title: true,
               FlowState: {
@@ -51,7 +56,20 @@ cron.schedule("*/4 * * * *", () => {
               flowNodeId: true,
               accountId: true,
               flowId: true,
-              ConnectionWA: { select: { number: true, id: true } },
+              ConnectionWA: {
+                select: {
+                  number: true,
+                  id: true,
+                  Business: { select: { name: true } },
+                },
+              },
+              ConnectionIg: {
+                select: {
+                  credentials: true,
+                  id: true,
+                  Business: { select: { name: true } },
+                },
+              },
               ContactsWAOnAccount: {
                 select: {
                   id: true,
@@ -67,7 +85,8 @@ cron.schedule("*/4 * * * *", () => {
           if (
             !Appointment.flowId ||
             !Appointment.FlowState ||
-            !Appointment.ConnectionWA
+            !Appointment.ConnectionWA ||
+            !Appointment.ContactsWAOnAccount
           ) {
             await prisma.appointmentReminders.update({
               where: { id },
@@ -99,6 +118,7 @@ cron.schedule("*/4 * * * *", () => {
             accountId: Appointment.accountId,
             title_txt: "Lembrete de agendamento",
             body_txt,
+            tag: `appointment-${id}`,
             onFilterSocket: () => [],
             url_redirect: "/auth/appointments",
           });
@@ -176,28 +196,70 @@ cron.schedule("*/4 * * * *", () => {
             );
           }
           if (nextNode) {
-            const businessInfo = await prisma.connectionWA.findFirst({
-              where: { id: Appointment.ConnectionWA.id },
-              select: { Business: { select: { name: true } } },
-            });
-            const bot = sessionsBaileysWA.get(Appointment.ConnectionWA.id);
+            let external_adapter:
+              | (IPropsControler["external_adapter"] & { businessName: string })
+              | null = null;
 
-            if (
-              !businessInfo?.Business ||
-              !bot ||
-              !Appointment.ContactsWAOnAccount
-            ) {
-              await prisma.appointmentReminders.update({
-                where: { id },
-                data: { status: "failed" },
+            if (Appointment.ConnectionWA?.id) {
+              let attempt = 0;
+              const botOnline = new Promise<boolean>((resolve, reject) => {
+                function run() {
+                  if (attempt >= 5) {
+                    return resolve(false);
+                  } else {
+                    setInterval(async () => {
+                      const botWA = cacheConnectionsWAOnline.get(
+                        Appointment!.ConnectionWA?.id!,
+                      );
+                      if (!botWA) {
+                        attempt++;
+                        return run();
+                      } else {
+                        return resolve(botWA);
+                      }
+                    }, 1000 * attempt);
+                  }
+                }
+                return run();
               });
-              return;
+
+              if (!botOnline) return;
+
+              const clientWA = sessionsBaileysWA.get(
+                Appointment.ConnectionWA?.id!,
+              )!;
+              external_adapter = {
+                type: "baileys",
+                clientWA: clientWA,
+                businessName: Appointment.ConnectionWA.Business.name,
+              };
+            }
+            if (Appointment.ConnectionIg?.id) {
+              try {
+                const credential = decrypte(
+                  Appointment.ConnectionIg.credentials,
+                );
+                external_adapter = {
+                  type: "instagram",
+                  page_token: credential.account_access_token,
+                  businessName: Appointment.ConnectionIg.Business.name,
+                };
+              } catch (error) {
+                return;
+              }
             }
 
+            if (!external_adapter) return;
+
+            const connectionId = (Appointment.ConnectionWA?.id ||
+              Appointment.ConnectionIg?.id)!;
+
             NodeControler({
-              businessName: businessInfo.Business.name,
+              businessName: external_adapter.businessName,
               flowId: Appointment.flowId,
               flowBusinessIds: flow.businessIds,
+              businessId: Appointment.businessId,
+
               ...(orderNode.type === "NodeAgentAI"
                 ? {
                     type: "running",
@@ -205,25 +267,23 @@ cron.schedule("*/4 * * * *", () => {
                     message: `Lembrete de agendamento automatico: ${body_txt}`,
                   }
                 : { type: "initial", action: null }),
-              connectionWhatsId: Appointment.ConnectionWA.id,
+
+              external_adapter,
+              connectionId,
+              lead_id:
+                Appointment.ContactsWAOnAccount!.ContactsWA.completeNumber,
+              contactAccountId: Appointment.ContactsWAOnAccount.id,
+
               chatbotId: Appointment.FlowState.chatbotId || undefined,
               campaignId: Appointment.FlowState.campaignId || undefined,
               oldNodeId: nextNode.id,
               previous_response_id:
                 Appointment.FlowState.previous_response_id || undefined,
-              clientWA: bot,
               isSavePositionLead: true,
               flowStateId: Appointment.FlowState.id,
-              contactsWAOnAccountId: Appointment.ContactsWAOnAccount.id,
-              lead: {
-                number:
-                  Appointment.ContactsWAOnAccount!.ContactsWA.completeNumber,
-              },
               currentNodeId: nextNode.id,
               edges: flow.edges,
               nodes: flow.nodes,
-              numberConnection:
-                Appointment.ConnectionWA.number + "@s.whatsapp.net",
               accountId: Appointment.accountId,
               actions: {
                 onFinish: async (vl) => {
@@ -240,8 +300,14 @@ cron.schedule("*/4 * * * *", () => {
                   console.log("TA CAINDO AQUI, finalizando fluxo");
                   await prisma.flowState.update({
                     where: { id: Appointment.FlowState!.id! },
-                    data: { isFinish: true },
+                    data: { isFinish: true, finishedAt: new Date() },
                   });
+                  webSocketEmitToRoom()
+                    .account(Appointment.accountId)
+                    .dashboard.dashboard_services({
+                      delta: -1,
+                      hour: resolveHourAndMinute(),
+                    });
                   if (
                     Appointment.FlowState!.chatbotId &&
                     Appointment.FlowState!.Chatbot?.TimeToRestart
@@ -271,35 +337,16 @@ cron.schedule("*/4 * * * *", () => {
                     .catch((err) => console.log(err));
                 },
                 onEnterNode: async (node) => {
-                  const indexCurrentAlreadyExist =
-                    await prisma.flowState.findFirst({
-                      where: {
-                        connectionWAId: Appointment.ConnectionWA?.id,
-                        contactsWAOnAccountId:
-                          Appointment.ContactsWAOnAccount?.id,
-                      },
-                      select: { id: true },
-                    });
-                  if (!indexCurrentAlreadyExist) {
-                    await prisma.flowState.create({
-                      data: {
-                        indexNode: node.id,
-                        flowId: node.flowId,
-                        connectionWAId: Appointment.ConnectionWA?.id,
-                        contactsWAOnAccountId:
-                          Appointment.ContactsWAOnAccount?.id,
-                      },
-                    });
-                  } else {
-                    await prisma.flowState.update({
-                      where: { id: indexCurrentAlreadyExist.id },
+                  await prisma.flowState
+                    .update({
+                      where: { id: Appointment.FlowState!.id },
                       data: {
                         indexNode: node.id,
                         flowId: node.flowId,
                         agentId: node.agentId || null,
                       },
-                    });
-                  }
+                    })
+                    .catch((err) => console.log(err));
                 },
               },
             }).finally(() => {

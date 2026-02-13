@@ -12,19 +12,10 @@ import crypto from "crypto";
 import { listFbChatbot } from "../../../../../utils/cachesMap";
 import { getMenuOnlinePublicValidation } from "../../../../../core/getMenuOnlinePublic/Validation";
 import { getMenuOnlinePublicController } from "../../../../../core/getMenuOnlinePublic";
-import { AxiosError } from "axios";
 import {
-  getMetaAccessToken,
-  getMetaLongAccessToken,
-} from "../../../../../services/meta/meta.auth";
-import {
-  getMetaAccounts,
-  getMetaIstagramId,
-  metaSubscribedApps,
-} from "../../../../../services/meta/meta.service";
-import NodeCache from "node-cache";
-import { metaAccountsCache } from "../../../../../services/meta/cache";
-import { socketIo } from "../../..";
+  metaIgCallbackWebhook,
+  metaVerifyWebhook,
+} from "../../../../../services/meta/meta.webhook";
 
 const RouterV1Public_Get = Router();
 
@@ -198,75 +189,7 @@ RouterV1Public_Get.get(
   getMenuOnlinePublicController,
 );
 
-RouterV1Public_Get.get("/meta/webhook", (req, res) => {
-  const mode = req.query["hub.mode"];
-  const token = req.query["hub.verify_token"];
-  const challenge = req.query["hub.challenge"];
-
-  if (mode === "subscribe" && token === "instagram_webhook_token_123") {
-    return res.status(200).send(challenge);
-  }
-
-  return res.sendStatus(403);
-});
-
-let credentials: { access_token: string; instagram_id: string } | null = null;
-
-RouterV1Public_Get.post("/meta/webhook", (req, res) => {
-  console.log("INSTAGRAM WEBHOOK:", JSON.stringify(req.body, null, 2));
-  res.sendStatus(200);
-});
-
-RouterV1Public_Get.get("/meta/auth/instagram/callback", async (req, res) => {
-  const { code, modal_id } = req.query;
-
-  // if (!code) {
-  //   return res.redirect(
-  //     `http://localhost:573/auth/?fb_success=false&modal_id=${modal_id}`,
-  //   );
-  // }
-
-  try {
-    // const access_token = await getMetaAccessToken(code as string);
-    // const long_access_token = await getMetaLongAccessToken(access_token);
-    // const accounts = await getMetaAccounts(long_access_token);
-    // metaAccountsCache.set(modal_id as string, accounts);
-    console.log({ modal_id_WEBHOOK: modal_id });
-    socketIo.to(modal_id as string).emit("receber_accounts", [
-      {
-        name: "Conta 1",
-        id: "1",
-      },
-      {
-        name: "Conta 2",
-        id: "2",
-      },
-    ]);
-
-    // const instagram_id = await getMetaIstagramId(accounts[0]);
-    // await metaSubscribedApps(accounts[0]);
-
-    // 2. Verifica se a inscrição foi salva com sucesso
-    // const verify = await axios.get(
-    //   `https://graph.facebook.com/v19.0/${pageId}/subscribed_apps`,
-    //   { params: { access_token: pageToken } },
-    // );
-    // console.log(
-    //   "Configurações atuais da Página:",
-    //   JSON.stringify(verify.data, null, 2),
-    // );
-
-    // return res.redirect(
-    //   `http://localhost:573/auth/?fb_success=true&modal_id=${modal_id}`,
-    // );
-
-    return res.send("<script>window.close();</script>");
-  } catch (error: any) {
-    console.log(error);
-    if (error instanceof AxiosError) {
-      res.json(error.response?.data);
-    }
-  }
-});
+RouterV1Public_Get.get("/meta/webhook", metaVerifyWebhook);
+RouterV1Public_Get.get("/meta/auth/instagram/callback", metaIgCallbackWebhook);
 
 export default RouterV1Public_Get;

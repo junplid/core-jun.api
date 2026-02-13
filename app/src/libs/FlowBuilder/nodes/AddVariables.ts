@@ -5,7 +5,7 @@ import { resolveTextVariables } from "../utils/ResolveTextVariables";
 interface PropsNodeAction {
   data: NodeAddVariablesData;
   flowStateId: number;
-  contactsWAOnAccountId: number;
+  contactAccountId: number;
   nodeId: string;
   accountId: number;
   numberLead: string;
@@ -13,7 +13,7 @@ interface PropsNodeAction {
 
 export const NodeAddVariables = (props: PropsNodeAction): Promise<void> =>
   new Promise(async (res, _rej) => {
-    const { data, contactsWAOnAccountId } = props;
+    const { data, contactAccountId } = props;
 
     for await (const newVar of data.list || []) {
       const exist = await prisma.variable.findFirst({
@@ -26,17 +26,20 @@ export const NodeAddVariables = (props: PropsNodeAction): Promise<void> =>
           accountId: props.accountId,
           text: newVar.value || "",
           nodeId: props.nodeId,
-          contactsWAOnAccountId,
+          contactsWAOnAccountId: contactAccountId,
           numberLead: props.numberLead,
         });
         const picked = await prisma.contactsWAOnAccountVariable.findFirst({
-          where: { contactsWAOnAccountId, variableId: newVar.id },
+          where: {
+            contactsWAOnAccountId: contactAccountId,
+            variableId: newVar.id,
+          },
           select: { id: true },
         });
         if (!picked) {
           await prisma.contactsWAOnAccountVariable.create({
             data: {
-              contactsWAOnAccountId,
+              contactsWAOnAccountId: contactAccountId,
               variableId: newVar.id,
               value: nextValue,
             },
@@ -45,7 +48,7 @@ export const NodeAddVariables = (props: PropsNodeAction): Promise<void> =>
           await prisma.contactsWAOnAccountVariable.update({
             where: { id: picked.id },
             data: {
-              contactsWAOnAccountId,
+              contactsWAOnAccountId: contactAccountId,
               variableId: newVar.id,
               value: nextValue,
             },

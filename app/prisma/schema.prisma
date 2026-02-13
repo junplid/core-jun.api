@@ -230,8 +230,10 @@ model Tickets {
   InboxDepartment      InboxDepartments      @relation(fields: [inboxDepartmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   contactWAOnAccountId Int
   ContactsWAOnAccount  ContactsWAOnAccount   @relation(fields: [contactWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  connectionWAId       Int
-  ConnectionWA         ConnectionWA          @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  connectionWAId       Int?
+  connectionIgId       Int?
+  ConnectionWA         ConnectionWA?         @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ConnectionIg         ConnectionIg?         @relation(fields: [connectionIgId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Messages             Messages[]
   Charges              Charges[]
 
@@ -245,34 +247,40 @@ enum TypeSentBy {
   system
 }
 
+enum TypeStatusMessage {
+  SENT
+  DELIVERED
+}
+
 model Messages {
-  id               Int         @id @default(autoincrement())
+  id               Int               @id @default(autoincrement())
   type             String
   by               TypeSentBy
-  latitude         String      @default("")
-  longitude        String      @default("")
-  address          String      @default("")
-  name             String      @default("")
+  latitude         String            @default("")
+  longitude        String            @default("")
+  address          String            @default("")
+  name             String            @default("")
   // definir linhas de tokens de entrada, saida e total, para mensurar quanto to tokens são usados por flowstate
   // e tao sera usado para metricas sobre qual tipo/tamanho de empresa usa quantos tokens por mês
-  fullName         String      @default("")
-  number           String      @default("")
-  org              String      @default("")
-  fileNameOriginal String      @default("")
-  read             Boolean     @default(false)
-  ptt              Boolean     @default(false)
-  message          String      @db.Text
-  caption          String      @default("")
-  fileName         String      @default("")
-  messageKey       String?
+  fullName         String            @default("")
+  number           String            @default("")
+  org              String            @default("")
+  fileNameOriginal String            @default("")
+  read             Boolean           @default(false)
+  ptt              Boolean           @default(false)
+  message          String            @db.Text
+  caption          String            @default("")
+  fileName         String            @default("")
+  messageKey       String?           @unique
+  status           TypeStatusMessage @default(SENT)
   flowStateId      Int?
   inboxUserId      Int?
   ticketsId        Int?
-  FlowState        FlowState?  @relation(fields: [flowStateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  InboxUser        InboxUsers? @relation(fields: [inboxUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  Tickets          Tickets?    @relation(fields: [ticketsId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  createAt         DateTime    @default(now())
-  updateAt         DateTime    @default(now()) @updatedAt
+  FlowState        FlowState?        @relation(fields: [flowStateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  InboxUser        InboxUsers?       @relation(fields: [inboxUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  Tickets          Tickets?          @relation(fields: [ticketsId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createAt         DateTime          @default(now())
+  updateAt         DateTime          @default(now()) @updatedAt
 
   @@index([id, inboxUserId, ticketsId, flowStateId, messageKey, by, read])
 }
@@ -754,6 +762,7 @@ model Business {
   Orders                 Orders[]
   Charges                Charges[]
   Appointments           Appointments[]
+  ConnectionIg           ConnectionIg[]
 
   @@index([id, accountId])
 }
@@ -789,6 +798,32 @@ model ConnectionWA {
   AgentAI              AgentAI?
 
   @@index([id, name, type, number])
+}
+
+model ConnectionIg {
+  id           Int            @id @default(autoincrement())
+  interrupted  Boolean        @default(false)
+  description  String?
+  page_id      String
+  page_name    String
+  ig_username  String
+  ig_id        String
+  ig_picture   String?        @db.Text
+  credentials  String         @db.Text
+  createAt     DateTime       @default(now())
+  updateAt     DateTime       @default(now()) @updatedAt
+  businessId   Int
+  Business     Business       @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Chatbot      Chatbot[]
+  FlowState    FlowState[]
+  Tickets      Tickets[]
+  LogSystem    LogSystem[]
+  Orders       Orders[]
+  MenusOnline  MenusOnline[]
+  Appointments Appointments[]
+  AgentAI      AgentAI?
+
+  @@index([id, ig_username])
 }
 
 model ConnectionWAOnGroups {
@@ -948,6 +983,7 @@ model FlowState {
   isSent                Boolean              @default(false)
   firedOnDate           DateTime?
   isFinish              Boolean?             @default(false)
+  finishedAt            DateTime?
   indexNode             String?
   agentId               Int?
   fbc                   String?
@@ -966,6 +1002,7 @@ model FlowState {
   campaignId            Int?
   contactsWAOnAccountId Int?
   connectionWAId        Int?
+  connectionIgId        Int?
   audienceId            Int?
   chatbotId             Int?
   Chatbot               Chatbot?             @relation(fields: [chatbotId], references: [id], onDelete: SetNull, onUpdate: SetNull)
@@ -973,6 +1010,7 @@ model FlowState {
   Campaign              Campaign?            @relation(fields: [campaignId], references: [id], onDelete: SetNull, onUpdate: SetNull)
   ContactsWAOnAccount   ContactsWAOnAccount? @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ConnectionWA          ConnectionWA?        @relation(fields: [connectionWAId], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  ConnectionIg          ConnectionIg?        @relation(fields: [connectionIgId], references: [id], onDelete: SetNull, onUpdate: SetNull)
   Tickets               Tickets[]
   Messages              Messages[]
   Orders                Orders[]
@@ -980,7 +1018,7 @@ model FlowState {
   Appointments          Appointments[]
   FollowUps             FollowUp[]
 
-  @@index([id, flowId, campaignId, contactsWAOnAccountId, connectionWAId, audienceId, isSent, isFinish, createAt])
+  @@index([createAt, finishedAt])
 }
 
 // enum TypeLogFlowState {
@@ -1105,7 +1143,9 @@ model Chatbot {
   addToLeadTagsIds      Int[]                 @default([])
   trigger               String?               @db.VarChar(160)
   flowBId               String?
+  connectionIgId        Int?
   ConnectionWA          ConnectionWA?         @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ConnectionIg          ConnectionIg?         @relation(fields: [connectionIgId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   businessId            Int
   Business              Business              @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   accountId             Int
@@ -1127,15 +1167,29 @@ enum TypeChatbotInactivity {
   days
 }
 
+enum TypeContact {
+  instagram
+  whatsapp
+  messenger
+}
+
 model ContactsWA {
-  id                  Int                   @id @default(autoincrement())
-  img                 String                @default("") @db.VarChar(250)
-  completeNumber      String                @unique
-  createAt            DateTime              @default(now())
-  updateAt            DateTime              @default(now()) @updatedAt
+  id             Int     @id @default(autoincrement())
+  img            String  @default("") @db.VarChar(250)
+  completeNumber String
+  page_id        String? // null caso seja "whatsapp"
+
+  name     String? @db.VarChar(255) // precisa remover, a ideia é fazer a request e cachear por 1 dia. (caso seja instagram)
+  username String? @db.VarChar(150) // precisa remover, a ideia é fazer a request e cachear por 1 dia. (caso seja instagram)
+
+  channel  TypeContact @default(whatsapp)
+  createAt DateTime    @default(now())
+  updateAt DateTime    @default(now()) @updatedAt
+
   ContactsWAOnAccount ContactsWAOnAccount[]
   Account             Account[]
 
+  @@unique([completeNumber, page_id, channel])
   @@index([id, completeNumber, createAt])
 }
 
@@ -1145,6 +1199,7 @@ model ContactsWAOnAccount {
   name                        String                        @db.VarChar(150)
   accountId                   Int
   contactWAId                 Int
+  last_interaction            DateTime                      @default(now())
   createAt                    DateTime                      @default(now())
   updateAt                    DateTime                      @default(now()) @updatedAt
   ContactsWA                  ContactsWA                    @relation(fields: [contactWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -1260,6 +1315,7 @@ model ContactsWAOnAccountVariable {
 model StoragePaths {
   id                     Int                      @id @default(autoincrement())
   name                   String?
+  attachment_id          String?
   originalName           String
   fileName               String
   size                   Float
@@ -1865,10 +1921,12 @@ model AgentAI {
   updateAt              DateTime               @default(now()) @updatedAt
   accountId             Int
   connectionWAId        Int?                   @unique
+  connectionIgId        Int?                   @unique
   chatbotId             Int?                   @unique
   providerCredentialId  Int
   Account               Account                @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ConnectionWA          ConnectionWA?          @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ConnectionIg          ConnectionIg?          @relation(fields: [connectionIgId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Chatbot               Chatbot?               @relation(fields: [chatbotId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ProviderCredential    ProviderCredential     @relation(fields: [providerCredentialId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   AgentAIOnBusiness     AgentAIOnBusiness[]
@@ -2016,6 +2074,8 @@ model Orders {
   ConnectionWA          ConnectionWA?        @relation(fields: [connectionWAId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   Account               Account              @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Charges               Charges[]
+  ConnectionIg          ConnectionIg?        @relation(fields: [connectionIgId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  connectionIgId        Int?
 
   @@index([id, name, accountId])
 }
@@ -2099,9 +2159,11 @@ model LogSystem {
   description    String        @db.Text
   accountId      Int?
   connectionWAId Int?
+  connectionIgId Int?
   createAt       DateTime      @default(now())
   Account        Account?      @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ConnectionWA   ConnectionWA? @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ConnectionIg   ConnectionIg? @relation(fields: [connectionIgId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([id, connectionWAId, accountId])
 }
@@ -2127,6 +2189,8 @@ model MenusOnline {
   Orders           Orders[]
   SizesPizza       SizesPizza[]
   MenusOnlineItems MenusOnlineItems[]
+  ConnectionIg     ConnectionIg?      @relation(fields: [connectionIgId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  connectionIgId   Int?
 
   @@index([id, uuid, accountId])
 }
@@ -2252,6 +2316,8 @@ model Appointments {
   ConnectionWA          ConnectionWA?            @relation(fields: [connectionWAId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   Account               Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   appointmentReminders  AppointmentReminders[]
+  ConnectionIg          ConnectionIg?            @relation(fields: [connectionIgId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  connectionIgId        Int?
 }
 
 enum StatusAppointmentReminders {

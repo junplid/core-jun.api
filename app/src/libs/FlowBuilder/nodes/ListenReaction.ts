@@ -5,12 +5,12 @@ interface PropsNodeListenReaction {
   data: NodeListenReactionData;
   message: string;
   reactionText: string;
-  contactsWAOnAccountId: number;
+  contactAccountId: number;
   contactsWAOnAccountReactionId?: number;
 }
 
 export const NodeListenReaction = async (
-  props: PropsNodeListenReaction
+  props: PropsNodeListenReaction,
 ): Promise<void> => {
   if (props.data.varIdToReaction) {
     const exist = await prisma.variable.findFirst({
@@ -20,7 +20,7 @@ export const NodeListenReaction = async (
     if (exist) {
       const picked = await prisma.contactsWAOnAccountVariable.findFirst({
         where: {
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactsWAOnAccountId: props.contactAccountId,
           variableId: props.data.varIdToReaction,
         },
         select: { id: true },
@@ -28,7 +28,7 @@ export const NodeListenReaction = async (
       if (!picked) {
         await prisma.contactsWAOnAccountVariable.create({
           data: {
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            contactsWAOnAccountId: props.contactAccountId,
             variableId: props.data.varIdToReaction,
             value: props.reactionText,
           },
@@ -37,7 +37,7 @@ export const NodeListenReaction = async (
         await prisma.contactsWAOnAccountVariable.update({
           where: { id: picked.id },
           data: {
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            contactsWAOnAccountId: props.contactAccountId,
             variableId: props.data.varIdToReaction,
             value: props.reactionText,
           },
@@ -80,7 +80,7 @@ export const NodeListenReaction = async (
     if (exist) {
       const picked = await prisma.contactsWAOnAccountVariable.findFirst({
         where: {
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactsWAOnAccountId: props.contactAccountId,
           variableId: props.data.varIdToMessage,
         },
         select: { id: true },
@@ -88,7 +88,7 @@ export const NodeListenReaction = async (
       if (!picked) {
         await prisma.contactsWAOnAccountVariable.create({
           data: {
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            contactsWAOnAccountId: props.contactAccountId,
             variableId: props.data.varIdToMessage,
             value: props.message,
           },
@@ -97,7 +97,7 @@ export const NodeListenReaction = async (
         await prisma.contactsWAOnAccountVariable.update({
           where: { id: picked.id },
           data: {
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            contactsWAOnAccountId: props.contactAccountId,
             variableId: props.data.varIdToMessage,
             value: props.message,
           },

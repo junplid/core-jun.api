@@ -55,11 +55,36 @@ if (!existsSync(pathFilesTest)) {
 })();
 
 const app = express();
+const allowedOriginsProd = [
+  "https://app.junplid.com.br",
+  "https://root.junplid.com.br",
+];
+
 const corsOptions = {
-  origin:
-    process.env.NODE_ENV === "production"
-      ? ["https://app.junplid.com.br", "https://root.junplid.com.br"]
-      : ["http://localhost:5173", "http://localhost:3000"],
+  origin: (origin: string | undefined, callback: Function) => {
+    if (!origin) return callback(null, true); // mobile apps / postman
+
+    const isProd = process.env.NODE_ENV === "production";
+
+    if (isProd) {
+      if (allowedOriginsProd.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    }
+
+    // ✅ DEV: permitir localhost + qualquer ngrok
+    if (
+      origin.startsWith("http://localhost") ||
+      origin.startsWith("https://localhost") ||
+      origin.includes(".ngrok") ||
+      origin.includes(".ngrok-free.app")
+    ) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true,
 };
 

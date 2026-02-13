@@ -13,6 +13,7 @@ export const createChatbotValidation = (
     businessId: Joi.number().required(),
     flowId: Joi.string().required(),
     connectionWAId: Joi.number(),
+    connectionIgId: Joi.number(),
     status: Joi.boolean().optional(),
     description: Joi.string().optional(),
     addLeadToAudiencesIds: Joi.array().items(Joi.number()).optional(),

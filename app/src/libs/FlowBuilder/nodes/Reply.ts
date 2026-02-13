@@ -6,7 +6,7 @@ import moment from "moment-timezone";
 
 const getNextTimeOut = (
   type: "MINUTES" | "HOURS" | "DAYS" | "SECONDS",
-  value: number
+  value: number,
 ) => {
   try {
     if (type === "SECONDS" && value > 1440) value = 1440;
@@ -27,12 +27,12 @@ const getNextTimeOut = (
 };
 
 interface PropsNodeReply {
-  numberLead: string;
-  numberConnection: string;
+  lead_id: string;
+  contactAccountId: number;
+  connectionId: number;
   data?: NodeReplyData;
   message?: string;
   flowStateId: number;
-  contactsWAOnAccountId: number;
   accountId: number;
   flowBusinessIds?: number[];
   onExecuteSchedule?: () => Promise<void>;
@@ -41,11 +41,11 @@ interface PropsNodeReply {
 type ResultPromise = { action: "NEXT" | "RETURN"; line?: string };
 
 export const NodeReply = async (
-  props: PropsNodeReply
+  props: PropsNodeReply,
 ): Promise<ResultPromise> => {
   const { message, data } = props;
   console.log({ message, time: data?.timeout });
-  const keyMap = props.numberConnection + props.numberLead;
+  const keyMap = `${props.connectionId}+${props.lead_id}`;
 
   const scheduleExecution = scheduleExecutionsReply.get(keyMap);
   if (message) {
@@ -74,7 +74,7 @@ export const NodeReply = async (
       const x = await prisma.contactsWAOnAccountVariable.findFirst({
         where: {
           variableId: id,
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          contactsWAOnAccountId: props.contactAccountId,
         },
         select: { id: true },
       });
@@ -87,7 +87,7 @@ export const NodeReply = async (
         await prisma.contactsWAOnAccountVariable.create({
           data: {
             value: message,
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            contactsWAOnAccountId: props.contactAccountId,
             variableId: id,
           },
         });
@@ -111,7 +111,7 @@ export const NodeReply = async (
         const nextTimeStart = getNextTimeOut(type[0], nextNumber);
         const timeOnExecuteActionTimeOut = scheduleJob(
           nextTimeStart,
-          props.onExecuteSchedule
+          props.onExecuteSchedule,
         );
         scheduleExecutionsReply.set(keyMap, timeOnExecuteActionTimeOut);
         return { action: "RETURN", line: "102" };

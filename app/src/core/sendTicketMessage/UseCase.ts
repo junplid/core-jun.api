@@ -1,8 +1,6 @@
 import { resolve } from "path";
 import { SendMessageText } from "../../adapters/Baileys/modules/sendMessage";
 import { prisma } from "../../adapters/Prisma/client";
-import { socketIo } from "../../infra/express";
-import { cacheAccountSocket } from "../../infra/websocket/cache";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { SendTicketMessageDTO_I } from "./DTO";
 import { lookup } from "mime-types";
@@ -12,6 +10,10 @@ import { readFileSync } from "fs-extra";
 import { SendImage } from "../../adapters/Baileys/modules/sendImage";
 import { SendVideo } from "../../adapters/Baileys/modules/sendVideo";
 import { SendAudio } from "../../adapters/Baileys/modules/sendAudio";
+import { webSocketEmitToRoom } from "../../infra/websocket";
+
+// toda resposta de error deve ser feita via socket.
+// a mensagem de error deve aparecer no balão da mensagem em cor vermelho e icone de error vermelho.
 
 let path = "";
 if (process.env.NODE_ENV === "production") {
@@ -23,7 +25,7 @@ if (process.env.NODE_ENV === "production") {
 export class SendTicketMessageUseCase {
   constructor() {}
 
-  async run({ ...dto }: SendTicketMessageDTO_I) {
+  async run({ sockId_ignore, ...dto }: SendTicketMessageDTO_I) {
     const exist = await prisma.tickets.findFirst({
       where: {
         id: dto.id,
@@ -33,773 +35,857 @@ export class SendTicketMessageUseCase {
       select: {
         accountId: true,
         connectionWAId: true,
-        InboxDepartment: { select: { name: true, id: true, businessId: true } },
+        InboxDepartment: { select: { id: true } },
         ContactsWAOnAccount: {
           select: {
-            name: true,
             id: true,
             ContactsWA: { select: { completeNumber: true } },
           },
         },
-        updateAt: true,
       },
     });
 
     if (!exist) {
       throw new ErrorResponse(400).container(
-        "Não foi possivel encontrar o ticket.",
+        "Não foi possivel encontrar o ticket. Error:#61",
       );
     }
 
-    const { InboxDepartment, ContactsWAOnAccount, updateAt } = exist;
-
-    const nameSpace = socketIo.of(
-      `/business-${InboxDepartment.businessId}/inbox`,
-    );
+    const { InboxDepartment, ContactsWAOnAccount } = exist;
 
     if (dto.type === "text") {
-      let messageId = 0;
-      let lastInteractionDate: null | Date = null;
       try {
-        const msg = await SendMessageText({
-          connectionId: exist.connectionWAId,
-          text: dto.text,
-          toNumber: ContactsWAOnAccount.ContactsWA.completeNumber,
-        });
-        if (!msg?.key?.id) {
-          throw new ErrorResponse(500).toast({
-            title: "Erro ao enviar mensagem.",
-            description: "Não foi possível enviar a mensagem.",
-            type: "error",
+        let messageId = 0;
+        let msgkey: string | null = null;
+
+        if (exist.connectionWAId) {
+          const msg = await SendMessageText({
+            connectionId: exist.connectionWAId,
+            toNumber: ContactsWAOnAccount.ContactsWA.completeNumber,
+            text: dto.text,
           });
+          if (!msg?.key?.id) {
+            return {
+              status: 201,
+              msg: [
+                {
+                  code_uuid: dto.code_uuid,
+                  error: "`msgKey` não retornado. Error:#73",
+                },
+              ],
+            };
+          }
+          msgkey = msg?.key?.id;
         }
+
+        if (!msgkey) {
+          return {
+            status: 201,
+            msg: [
+              {
+                code_uuid: dto.code_uuid,
+                error: "`msgKey` não retornado. Error:#87",
+              },
+            ],
+          };
+        }
+
+        const nextText = await resolveTextVariables({
+          accountId: exist.accountId,
+          contactsWAOnAccountId: exist.ContactsWAOnAccount.id,
+          text: dto.text,
+          numberLead: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
+        });
+
         const { id: msgId, createAt } = await prisma.messages.create({
           data: {
             by: "user",
             type: "text",
-            message: dto.text,
+            message: nextText,
             ticketsId: dto.id,
-            messageKey: msg.key.id,
+            messageKey: msgkey,
           },
           select: { id: true, createAt: true },
         });
-        lastInteractionDate = createAt;
         messageId = msgId;
+
         if (dto.accountId) {
-          cacheAccountSocket
-            .get(dto.accountId)
-            ?.listSocket?.forEach((sockId) => {
-              // isso é só se caso o contato enviar mensagem para o ticket.
-              // socketIo.to(sockId).emit(`inbox`, {
-              //   accountId: dto.accountId,
-              //   departmentId: InboxDepartment.id,
-              //   departmentName: InboxDepartment.name,
-              //   status: "MESSAGE",
-              //   notifyMsc: true,
-              //   notifyToast: true,
-              //   id: dto.id,
-              // });
+          const { ticket_chat, player_department } =
+            webSocketEmitToRoom().account(dto.accountId!);
 
-              nameSpace.emit("message-list", {
-                content: {
-                  id: msgId,
-                  type: "text",
-                  text: dto.text,
-                },
-                by: "contact",
-                departmentId: InboxDepartment.id,
-                ticketId: dto.id,
-                userId: dto.userId, // caso seja enviado para um usuário.
-                lastInteractionDate: createAt,
-                read: true,
-              });
+          ticket_chat(dto.id).message(
+            {
+              content: {
+                id: messageId,
+                text: nextText,
+                type: "text",
+                createAt,
+              },
+              ticketId: dto.id,
+              by: "user",
+            },
+            [sockId_ignore],
+          );
 
-              nameSpace.emit("message", {
-                content: {
-                  id: messageId,
-                  text: dto.text,
-                  type: "text",
-                },
-                by: "user",
-                departmentId: InboxDepartment.id,
-                ticketId: dto.id,
-                userId: undefined, // caso seja enviado para um usuário.
-                lastInteractionDate: lastInteractionDate!,
-              });
-            });
+          player_department(InboxDepartment.id).message_ticket_list(
+            {
+              text: nextText,
+              createAt,
+              status: "SENT",
+              type: "text",
+              by: "user",
+              ticketId: dto.id,
+            },
+            [sockId_ignore],
+          );
         }
+        return {
+          status: 201,
+          msg: [{ id: msgId, createAt, code_uuid: dto.code_uuid }],
+        };
       } catch (error) {
-        console.error("Error sending message:", error);
-        throw new ErrorResponse(500).toast({
-          title: "Erro na conexão ao tentar enviar a mensagem.",
-          description: "Por favor, verifique a conexão com o WhatsApp.",
-          type: "error",
-        });
+        return {
+          status: 201,
+          msg: [
+            {
+              code_uuid: dto.code_uuid,
+              error: "`msgKey` não retornado. Error:#152",
+            },
+          ],
+        };
       }
     } else {
       const files = dto.files || [];
       if (!files.length) {
         throw new ErrorResponse(400).container(
-          "É necessário enviar pelo menos um arquivo.",
+          "É necessário enviar pelo menos um arquivo. Error:#161",
         );
       }
 
-      const firstFile = files.shift();
-      if (firstFile) {
-        const e = await prisma.storagePaths.findFirst({
-          where: { id: firstFile.id, accountId: exist.accountId },
-          select: { fileName: true, originalName: true },
-        });
+      const msgResponse: any[] = [];
+      for (let index = 0; index < files.length; index++) {
+        if (!index) {
+          const firstFile = files[index];
+          const e = await prisma.storagePaths.findFirst({
+            where: { id: firstFile.id, accountId: exist.accountId },
+            select: { fileName: true, originalName: true },
+          });
 
-        if (e) {
-          const urlStatic = `${path}/${e.fileName}`;
-          const mimetype = lookup(urlStatic);
-          let caption = "";
+          if (e) {
+            const urlStatic = `${path}/${e.fileName}`;
+            const mimetype = lookup(urlStatic);
+            let caption = "";
 
-          if ((dto.type === "file" || dto.type === "image") && dto.text) {
-            caption = await resolveTextVariables({
-              accountId: exist.accountId,
-              contactsWAOnAccountId: exist.ContactsWAOnAccount.id,
-              text: dto.text,
-              // ticketProtocol: props.ticketProtocol,
-              numberLead: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
-            });
-          }
-          if (dto.type === "file") {
-            try {
-              const msg = await SendFile({
-                connectionId: exist.connectionWAId,
-                originalName: e.originalName,
-                toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
-                caption,
-                document: readFileSync(urlStatic),
-                mimetype: mimetype || undefined,
+            if ((dto.type === "file" || dto.type === "image") && dto.text) {
+              caption = await resolveTextVariables({
+                accountId: exist.accountId,
+                contactsWAOnAccountId: exist.ContactsWAOnAccount.id,
+                text: dto.text,
+                numberLead: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
               });
-              if (!msg?.key?.id) {
-                throw new ErrorResponse(500).toast({
-                  title: "Erro ao enviar mensagem.",
-                  description: "Não foi possível enviar a mensagem.",
-                  type: "error",
-                });
-              }
-              const { id: msgId, createAt } = await prisma.messages.create({
-                data: {
-                  by: "user",
-                  type: "file",
-                  caption,
-                  message: "",
-                  fileName: e.fileName,
-                  ticketsId: dto.id,
-                  messageKey: msg.key.id,
-                },
-                select: { id: true, createAt: true },
-              });
-              if (dto.accountId) {
-                cacheAccountSocket
-                  .get(dto.accountId)
-                  ?.listSocket?.forEach((sockId) => {
-                    // isso é só se caso o contato enviar mensagem para o ticket.
-                    // socketIo.to(sockId).emit(`inbox`, {
-                    //   accountId: dto.accountId,
-                    //   departmentId: InboxDepartment.id,
-                    //   departmentName: InboxDepartment.name,
-                    //   status: "MESSAGE",
-                    //   notifyMsc: true,
-                    //   notifyToast: true,
-                    //   id: dto.id,
-                    // });
-                    nameSpace.emit("message-list", {
-                      content: { id: msgId, type: "file" },
-                      by: "contact",
-                      departmentId: InboxDepartment.id,
-                      notifyMsc: false,
-                      notifyToast: false,
-                      ticketId: dto.id,
-                      userId: dto.userId, // caso seja enviado para um usuário.
-                      lastInteractionDate: createAt,
-                      read: true,
+            }
+            if (dto.type === "file") {
+              try {
+                let messageId = 0;
+                let msgkey: string | null = null;
+                if (exist.connectionWAId) {
+                  const msg = await SendFile({
+                    connectionId: exist.connectionWAId,
+                    originalName: e.originalName,
+                    toNumber:
+                      exist.ContactsWAOnAccount.ContactsWA.completeNumber,
+                    caption,
+                    document: readFileSync(urlStatic),
+                    mimetype: mimetype || undefined,
+                  });
+                  if (!msg?.key?.id) {
+                    msgResponse.push({
+                      error: "`msgKey` não retornado. Error:#203",
+                      code_uuid: firstFile.code_uuid,
                     });
-                    nameSpace.emit("message", {
+                    continue;
+                  }
+                  msgkey = msg?.key?.id;
+                }
+                if (!msgkey) {
+                  msgResponse.push({
+                    error: "`msgKey` não retornado. Error:#212",
+                    code_uuid: firstFile.code_uuid,
+                  });
+                  continue;
+                }
+                const { id: msgId, createAt } = await prisma.messages.create({
+                  data: {
+                    by: "user",
+                    type: "file",
+                    caption,
+                    message: "",
+                    fileName: e.fileName,
+                    ticketsId: dto.id,
+                    messageKey: msgkey,
+                  },
+                  select: { id: true, createAt: true },
+                });
+                messageId = msgId;
+
+                if (dto.accountId) {
+                  const { ticket_chat, player_department } =
+                    webSocketEmitToRoom().account(dto.accountId!);
+
+                  ticket_chat(dto.id).message(
+                    {
                       content: {
-                        id: msgId,
+                        id: messageId,
+                        createAt,
                         type: "file",
-                        caption,
                         fileName: e.fileName,
+                        caption,
                       },
-                      by: "user",
-                      departmentId: InboxDepartment.id,
-                      notifyMsc: false,
-                      notifyToast: false,
                       ticketId: dto.id,
-                      userId: dto.userId, // caso seja enviado para um usuário.
-                      lastInteractionDate: createAt,
-                    });
-                  });
-              }
-            } catch (error) {
-              console.log(error);
-              throw new ErrorResponse(500).toast({
-                title: "Erro ao enviar arquivo.",
-                description: "Não foi possível enviar o arquivo.",
-                type: "error",
-              });
-            }
-          }
-          if (dto.type === "image") {
-            try {
-              if (!mimetype) {
-                throw new ErrorResponse(400).container(
-                  "Tipo de arquivo inválido. Por favor, envie uma imagem.",
-                );
-              }
-              if (/^image\//.test(mimetype)) {
-                const msg = await SendImage({
-                  connectionId: exist.connectionWAId,
-                  url: urlStatic,
-                  toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
-                  caption,
-                });
-                if (!msg?.key?.id) {
-                  throw new ErrorResponse(500).toast({
-                    title: "Erro ao enviar imagem.",
-                    description: "Não foi possível enviar a imagem.",
-                    type: "error",
-                  });
-                }
-                const { id: msgId, createAt } = await prisma.messages.create({
-                  data: {
-                    by: "user",
-                    type: "image",
-                    caption,
-                    message: "",
-                    fileName: e.fileName,
-                    ticketsId: dto.id,
-                    messageKey: msg.key.id,
-                  },
-                  select: { id: true, createAt: true },
-                });
-                if (dto.accountId) {
-                  cacheAccountSocket
-                    .get(dto.accountId)
-                    ?.listSocket?.forEach((sockId) => {
-                      // isso é só se caso o contato enviar mensagem para o ticket.
-                      // socketIo.to(sockId).emit(`inbox`, {
-                      //   accountId: dto.accountId,
-                      //   departmentId: InboxDepartment.id,
-                      //   departmentName: InboxDepartment.name,
-                      //   status: "MESSAGE",
-                      //   notifyMsc: true,
-                      //   notifyToast: true,
-                      //   id: dto.id,
-                      // });
-                      nameSpace.emit("message-list", {
-                        content: { id: msgId, type: "image" },
-                        by: "contact",
-                        departmentId: InboxDepartment.id,
-                        notifyMsc: false,
-                        notifyToast: false,
-                        ticketId: dto.id,
-                        userId: dto.userId, // caso seja enviado para um usuário.
-                        lastInteractionDate: createAt,
-                        read: true,
-                      });
-                      nameSpace.emit("message", {
-                        content: {
-                          id: msgId,
-                          type: "image",
-                          caption,
-                          fileName: e.fileName,
-                        },
-                        by: "user",
-                        departmentId: InboxDepartment.id,
-                        notifyMsc: false,
-                        notifyToast: false,
-                        ticketId: dto.id,
-                        userId: dto.userId, // caso seja enviado para um usuário.
-                        lastInteractionDate: createAt,
-                      });
-                    });
-                }
-              }
-              if (/^video\//.test(mimetype)) {
-                const msg = await SendVideo({
-                  connectionId: exist.connectionWAId,
-                  toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
-                  caption,
-                  video: readFileSync(urlStatic),
-                  mimetype: mimetype || undefined,
-                });
-                if (!msg?.key?.id) {
-                  throw new ErrorResponse(500).toast({
-                    title: "Erro ao enviar vídeo.",
-                    description: "Não foi possível enviar a vídeo.",
-                    type: "error",
-                  });
-                }
-                const { id: msgId, createAt } = await prisma.messages.create({
-                  data: {
-                    by: "user",
-                    type: "video",
-                    caption,
-                    message: "",
-                    fileName: e.fileName,
-                    ticketsId: dto.id,
-                    messageKey: msg.key.id,
-                  },
-                  select: { id: true, createAt: true },
-                });
-                if (dto.accountId) {
-                  cacheAccountSocket
-                    .get(dto.accountId)
-                    ?.listSocket?.forEach((sockId) => {
-                      // isso é só se caso o contato enviar mensagem para o ticket.
-                      // socketIo.to(sockId).emit(`inbox`, {
-                      //   accountId: dto.accountId,
-                      //   departmentId: InboxDepartment.id,
-                      //   departmentName: InboxDepartment.name,
-                      //   status: "MESSAGE",
-                      //   notifyMsc: true,
-                      //   notifyToast: true,
-                      //   id: dto.id,
-                      // });
-                      nameSpace.emit("message-list", {
-                        content: { id: msgId, type: "video" },
-                        by: "contact",
-                        departmentId: InboxDepartment.id,
-                        notifyMsc: false,
-                        notifyToast: false,
-                        ticketId: dto.id,
-                        userId: dto.userId, // caso seja enviado para um usuário.
-                        lastInteractionDate: createAt,
-                        read: true,
-                      });
-                      nameSpace.emit("message", {
-                        content: {
-                          id: msgId,
-                          type: "video",
-                          caption,
-                          fileName: e.fileName,
-                        },
-                        by: "user",
-                        departmentId: InboxDepartment.id,
-                        notifyMsc: false,
-                        notifyToast: false,
-                        ticketId: dto.id,
-                        userId: dto.userId, // caso seja enviado para um usuário.
-                        lastInteractionDate: createAt,
-                      });
-                    });
-                }
-              }
-            } catch (error) {
-              throw new ErrorResponse(500).toast({
-                title: "Erro ao enviar imagem.",
-                description: "Não foi possível enviar a imagem.",
-                type: "error",
-              });
-            }
-          }
-          if (dto.type === "audio") {
-            const msg = await SendAudio({
-              connectionId: exist.connectionWAId,
-              toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
-              urlStatic: urlStatic,
-              ptt: firstFile.type === "audio",
-              mimetype: mimetype || undefined,
-            });
-            if (!msg?.key?.id) {
-              throw new ErrorResponse(500).toast({
-                title: "Erro ao enviar imagem.",
-                description: "Não foi possível enviar a audio.",
-                type: "error",
-              });
-            }
-            const { id: msgId, createAt } = await prisma.messages.create({
-              data: {
-                by: "user",
-                type: "audio",
-                ptt: firstFile.type === "audio",
-                message: "",
-                fileName: e.fileName,
-                ticketsId: dto.id,
-                messageKey: msg.key.id,
-              },
-              select: { id: true, createAt: true },
-            });
-            if (dto.accountId) {
-              cacheAccountSocket
-                .get(dto.accountId)
-                ?.listSocket?.forEach((sockId) => {
-                  // isso é só se caso o contato enviar mensagem para o ticket.
-                  // socketIo.to(sockId).emit(`inbox`, {
-                  //   accountId: dto.accountId,
-                  //   departmentId: InboxDepartment.id,
-                  //   departmentName: InboxDepartment.name,
-                  //   status: "MESSAGE",
-                  //   notifyMsc: true,
-                  //   notifyToast: true,
-                  //   id: dto.id,
-                  // });
-                  nameSpace.emit("message-list", {
-                    content: { id: msgId, type: "audio" },
-                    by: "contact",
-                    departmentId: InboxDepartment.id,
-                    notifyMsc: false,
-                    notifyToast: false,
-                    ticketId: dto.id,
-                    userId: dto.userId, // caso seja enviado para um usuário.
-                    lastInteractionDate: createAt,
-                    read: true,
-                  });
-                  nameSpace.emit("message", {
-                    content: {
-                      id: msgId,
-                      type: "audio",
-                      fileName: e.fileName,
-                      ptt: firstFile.type === "audio",
+                      by: "user",
                     },
-                    by: "user",
-                    departmentId: InboxDepartment.id,
-                    notifyMsc: false,
-                    notifyToast: false,
-                    ticketId: dto.id,
-                    userId: dto.userId, // caso seja enviado para um usuário.
-                    lastInteractionDate: createAt,
-                  });
-                });
-            }
-          }
-        }
-      }
+                    [sockId_ignore],
+                  );
 
-      for await (const file of files) {
-        const e = await prisma.storagePaths.findFirst({
-          where: { id: file.id, accountId: exist.accountId },
-          select: { fileName: true, originalName: true },
-        });
-
-        if (e) {
-          const urlStatic = `${path}/${e.fileName}`;
-          const mimetype = lookup(urlStatic);
-          let caption = "";
-
-          if ((dto.type === "file" || dto.type === "image") && dto.text) {
-            caption = await resolveTextVariables({
-              accountId: exist.accountId,
-              contactsWAOnAccountId: exist.ContactsWAOnAccount.id,
-              text: dto.text,
-              // ticketProtocol: props.ticketProtocol,
-              numberLead: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
-            });
-          }
-          if (dto.type === "file") {
-            try {
-              const msg = await SendFile({
-                connectionId: exist.connectionWAId,
-                originalName: e.originalName,
-                toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
-                caption,
-                document: readFileSync(urlStatic),
-                mimetype: mimetype || undefined,
-              });
-              if (!msg?.key?.id) {
-                throw new ErrorResponse(500).toast({
-                  title: "Erro ao enviar mensagem.",
-                  description: "Não foi possível enviar a mensagem.",
-                  type: "error",
-                });
-              }
-              const { id: msgId, createAt } = await prisma.messages.create({
-                data: {
-                  by: "user",
-                  type: "file",
-                  caption,
-                  message: "",
-                  fileName: e.fileName,
-                  ticketsId: dto.id,
-                  messageKey: msg.key.id,
-                },
-                select: { id: true, createAt: true },
-              });
-              if (dto.accountId) {
-                cacheAccountSocket
-                  .get(dto.accountId)
-                  ?.listSocket?.forEach((sockId) => {
-                    // isso é só se caso o contato enviar mensagem para o ticket.
-                    // socketIo.to(sockId).emit(`inbox`, {
-                    //   accountId: dto.accountId,
-                    //   departmentId: InboxDepartment.id,
-                    //   departmentName: InboxDepartment.name,
-                    //   status: "MESSAGE",
-                    //   notifyMsc: true,
-                    //   notifyToast: true,
-                    //   id: dto.id,
-                    // });
-                    nameSpace.emit("message-list", {
-                      content: { id: msgId, type: "file" },
-                      by: "contact",
-                      departmentId: InboxDepartment.id,
-                      notifyMsc: false,
-                      notifyToast: false,
-                      ticketId: dto.id,
-                      userId: dto.userId, // caso seja enviado para um usuário.
-                      lastInteractionDate: createAt,
-                      read: true,
-                    });
-                    nameSpace.emit("message", {
-                      content: {
-                        id: msgId,
-                        type: "file",
-                        caption,
-                        fileName: e.fileName,
-                      },
+                  player_department(InboxDepartment.id).message_ticket_list(
+                    {
+                      type: "file",
+                      status: "SENT",
                       by: "user",
-                      departmentId: InboxDepartment.id,
-                      notifyMsc: false,
-                      notifyToast: false,
                       ticketId: dto.id,
-                      userId: dto.userId, // caso seja enviado para um usuário.
-                      lastInteractionDate: createAt,
-                    });
-                  });
+                      createAt,
+                    },
+                    [sockId_ignore],
+                  );
+                }
+                msgResponse.push({
+                  id: messageId,
+                  createAt,
+                  code_uuid: firstFile.code_uuid,
+                });
+              } catch (error) {
+                msgResponse.push({
+                  error: "Não foi possivel enviar a mensagem. Error:#268",
+                  code_uuid: firstFile.code_uuid,
+                });
+                continue;
               }
-            } catch (error) {
-              throw new ErrorResponse(500).toast({
-                title: "Erro ao enviar arquivo.",
-                description: "Não foi possível enviar o arquivo.",
-                type: "error",
-              });
             }
-          }
-          if (dto.type === "image") {
-            try {
-              if (!mimetype) {
-                throw new ErrorResponse(400).container(
-                  "Tipo de arquivo inválido. Por favor, envie uma imagem.",
-                );
-              }
-              if (/^image\//.test(mimetype)) {
-                const msg = await SendImage({
-                  connectionId: exist.connectionWAId,
-                  url: urlStatic,
-                  toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
-                  caption,
-                });
-                if (!msg?.key?.id) {
-                  throw new ErrorResponse(500).toast({
-                    title: "Erro ao enviar imagem.",
-                    description: "Não foi possível enviar a imagem.",
-                    type: "error",
+            if (dto.type === "image") {
+              try {
+                if (!mimetype) {
+                  msgResponse.push({
+                    error: "Arquivo inválido. Error:#278",
+                    code_uuid: firstFile.code_uuid,
                   });
+                  continue;
                 }
-                const { id: msgId, createAt } = await prisma.messages.create({
-                  data: {
-                    by: "user",
-                    type: "image",
-                    caption,
-                    message: "",
-                    fileName: e.fileName,
-                    ticketsId: dto.id,
-                    messageKey: msg.key.id,
-                  },
-                  select: { id: true, createAt: true },
-                });
-                if (dto.accountId) {
-                  cacheAccountSocket
-                    .get(dto.accountId)
-                    ?.listSocket?.forEach((sockId) => {
-                      // isso é só se caso o contato enviar mensagem para o ticket.
-                      // socketIo.to(sockId).emit(`inbox`, {
-                      //   accountId: dto.accountId,
-                      //   departmentId: InboxDepartment.id,
-                      //   departmentName: InboxDepartment.name,
-                      //   status: "MESSAGE",
-                      //   notifyMsc: true,
-                      //   notifyToast: true,
-                      //   id: dto.id,
-                      // });
-                      nameSpace.emit("message-list", {
-                        content: { id: msgId, type: "image" },
-                        by: "contact",
-                        departmentId: InboxDepartment.id,
-                        notifyMsc: false,
-                        notifyToast: false,
-                        ticketId: dto.id,
-                        userId: dto.userId, // caso seja enviado para um usuário.
-                        lastInteractionDate: createAt,
-                        read: true,
-                      });
-                      nameSpace.emit("message", {
-                        content: {
-                          id: msgId,
-                          type: "image",
-                          caption,
-                          fileName: e.fileName,
-                        },
-                        by: "user",
-                        departmentId: InboxDepartment.id,
-                        notifyMsc: false,
-                        notifyToast: false,
-                        ticketId: dto.id,
-                        userId: dto.userId, // caso seja enviado para um usuário.
-                        lastInteractionDate: createAt,
-                      });
-                    });
-                }
-              }
-              if (/^video\//.test(mimetype)) {
-                const msg = await SendVideo({
-                  connectionId: exist.connectionWAId,
-                  toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
-                  caption,
-                  video: readFileSync(urlStatic),
-                  mimetype: mimetype || undefined,
-                });
-                if (!msg?.key?.id) {
-                  throw new ErrorResponse(500).toast({
-                    title: "Erro ao enviar video.",
-                    description: "Não foi possível enviar a vídeo.",
-                    type: "error",
-                  });
-                }
-                const { id: msgId, createAt } = await prisma.messages.create({
-                  data: {
-                    by: "user",
-                    type: "video",
-                    caption,
-                    message: "",
-                    fileName: e.fileName,
-                    ticketsId: dto.id,
-                    messageKey: msg.key.id,
-                  },
-                  select: { id: true, createAt: true },
-                });
-                if (dto.accountId) {
-                  cacheAccountSocket
-                    .get(dto.accountId)
-                    ?.listSocket?.forEach((sockId) => {
-                      // isso é só se caso o contato enviar mensagem para o ticket.
-                      // socketIo.to(sockId).emit(`inbox`, {
-                      //   accountId: dto.accountId,
-                      //   departmentId: InboxDepartment.id,
-                      //   departmentName: InboxDepartment.name,
-                      //   status: "MESSAGE",
-                      //   notifyMsc: true,
-                      //   notifyToast: true,
-                      //   id: dto.id,
-                      // });
-                      nameSpace.emit("message-list", {
-                        content: { id: msgId, type: "video" },
-                        by: "contact",
-                        departmentId: InboxDepartment.id,
-                        notifyMsc: false,
-                        notifyToast: false,
-                        ticketId: dto.id,
-                        userId: dto.userId, // caso seja enviado para um usuário.
-                        lastInteractionDate: createAt,
-                        read: true,
-                      });
-                      nameSpace.emit("message", {
-                        content: {
-                          id: msgId,
-                          type: "video",
-                          caption,
-                          fileName: e.fileName,
-                        },
-                        by: "user",
-                        departmentId: InboxDepartment.id,
-                        notifyMsc: false,
-                        notifyToast: false,
-                        ticketId: dto.id,
-                        userId: dto.userId, // caso seja enviado para um usuário.
-                        lastInteractionDate: createAt,
-                      });
-                    });
-                }
-              }
-            } catch (error) {
-              throw new ErrorResponse(500).toast({
-                title: "Erro ao enviar imagem.",
-                description: "Não foi possível enviar a imagem.",
-                type: "error",
-              });
-            }
-          }
-          if (dto.type === "audio") {
-            const msg = await SendAudio({
-              connectionId: exist.connectionWAId,
-              toNumber: exist.ContactsWAOnAccount.ContactsWA.completeNumber,
-              urlStatic: urlStatic,
-              ptt: file.type === "audio",
-              mimetype: mimetype || undefined,
-            });
-            if (!msg?.key?.id) {
-              throw new ErrorResponse(500).toast({
-                title: "Erro ao enviar imagem.",
-                description: "Não foi possível enviar a audio.",
-                type: "error",
-              });
-            }
-            const { id: msgId, createAt } = await prisma.messages.create({
-              data: {
-                by: "user",
-                type: "audio",
-                ptt: file.type === "audio",
-                message: "",
-                fileName: e.fileName,
-                ticketsId: dto.id,
-                messageKey: msg.key.id,
-              },
-              select: { id: true, createAt: true },
-            });
-            if (dto.accountId) {
-              cacheAccountSocket
-                .get(dto.accountId)
-                ?.listSocket?.forEach((sockId) => {
-                  // isso é só se caso o contato enviar mensagem para o ticket.
-                  // socketIo.to(sockId).emit(`inbox`, {
-                  //   accountId: dto.accountId,
-                  //   departmentId: InboxDepartment.id,
-                  //   departmentName: InboxDepartment.name,
-                  //   status: "MESSAGE",
-                  //   notifyMsc: true,
-                  //   notifyToast: true,
-                  //   id: dto.id,
-                  // });
-                  nameSpace.emit("message-list", {
-                    content: { id: msgId, type: "audio" },
-                    by: "contact",
-                    departmentId: InboxDepartment.id,
-                    notifyMsc: false,
-                    notifyToast: false,
-                    ticketId: dto.id,
-                    userId: dto.userId, // caso seja enviado para um usuário.
-                    lastInteractionDate: createAt,
-                    read: true,
-                  });
-                  nameSpace.emit("message", {
-                    content: {
-                      id: msgId,
-                      type: "audio",
+                if (/^image\//.test(mimetype)) {
+                  let messageId = 0;
+                  let msgkey: string | null = null;
+                  if (exist.connectionWAId) {
+                    const msg = await SendImage({
+                      connectionId: exist.connectionWAId,
+                      url: urlStatic,
+                      toNumber:
+                        exist.ContactsWAOnAccount.ContactsWA.completeNumber,
                       caption,
+                    });
+                    if (!msg?.key?.id) {
+                      msgResponse.push({
+                        error: "`msgKey` não retornado. Error:#296",
+                        code_uuid: firstFile.code_uuid,
+                      });
+                      continue;
+                    }
+                    msgkey = msg?.key?.id;
+                  }
+                  if (!msgkey) {
+                    msgResponse.push({
+                      error: "`msgKey` não retornado. Error:#305",
+                      code_uuid: firstFile.code_uuid,
+                    });
+                    continue;
+                  }
+                  const { id: msgId, createAt } = await prisma.messages.create({
+                    data: {
+                      by: "user",
+                      type: "image",
+                      caption,
+                      message: "",
                       fileName: e.fileName,
-                      ptt: file.type === "audio",
+                      ticketsId: dto.id,
+                      messageKey: msgkey,
                     },
-                    by: "user",
-                    departmentId: InboxDepartment.id,
-                    notifyMsc: false,
-                    notifyToast: false,
-                    ticketId: dto.id,
-                    userId: dto.userId, // caso seja enviado para um usuário.
-                    lastInteractionDate: createAt,
+                    select: { id: true, createAt: true },
                   });
+                  messageId = msgId;
+
+                  if (dto.accountId) {
+                    const { ticket_chat, player_department } =
+                      webSocketEmitToRoom().account(dto.accountId!);
+
+                    ticket_chat(dto.id).message(
+                      {
+                        content: {
+                          id: messageId,
+                          createAt,
+                          type: "image",
+                          fileName: e.fileName,
+                          caption,
+                        },
+                        ticketId: dto.id,
+                        by: "user",
+                      },
+                      [sockId_ignore],
+                    );
+
+                    player_department(InboxDepartment.id).message_ticket_list(
+                      {
+                        type: "image",
+                        status: "SENT",
+                        by: "user",
+                        ticketId: dto.id,
+                        createAt,
+                      },
+                      [sockId_ignore],
+                    );
+                  }
+                  msgResponse.push({
+                    id: messageId,
+                    createAt,
+                    code_uuid: firstFile.code_uuid,
+                  });
+                }
+                if (/^video\//.test(mimetype)) {
+                  let messageId = 0;
+                  let msgkey: string | null = null;
+                  if (exist.connectionWAId) {
+                    const msg = await SendVideo({
+                      connectionId: exist.connectionWAId,
+                      toNumber:
+                        exist.ContactsWAOnAccount.ContactsWA.completeNumber,
+                      caption,
+                      video: readFileSync(urlStatic),
+                      mimetype: mimetype || undefined,
+                    });
+                    if (!msg?.key?.id) {
+                      msgResponse.push({
+                        error: "`msgKey` não retornado. Error:#374",
+                        code_uuid: firstFile.code_uuid,
+                      });
+                      continue;
+                    }
+                    msgkey = msg?.key?.id;
+                  }
+                  if (!msgkey) {
+                    msgResponse.push({
+                      error: "`msgKey` não retornado. Error:#383",
+                      code_uuid: firstFile.code_uuid,
+                    });
+                    continue;
+                  }
+                  const { id: msgId, createAt } = await prisma.messages.create({
+                    data: {
+                      by: "user",
+                      type: "video",
+                      caption,
+                      message: "",
+                      fileName: e.fileName,
+                      ticketsId: dto.id,
+                      messageKey: msgkey,
+                    },
+                    select: { id: true, createAt: true },
+                  });
+                  messageId = msgId;
+                  if (dto.accountId) {
+                    const { ticket_chat, player_department } =
+                      webSocketEmitToRoom().account(dto.accountId!);
+
+                    ticket_chat(dto.id).message(
+                      {
+                        content: {
+                          id: messageId,
+                          createAt,
+                          type: "video",
+                          fileName: e.fileName,
+                          caption,
+                        },
+                        ticketId: dto.id,
+                        by: "user",
+                      },
+                      [sockId_ignore],
+                    );
+
+                    player_department(InboxDepartment.id).message_ticket_list(
+                      {
+                        type: "video",
+                        status: "SENT",
+                        by: "user",
+                        ticketId: dto.id,
+                        createAt,
+                      },
+                      [sockId_ignore],
+                    );
+                  }
+                  msgResponse.push({
+                    id: messageId,
+                    createAt,
+                    code_uuid: firstFile.code_uuid,
+                  });
+                }
+              } catch (error) {
+                msgResponse.push({
+                  error: "Não foi possivel enviar a mensagem. Error:#439",
+                  code_uuid: firstFile.code_uuid,
                 });
+                continue;
+              }
+            }
+            if (dto.type === "audio") {
+              try {
+                let messageId = 0;
+                let msgkey: string | null = null;
+                if (exist.connectionWAId) {
+                  const msg = await SendAudio({
+                    connectionId: exist.connectionWAId,
+                    toNumber:
+                      exist.ContactsWAOnAccount.ContactsWA.completeNumber,
+                    urlStatic: urlStatic,
+                    ptt: firstFile.type === "audio",
+                    mimetype: mimetype || undefined,
+                  });
+                  if (!msg?.key?.id) {
+                    msgResponse.push({
+                      error: "`msgKey` não retornado. Error:#460",
+                      code_uuid: firstFile.code_uuid,
+                    });
+                    continue;
+                  }
+                  msgkey = msg?.key?.id;
+                }
+                if (!msgkey) {
+                  msgResponse.push({
+                    error: "`msgKey` não retornado. Error:#469",
+                    code_uuid: firstFile.code_uuid,
+                  });
+                  continue;
+                }
+                const { id: msgId, createAt } = await prisma.messages.create({
+                  data: {
+                    by: "user",
+                    type: "audio",
+                    ptt: firstFile.type === "audio",
+                    message: "",
+                    fileName: e.fileName,
+                    ticketsId: dto.id,
+                    messageKey: msgkey,
+                  },
+                  select: { id: true, createAt: true },
+                });
+                messageId = msgId;
+
+                if (dto.accountId) {
+                  const { ticket_chat, player_department } =
+                    webSocketEmitToRoom().account(dto.accountId!);
+
+                  ticket_chat(dto.id).message(
+                    {
+                      content: {
+                        id: messageId,
+                        createAt,
+                        type: "audio",
+                        fileName: e.fileName,
+                        caption,
+                        ptt: true,
+                      },
+                      ticketId: dto.id,
+                      by: "user",
+                    },
+                    [sockId_ignore],
+                  );
+
+                  player_department(InboxDepartment.id).message_ticket_list(
+                    {
+                      type: "audio",
+                      status: "SENT",
+                      by: "user",
+                      ticketId: dto.id,
+                      createAt,
+                    },
+                    [sockId_ignore],
+                  );
+                }
+                msgResponse.push({
+                  id: messageId,
+                  createAt,
+                  code_uuid: firstFile.code_uuid,
+                });
+              } catch (error) {
+                msgResponse.push({
+                  error: "Não foi possivel enviar a mensagem. Error:#526",
+                  code_uuid: firstFile.code_uuid,
+                });
+                continue;
+              }
+            }
+          } else {
+            msgResponse.push({
+              error: "Arquivo não encontrado. Error:#534",
+              code_uuid: firstFile.code_uuid,
+            });
+            continue;
+          }
+        } else {
+          const file = files[index];
+          const e = await prisma.storagePaths.findFirst({
+            where: { id: file.id, accountId: exist.accountId },
+            select: { fileName: true, originalName: true },
+          });
+
+          if (e) {
+            const urlStatic = `${path}/${e.fileName}`;
+            const mimetype = lookup(urlStatic);
+
+            if (dto.type === "file") {
+              try {
+                let messageId = 0;
+                let msgkey: string | null = null;
+                if (exist.connectionWAId) {
+                  const msg = await SendFile({
+                    connectionId: exist.connectionWAId,
+                    originalName: e.originalName,
+                    toNumber:
+                      exist.ContactsWAOnAccount.ContactsWA.completeNumber,
+                    document: readFileSync(urlStatic),
+                    mimetype: mimetype || undefined,
+                  });
+                  if (!msg?.key?.id) {
+                    msgResponse.push({
+                      error: "`msgKey` não retornado. Error:#565",
+                      code_uuid: file.code_uuid,
+                    });
+                    continue;
+                  }
+                  msgkey = msg?.key?.id;
+                }
+                if (!msgkey) {
+                  msgResponse.push({
+                    error: "`msgKey` não retornado. Error:#574",
+                    code_uuid: file.code_uuid,
+                  });
+                  continue;
+                }
+                const { id: msgId, createAt } = await prisma.messages.create({
+                  data: {
+                    by: "user",
+                    type: "file",
+                    message: "",
+                    fileName: e.fileName,
+                    ticketsId: dto.id,
+                    messageKey: msgkey,
+                  },
+                  select: { id: true, createAt: true },
+                });
+                messageId = msgId;
+                if (dto.accountId) {
+                  const { ticket_chat, player_department } =
+                    webSocketEmitToRoom().account(dto.accountId!);
+
+                  ticket_chat(dto.id).message(
+                    {
+                      content: {
+                        id: messageId,
+                        createAt,
+                        type: "file",
+                        fileName: e.fileName,
+                      },
+                      ticketId: dto.id,
+                      by: "user",
+                    },
+                    [sockId_ignore],
+                  );
+
+                  player_department(InboxDepartment.id).message_ticket_list(
+                    {
+                      type: "file",
+                      status: "SENT",
+                      by: "user",
+                      ticketId: dto.id,
+                      createAt,
+                    },
+                    [sockId_ignore],
+                  );
+                }
+                msgResponse.push({
+                  id: messageId,
+                  createAt,
+                  code_uuid: file.code_uuid,
+                });
+              } catch (error) {
+                msgResponse.push({
+                  error: "Não foi possivel enviar a mensagem. Error:#627",
+                  code_uuid: file.code_uuid,
+                });
+                continue;
+              }
+            }
+            if (dto.type === "image") {
+              try {
+                if (!mimetype) {
+                  msgResponse.push({
+                    error: "Arquivo inválido. Error:#637",
+                    code_uuid: file.code_uuid,
+                  });
+                  continue;
+                }
+                if (/^image\//.test(mimetype)) {
+                  let messageId = 0;
+                  let msgkey: string | null = null;
+                  if (exist.connectionWAId) {
+                    const msg = await SendImage({
+                      connectionId: exist.connectionWAId,
+                      url: urlStatic,
+                      toNumber:
+                        exist.ContactsWAOnAccount.ContactsWA.completeNumber,
+                    });
+                    if (!msg?.key?.id) {
+                      msgResponse.push({
+                        error: "`msgKey` não retornado. Error:#654",
+                        code_uuid: file.code_uuid,
+                      });
+                      continue;
+                    }
+                    msgkey = msg?.key?.id;
+                  }
+                  if (!msgkey) {
+                    msgResponse.push({
+                      error: "`msgKey` não retornado. Error:#663",
+                      code_uuid: file.code_uuid,
+                    });
+                    continue;
+                  }
+                  const { id: msgId, createAt } = await prisma.messages.create({
+                    data: {
+                      by: "user",
+                      type: "image",
+                      message: "",
+                      fileName: e.fileName,
+                      ticketsId: dto.id,
+                      messageKey: msgkey,
+                    },
+                    select: { id: true, createAt: true },
+                  });
+                  messageId = msgId;
+
+                  if (dto.accountId) {
+                    const { ticket_chat, player_department } =
+                      webSocketEmitToRoom().account(dto.accountId!);
+
+                    ticket_chat(dto.id).message(
+                      {
+                        content: {
+                          id: messageId,
+                          createAt,
+                          type: "image",
+                          fileName: e.fileName,
+                        },
+                        ticketId: dto.id,
+                        by: "user",
+                      },
+                      [sockId_ignore],
+                    );
+
+                    player_department(InboxDepartment.id).message_ticket_list(
+                      {
+                        type: "image",
+                        status: "SENT",
+                        by: "user",
+                        ticketId: dto.id,
+                        createAt,
+                      },
+                      [sockId_ignore],
+                    );
+                  }
+                  msgResponse.push({
+                    id: messageId,
+                    createAt,
+                    code_uuid: file.code_uuid,
+                  });
+                }
+
+                if (/^video\//.test(mimetype)) {
+                  let messageId = 0;
+                  let msgkey: string | null = null;
+                  if (exist.connectionWAId) {
+                    const msg = await SendVideo({
+                      connectionId: exist.connectionWAId,
+                      toNumber:
+                        exist.ContactsWAOnAccount.ContactsWA.completeNumber,
+                      video: readFileSync(urlStatic),
+                      mimetype: mimetype || undefined,
+                    });
+                    if (!msg?.key?.id) {
+                      msgResponse.push({
+                        error: "`msgKey` não retornado. Error:#730",
+                        code_uuid: file.code_uuid,
+                      });
+                      continue;
+                    }
+                    msgkey = msg?.key?.id;
+                  }
+                  if (!msgkey) {
+                    msgResponse.push({
+                      error: "`msgKey` não retornado. Error:#742",
+                      code_uuid: file.code_uuid,
+                    });
+                    continue;
+                  }
+                  const { id: msgId, createAt } = await prisma.messages.create({
+                    data: {
+                      by: "user",
+                      type: "video",
+                      message: "",
+                      fileName: e.fileName,
+                      ticketsId: dto.id,
+                      messageKey: msgkey,
+                    },
+                    select: { id: true, createAt: true },
+                  });
+                  messageId = msgId;
+                  if (dto.accountId) {
+                    const { ticket_chat, player_department } =
+                      webSocketEmitToRoom().account(dto.accountId!);
+
+                    ticket_chat(dto.id).message(
+                      {
+                        content: {
+                          id: messageId,
+                          createAt,
+                          type: "video",
+                          fileName: e.fileName,
+                        },
+                        ticketId: dto.id,
+                        by: "user",
+                      },
+                      [sockId_ignore],
+                    );
+
+                    player_department(InboxDepartment.id).message_ticket_list(
+                      {
+                        type: "video",
+                        status: "SENT",
+                        by: "user",
+                        ticketId: dto.id,
+                        createAt,
+                      },
+                      [sockId_ignore],
+                    );
+                  }
+                  msgResponse.push({
+                    id: messageId,
+                    createAt,
+                    code_uuid: file.code_uuid,
+                  });
+                }
+              } catch (error) {
+                msgResponse.push({
+                  error: "Não foi possivel enviar a mensagem. Error:#793",
+                  code_uuid: file.code_uuid,
+                });
+                continue;
+              }
+            }
+            if (dto.type === "audio") {
+              try {
+                let messageId = 0;
+                let msgkey: string | null = null;
+                if (exist.connectionWAId) {
+                  const msg = await SendAudio({
+                    connectionId: exist.connectionWAId,
+                    toNumber:
+                      exist.ContactsWAOnAccount.ContactsWA.completeNumber,
+                    urlStatic: urlStatic,
+                    ptt: file.type === "audio",
+                    mimetype: mimetype || undefined,
+                  });
+                  if (!msg?.key?.id) {
+                    msgResponse.push({
+                      error: "`msgKey` não retornado. Error:#814",
+                      code_uuid: file.code_uuid,
+                    });
+                    continue;
+                  }
+                  msgkey = msg?.key?.id;
+                }
+                if (!msgkey) {
+                  msgResponse.push({
+                    error: "`msgKey` não retornado. Error:#823",
+                    code_uuid: file.code_uuid,
+                  });
+                  continue;
+                }
+                const { id: msgId, createAt } = await prisma.messages.create({
+                  data: {
+                    by: "user",
+                    type: "audio",
+                    ptt: file.type === "audio",
+                    message: "",
+                    fileName: e.fileName,
+                    ticketsId: dto.id,
+                    messageKey: msgkey,
+                  },
+                  select: { id: true, createAt: true },
+                });
+                messageId = msgId;
+                if (dto.accountId) {
+                  const { ticket_chat, player_department } =
+                    webSocketEmitToRoom().account(dto.accountId!);
+
+                  ticket_chat(dto.id).message(
+                    {
+                      content: {
+                        id: messageId,
+                        createAt,
+                        type: "audio",
+                        fileName: e.fileName,
+                        ptt: true,
+                      },
+                      ticketId: dto.id,
+                      by: "user",
+                    },
+                    [sockId_ignore],
+                  );
+
+                  player_department(InboxDepartment.id).message_ticket_list(
+                    {
+                      type: "audio",
+                      status: "SENT",
+                      by: "user",
+                      ticketId: dto.id,
+                      createAt,
+                    },
+                    [sockId_ignore],
+                  );
+                }
+                msgResponse.push({
+                  id: messageId,
+                  createAt,
+                  code_uuid: file.code_uuid,
+                });
+              } catch (error) {
+                msgResponse.push({
+                  error: "Não foi possivel enviar a mensagem. Error:#878",
+                  code_uuid: file.code_uuid,
+                });
+                continue;
+              }
             }
           }
         }
       }
-    }
 
-    return { message: "OK!", status: 201 };
+      return { status: 201, msg: msgResponse };
+    }
   }
 }

@@ -4,6 +4,7 @@ import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { cacheAccountSocket } from "../../../infra/websocket/cache";
 import { socketIo } from "../../../infra/express";
 import { NotificationApp } from "../../../utils/notificationApp";
+import { webSocketEmitToRoom } from "../../../infra/websocket";
 
 interface PropsUpdateOrder {
   numberLead: string;
@@ -159,6 +160,7 @@ export const NodeUpdateOrder = async (
       accountId: props.accountId,
       title_txt: "Pedido atualizado",
       title_html: "Pedido atualizado",
+      tag: `update-order-${getOrder.n_order}`,
       body_txt: `#${getOrder.n_order} - ${name}`,
       body_html: `<span className="font-medium text-sm line-clamp-1">Pedido atualizado</span><span className="text-xs font-light">#${getOrder.n_order} - ${name}</span>`,
       url_redirect: "/auth/orders",
@@ -169,44 +171,41 @@ export const NodeUpdateOrder = async (
       },
     });
 
-    cacheAccountSocket
-      .get(props.accountId)
-      ?.listSocket?.forEach(async (sockId) => {
-        socketIo.to(sockId.id).emit(`order`, {
-          accountId: props.accountId,
-          action: "update",
-          order: {
-            id: getOrder.id,
-            ...(fields?.includes("name") && {
-              name: restData.name,
-            }),
-            ...(fields?.includes("status") && {
-              status: restData.status,
-            }),
-            ...(fields?.includes("data") && {
-              data: restData.data,
-            }),
-            ...(fields?.includes("payment_method") && {
-              payment_method: restData.payment_method,
-            }),
-            ...(fields?.includes("priority") && {
-              priority: restData.priority,
-            }),
-            ...(fields?.includes("delivery_address") && {
-              delivery_address: restData.delivery_address,
-            }),
-            ...(fields?.includes("total") && {
-              total: restData.total,
-            }),
-            ...(fields?.includes("actionChannels") && {
-              actionChannels: restData.actionChannels.map((s) => s.text),
-            }),
-            ...(fields?.includes("dragDrop") && {
-              isDragDisabled: !!restData.isDragDisabled,
-            }),
-          },
-        });
-      });
+    webSocketEmitToRoom()
+      .account(props.accountId)
+      .orders.update_order(
+        {
+          id: getOrder.id,
+          ...(fields?.includes("name") && {
+            name: restData.name,
+          }),
+          ...(fields?.includes("status") && {
+            status: restData.status,
+          }),
+          ...(fields?.includes("data") && {
+            data: restData.data,
+          }),
+          ...(fields?.includes("payment_method") && {
+            payment_method: restData.payment_method,
+          }),
+          ...(fields?.includes("priority") && {
+            priority: restData.priority,
+          }),
+          ...(fields?.includes("delivery_address") && {
+            delivery_address: restData.delivery_address,
+          }),
+          ...(fields?.includes("total") && {
+            total: restData.total,
+          }),
+          ...(fields?.includes("actionChannels") && {
+            actionChannels: restData.actionChannels.map((s) => s.text),
+          }),
+          ...(fields?.includes("dragDrop") && {
+            isDragDisabled: !!restData.isDragDisabled,
+          }),
+        },
+        [],
+      );
 
     return "ok";
   } catch (error) {

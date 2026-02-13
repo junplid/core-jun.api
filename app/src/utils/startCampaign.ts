@@ -9,6 +9,8 @@ import { sessionsBaileysWA } from "../adapters/Baileys";
 import { cacheFlowsMap } from "../adapters/Baileys/Cache";
 import { cacheAccountSocket } from "../infra/websocket/cache";
 import { mongo } from "../adapters/mongo/connection";
+import { webSocketEmitToRoom } from "../infra/websocket";
+import { resolveHourAndMinute } from "./resolveHour:mm";
 
 interface PropsStartCampaign {
   id: number;
@@ -79,7 +81,7 @@ export const startCampaign = async ({
         if (!campaign) return rej();
 
         const allBusinessInterruped = campaign.CampaignOnBusiness.map(
-          (s) => s.Business.interrupted
+          (s) => s.Business.interrupted,
         ).every((s) => s);
 
         if (allBusinessInterruped) {
@@ -88,7 +90,7 @@ export const startCampaign = async ({
         }
 
         const allConnectionsInterruped = campaign.ConnectionOnCampaign.map(
-          (s) => s.ConnectionWA.interrupted
+          (s) => s.ConnectionWA.interrupted,
         ).every((s) => s);
 
         if (allConnectionsInterruped) {
@@ -102,7 +104,7 @@ export const startCampaign = async ({
           flowId: campaign.flowId,
           OperatingDays: campaign.OperatingDays,
           connectionIds: campaign.ConnectionOnCampaign.map(
-            (s) => s.ConnectionWA.id
+            (s) => s.ConnectionWA.id,
           ),
         });
       }
@@ -182,7 +184,7 @@ export const startCampaign = async ({
     }
 
     const listFlowStateWithConnection = nextFlowState.filter(
-      (s) => s.connectionWAId
+      (s) => s.connectionWAId,
     );
 
     const orderedFlowStateWithConnection = listFlowStateWithConnection.reduce(
@@ -224,7 +226,7 @@ export const startCampaign = async ({
           completeNumber: string | null;
           indexNode: string | null;
         }[];
-      }[]
+      }[],
     );
 
     async function checkDay() {
@@ -261,12 +263,12 @@ export const startCampaign = async ({
                     });
                     return nextDayWeek.diff(
                       moment().tz("America/Sao_Paulo"),
-                      "minutes"
+                      "minutes",
                     );
                   });
 
                   return Math.min(...listNextWeeks);
-                }).filter((s) => s >= 0)
+                }).filter((s) => s >= 0),
               );
 
               scheduleJob(
@@ -274,7 +276,7 @@ export const startCampaign = async ({
                   .tz("America/Sao_Paulo")
                   .add(minutesToNextExecutionInQueue, "minutes")
                   .toDate(),
-                checkDay
+                checkDay,
               );
             }
           } else {
@@ -290,14 +292,17 @@ export const startCampaign = async ({
       const connectionWA = sessionsBaileysWA.get(connection.id);
       if (!connectionWA) {
         console.log(
-          `Conexão WA com ID ${connection.id} não encontrada ou está off-line`
+          `Conexão WA com ID ${connection.id} não encontrada ou está off-line`,
         );
         continue;
       }
 
       const infoConnection = await prisma.connectionWA.findUnique({
         where: { id: connection.id },
-        select: { number: true, Business: { select: { name: true } } },
+        select: {
+          number: true,
+          Business: { select: { name: true, id: true } },
+        },
       });
 
       if (!infoConnection) {
@@ -317,8 +322,14 @@ export const startCampaign = async ({
         if (!connection.status) {
           await prisma.flowState.update({
             where: { id: stateFlow.id },
-            data: { isFinish: true },
+            data: { isFinish: true, finishedAt: new Date() },
           });
+          webSocketEmitToRoom()
+            .account(campaign.accountId)
+            .dashboard.dashboard_services({
+              delta: -1,
+              hour: resolveHourAndMinute(),
+            });
           continue;
         }
         await checkDay();
@@ -328,7 +339,7 @@ export const startCampaign = async ({
             setTimeout(() => {
               shorts = 0;
               res();
-            }, campaign.ShootingSpeed.timeRest)
+            }, campaign.ShootingSpeed.timeRest),
           );
         }
 
@@ -346,7 +357,7 @@ export const startCampaign = async ({
           socketIo.to(sockId.id).emit(`sentCount-campaign`, {
             id,
             increment: 1,
-          })
+          }),
         );
 
         if (
@@ -357,8 +368,14 @@ export const startCampaign = async ({
           console.log("Dados incompletos no FlowState, não será processado.");
           await prisma.flowState.update({
             where: { id: stateFlow.id },
-            data: { isFinish: true },
+            data: { isFinish: true, finishedAt: new Date() },
           });
+          webSocketEmitToRoom()
+            .account(campaign.accountId)
+            .dashboard.dashboard_services({
+              delta: -1,
+              hour: resolveHourAndMinute(),
+            });
           return;
         }
 
@@ -407,17 +424,18 @@ export const startCampaign = async ({
 
         NodeControler({
           businessName: infoConnection?.Business.name!,
-          connectionWhatsId: connection.id,
-          clientWA: connectionWA,
+          businessId: infoConnection.Business.id,
+          external_adapter: { type: "baileys", clientWA: connectionWA },
+          connectionId: connection.id,
+          lead_id: stateFlow.completeNumber,
+          contactAccountId: stateFlow.contactsWAOnAccountId,
+
           action: null,
-          lead: { number: stateFlow.completeNumber },
           oldNodeId: stateFlow.indexNode || "0",
           accountId: campaign.accountId,
           flowId: campaign.flowId,
-          numberConnection: infoConnection.number! + "@s.whatsapp.net",
           type: "initial",
           campaignId: id,
-          contactsWAOnAccountId: stateFlow.contactsWAOnAccountId,
           flowStateId: stateFlow.id,
           nodes: flow.nodes,
           edges: flow.edges,
@@ -434,8 +452,14 @@ export const startCampaign = async ({
             onErrorNumber: async () => {
               await prisma.flowState.update({
                 where: { id: stateFlow.id },
-                data: { isFinish: true },
+                data: { isFinish: true, finishedAt: new Date() },
               });
+              webSocketEmitToRoom()
+                .account(campaign.accountId)
+                .dashboard.dashboard_services({
+                  delta: -1,
+                  hour: resolveHourAndMinute(),
+                });
               const contactsInFlow = await prisma.flowState.count({
                 where: { isFinish: false, campaignId: id },
               });
@@ -450,7 +474,7 @@ export const startCampaign = async ({
                     socketIo.to(sockId.id).emit("status-campaign", {
                       id,
                       status: "finished",
-                    })
+                    }),
                   );
               }
             },
@@ -465,8 +489,14 @@ export const startCampaign = async ({
             onFinish: async () => {
               await prisma.flowState.update({
                 where: { id: stateFlow.id },
-                data: { isFinish: true },
+                data: { isFinish: true, finishedAt: new Date() },
               });
+              webSocketEmitToRoom()
+                .account(campaign.accountId)
+                .dashboard.dashboard_services({
+                  delta: -1,
+                  hour: resolveHourAndMinute(),
+                });
               // enviar socket de finishPercentage;
               const contactsInFlow = await prisma.flowState.count({
                 where: {
@@ -485,15 +515,21 @@ export const startCampaign = async ({
                     socketIo.to(sockId.id).emit("status-campaign", {
                       id,
                       status: "finished",
-                    })
+                    }),
                   );
               }
             },
             onErrorClient: async (indexN) => {
               await prisma.flowState.update({
                 where: { id: stateFlow.id },
-                data: { isFinish: true },
+                data: { isFinish: true, finishedAt: new Date() },
               });
+              webSocketEmitToRoom()
+                .account(campaign.accountId)
+                .dashboard.dashboard_services({
+                  delta: -1,
+                  hour: resolveHourAndMinute(),
+                });
               const contactsInFlow = await prisma.flowState.count({
                 where: {
                   isFinish: false,
@@ -511,7 +547,7 @@ export const startCampaign = async ({
                     socketIo.to(sockId.id).emit("status-campaign", {
                       id,
                       status: "finished",
-                    })
+                    }),
                   );
               }
             },
@@ -519,7 +555,7 @@ export const startCampaign = async ({
         });
         const nextTimeShorts =
           Math.floor(
-            Math.random() * (15000 - campaign.ShootingSpeed.timeBetweenShots)
+            Math.random() * (15000 - campaign.ShootingSpeed.timeBetweenShots),
           ) + campaign.ShootingSpeed.timeBetweenShots;
         await new Promise((res: any) => {
           setTimeout(() => {
@@ -532,7 +568,7 @@ export const startCampaign = async ({
     }
 
     const listFlowStateWithoutConnection = nextFlowState.filter(
-      (s) => !s.connectionWAId
+      (s) => !s.connectionWAId,
     );
 
     if (!listFlowStateWithoutConnection.length) {
@@ -593,7 +629,7 @@ export const startCampaign = async ({
 
     const statesFlowChunk = chunk(
       listFlowStateWithoutConnection,
-      Math.floor(nMax / nMin)
+      Math.floor(nMax / nMin),
     );
 
     for (let index = 0; index < clientsWA.length; index++) {
@@ -606,7 +642,10 @@ export const startCampaign = async ({
 
       const infoConnection = await prisma.connectionWA.findUnique({
         where: { id: clientsWA[i]!.id },
-        select: { number: true, Business: { select: { name: true } } },
+        select: {
+          number: true,
+          Business: { select: { name: true, id: true } },
+        },
       });
 
       if (!infoConnection) {
@@ -631,7 +670,7 @@ export const startCampaign = async ({
             setTimeout(() => {
               shorts = 0;
               res();
-            }, campaign.ShootingSpeed.timeRest)
+            }, campaign.ShootingSpeed.timeRest),
           );
         }
 
@@ -651,25 +690,24 @@ export const startCampaign = async ({
           socketIo.to(sockId.id).emit(`sentCount-campaign`, {
             id,
             increment: 1,
-          })
+          }),
         );
 
         stateFlow.status = true;
         NodeControler({
           businessName: infoConnection?.Business.name!,
-          connectionWhatsId: clientsWA[i]!.id,
-          clientWA: clientsWA[i]!.bot!,
+          businessId: infoConnection.Business.id,
+          external_adapter: { type: "baileys", clientWA: clientsWA[i]!.bot! },
+          connectionId: clientsWA[i]!.id,
+          lead_id: stateFlow.ContactsWAOnAccount!.ContactsWA.completeNumber,
+          contactAccountId: stateFlow.ContactsWAOnAccount!.id,
+
           action: null,
-          lead: {
-            number: stateFlow.ContactsWAOnAccount!.ContactsWA.completeNumber,
-          },
           oldNodeId: stateFlow.indexNode || "0",
           accountId: campaign.accountId,
           flowId: campaign.flowId,
-          numberConnection: infoConnection.number! + "@s.whatsapp.net",
           type: "initial",
           campaignId: id,
-          contactsWAOnAccountId: stateFlow.ContactsWAOnAccount!.id,
           flowStateId: stateFlow.id,
           nodes: flow.nodes,
           edges: flow.edges,
@@ -686,8 +724,14 @@ export const startCampaign = async ({
             onErrorNumber: async () => {
               await prisma.flowState.update({
                 where: { id: stateFlow.id },
-                data: { isFinish: true },
+                data: { isFinish: true, finishedAt: new Date() },
               });
+              webSocketEmitToRoom()
+                .account(campaign.accountId)
+                .dashboard.dashboard_services({
+                  delta: -1,
+                  hour: resolveHourAndMinute(),
+                });
               const contactsInFlow = await prisma.flowState.count({
                 where: { isFinish: false, campaignId: id },
               });
@@ -702,7 +746,7 @@ export const startCampaign = async ({
                     socketIo.to(sockId.id).emit("status-campaign", {
                       id,
                       status: "finished",
-                    })
+                    }),
                   );
               }
             },
@@ -717,8 +761,14 @@ export const startCampaign = async ({
             onFinish: async () => {
               await prisma.flowState.update({
                 where: { id: stateFlow.id },
-                data: { isFinish: true },
+                data: { isFinish: true, finishedAt: new Date() },
               });
+              webSocketEmitToRoom()
+                .account(campaign.accountId)
+                .dashboard.dashboard_services({
+                  delta: -1,
+                  hour: resolveHourAndMinute(),
+                });
               const contactsInFlow = await prisma.flowState.count({
                 where: {
                   isFinish: false,
@@ -736,7 +786,7 @@ export const startCampaign = async ({
                     socketIo.to(sockId.id).emit("status-campaign", {
                       id,
                       status: "finished",
-                    })
+                    }),
                   );
               }
             },
@@ -753,14 +803,14 @@ export const startCampaign = async ({
                   return;
                 }
                 const nextConnection = clientsWA.findIndex(
-                  (s) => s!.id === nextConnections[0]!?.id
+                  (s) => s!.id === nextConnections[0]!?.id,
                 );
                 const isSending = clientsWA[nextConnection]!.flowStates.some(
-                  (c) => c.status === false
+                  (c) => c.status === false,
                 );
                 if (isSending) {
                   const awaitedSF = clientsWA[i]!.flowStates.filter(
-                    (s) => s.status === false
+                    (s) => s.status === false,
                   );
                   clientsWA[nextConnection]!.flowStates = [
                     ...clientsWA[nextConnection]!.flowStates,
@@ -785,7 +835,7 @@ export const startCampaign = async ({
                 }
                 if (nextConnections.length === 1) {
                   const awaitedSF = clientsWA[i]!.flowStates.filter(
-                    (s) => s.status === false
+                    (s) => s.status === false,
                   );
                   for (const awaited of awaitedSF) {
                     await prisma.flowState.update({
@@ -809,8 +859,14 @@ export const startCampaign = async ({
                   if (awaitedSF.length) {
                     await prisma.flowState.update({
                       where: { id: stateFlow.id },
-                      data: { isFinish: true },
+                      data: { isFinish: true, finishedAt: new Date() },
                     });
+                    webSocketEmitToRoom()
+                      .account(campaign.accountId)
+                      .dashboard.dashboard_services({
+                        delta: -1,
+                        hour: resolveHourAndMinute(),
+                      });
                     startCampaign({
                       id,
                       connectionIds: [clientsWA[nextConnection]!.id],
@@ -825,7 +881,7 @@ export const startCampaign = async ({
         });
         const nextTimeShorts =
           Math.floor(
-            Math.random() * (15000 - campaign.ShootingSpeed.timeBetweenShots)
+            Math.random() * (15000 - campaign.ShootingSpeed.timeBetweenShots),
           ) + campaign.ShootingSpeed.timeBetweenShots;
         await new Promise((res: any) => {
           setTimeout(() => {

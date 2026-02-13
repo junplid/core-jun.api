@@ -7,11 +7,17 @@ import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { resolveMoney } from "../utils/ResolveMoney";
 import { cacheConnectionsWAOnline } from "../../../adapters/Baileys/Cache";
 import { NotificationApp } from "../../../utils/notificationApp";
+import { webSocketEmitToRoom } from "../../../infra/websocket";
 
 interface PropsCreateOrder {
-  numberLead: string;
-  contactsWAOnAccountId: number;
-  connectionWhatsId: number;
+  lead_id: string;
+  contactAccountId: number;
+  connectionId: number;
+
+  external_adapter:
+    | { type: "baileys" }
+    | { type: "instagram"; page_token: string };
+
   data: NodeCreateOrderData;
   accountId: number;
   businessName: string;
@@ -36,8 +42,8 @@ export const NodeCreateOrder = async (
       const charge_transactionId = await resolveTextVariables({
         accountId: props.accountId,
         text: props.data.charge_transactionId,
-        contactsWAOnAccountId: props.contactsWAOnAccountId,
-        numberLead: props.numberLead,
+        contactsWAOnAccountId: props.contactAccountId,
+        numberLead: props.lead_id,
         nodeId: props.nodeId,
       });
       const getcharge = await prisma.charges.findFirst({
@@ -60,8 +66,8 @@ export const NodeCreateOrder = async (
       restData.name = await resolveTextVariables({
         accountId: props.accountId,
         text: restData.name,
-        contactsWAOnAccountId: props.contactsWAOnAccountId,
-        numberLead: props.numberLead,
+        contactsWAOnAccountId: props.contactAccountId,
+        numberLead: props.lead_id,
         nodeId: props.nodeId,
       });
     }
@@ -70,8 +76,8 @@ export const NodeCreateOrder = async (
       restData.origin = await resolveTextVariables({
         accountId: props.accountId,
         text: restData.origin,
-        contactsWAOnAccountId: props.contactsWAOnAccountId,
-        numberLead: props.numberLead,
+        contactsWAOnAccountId: props.contactAccountId,
+        numberLead: props.lead_id,
         nodeId: props.nodeId,
       });
     }
@@ -80,8 +86,8 @@ export const NodeCreateOrder = async (
       restData.description = await resolveTextVariables({
         accountId: props.accountId,
         text: restData.description,
-        contactsWAOnAccountId: props.contactsWAOnAccountId,
-        numberLead: props.numberLead,
+        contactsWAOnAccountId: props.contactAccountId,
+        numberLead: props.lead_id,
         nodeId: props.nodeId,
       });
     }
@@ -90,8 +96,8 @@ export const NodeCreateOrder = async (
       restData.data = await resolveTextVariables({
         accountId: props.accountId,
         text: restData.data,
-        contactsWAOnAccountId: props.contactsWAOnAccountId,
-        numberLead: props.numberLead,
+        contactsWAOnAccountId: props.contactAccountId,
+        numberLead: props.lead_id,
         nodeId: props.nodeId,
       });
     }
@@ -102,8 +108,8 @@ export const NodeCreateOrder = async (
           await resolveTextVariables({
             accountId: props.accountId,
             text: restData.total,
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
-            numberLead: props.numberLead,
+            contactsWAOnAccountId: props.contactAccountId,
+            numberLead: props.lead_id,
             nodeId: props.nodeId,
           }),
         ),
@@ -116,20 +122,19 @@ export const NodeCreateOrder = async (
       restData.delivery_address = await resolveTextVariables({
         accountId: props.accountId,
         text: restData.delivery_address,
-        contactsWAOnAccountId: props.contactsWAOnAccountId,
-        numberLead: props.numberLead,
+        contactsWAOnAccountId: props.contactAccountId,
+        numberLead: props.lead_id,
         nodeId: props.nodeId,
       });
     } else if (restData.payment_method) {
       restData.payment_method = await resolveTextVariables({
         accountId: props.accountId,
         text: restData.payment_method,
-        contactsWAOnAccountId: props.contactsWAOnAccountId,
-        numberLead: props.numberLead,
+        contactsWAOnAccountId: props.contactAccountId,
+        numberLead: props.lead_id,
         nodeId: props.nodeId,
       });
     }
-    console.log("vindo aqui");
 
     const tracking_code = genNumCode(5);
     const last = await prisma.orders.findFirst({
@@ -147,10 +152,14 @@ export const NodeCreateOrder = async (
     const { id, createAt, ContactsWAOnAccount } = await prisma.orders.create({
       data: {
         accountId: props.accountId,
-        contactsWAOnAccountId: props.contactsWAOnAccountId,
+        contactsWAOnAccountId: props.contactAccountId,
         flowStateId: props.flowStateId,
         flowNodeId: props.nodeId,
-        connectionWAId: props.connectionWhatsId,
+
+        ...(props.external_adapter.type === "baileys"
+          ? { connectionWAId: props.connectionId }
+          : { connectionIgId: props.connectionId }),
+
         flowId: props.flowId,
         n_order,
         rank: newRank,
@@ -168,10 +177,11 @@ export const NodeCreateOrder = async (
         Business: { select: { name: true, id: true } },
         ContactsWAOnAccount: {
           select: {
-            ContactsWA: { select: { completeNumber: true } },
+            ContactsWA: { select: { completeNumber: true, username: true } },
             Tickets: {
               where: { status: { notIn: ["DELETED", "RESOLVED"] } },
               select: {
+                ConnectionIg: { select: { ig_username: true } },
                 ConnectionWA: { select: { name: true, id: true } },
                 id: true,
                 InboxDepartment: { select: { name: true } },
@@ -199,7 +209,7 @@ export const NodeCreateOrder = async (
       if (exist) {
         const picked = await prisma.contactsWAOnAccountVariable.findFirst({
           where: {
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            contactsWAOnAccountId: props.contactAccountId,
             variableId: varId_save_nOrder,
           },
           select: { id: true },
@@ -207,7 +217,7 @@ export const NodeCreateOrder = async (
         if (!picked) {
           await prisma.contactsWAOnAccountVariable.create({
             data: {
-              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              contactsWAOnAccountId: props.contactAccountId,
               variableId: varId_save_nOrder,
               value: n_order,
             },
@@ -216,7 +226,7 @@ export const NodeCreateOrder = async (
           await prisma.contactsWAOnAccountVariable.update({
             where: { id: picked.id },
             data: {
-              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              contactsWAOnAccountId: props.contactAccountId,
               variableId: varId_save_nOrder,
               value: n_order,
             },
@@ -229,6 +239,7 @@ export const NodeCreateOrder = async (
       await NotificationApp({
         accountId: props.accountId,
         title_txt: `Novo pedido`,
+        tag: `new-order-${n_order}`,
         title_html: `Novo pedido`,
         body_txt: `${restData.name} - #${n_order}`,
         body_html: `<span className="font-medium text-sm line-clamp-1">Novo pedido</span><span className="text-xs font-light">${restData.name} - #${n_order}</span>`,
@@ -241,45 +252,67 @@ export const NodeCreateOrder = async (
       });
     }
 
-    cacheAccountSocket
-      .get(props.accountId)
-      ?.listSocket?.forEach(async (sockId) => {
-        socketIo.to(sockId.id).emit(`order:new`, {
-          accountId: props.accountId,
-          order: {
-            id,
-            name: restData.name,
-            n_order,
-            businessId: restData.businessId,
-            description: restData.description,
-            origin: restData.origin,
-            createAt,
-            delivery_address: restData.delivery_address,
-            payment_method: restData.payment_method,
-            actionChannels: actionChannels.map((s) => s.text),
-            contact: ContactsWAOnAccount?.ContactsWA.completeNumber,
-            status: restData.status || "pending",
-            priority: restData.priority || "low",
-            data: restData.data,
-            total: restData.total,
-            sequence: newRank,
-            isDragDisabled: restData.isDragDisabled,
-            ticket:
-              ContactsWAOnAccount?.Tickets.map((tk) => {
-                const isConnected = !!cacheConnectionsWAOnline.get(
-                  tk.ConnectionWA.id,
-                );
-                return {
-                  connection: { ...tk.ConnectionWA, s: isConnected },
-                  id: tk.id,
-                  // lastMessage: tk.Messages[0].by,
-                  departmentName: tk.InboxDepartment.name,
-                  status: tk.status,
+    webSocketEmitToRoom()
+      .account(props.accountId)
+      .orders.new_order(
+        {
+          id,
+          name: restData.name,
+          n_order,
+          businessId: restData.businessId,
+          description: restData.description,
+          origin: restData.origin,
+          createAt,
+          delivery_address: restData.delivery_address,
+          payment_method: restData.payment_method,
+          actionChannels: actionChannels.map((s) => s.text),
+
+          ...(props.external_adapter.type === "baileys"
+            ? {
+                channel: "baileys",
+                contact: ContactsWAOnAccount?.ContactsWA.completeNumber,
+              }
+            : {
+                channel: "instagram",
+                contact: ContactsWAOnAccount?.ContactsWA.username,
+              }),
+
+          status: restData.status || "pending",
+          priority: restData.priority || "low",
+          data: restData.data,
+          total: restData.total,
+          sequence: newRank,
+          isDragDisabled: restData.isDragDisabled,
+          ticket:
+            ContactsWAOnAccount?.Tickets.map((tk) => {
+              let connection: any = {};
+
+              if (tk.ConnectionWA?.name) {
+                connection = {
+                  s: !!cacheConnectionsWAOnline.get(tk.ConnectionWA?.id),
+                  name: tk.ConnectionWA.name,
+                  channel: "baileys",
                 };
-              }) || [],
-          },
-        });
-      });
+              }
+              if (tk.ConnectionIg?.ig_username) {
+                connection = {
+                  s: true,
+                  name: tk.ConnectionIg.ig_username,
+                  channel: "instagram",
+                };
+              }
+
+              return {
+                connection,
+                id: tk.id,
+                // lastMessage: tk.Messages[0].by,
+                departmentName: tk.InboxDepartment.name,
+                status: tk.status,
+              };
+            }) || [],
+        },
+        [],
+      );
 
     return;
   } catch (error) {

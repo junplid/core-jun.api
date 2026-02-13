@@ -6,7 +6,7 @@
     "@hapi/boom": "^10.0.1",
     "@prisma/client": "^5.3.1",
     "axios": "^1.4.0",
-    "baileys": "^6.7.18",
+    "baileys": "^7.0.0-rc.9",
     "bcrypt": "^5.1.0",
     "brazilian-values": "^0.13.1",
     "bytes": "^3.1.2",

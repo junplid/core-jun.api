@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { prisma } from "../../adapters/Prisma/client";
 import {
+  cacheConnectionsWAOnline,
   cacheFlowsMap,
   chatbotRestartInDate,
   leadAwaiting,
@@ -9,8 +10,11 @@ import {
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { mongo } from "../../adapters/mongo/connection";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
-import { NodeControler } from "../../libs/FlowBuilder/Control";
+import { IPropsControler, NodeControler } from "../../libs/FlowBuilder/Control";
 import momentLib from "moment-timezone";
+import { decrypte } from "../../libs/encryption";
+import { webSocketEmitToRoom } from "../websocket";
+import { resolveHourAndMinute } from "../../utils/resolveHour:mm";
 
 cron.schedule("*/1 * * * *", () => {
   (async () => {
@@ -32,7 +36,20 @@ cron.schedule("*/1 * * * *", () => {
               chatbotId: true,
               campaignId: true,
               flowId: true,
-              ConnectionWA: { select: { number: true, id: true } },
+              ConnectionWA: {
+                select: {
+                  number: true,
+                  id: true,
+                  Business: { select: { name: true } },
+                },
+              },
+              ConnectionIg: {
+                select: {
+                  id: true,
+                  credentials: true,
+                  Business: { select: { name: true } },
+                },
+              },
               previous_response_id: true,
               ContactsWAOnAccount: {
                 select: {
@@ -42,6 +59,7 @@ cron.schedule("*/1 * * * *", () => {
               },
               Chatbot: {
                 select: {
+                  businessId: true,
                   TimeToRestart: { select: { type: true, value: true } },
                 },
               },
@@ -52,7 +70,11 @@ cron.schedule("*/1 * * * *", () => {
       });
       if (followUps.length) {
         followUps.forEach(async ({ FlowState, ...followup }) => {
-          if (!FlowState.flowId || !FlowState.ConnectionWA) {
+          if (
+            !FlowState.flowId ||
+            !FlowState.ConnectionWA ||
+            !FlowState.ContactsWAOnAccount
+          ) {
             await prisma.followUp.update({
               where: { id: followup.id },
               data: { status: "failed" },
@@ -145,28 +167,68 @@ cron.schedule("*/1 * * * *", () => {
             );
           }
           if (nextNode) {
-            const businessInfo = await prisma.connectionWA.findFirst({
-              where: { id: FlowState.ConnectionWA.id },
-              select: { Business: { select: { name: true } } },
-            });
-            const bot = sessionsBaileysWA.get(FlowState.ConnectionWA.id);
+            let external_adapter:
+              | (IPropsControler["external_adapter"] & { businessName: string })
+              | null = null;
 
-            if (
-              !businessInfo?.Business ||
-              !bot ||
-              !FlowState.ContactsWAOnAccount
-            ) {
-              await prisma.followUp.update({
-                where: { id: followup.id },
-                data: { status: "failed" },
+            if (FlowState.ConnectionWA?.id) {
+              let attempt = 0;
+              const botOnline = new Promise<boolean>((resolve, reject) => {
+                function run() {
+                  if (attempt >= 5) {
+                    return resolve(false);
+                  } else {
+                    setInterval(async () => {
+                      const botWA = cacheConnectionsWAOnline.get(
+                        FlowState!.ConnectionWA?.id!,
+                      );
+                      if (!botWA) {
+                        attempt++;
+                        return run();
+                      } else {
+                        return resolve(botWA);
+                      }
+                    }, 1000 * attempt);
+                  }
+                }
+                return run();
               });
-              return;
+
+              if (!botOnline) return;
+
+              const clientWA = sessionsBaileysWA.get(
+                FlowState.ConnectionWA?.id!,
+              )!;
+              external_adapter = {
+                type: "baileys",
+                clientWA: clientWA,
+                businessName: FlowState.ConnectionWA.Business.name,
+              };
+            }
+            if (FlowState.ConnectionIg?.id) {
+              try {
+                const credential = decrypte(FlowState.ConnectionIg.credentials);
+                external_adapter = {
+                  type: "instagram",
+                  page_token: credential.account_access_token,
+                  businessName: FlowState.ConnectionIg.Business.name,
+                };
+              } catch (error) {
+                return;
+              }
             }
 
+            if (!external_adapter) return;
+
+            const connectionId = (FlowState.ConnectionWA?.id ||
+              FlowState.ConnectionIg?.id)!;
+
             NodeControler({
-              businessName: businessInfo.Business.name,
+              businessName: external_adapter.businessName,
               flowId: FlowState.flowId,
               flowBusinessIds: flow.businessIds,
+              businessId: FlowState.Chatbot!.businessId,
+
               ...(pickNode.type === "NodeAgentAI"
                 ? {
                     type: "running",
@@ -174,24 +236,21 @@ cron.schedule("*/1 * * * *", () => {
                     message: `Follow-up executado: ${followup.body}`,
                   }
                 : { type: "initial", action: null }),
-              connectionWhatsId: FlowState.ConnectionWA.id,
+
+              external_adapter,
+              connectionId,
+              lead_id: FlowState.ContactsWAOnAccount!.ContactsWA.completeNumber,
+              contactAccountId: FlowState.ContactsWAOnAccount.id,
+
               chatbotId: FlowState.chatbotId || undefined,
               campaignId: FlowState.campaignId || undefined,
               oldNodeId: nextNode.id,
               previous_response_id: FlowState.previous_response_id || undefined,
-              clientWA: bot,
               isSavePositionLead: true,
               flowStateId: FlowState.id,
-              contactsWAOnAccountId: FlowState.ContactsWAOnAccount.id,
-              lead: {
-                number:
-                  FlowState.ContactsWAOnAccount!.ContactsWA.completeNumber,
-              },
               currentNodeId: nextNode.id,
               edges: flow.edges,
               nodes: flow.nodes,
-              numberConnection:
-                FlowState.ConnectionWA.number + "@s.whatsapp.net",
               accountId: followup.accountId,
               actions: {
                 onFinish: async (vl) => {
@@ -207,8 +266,14 @@ cron.schedule("*/1 * * * *", () => {
                   console.log("TA CAINDO AQUI, finalizando fluxo");
                   await prisma.flowState.update({
                     where: { id: FlowState!.id! },
-                    data: { isFinish: true },
+                    data: { isFinish: true, finishedAt: new Date() },
                   });
+                  webSocketEmitToRoom()
+                    .account(followup.accountId)
+                    .dashboard.dashboard_services({
+                      delta: -1,
+                      hour: resolveHourAndMinute(),
+                    });
                   if (
                     FlowState!.chatbotId &&
                     FlowState!.Chatbot?.TimeToRestart
@@ -237,35 +302,16 @@ cron.schedule("*/1 * * * *", () => {
                     .catch((err) => console.log(err));
                 },
                 onEnterNode: async (node) => {
-                  const indexCurrentAlreadyExist =
-                    await prisma.flowState.findFirst({
-                      where: {
-                        connectionWAId: FlowState.ConnectionWA?.id,
-                        contactsWAOnAccountId:
-                          FlowState.ContactsWAOnAccount?.id,
-                      },
-                      select: { id: true },
-                    });
-                  if (!indexCurrentAlreadyExist) {
-                    await prisma.flowState.create({
-                      data: {
-                        indexNode: node.id,
-                        flowId: node.flowId,
-                        connectionWAId: FlowState.ConnectionWA?.id,
-                        contactsWAOnAccountId:
-                          FlowState.ContactsWAOnAccount?.id,
-                      },
-                    });
-                  } else {
-                    await prisma.flowState.update({
-                      where: { id: indexCurrentAlreadyExist.id },
+                  await prisma.flowState
+                    .update({
+                      where: { id: FlowState!.id },
                       data: {
                         indexNode: node.id,
                         flowId: node.flowId,
                         agentId: node.agentId || null,
                       },
-                    });
-                  }
+                    })
+                    .catch((err) => console.log(err));
                 },
               },
             }).finally(() => {

@@ -55,6 +55,10 @@ import { createCampaignController } from "../../../../../core/createCampaign";
 import { createPushTokenValidation } from "../../../../../core/createPushToken/Validation";
 import { createPushTokenController } from "../../../../../core/createPushToken";
 import { csrfMiddleware } from "../../../../middlewares/csrf";
+import { createConnectionIgValidation } from "../../../../../core/createConnectionIg/Validation";
+import { createConnectionIgController } from "../../../../../core/createConnectionIg";
+import { createDeltaValidation } from "../../../../../core/createDelta/Validation";
+import { createDeltaController } from "../../../../../core/createDelta";
 
 const RouterV1Private_Post = Router();
 
@@ -294,5 +298,19 @@ RouterV1Private_Post.post("/logout", (_, res) => {
 
   return res.sendStatus(204);
 });
+
+RouterV1Private_Post.post(
+  "/connections-ig",
+  csrfMiddleware,
+  createConnectionIgValidation,
+  createConnectionIgController,
+);
+
+RouterV1Private_Post.post(
+  "/delta",
+  csrfMiddleware,
+  createDeltaValidation,
+  createDeltaController,
+);
 
 export default RouterV1Private_Post;

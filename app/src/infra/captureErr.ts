@@ -13,6 +13,7 @@ process.on("unhandledRejection", (reason) => {
 async function shutdown() {
   await NotificationApp({
     accountId: 1,
+    tag: `server-kill`,
     title_txt: "🚨🚨🚨",
     body_txt: "Servidor caiu ‼️",
     onFilterSocket: () => [],

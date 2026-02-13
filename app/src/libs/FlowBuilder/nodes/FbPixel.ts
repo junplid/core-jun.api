@@ -12,10 +12,9 @@ import { listFbChatbot } from "../../../utils/cachesMap";
 import crypto from "crypto";
 
 interface PropsFbPixel {
-  numberLead: string;
-  botWA: WASocket;
-  contactsWAOnAccountId: number;
-  connectionWhatsId: number;
+  lead_id: string;
+  contactAccountId: number;
+
   data: NodeFbPixelData;
   accountId: number;
   businessName: string;
@@ -38,17 +37,17 @@ export const NodeFbPixel = (props: PropsFbPixel): Promise<void> => {
 
     try {
       const userData = new UserData();
-      userData.setPhone("+" + props.numberLead);
+      userData.setPhone("+" + props.lead_id);
       const customData = new CustomData();
 
       Object.entries(props.data.event).forEach(async ([key, value]) => {
         if (value?.trim()) {
           const nextValue = await resolveTextVariables({
             accountId: props.accountId,
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            contactsWAOnAccountId: props.contactAccountId,
             text: value?.trim(),
             ticketProtocol: props.ticketProtocol,
-            numberLead: props.numberLead,
+            numberLead: props.lead_id,
             nodeId: props.nodeId,
           });
           if (key === "userEmail") userData.setEmail(h(nextValue));
@@ -127,12 +126,12 @@ export const NodeFbPixel = (props: PropsFbPixel): Promise<void> => {
         .setEventTime(Math.floor(Number(new Date()) / 1000))
         .setUserData(userData)
         .setCustomData(customData)
-        .setEventSourceUrl("https://wa.me/" + props.numberLead)
+        .setEventSourceUrl("https://wa.me/" + props.lead_id)
         .setActionSource("chat");
 
       const eventRequest = new EventRequest(
         getFbPixel.access_token,
-        getFbPixel.pixel_id
+        getFbPixel.pixel_id,
       ).setEvents([serverEvent]);
 
       await eventRequest.execute();

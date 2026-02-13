@@ -8,9 +8,12 @@ import { mongo } from "../../adapters/mongo/connection";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { prisma } from "../../adapters/Prisma/client";
 import { socketIo } from "../../infra/express";
+import { webSocketEmitToRoom } from "../../infra/websocket";
 import { cacheAccountSocket } from "../../infra/websocket/cache";
-import { NodeControler } from "../../libs/FlowBuilder/Control";
+import { decrypte } from "../../libs/encryption";
+import { IPropsControler, NodeControler } from "../../libs/FlowBuilder/Control";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { resolveHourAndMinute } from "../../utils/resolveHour:mm";
 import { ResolveTicketDTO_I } from "./DTO";
 
 export class ResolveTicketUseCase {
@@ -28,7 +31,7 @@ export class ResolveTicketUseCase {
 
     if (!exist) {
       throw new ErrorResponse(400).container(
-        "Não foi possivel encontrar o ticket."
+        "Não foi possivel encontrar o ticket.",
       );
     }
 
@@ -53,43 +56,49 @@ export class ResolveTicketUseCase {
             GoBackFlowState: {
               select: { flowId: true, indexNode: true, id: true },
             },
-            connectionWAId: true,
             accountId: true,
             ConnectionWA: {
-              select: { id: true, number: true },
+              select: {
+                id: true,
+                number: true,
+                Business: { select: { name: true } },
+              },
+            },
+            ConnectionIg: {
+              select: {
+                id: true,
+                credentials: true,
+                page_id: true,
+                Business: { select: { name: true } },
+              },
             },
           },
         });
 
       if (dto.accountId) {
-        const isonline = cacheAccountSocket.get(dto.accountId)?.listSocket
-          .length;
+        const { departments, player_department } =
+          webSocketEmitToRoom().account(dto.accountId);
 
-        cacheAccountSocket
-          .get(dto.accountId)
-          ?.listSocket?.forEach(async (sockId) => {
-            socketIo.to(sockId.id).emit(`inbox`, {
-              accountId: dto.accountId,
-              departmentId: InboxDepartment.id,
-              departmentName: InboxDepartment.name,
-              status: "RESOLVED",
-              id: dto.id,
-            });
-          });
-        if (isonline) {
-          socketIo
-            .of(`/business-${InboxDepartment.businessId}/inbox`)
-            .emit("list", {
-              status: "RESOLVED",
-              forceOpen: false,
-              departmentId: InboxDepartment.id,
-              notifyMsc: false,
-              name: ContactsWAOnAccount.name,
-              lastInteractionDate: updateAt,
-              id: dto.id,
-              userId: undefined, // caso seja enviado para um usuário.
-            });
-        }
+        departments.math_open_ticket_count(
+          {
+            departmentId: InboxDepartment.id,
+            n: -1,
+          },
+          [],
+        );
+
+        player_department(InboxDepartment.id).resolve_ticket_list(
+          {
+            forceOpen: false,
+            departmentId: InboxDepartment.id,
+            notifyMsc: false,
+            name: ContactsWAOnAccount.name,
+            lastInteractionDate: updateAt,
+            id: dto.id,
+            userId: undefined,
+          },
+          [],
+        );
 
         if (dto.orderId) {
           const order = await prisma.orders.findFirst({
@@ -100,16 +109,14 @@ export class ResolveTicketUseCase {
             select: { status: true },
           });
           if (order?.status) {
-            cacheAccountSocket
-              .get(dto.accountId)
-              ?.listSocket?.forEach(async (sockId) => {
-                socketIo.to(sockId.id).emit(`order:ticket:remove`, {
-                  accountId: dto.accountId,
-                  status: order.status,
-                  ticketId: dto.id,
-                  orderId: dto.orderId,
-                });
-              });
+            webSocketEmitToRoom().account(dto.accountId).orders.remove_ticket(
+              {
+                status: order.status,
+                ticketId: dto.id,
+                orderId: dto.orderId,
+              },
+              [],
+            );
           }
         }
       }
@@ -118,33 +125,71 @@ export class ResolveTicketUseCase {
         return { message: "OK!", status: 201 };
       }
 
-      let attempt = 0;
-      const botOnline = new Promise<boolean>((resolve, reject) => {
-        function run() {
-          if (attempt >= 5) {
-            return resolve(false);
-          } else {
-            setInterval(async () => {
-              const botWA = cacheConnectionsWAOnline.get(rest!.connectionWAId);
-              if (!botWA) {
-                attempt++;
-                return run();
-              } else {
-                return resolve(botWA);
-              }
-            }, 1000 * attempt);
-          }
-        }
-        return run();
-      });
+      let external_adapter:
+        | (IPropsControler["external_adapter"] & { businessName: string })
+        | null = null;
 
-      if (!botOnline) {
-        throw new ErrorResponse(400).container(
-          "Não foi possivel encontrar a conexão conectada."
-        );
+      if (rest.ConnectionWA?.id) {
+        let attempt = 0;
+        const botOnline = new Promise<boolean>((resolve, reject) => {
+          function run() {
+            if (attempt >= 5) {
+              return resolve(false);
+            } else {
+              setInterval(async () => {
+                const botWA = cacheConnectionsWAOnline.get(
+                  rest.ConnectionWA?.id!,
+                );
+                if (!botWA) {
+                  attempt++;
+                  return run();
+                } else {
+                  return resolve(botWA);
+                }
+              }, 1000 * attempt);
+            }
+          }
+          return run();
+        });
+
+        if (!botOnline) {
+          throw new ErrorResponse(400).container(
+            "Não foi possivel encontrar a conexão conectada.",
+          );
+        }
+
+        const clientWA = sessionsBaileysWA.get(rest.ConnectionWA?.id!)!;
+        external_adapter = {
+          type: "baileys",
+          clientWA: clientWA,
+          businessName: rest.ConnectionWA.Business.name,
+        };
+      }
+      if (rest.ConnectionIg?.id) {
+        try {
+          const credential = decrypte(rest.ConnectionIg.credentials);
+          external_adapter = {
+            type: "instagram",
+            page_token: credential.account_access_token,
+            businessName: rest.ConnectionIg.Business.name,
+          };
+        } catch (error) {
+          throw new ErrorResponse(400).toast({
+            title: "Falha ao descriptografar credencias.",
+            description:
+              "Servidor negou o acesso ao dados de Integração do Instagram.",
+            type: "error",
+          });
+        }
       }
 
-      const clientWA = sessionsBaileysWA.get(rest.connectionWAId)!;
+      if (!external_adapter) {
+        throw new ErrorResponse(400).toast({
+          title: "Error interno.",
+          description: "Conexão ou integração não encontrada.",
+          type: "error",
+        });
+      }
 
       let flow = cacheFlowsMap.get(rest.GoBackFlowState.flowId);
       if (!flow) {
@@ -189,23 +234,25 @@ export class ResolveTicketUseCase {
 
       if (!flow) {
         throw new ErrorResponse(400).container(
-          "Não foi possivel encontrar o fluxo."
+          "Não foi possivel encontrar o fluxo.",
         );
       }
 
       const orderNode = flow.nodes.find(
-        (n: any) => n.id === rest.GoBackFlowState!.indexNode
+        (n: any) => n.id === rest.GoBackFlowState!.indexNode,
       ) as any;
 
+      const connectionId = (rest.ConnectionWA?.id || rest.ConnectionIg?.id)!;
+
       NodeControler({
-        clientWA,
-        businessName: InboxDepartment.name,
-        connectionWhatsId: rest.connectionWAId,
-        lead: { number: ContactsWAOnAccount.ContactsWA.completeNumber },
+        external_adapter: external_adapter,
+        connectionId,
+        businessId: InboxDepartment.businessId,
+        lead_id: ContactsWAOnAccount.ContactsWA.completeNumber,
+        businessName: external_adapter.businessName,
         oldNodeId: rest.GoBackFlowState.indexNode || "0",
         accountId: rest.accountId,
         flowId: rest.GoBackFlowState.flowId,
-        numberConnection: rest.ConnectionWA.number! + "@s.whatsapp.net",
         ...(orderNode.type === "NodeAgentAI"
           ? {
               type: "running",
@@ -216,7 +263,7 @@ export class ResolveTicketUseCase {
               type: "initial",
               action: null,
             }),
-        contactsWAOnAccountId: ContactsWAOnAccount.id,
+        contactAccountId: ContactsWAOnAccount.id,
         flowStateId: rest.GoBackFlowState.id,
         nodes: flow.nodes,
         edges: flow.edges,
@@ -226,8 +273,14 @@ export class ResolveTicketUseCase {
             if (rest.GoBackFlowState) {
               await prisma.flowState.update({
                 where: { id: rest.GoBackFlowState.id },
-                data: { isFinish: true },
+                data: { isFinish: true, finishedAt: new Date() },
               });
+              webSocketEmitToRoom()
+                .account(rest.accountId)
+                .dashboard.dashboard_services({
+                  delta: -1,
+                  hour: resolveHourAndMinute(),
+                });
             }
           },
           onExecutedNode: async (node) => {
@@ -245,24 +298,9 @@ export class ResolveTicketUseCase {
             }
           },
           onEnterNode: async (node) => {
-            const indexCurrentAlreadyExist = await prisma.flowState.findFirst({
-              where: {
-                connectionWAId: rest.connectionWAId,
-                contactsWAOnAccountId: ContactsWAOnAccount.id,
-              },
-              select: { id: true },
-            });
-            if (!indexCurrentAlreadyExist) {
-              await prisma.flowState.create({
-                data: {
-                  indexNode: node.id,
-                  connectionWAId: rest.connectionWAId,
-                  contactsWAOnAccountId: ContactsWAOnAccount.id,
-                },
-              });
-            } else {
+            if (rest.GoBackFlowState) {
               await prisma.flowState.update({
-                where: { id: indexCurrentAlreadyExist.id },
+                where: { id: rest.GoBackFlowState.id },
                 data: { indexNode: node.id },
               });
             }
@@ -270,14 +308,13 @@ export class ResolveTicketUseCase {
         },
       }).finally(() => {
         leadAwaiting.set(
-          `${rest.connectionWAId}+${ContactsWAOnAccount.ContactsWA.completeNumber}`,
-          false
+          `${connectionId}+${ContactsWAOnAccount.ContactsWA.completeNumber}`,
+          false,
         );
       });
 
       return { message: "OK!", status: 201 };
     } catch (error) {
-      console.log(error);
       throw new ErrorResponse(400).toast({
         title: "Não foi possivel puxar ticket.",
         type: "error",

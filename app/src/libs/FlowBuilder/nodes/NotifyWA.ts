@@ -1,39 +1,32 @@
-import { WASocket } from "baileys";
 import { NodeNotifyWAData } from "../Payload";
-import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
-import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { validatePhoneNumber } from "../../../helpers/validatePhoneNumber";
 import { prisma } from "../../../adapters/Prisma/client";
 import { resolveJid } from "../../../utils/resolveJid";
+import { NodeMessage } from "./Message";
 
 interface PropsNodeNotifyWA {
-  numberLead: string;
-  botWA: WASocket;
-  contactsWAOnAccountId: number;
-  connectionWhatsId: number;
+  lead_id: string;
+  contactAccountId: number;
+  connectionId: number;
+  external_adapter:
+    | { type: "baileys" }
+    | { type: "instagram"; page_token: string };
+
   data: NodeNotifyWAData;
   accountId: number;
   businessName: string;
   ticketProtocol?: string;
   nodeId: string;
   flowStateId: number;
+  action: { onErrorClient?(): void };
 }
 
 export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
-  const nextText = await resolveTextVariables({
-    accountId: props.accountId,
-    contactsWAOnAccountId: props.contactsWAOnAccountId,
-    text: props.data.text || "",
-    ticketProtocol: props.ticketProtocol,
-    numberLead: props.numberLead,
-    nodeId: props.nodeId,
-  });
-
   for await (const { number } of props.data.numbers) {
     const newNumber = validatePhoneNumber(number);
 
     if (newNumber) {
-      const valid = await resolveJid(props.botWA, newNumber, true);
+      const valid = await resolveJid(props.connectionId, newNumber, true);
       if (!valid) continue;
 
       if (props.data.tagIds?.length) {
@@ -68,20 +61,25 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
       }
 
       try {
-        const msg = await SendMessageText({
-          connectionId: props.connectionWhatsId,
-          text: nextText,
-          toNumber: valid.jid,
-        });
-        if (!msg) continue;
-        await prisma.messages.create({
+        await NodeMessage({
+          accountId: props.accountId,
+          action: props.action,
+          connectionId: props.connectionId,
+          sendBy: "bot",
+          contactAccountId: props.contactAccountId,
           data: {
-            by: "bot",
-            message: nextText,
-            type: "text",
-            messageKey: msg.key.id,
-            flowStateId: props.flowStateId,
+            messages: [
+              {
+                key: "1",
+                text: props.data.text || "",
+                interval: undefined,
+              },
+            ],
           },
+          external_adapter: props.external_adapter,
+          flowStateId: props.flowStateId,
+          lead_id: props.lead_id,
+          nodeId: props.nodeId,
         });
         continue;
       } catch (error) {

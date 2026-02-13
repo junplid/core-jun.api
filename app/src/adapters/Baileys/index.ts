@@ -3,9 +3,12 @@ import pino from "pino";
 import makeWASocket, {
   DisconnectReason,
   WAConnectionState,
+  WAPrivacyOnlineValue,
+  WAReadReceiptsValue,
   WASocket,
   downloadMediaMessage,
   fetchLatestBaileysVersion,
+  jidNormalizedUser,
   useMultiFileAuthState,
 } from "baileys";
 import { writeFileSync } from "fs";
@@ -42,11 +45,13 @@ import { startChatbotQueue } from "../../utils/startChatbotQueue";
 import mime from "mime-types";
 import { SendMessageText } from "./modules/sendMessage";
 import { TypingDelay } from "./modules/typing";
-import { TypeStatusCampaign } from "@prisma/client";
+import { TypeStatusCampaign, WAPrivacyValue } from "@prisma/client";
 import NodeCache from "node-cache";
 import { ulid } from "ulid";
 import { mongo } from "../mongo/connection";
 import { NotificationApp } from "../../utils/notificationApp";
+import { webSocketEmitToRoom } from "../../infra/websocket";
+import { resolveHourAndMinute } from "../../utils/resolveHour:mm";
 
 function CalculeTypingDelay(text: string, ms = 150) {
   const delay = text.split(" ").length * (ms / 1000);
@@ -216,6 +221,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
             title_txt: "🚨🚨🚨",
             body_txt: "Uma conexão caiu.",
             onFilterSocket: () => [],
+            tag: "wa-close",
           });
           await killConnectionWA(id, props.accountId);
           emitStatus(id, "close");
@@ -587,48 +593,138 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   select: { ConnectionConfig: true },
                 });
                 const cfg = ConnectionConfig;
-                if (cfg) {
-                  const tasks: Promise<unknown>[] = [];
-                  if (cfg.profileName) {
-                    tasks.push(bot.updateProfileName(cfg.profileName));
-                  }
-                  if (cfg.fileNameImgPerfil) {
-                    tasks.push(
-                      bot.updateProfilePicture(`${number}@s.whatsapp.net`, {
-                        url: resolve(
-                          __dirname,
-                          `../../../static/image/${cfg.fileNameImgPerfil}`,
-                        ),
-                      }),
-                    );
-                  }
-                  if (cfg.profileStatus) {
-                    tasks.push(bot.updateProfileStatus(cfg.profileStatus));
-                  }
-                  if (cfg.lastSeenPrivacy) {
-                    tasks.push(bot.updateLastSeenPrivacy(cfg.lastSeenPrivacy));
-                  }
-                  if (cfg.onlinePrivacy) {
-                    tasks.push(bot.updateOnlinePrivacy(cfg.onlinePrivacy));
-                  }
-                  if (cfg.readReceiptsPrivacy) {
-                    tasks.push(
-                      bot.updateReadReceiptsPrivacy(cfg.readReceiptsPrivacy),
-                    );
-                  }
-                  if (cfg.statusPrivacy) {
-                    tasks.push(bot.updateStatusPrivacy(cfg.statusPrivacy));
-                  }
-                  if (cfg.imgPerfilPrivacy) {
-                    tasks.push(
-                      bot.updateProfilePicturePrivacy(cfg.imgPerfilPrivacy),
-                    );
-                  }
-                  console.log("4");
 
-                  await Promise.allSettled(tasks);
-                  console.log("5");
+                const tasks: Promise<unknown>[] = [];
+                if (cfg?.profileName) {
+                  tasks.push(bot.updateProfileName(cfg.profileName));
+                } else {
+                  await prisma.connectionConfig.upsert({
+                    where: { connectionWAId: props.connectionWhatsId },
+                    create: {
+                      profileName: bot.user?.name,
+                      connectionWAId: props.connectionWhatsId,
+                    },
+                    update: { profileName: bot.user?.name },
+                  });
                 }
+                if (cfg?.fileNameImgPerfil) {
+                  tasks.push(
+                    bot.updateProfilePicture(`${number}@s.whatsapp.net`, {
+                      url: resolve(
+                        __dirname,
+                        `../../../static/image/${cfg.fileNameImgPerfil}`,
+                      ),
+                    }),
+                  );
+                } else {
+                  if (bot.user?.imgUrl) {
+                    await prisma.connectionConfig.upsert({
+                      where: { connectionWAId: props.connectionWhatsId },
+                      create: {
+                        fileNameImgPerfil: bot.user.imgUrl,
+                        connectionWAId: props.connectionWhatsId,
+                      },
+                      update: { fileNameImgPerfil: bot.user.imgUrl },
+                    });
+                  }
+                }
+                if (cfg?.profileStatus) {
+                  tasks.push(bot.updateProfileStatus(cfg.profileStatus));
+                } else {
+                  if (bot.user?.status) {
+                    await prisma.connectionConfig.upsert({
+                      where: { connectionWAId: props.connectionWhatsId },
+                      create: {
+                        profileStatus: bot.user.status,
+                        connectionWAId: props.connectionWhatsId,
+                      },
+                      update: { profileStatus: bot.user.status },
+                    });
+                  }
+                }
+                const privacyConfig = await bot.fetchPrivacySettings();
+                if (cfg?.lastSeenPrivacy) {
+                  tasks.push(bot.updateLastSeenPrivacy(cfg.lastSeenPrivacy));
+                } else {
+                  await prisma.connectionConfig.upsert({
+                    where: { connectionWAId: props.connectionWhatsId },
+                    create: {
+                      lastSeenPrivacy: privacyConfig.last as WAPrivacyValue,
+                      connectionWAId: props.connectionWhatsId,
+                    },
+                    update: {
+                      lastSeenPrivacy: privacyConfig.last as WAPrivacyValue,
+                    },
+                  });
+                }
+                if (cfg?.onlinePrivacy) {
+                  tasks.push(bot.updateOnlinePrivacy(cfg.onlinePrivacy));
+                } else {
+                  await prisma.connectionConfig.upsert({
+                    where: { connectionWAId: props.connectionWhatsId },
+                    create: {
+                      onlinePrivacy:
+                        privacyConfig.online as WAPrivacyOnlineValue,
+                      connectionWAId: props.connectionWhatsId,
+                    },
+                    update: {
+                      onlinePrivacy:
+                        privacyConfig.online as WAPrivacyOnlineValue,
+                    },
+                  });
+                  // console.log("lastSeenPrivacy",await bot.last());
+                }
+                if (cfg?.readReceiptsPrivacy) {
+                  tasks.push(
+                    bot.updateReadReceiptsPrivacy(cfg.readReceiptsPrivacy),
+                  );
+                } else {
+                  await prisma.connectionConfig.upsert({
+                    where: { connectionWAId: props.connectionWhatsId },
+                    create: {
+                      readReceiptsPrivacy:
+                        privacyConfig.readreceipts as WAReadReceiptsValue,
+                      connectionWAId: props.connectionWhatsId,
+                    },
+                    update: {
+                      readReceiptsPrivacy:
+                        privacyConfig.readreceipts as WAReadReceiptsValue,
+                    },
+                  });
+                }
+                if (cfg?.statusPrivacy) {
+                  tasks.push(bot.updateStatusPrivacy(cfg.statusPrivacy));
+                } else {
+                  await prisma.connectionConfig.upsert({
+                    where: { connectionWAId: props.connectionWhatsId },
+                    create: {
+                      statusPrivacy: privacyConfig.status as WAPrivacyValue,
+                      connectionWAId: props.connectionWhatsId,
+                    },
+                    update: {
+                      statusPrivacy: privacyConfig.status as WAPrivacyValue,
+                    },
+                  });
+                }
+                if (cfg?.imgPerfilPrivacy) {
+                  tasks.push(
+                    bot.updateProfilePicturePrivacy(cfg.imgPerfilPrivacy),
+                  );
+                } else {
+                  await prisma.connectionConfig.upsert({
+                    where: { connectionWAId: props.connectionWhatsId },
+                    create: {
+                      imgPerfilPrivacy: privacyConfig.profile as WAPrivacyValue,
+                      connectionWAId: props.connectionWhatsId,
+                    },
+                    update: {
+                      imgPerfilPrivacy: privacyConfig.profile as WAPrivacyValue,
+                    },
+                  });
+                }
+
+                await Promise.allSettled(tasks);
+
                 // await prisma.connectionWAOnGroups.deleteMany({
                 //   where: { connectionWAId: props.connectionWhatsId },
                 // });
@@ -636,6 +732,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                 // Object.values(allGroups).forEach((g) => groupCache.set(g.id, g));
                 props.onConnection && props.onConnection(connection);
               } catch (error) {
+                console.log("deu error");
                 const hash = ulid();
                 cacheRootSocket.forEach((sockId) =>
                   socketIo.to(sockId).emit(`geral-logs`, {
@@ -694,7 +791,9 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     flowId: true,
                     chatbotId: true,
                     campaignId: true,
-                    ConnectionWA: { select: { number: true } },
+                    ConnectionWA: {
+                      select: { number: true, businessId: true },
+                    },
                     ContactsWAOnAccount: {
                       select: {
                         id: true,
@@ -721,7 +820,13 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
             }
             const { ContactsWAOnAccount, ...contactWA } =
               await prisma.contactsWA.upsert({
-                where: { completeNumber: identifierLead },
+                where: {
+                  completeNumber_page_id_channel: {
+                    completeNumber: identifierLead,
+                    channel: "whatsapp",
+                    page_id: "whatsapp_default",
+                  },
+                },
                 create: { completeNumber: identifierLead },
                 update: {},
                 select: {
@@ -845,22 +950,23 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   flowBusinessIds: flow!.businessIds,
                   type: "running",
                   action: null,
-                  connectionWhatsId: props.connectionWhatsId,
+                  external_adapter: {
+                    clientWA: bot,
+                    type: "baileys",
+                  },
+                  businessId: msg!.FlowState!.ConnectionWA!.businessId,
                   chatbotId: msg!.FlowState!.chatbotId || undefined,
                   campaignId: msg!.FlowState!.campaignId || undefined,
                   oldNodeId: reactionNode.id,
                   currentNodeId: reactionNode.id,
-                  clientWA: bot,
                   isSavePositionLead: false,
                   flowStateId: msg!.FlowState!.id,
-                  contactsWAOnAccountId:
-                    msg!.FlowState!.ContactsWAOnAccount!.id,
-                  lead: { number: numberLead },
+                  contactAccountId: msg!.FlowState!.ContactsWAOnAccount!.id,
+                  lead_id: numberLead,
                   edges: flow!.edges,
                   nodes: flow!.nodes,
                   contactsWAOnAccountReactionId: ContactsWAOnAccount[0].id,
-                  numberConnection:
-                    msg!.FlowState!.ConnectionWA!.number + "@s.whatsapp.net",
+                  connectionId: props.connectionWhatsId,
                   ...reaction!,
                   accountId: props.accountId,
                   actions: {
@@ -894,6 +1000,13 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
 
         bot.ev.on("messages.upsert", async (body) => {
           const isGroup = !!body.messages[0].key.remoteJid?.includes("@g.us");
+          const numberConnection = bot.user?.id.split(":")[0];
+          const identifierLead = body.messages[0].key.remoteJid;
+          if (!identifierLead) {
+            console.log("Deu erro para recuperar número do lead");
+            return;
+          }
+
           // body.messages[0].messageStubType === proto.WebMessageInfo.StubType.GROUP_PARTICIPANT_ADD;
           // const isRemovedGroup = body.messages[0].messageStubType === proto.WebMessageInfo.StubType.GROUP_PARTICIPANT_REMOVE;;
           // if (!isGroup && !body.messages[0].key.fromMe) {
@@ -903,16 +1016,58 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
           //     message: body.messages[0].message,
           //   });
           // }
+
+          const fromMe = body.messages[0].key.fromMe;
+
+          if (!isGroup && fromMe && body.type === "append") {
+            if (!body.messages[0].key.id) return;
+
+            try {
+              const findMessage = await prisma.messages.findFirstOrThrow({
+                where: { messageKey: body.messages[0].key.id },
+                select: { id: true },
+              });
+              await prisma.messages.update({
+                where: { id: findMessage.id },
+                data: { status: "DELIVERED" },
+                select: { id: true },
+              });
+              const ticket = await prisma.tickets.findFirst({
+                where: {
+                  ContactsWAOnAccount: {
+                    ContactsWA: { completeNumber: identifierLead },
+                  },
+                  connectionWAId: props.connectionWhatsId,
+                },
+                select: {
+                  InboxDepartment: { select: { businessId: true } },
+                  id: true,
+                },
+              });
+              if (!ticket) return;
+              webSocketEmitToRoom()
+                .account(props.accountId)
+                .ticket_chat(ticket.id)
+                .message_eco(
+                  {
+                    id: findMessage.id,
+                  },
+                  [],
+                );
+            } catch (error) {
+              return;
+            }
+          }
+
           if (
             !isGroup &&
             body.type === "notify" &&
-            !body.messages[0].key.fromMe &&
+            !fromMe &&
             !body.messages[0].message?.reactionMessage &&
             !body.messages[0].reactions?.length
           ) {
             await mongo();
 
-            const identifierLead = body.messages[0].key.remoteJid;
             const keyMapLeadAwaiting = `${props.connectionWhatsId}+${identifierLead}`;
 
             if (!identifierLead) {
@@ -922,7 +1077,6 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
             // await bot.readMessages(body.messages.map((m) => m.key));
             // console.log({ audio: body.messages[0].message?.audioMessage?.url });
 
-            const numberConnection = bot.user?.id.split(":")[0];
             const isAudioMessage =
               !!body.messages[0].message?.audioMessage?.url;
             const isImageMessage = !!body.messages[0].message?.imageMessage;
@@ -951,10 +1105,18 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
 
             const { ContactsWAOnAccount, ...contactWA } =
               await prisma.contactsWA.upsert({
-                where: { completeNumber: identifierLead },
+                where: {
+                  completeNumber_page_id_channel: {
+                    completeNumber: identifierLead,
+                    channel: "whatsapp",
+                    page_id: "whatsapp_default",
+                  },
+                },
                 create: {
                   img: profilePicUrl,
                   completeNumber: identifierLead,
+                  page_id: "whatsapp_default",
+                  channel: "whatsapp",
                   ContactsWAOnAccount: {
                     create: {
                       accountId: props.accountId,
@@ -1301,18 +1463,16 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                   by: "contact",
                   messageKey: body.messages[0].key.id,
                   read: isCurrentTicket,
+                  status: "DELIVERED",
                 },
                 select: { createAt: true, id: true },
               });
-
-              const inboxSpace = socketIo.of(
-                `/business-${ticket.InboxDepartment.businessId}/inbox`,
-              );
 
               await NotificationApp({
                 accountId: props.accountId,
                 title_txt: `${ticket.ContactsWAOnAccount.name}`,
                 title_html: `${ticket.ContactsWAOnAccount.name}`,
+                tag: `msg-ticket-${ticket.id}`,
                 body_txt: !messageText
                   ? `🎤📷 arquivo de mídia`
                   : messageText.slice(0, 24),
@@ -1325,68 +1485,72 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                 onFilterSocket(sockets) {
                   return sockets
                     .filter(
-                      (s) => s.focused !== `modal-player-chat-${ticket.id}`,
+                      (s) =>
+                        s.focused !== `modal-player-chat-${ticket.id}` ||
+                        s.focused !== `modal-player-only-chat-${ticket.id}`,
                     )
                     .map((s) => s.id);
                 },
               });
 
-              inboxSpace.emit("message-list", {
-                content: {
-                  id: msg.id,
-                  ...(messageText && { type: "text", text: messageText }),
+              const { ticket_chat, player_department } =
+                webSocketEmitToRoom().account(props.accountId);
+
+              player_department(ticket.InboxDepartment.id).message_ticket_list(
+                // @ts-expect-error
+                {
+                  createAt: msg.createAt,
+                  status: "DELIVERED",
+                  by: "contact",
+                  ticketId: ticket.id,
                   ...(messageAudio && { type: "audio" }),
                   ...(messageImage && { type: "image" }),
                   ...((doc || docWithCaption) && { type: "file" }),
-                },
-                by: "contact",
-                departmentId: ticket.InboxDepartment.id,
-                notifyMsc: !isCurrentTicket, // quem controla a notificação é a função NotificationApp
-                ticketId: ticket.id,
-                userId: ticket.inboxUserId, // caso seja enviado para um usuário.
-                lastInteractionDate: msg.createAt,
-                read: isCurrentTicket,
-              });
-
-              // modifica o chat
-              inboxSpace.emit("message", {
-                content: {
-                  id: msg.id,
                   ...(messageText && { type: "text", text: messageText }),
-                  ...(messageAudio && {
-                    type: "audio",
-                    fileName,
-                    ptt: messageAudio.ptt,
-                  }),
-                  ...(messageImage && {
-                    type: "image",
-                    fileName,
-                    ...(messageImage.caption && {
-                      caption: messageImage?.caption,
-                    }),
-                  }),
-                  ...(doc && {
-                    type: "file",
-                    fileName: fileName,
-                    fileNameOriginal,
-                    ...(doc.caption && { caption: doc.caption }),
-                  }),
-                  ...(docWithCaption && {
-                    type: "file",
-                    fileName: fileName,
-                    fileNameOriginal,
-                    ...(docWithCaption.caption && {
-                      caption: docWithCaption.caption,
-                    }),
-                  }),
                 },
-                by: "contact",
-                departmentId: ticket.InboxDepartment.id,
-                notifyMsc: !isCurrentTicket, // quem controla a notificação é a função NotificationApp
-                ticketId: ticket.id,
-                userId: ticket.inboxUserId, // caso seja enviado para um usuário.
-                lastInteractionDate: msg.createAt,
-              });
+                [],
+              );
+
+              ticket_chat(ticket.id).message(
+                {
+                  content: {
+                    ...msg,
+                    ...(messageText && { type: "text", text: messageText }),
+                    ...(messageAudio && {
+                      type: "audio",
+                      fileName,
+                      ptt: messageAudio.ptt,
+                    }),
+                    ...(messageImage && {
+                      type: "image",
+                      fileName,
+                      ...(messageImage.caption && {
+                        caption: messageImage?.caption,
+                      }),
+                    }),
+                    ...(doc && {
+                      type: "file",
+                      fileName: fileName,
+                      fileNameOriginal,
+                      ...(doc.caption && { caption: doc.caption }),
+                    }),
+                    ...(docWithCaption && {
+                      type: "file",
+                      fileName: fileName,
+                      fileNameOriginal,
+                      ...(docWithCaption.caption && {
+                        caption: docWithCaption.caption,
+                      }),
+                    }),
+                  },
+                  by: "contact",
+                  departmentId: ticket.InboxDepartment.id,
+                  notifyMsc: !isCurrentTicket, // quem controla a notificação é a função NotificationApp
+                  userId: ticket.inboxUserId, // caso seja enviado para um usuário.
+                  lastInteractionDate: msg.createAt,
+                },
+                [],
+              );
 
               //   businessSpace.emit("synchronize-message", {
               //     ticketId: ticket.id,
@@ -1457,21 +1621,6 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
               },
             });
 
-            if (!messageText) {
-              const isSendMessageSuportText =
-                cacheSendMessageSuportText.get(keyMapLeadAwaiting);
-              if (!isSendMessageSuportText) {
-                await SendMessageText({
-                  connectionId: props.connectionWhatsId,
-                  text: "*Mensagem automática*\nEste chat ainda só oferece suporte a mensagens de texto.",
-                  toNumber: identifierLead,
-                });
-                return;
-              }
-              return;
-            }
-            cacheSendMessageSuportText.delete(keyMapLeadAwaiting);
-
             if (chatbot) {
               let currentIndexNodeLead = await prisma.flowState.findFirst({
                 where: {
@@ -1500,17 +1649,55 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                     previous_response_id: true,
                   },
                 });
+                webSocketEmitToRoom()
+                  .account(props.accountId)
+                  .dashboard.dashboard_services({
+                    delta: +1,
+                    hour: resolveHourAndMinute(),
+                  });
               }
 
-              await prisma.messages.create({
-                data: {
-                  by: "contact",
-                  message: messageText ?? "<Enviou mídia>",
-                  type: "text",
-                  messageKey: body.messages[0].key.id,
-                  flowStateId: currentIndexNodeLead.id,
-                },
-              });
+              if (!messageText) {
+                const isSendMessageSuportText =
+                  cacheSendMessageSuportText.get(keyMapLeadAwaiting);
+
+                if (!isSendMessageSuportText) {
+                  await prisma.messages.create({
+                    data: {
+                      by: "contact",
+                      message: "<Enviou mídia>",
+                      type: "text",
+                      messageKey: body.messages[0].key.id,
+                      status: "DELIVERED",
+                      flowStateId: currentIndexNodeLead.id,
+                    },
+                  });
+
+                  const msg = await SendMessageText({
+                    connectionId: props.connectionWhatsId,
+                    text: "*Mensagem automática*\nEste chat ainda só oferece suporte a mensagens de texto.",
+                    toNumber: identifierLead,
+                  });
+
+                  if (msg?.key?.id) {
+                    await prisma.messages.create({
+                      data: {
+                        by: "system",
+                        message:
+                          "*Mensagem automática*\nEste chat ainda só oferece suporte a mensagens de texto.",
+                        type: "text",
+                        messageKey: msg.key.id,
+                        flowStateId: currentIndexNodeLead.id,
+                      },
+                    });
+                  }
+
+                  return;
+                }
+                return;
+              }
+              cacheSendMessageSuportText.delete(keyMapLeadAwaiting);
+
               const isToRestartChatbot = chatbotRestartInDate.get(
                 `${numberConnection}+${identifierLead}`,
               );
@@ -1776,21 +1963,24 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                     flowId: chatbot.flowId,
                     flowBusinessIds: flow.businessIds,
                     type: "running",
+                    businessId: chatbot.Business.id,
                     audio: fileName,
-                    connectionWhatsId: props.connectionWhatsId,
+                    connectionId: props.connectionWhatsId,
                     chatbotId: chatbot.id,
                     oldNodeId: currentIndexNodeLead?.indexNode || "0",
                     previous_response_id:
                       currentIndexNodeLead.previous_response_id || undefined,
-                    clientWA: bot,
+                    external_adapter: {
+                      type: "baileys",
+                      clientWA: bot,
+                    },
                     isSavePositionLead: true,
                     flowStateId: currentIndexNodeLead.id,
-                    contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                    lead: { number: identifierLead },
+                    contactAccountId: ContactsWAOnAccount[0].id,
+                    lead_id: identifierLead,
                     currentNodeId: currentIndexNodeLead?.indexNode || "0",
                     edges: flow.edges,
                     nodes: flow.nodes,
-                    numberConnection: numberConnection + "@s.whatsapp.net",
                     message: messageText ?? "",
                     accountId: props.accountId,
                     action: null,
@@ -1809,8 +1999,15 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                           console.log("TA CAINDO AQUI, finalizando fluxo");
                           await prisma.flowState.update({
                             where: { id: currentIndexNodeLead.id },
-                            data: { isFinish: true },
+                            data: { isFinish: true, finishedAt: new Date() },
                           });
+
+                          webSocketEmitToRoom()
+                            .account(props.accountId)
+                            .dashboard.dashboard_services({
+                              delta: -1,
+                              hour: resolveHourAndMinute(),
+                            });
                           if (chatbot.TimeToRestart) {
                             const nextDate = moment()
                               .tz("America/Sao_Paulo")
@@ -1840,8 +2037,14 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                           console.log("TA CAINDO AQUI, finalizando fluxo");
                           await prisma.flowState.update({
                             where: { id: currentIndexNodeLead.id },
-                            data: { isFinish: true },
+                            data: { isFinish: true, finishedAt: new Date() },
                           });
+                          webSocketEmitToRoom()
+                            .account(props.accountId)
+                            .dashboard.dashboard_services({
+                              delta: -1,
+                              hour: resolveHourAndMinute(),
+                            });
                           if (chatbot.TimeToRestart) {
                             const nextDate = moment()
                               .tz("America/Sao_Paulo")
@@ -1906,6 +2109,12 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                               contactsWAOnAccountId: ContactsWAOnAccount[0].id,
                             },
                           });
+                          webSocketEmitToRoom()
+                            .account(props.accountId)
+                            .dashboard.dashboard_services({
+                              delta: +1,
+                              hour: resolveHourAndMinute(),
+                            });
                         } else {
                           await prisma.flowState.update({
                             where: { id: indexCurrentAlreadyExist.id },
@@ -1948,8 +2157,6 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                   }
                 });
 
-                console.log({ validTime });
-
                 if (!validTime) {
                   if (chatbot.fallback) {
                     const flowState = await prisma.flowState.findFirst({
@@ -1960,7 +2167,6 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                       },
                       select: { id: true, fallbackSent: true },
                     });
-                    console.log({ flowState });
                     if (!flowState) {
                       await new Promise((resolve) =>
                         setTimeout(resolve, 1000 * 4),
@@ -1985,6 +2191,12 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                         },
                         select: { id: true },
                       });
+                      webSocketEmitToRoom()
+                        .account(props.accountId)
+                        .dashboard.dashboard_services({
+                          delta: +1,
+                          hour: resolveHourAndMinute(),
+                        });
                     } else {
                       if (!flowState.fallbackSent) {
                         await new Promise((resolve) =>
@@ -2136,6 +2348,21 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
             });
 
             if (!!campaignOfConnection) {
+              if (!messageText) {
+                const isSendMessageSuportText =
+                  cacheSendMessageSuportText.get(keyMapLeadAwaiting);
+                if (!isSendMessageSuportText) {
+                  await SendMessageText({
+                    connectionId: props.connectionWhatsId,
+                    text: "*Mensagem automática*\nEste chat ainda só oferece suporte a mensagens de texto.",
+                    toNumber: identifierLead,
+                  });
+                  return;
+                }
+                return;
+              }
+              cacheSendMessageSuportText.delete(keyMapLeadAwaiting);
+
               const flowState = await prisma.flowState.findFirst({
                 where: {
                   campaignId: campaignOfConnection?.id,
@@ -2288,7 +2515,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
 
               const businessInfo = await prisma.connectionWA.findFirst({
                 where: { id: props.connectionWhatsId },
-                select: { Business: { select: { name: true } } },
+                select: { Business: { select: { name: true, id: true } } },
               });
 
               if (!flowState.ContactsWAOnAccount) {
@@ -2311,6 +2538,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                 businessName: businessInfo?.Business.name!,
                 isSavePositionLead: true,
                 flowId: flowId || campaignOfConnection.flowId,
+                businessId: businessInfo!.Business.id,
                 isMidia:
                   isAudioMessage ||
                   isImageMessage ||
@@ -2321,18 +2549,20 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                 type: "running",
                 previous_response_id:
                   flowState.previous_response_id || undefined,
-                connectionWhatsId: props.connectionWhatsId,
-                clientWA: bot,
+                connectionId: props.connectionWhatsId,
+                external_adapter: {
+                  type: "baileys",
+                  clientWA: bot,
+                },
                 campaignId: campaignOfConnection?.id,
                 oldNodeId: flowState.indexNode || "0",
                 flowStateId: flowState.id,
-                contactsWAOnAccountId: flowState.ContactsWAOnAccount.id,
-                lead: { number: identifierLead },
+                contactAccountId: flowState.ContactsWAOnAccount.id,
+                lead_id: identifierLead,
                 action: null,
                 currentNodeId: flowState.indexNode || "0",
                 edges: currentFlow.edges,
                 nodes: currentFlow.nodes,
-                numberConnection: numberConnection + "@s.whatsapp.net",
                 message: messageText || "",
                 accountId: props.accountId,
                 actions: {
@@ -2340,8 +2570,14 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                     try {
                       await prisma.flowState.update({
                         where: { id: flowState.id },
-                        data: { isFinish: true },
+                        data: { isFinish: true, finishedAt: new Date() },
                       });
+                      webSocketEmitToRoom()
+                        .account(props.accountId)
+                        .dashboard.dashboard_services({
+                          delta: -1,
+                          hour: resolveHourAndMinute(),
+                        });
                     } catch (error) {
                       console.log("Lead já foi finalizado nesse fluxo!");
                     }

@@ -4,7 +4,7 @@ import { ErrorResponse } from "../../utils/ErrorResponse";
 import OpenAI from "openai";
 import { resolve } from "path";
 import { createReadStream } from "fs-extra";
-import { AssistantTool } from "openai/resources/beta/assistants";
+// import { AssistantTool } from "openai/resources/beta/assistants";
 
 let path = "";
 if (process.env.NODE_ENV === "production") {
@@ -92,15 +92,15 @@ export class CreateAgentAIUseCase {
         });
       }
 
-      // try {
-      //   const client = new OpenAI({ apiKey: dto.apiKey });
-      //   await client.models.list();
-      // } catch (error) {
-      //   throw new ErrorResponse(400).input({
-      //     path: "apiKey",
-      //     text: "Credencial de API inválida",
-      //   });
-      // }
+      try {
+        const client = new OpenAI({ apiKey: dto.apiKey });
+        await client.models.list();
+      } catch (error) {
+        throw new ErrorResponse(400).input({
+          path: "apiKey",
+          text: "Credencial de API inválida",
+        });
+      }
 
       const newProviderCredential = await prisma.providerCredential.create({
         data: {

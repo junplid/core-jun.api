@@ -1,6 +1,7 @@
 import { GetTicketDTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 
 export class GetTicketUseCase {
   constructor() {}
@@ -16,6 +17,8 @@ export class GetTicketUseCase {
       },
       select: {
         id: true,
+        ConnectionIg: { select: { ig_username: true, id: true } },
+        ConnectionWA: { select: { id: true, name: true } },
         status: true,
         InboxDepartment: {
           select: { id: true, businessId: true },
@@ -48,6 +51,7 @@ export class GetTicketUseCase {
                 fullName: true,
                 latitude: true,
                 inboxUserId: true,
+                messageKey: true,
                 message: true,
                 fileNameOriginal: true,
                 longitude: true,
@@ -73,6 +77,7 @@ export class GetTicketUseCase {
             latitude: true,
             inboxUserId: true,
             message: true,
+            messageKey: true,
             fileNameOriginal: true,
             longitude: true,
             name: true,
@@ -99,16 +104,38 @@ export class GetTicketUseCase {
       Messages,
       GoBackFlowState,
       InboxDepartment,
+      ConnectionIg,
+      ConnectionWA,
       ...rest
     } = data;
 
     const listMessages = [...(GoBackFlowState?.Messages || []), ...Messages];
+
+    let connection: any = {};
+
+    if (ConnectionWA?.name) {
+      connection = {
+        s: !!cacheConnectionsWAOnline.get(ConnectionWA?.id),
+        ...ConnectionWA,
+        channel: "baileys",
+      };
+    }
+
+    if (ConnectionIg?.ig_username) {
+      connection = {
+        s: true,
+        name: ConnectionIg.ig_username,
+        id: ConnectionIg.id,
+        channel: "instagram",
+      };
+    }
 
     return {
       message: "OK!",
       status: 200,
       ticket: {
         ...rest,
+        connection,
         inboxDepartmentId: InboxDepartment.id,
         businessId: InboxDepartment.businessId,
         messages: listMessages.map((msg) => {
@@ -119,6 +146,7 @@ export class GetTicketUseCase {
                 type: "text",
                 text: msg.message,
                 id: msg.id,
+                messageKey: msg.messageKey,
               },
               by: msg.by,
             };
@@ -132,6 +160,7 @@ export class GetTicketUseCase {
                 id: msg.id,
                 fileName: msg.fileName,
                 ptt: msg.ptt,
+                messageKey: msg.messageKey,
               },
             };
           }
@@ -144,6 +173,7 @@ export class GetTicketUseCase {
                 caption: msg.caption,
                 id: msg.id,
                 fileName: msg.fileName,
+                messageKey: msg.messageKey,
               },
             };
           }
@@ -157,6 +187,7 @@ export class GetTicketUseCase {
                 fileName: msg.fileName,
                 caption: msg.caption,
                 fileNameOriginal: msg.fileNameOriginal,
+                messageKey: msg.messageKey,
               },
             };
           }
@@ -169,6 +200,7 @@ export class GetTicketUseCase {
                 id: msg.id,
                 caption: msg.caption,
                 fileName: msg.fileName,
+                messageKey: msg.messageKey,
               },
             };
           }
@@ -182,6 +214,7 @@ export class GetTicketUseCase {
               caption: msg.caption,
               fileNameOriginal: msg.fileNameOriginal,
               fileName: msg.fileName,
+              messageKey: msg.messageKey,
             },
           };
         }),

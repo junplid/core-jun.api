@@ -1,10 +1,10 @@
-import { WASocket } from "baileys";
 import { prisma } from "../adapters/Prisma/client";
+import { sessionsBaileysWA } from "../adapters/Baileys";
 
 export const resolveJid = async (
-  sock: WASocket,
+  connectionId: number,
   rawNumber: string,
-  pre: boolean
+  pre: boolean,
 ): Promise<
   { jid: string; completeNumber: string; contactId: number } | undefined
 > => {
@@ -29,15 +29,17 @@ export const resolveJid = async (
     });
     if (getN?.id) {
       return {
-        jid: getN.completeNumber + `@s.whatsapp.net`,
+        jid: getN.completeNumber,
         contactId: getN.id,
         completeNumber: getN.completeNumber,
       };
     }
   }
 
+  const sock = sessionsBaileysWA.get(connectionId);
+  if (!sock) return;
   const resolve = await sock.onWhatsApp(
-    ...candidates.map((c) => `${c}@s.whatsapp.net`)
+    ...candidates.map((c) => `${c}@s.whatsapp.net`),
   );
   for (const c of resolve || []) {
     if (c.exists) {

@@ -4,6 +4,7 @@ export interface CreateChatbotDTO_I {
   businessId: number;
   flowId: string;
   connectionWAId?: number;
+  connectionIgId?: number;
   status?: boolean;
   description?: string;
   addLeadToAudiencesIds?: number[];
