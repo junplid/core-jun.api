@@ -18,4 +18,5 @@ export interface CreateAgentAIDTO_I {
   timeout?: number;
   debounce?: number;
   service_tier?: TypeServiceTier;
+  modelTranscription?: string;
 }

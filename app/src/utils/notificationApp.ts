@@ -29,6 +29,7 @@ type Props = {
 export async function NotificationApp({
   accountId,
   onFilterSocket,
+  tag,
   ...props
 }: Props) {
   if (!accountId) {
@@ -60,7 +61,7 @@ export async function NotificationApp({
       title: props.title_txt,
       body: props.body_txt,
       url: props.url_redirect,
-      tag: props.tag,
+      tag,
     });
   }
 

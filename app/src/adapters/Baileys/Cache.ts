@@ -44,6 +44,7 @@ export const cacheInfoAgentAI: Map<
     debounce: number;
     apiKey: string;
     service_tier?: TypeServiceTier | null;
+    modelTranscription?: string | null;
   }
 > = new Map();
 

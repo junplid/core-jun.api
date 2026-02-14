@@ -113,12 +113,12 @@ export const WebSocketIo = (io: Server) => {
             `status-session-${data.connectionWhatsId}`,
             connection ?? "close",
           );
-          socket.emit(`status-connection`, {
+          socket.emit(`status_connection`, {
             connectionId: data.connectionWhatsId,
             connection: "sync",
           });
           setTimeout(() => {
-            socket.emit(`status-connection`, {
+            socket.emit(`status_connection`, {
               connectionId: data.connectionWhatsId,
               connection: connection ?? "close",
             });
@@ -614,6 +614,14 @@ export const WebSocketIo = (io: Server) => {
       socket.leave(`account:${auth.accountId}:dashboard`);
     });
 
+    socket.on("join_connections", () => {
+      socket.join(`account:${auth.accountId}:connections`);
+    });
+
+    socket.on("leave_connections", () => {
+      socket.leave(`account:${auth.accountId}:connections`);
+    });
+
     // atualizar status do evento.
   });
 };
@@ -625,6 +633,15 @@ export const webSocketEmitToRoom = () => {
     account: (accountId: number) => {
       let to = `account:${accountId}`;
       return {
+        emit: (emit: string, args: any, ignore: string[]) => {
+          io.to(to).except(ignore).emit(emit, args);
+        },
+        connections: {
+          status_connection: (args: any, ignore: string[]) => {
+            to = `${to}:connections`;
+            io.to(to).except(ignore).emit("status_connection", args);
+          },
+        },
         user_updated: (args: any, ignore: string[]) => {
           io.to(to).except(ignore).emit("user_updated", args);
         },

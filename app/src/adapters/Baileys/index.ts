@@ -52,6 +52,7 @@ import { mongo } from "../mongo/connection";
 import { NotificationApp } from "../../utils/notificationApp";
 import { webSocketEmitToRoom } from "../../infra/websocket";
 import { resolveHourAndMinute } from "../../utils/resolveHour:mm";
+import { handleFileTemp } from "../../utils/handleFileTemp";
 
 function CalculeTypingDelay(text: string, ms = 150) {
   const delay = text.split(" ").length * (ms / 1000);
@@ -198,33 +199,27 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
   return new Promise((res, rej) => {
     const run = async (restart: boolean = false) => {
       try {
-        function emitStatus(id: number, status: BaileysStatus) {
-          cacheAccountSocket
-            .get(props.accountId)
-            ?.listSocket?.forEach((sockId) =>
-              socketIo.to(sockId.id).emit(`status-connection`, {
+        function emitStatus(status: BaileysStatus) {
+          webSocketEmitToRoom()
+            .account(props.accountId)
+            .connections.status_connection(
+              {
                 connectionId: props.connectionWhatsId,
                 connection: status,
-              }),
+              },
+              [],
             );
         }
 
         async function softReconnect() {
-          emitStatus(props.connectionWhatsId, "connecting");
+          emitStatus("connecting");
           await new Promise((s) => setTimeout(s, 2_000));
           await run(true);
         }
 
         async function killAndClean(id: number, msg: string) {
-          await NotificationApp({
-            accountId: props.accountId,
-            title_txt: "🚨🚨🚨",
-            body_txt: "Uma conexão caiu.",
-            onFilterSocket: () => [],
-            tag: "wa-close",
-          });
           await killConnectionWA(id, props.accountId);
-          emitStatus(id, "close");
+          emitStatus("close");
         }
         const socketIds = cacheAccountSocket.get(props.accountId)?.listSocket;
 
@@ -403,39 +398,43 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                 connection === "open",
               );
             }
-            if (!!qr && socketIds?.length && !restart) {
+            if (!!qr && !restart) {
               if (!!props.number) {
                 const paircode = await bot.requestPairingCode(
                   props.number.replace(/\D/g, ""),
                 );
                 const code = paircode.split("");
                 code.splice(4, 0, "-");
-                socketIds.forEach((socketId) => {
-                  socketIo
-                    .to(socketId.id)
-                    .emit(
-                      `pairing-code-${props.connectionWhatsId}`,
-                      code.join("").split("-"),
-                    );
-                });
+                webSocketEmitToRoom()
+                  .account(props.accountId)
+                  .emit(
+                    `pairing-code-${props.connectionWhatsId}`,
+                    code.join("").split("-"),
+                    [],
+                  );
               } else {
-                socketIds.forEach((socketId) => {
-                  socketIo
-                    .to(socketId.id)
-                    .emit(`qr-code-${props.connectionWhatsId}`, qr);
-                });
+                console.log("veio aqui criar o qrcode!");
+                webSocketEmitToRoom()
+                  .account(props.accountId)
+                  .emit(`qr-code-${props.connectionWhatsId}`, qr, []);
               }
             }
 
-            if (connection) emitStatus(props.connectionWhatsId, connection);
+            if (connection) emitStatus(connection);
 
             const reason = new Boom(lastDisconnect?.error).output.statusCode;
 
             if (connection === "close") {
-              const hash = ulid();
               switch (reason) {
                 case DisconnectReason.badSession:
                   cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
+                  await NotificationApp({
+                    accountId: props.accountId,
+                    title_txt: "🚨🚨🚨",
+                    body_txt: "Uma conexão caiu.",
+                    onFilterSocket: () => [],
+                    tag: "wa-close",
+                  });
                   await killAndClean(
                     props.connectionWhatsId,
                     "Sessão corrompida - limpando credenciais.",
@@ -451,22 +450,6 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     attempts++;
                     await softReconnect();
                   }
-                  cacheRootSocket.forEach((sockId) =>
-                    socketIo.to(sockId).emit(`geral-logs`, {
-                      hash,
-                      entity: "baileys",
-                      type: "ERROR",
-                      value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Conexão perdida, tentativa: ${attempts} de se reconectar.`,
-                    }),
-                  );
-                  await prisma.geralLogDate.create({
-                    data: {
-                      hash,
-                      entity: "baileys",
-                      type: "ERROR",
-                      value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Conexão perdida, tentativa: ${attempts} de se reconectar.`,
-                    },
-                  });
                   break;
 
                 case DisconnectReason.connectionReplaced:
@@ -475,22 +458,6 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     props.connectionWhatsId,
                     "Sessão substituída em outro dispositivo.",
                   );
-                  cacheRootSocket.forEach((sockId) =>
-                    socketIo.to(sockId).emit(`geral-logs`, {
-                      hash,
-                      entity: "baileys",
-                      type: "ERROR",
-                      value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Substituída em outro dispositivo.`,
-                    }),
-                  );
-                  await prisma.geralLogDate.create({
-                    data: {
-                      hash,
-                      entity: "baileys",
-                      type: "ERROR",
-                      value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Substituída em outro dispositivo.`,
-                    },
-                  });
                   break;
 
                 case DisconnectReason.loggedOut:
@@ -499,49 +466,17 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     props.connectionWhatsId,
                     "Conta foi deslogada do WhatsApp.",
                   );
-                  cacheRootSocket.forEach((sockId) =>
-                    socketIo.to(sockId).emit(`geral-logs`, {
-                      hash,
-                      entity: "baileys",
-                      type: "ERROR",
-                      value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Deslogada do WhatsApp.`,
-                    }),
-                  );
-                  await prisma.geralLogDate.create({
-                    data: {
-                      hash,
-                      entity: "baileys",
-                      type: "ERROR",
-                      value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Deslogada do WhatsApp.`,
-                    },
-                  });
                   break;
 
-                case DisconnectReason.restartRequired:
-                  console.log("WhatsApp pediu restart - reiniciando sessão…");
+                case DisconnectReason.restartRequired: {
                   cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
                   await softReconnect();
                   break;
+                }
 
                 case DisconnectReason.forbidden:
                   cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
-                  emitStatus(props.connectionWhatsId, "close");
-                  cacheRootSocket.forEach((sockId) =>
-                    socketIo.to(sockId).emit(`geral-logs`, {
-                      hash,
-                      entity: "baileys",
-                      type: "ERROR",
-                      value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Número bloqueado / banido.`,
-                    }),
-                  );
-                  await prisma.geralLogDate.create({
-                    data: {
-                      hash,
-                      entity: "baileys",
-                      type: "ERROR",
-                      value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Número bloqueado / banido.`,
-                    },
-                  });
+                  emitStatus("close");
                   break;
 
                 case 405:
@@ -550,28 +485,12 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     props.connectionWhatsId,
                     "Sessão corrompida - limpando credenciais.",
                   );
-                  cacheRootSocket.forEach((sockId) =>
-                    socketIo.to(sockId).emit(`geral-logs`, {
-                      hash,
-                      entity: "baileys",
-                      type: "ERROR",
-                      value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Corrompida - limpando credenciais.`,
-                    }),
-                  );
-                  await prisma.geralLogDate.create({
-                    data: {
-                      hash,
-                      entity: "baileys",
-                      type: "ERROR",
-                      value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Corrompida - limpando credenciais.`,
-                    },
-                  });
                   break;
 
                 default:
                   cacheConnectionsWAOnline.set(props.connectionWhatsId, false);
                   console.error("Motivo de desconexão não mapeado:", reason);
-                  emitStatus(props.connectionWhatsId, "close");
+                  emitStatus("close");
               }
               return;
             }
@@ -582,7 +501,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               );
               attempts = 0;
               try {
-                emitStatus(props.connectionWhatsId, "open");
+                emitStatus("open");
                 const number = bot.user?.id.split(":")[0];
                 const { ConnectionConfig } = await prisma.connectionWA.update({
                   where: {
@@ -1147,7 +1066,10 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
             }
 
             // Verifica se o lead está aguardando processamento
-            if (leadAwaiting.get(keyMapLeadAwaiting)) return;
+            if (leadAwaiting.get(keyMapLeadAwaiting)) {
+              console.log("EM PROCESSAMENTO!");
+              return;
+            }
 
             const messageAudio = body.messages[0].message?.audioMessage;
             const messageImage = body.messages[0].message?.imageMessage;
@@ -1657,7 +1579,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                   });
               }
 
-              if (!messageText) {
+              if (!messageText && !messageAudio) {
                 const isSendMessageSuportText =
                   cacheSendMessageSuportText.get(keyMapLeadAwaiting);
 
@@ -1675,8 +1597,9 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
 
                   const msg = await SendMessageText({
                     connectionId: props.connectionWhatsId,
-                    text: "*Mensagem automática*\nEste chat ainda só oferece suporte a mensagens de texto.",
+                    text: "*Mensagem automática*\nEste chat oferece suporte a mensagens de texto ou áudio.",
                     toNumber: identifierLead,
+                    quoted: body.messages[0],
                   });
 
                   if (msg?.key?.id) {
@@ -1684,7 +1607,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                       data: {
                         by: "system",
                         message:
-                          "*Mensagem automática*\nEste chat ainda só oferece suporte a mensagens de texto.",
+                          "*Mensagem automática*\nEste chat oferece suporte a mensagens de texto ou áudio.",
                         type: "text",
                         messageKey: msg.key.id,
                         flowStateId: currentIndexNodeLead.id,
@@ -1919,23 +1842,54 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                     return;
                   }
 
-                  let fileName = "";
+                  let audioFilePath = "";
                   if (messageAudio) {
-                    const ext = mime.extension(
-                      messageAudio.mimetype || "audio/mpeg",
-                    );
-                    fileName = `audio_inbox_${Date.now()}.${ext}`;
+                    const durationSeconds = messageAudio.seconds || 0;
+                    if (!durationSeconds) {
+                      await prisma.messages.create({
+                        data: {
+                          by: "system",
+                          message:
+                            "Log: Duração não disponível. Ignorando por segurança.",
+                          type: "text",
+                          flowStateId: currentIndexNodeLead.id,
+                        },
+                      });
+                      return;
+                    }
+                    const durationMinutes = durationSeconds / 60;
+                    const maxDuration = Math.floor(6 * 1.3);
+                    if (durationMinutes > maxDuration) {
+                      const msg = await SendMessageText({
+                        connectionId: props.connectionWhatsId,
+                        text: `*Mensagem automática*\nO áudio enviado excedeu o limite máximo permitido(${maxDuration}min).`,
+                        toNumber: identifierLead,
+                        quoted: body.messages[0],
+                      });
+
+                      if (msg?.key?.id) {
+                        await prisma.messages.create({
+                          data: {
+                            by: "system",
+                            message: `*Mensagem automática*\nO áudio enviado excedeu o limite máximo permitido(${maxDuration}min).`,
+                            type: "text",
+                            messageKey: msg.key.id,
+                            flowStateId: currentIndexNodeLead.id,
+                          },
+                        });
+                      }
+                      return;
+                    }
+
                     try {
-                      const buffer = await downloadMediaMessage(
+                      const originalBufferAudio = (await downloadMediaMessage(
                         body.messages[0],
                         "buffer",
                         {},
-                      );
-                      writeFileSync(
-                        pathStatic + `/${fileName}`,
-                        new Uint8Array(buffer),
-                      );
-                      leadAwaiting.set(keyMapLeadAwaiting, false);
+                      )) as Buffer;
+                      const tempPath =
+                        await handleFileTemp.saveBuffer(originalBufferAudio);
+                      audioFilePath = tempPath;
                     } catch (error) {
                       const hash = ulid();
                       cacheRootSocket.forEach((sockId) =>
@@ -1964,7 +1918,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                     flowBusinessIds: flow.businessIds,
                     type: "running",
                     businessId: chatbot.Business.id,
-                    audio: fileName,
+                    audioPath: audioFilePath,
                     connectionId: props.connectionWhatsId,
                     chatbotId: chatbot.id,
                     oldNodeId: currentIndexNodeLead?.indexNode || "0",
@@ -2356,6 +2310,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                     connectionId: props.connectionWhatsId,
                     text: "*Mensagem automática*\nEste chat ainda só oferece suporte a mensagens de texto.",
                     toNumber: identifierLead,
+                    quoted: body.messages[0],
                   });
                   return;
                 }

@@ -152,6 +152,7 @@ export class CreateAgentAIUseCase {
               data: dto.businessIds.map((businessId) => ({ businessId })),
             },
           },
+          modelTranscription: dto.modelTranscription,
           knowledgeBase: dto.knowledgeBase,
           personality: dto.personality,
           temperature: dto.temperature || 1,

@@ -17,6 +17,7 @@ export const createAgentAIValidation = (
     language: Joi.string().optional(),
     personality: Joi.string().optional(),
     model: Joi.string().required(),
+    modelTranscription: Joi.string().optional().allow(null),
     temperature: Joi.number().min(0).max(1).optional(),
     knowledgeBase: Joi.string().optional(),
     files: Joi.array().items(Joi.number()).optional(),

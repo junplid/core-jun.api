@@ -7,10 +7,12 @@ interface Props {
   connectionId: number;
   text: string;
   toNumber: string;
+  quoted?: WAMessage;
 }
 
 export const SendMessageText = async ({
   connectionId,
+  quoted,
   ...props
 }: Props): Promise<WAMessage | undefined> => {
   const MAX_ATTEMPTS = 5;
@@ -19,8 +21,7 @@ export const SendMessageText = async ({
     const bot = sessionsBaileysWA.get(connectionId);
     if (!bot || !cacheConnectionsWAOnline.get(connectionId))
       throw new Error("CONEXÃO OFFLINE");
-    console.log(props.toNumber);
-    return safeSendMessage(bot, props.toNumber, { text: props.text });
+    return safeSendMessage(bot, props.toNumber, { text: props.text }, quoted);
   };
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {

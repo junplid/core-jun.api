@@ -7,35 +7,38 @@ import {
   cacheNewMessageWhileDebouceAgentAIRun,
   cacheNextInputsCurrentAgents,
   scheduleTimeoutAgentAI,
-} from "../../../adapters/Baileys/Cache";
-import { NodeAgentAIData } from "../Payload";
+} from "../../../../adapters/Baileys/Cache";
+import { NodeAgentAIData } from "../../Payload";
 import moment from "moment-timezone";
 import { scheduleJob } from "node-schedule";
-import { prisma } from "../../../adapters/Prisma/client";
+import { prisma } from "../../../../adapters/Prisma/client";
 import OpenAI from "openai";
 // import { validatePhoneNumber } from "../../../helpers/validatePhoneNumber";
-import { TypingDelay } from "../../../adapters/Baileys/modules/typing";
-import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
-import { resolveTextVariables } from "../utils/ResolveTextVariables";
-import { searchLinesInText } from "../../../utils/searchLinesInText";
-import { mongo } from "../../../adapters/mongo/connection";
-import { ModelFlows } from "../../../adapters/mongo/models/flows";
-import { NodeTimer } from "./Timer";
-import { NodeNotifyWA } from "./NotifyWA";
-import { sessionsBaileysWA } from "../../../adapters/Baileys";
-import { NodeSendFiles } from "./SendFiles";
-import { NodeSendVideos } from "./SendVideos";
-import { NodeSendImages } from "./SendImages";
-import { NodeSendAudios } from "./SendAudios";
-import { NodeSendAudiosLive } from "./SendAudiosLive";
-import { NodeTransferDepartment } from "./TransferDepartment";
-import { genNumCode } from "../../../utils/genNumCode";
-import { NodeCreateAppointment } from "./CreateAppointment";
+import { TypingDelay } from "../../../../adapters/Baileys/modules/typing";
+import { SendMessageText } from "../../../../adapters/Baileys/modules/sendMessage";
+import { resolveTextVariables } from "../../utils/ResolveTextVariables";
+import { searchLinesInText } from "../../../../utils/searchLinesInText";
+import { mongo } from "../../../../adapters/mongo/connection";
+import { ModelFlows } from "../../../../adapters/mongo/models/flows";
+import { NodeTimer } from "../Timer";
+import { NodeNotifyWA } from "../NotifyWA";
+import { sessionsBaileysWA } from "../../../../adapters/Baileys";
+import { NodeSendFiles } from "../SendFiles";
+import { NodeSendVideos } from "../SendVideos";
+import { NodeSendImages } from "../SendImages";
+import { NodeSendAudios } from "../SendAudios";
+import { NodeSendAudiosLive } from "../SendAudiosLive";
+import { NodeTransferDepartment } from "../TransferDepartment";
+import { genNumCode } from "../../../../utils/genNumCode";
+import { NodeCreateAppointment } from "../CreateAppointment";
 import { nanoid } from "nanoid";
-import { NodeUpdateAppointment } from "./UpdateAppointment";
-import { NodeCreateOrder } from "./CreateOrder";
-import { NodeUpdateOrder } from "./UpdateOrder";
-import { NodeCharge } from "./Charge";
+import { NodeUpdateAppointment } from "../UpdateAppointment";
+import { NodeCreateOrder } from "../CreateOrder";
+import { NodeUpdateOrder } from "../UpdateOrder";
+import { NodeCharge } from "../Charge";
+import { speedUpAudioFile } from "./speedUpAudio";
+import { handleFileTemp } from "../../../../utils/handleFileTemp";
+import { createReadStream } from "fs-extra";
 
 const tools: OpenAI.Responses.Tool[] = [
   {
@@ -822,6 +825,7 @@ interface PropsNodeAgentAI {
     | { type: "instagram"; page_token: string };
 
   data: NodeAgentAIData;
+  audioPath?: string;
   message?: { value: string; isDev: boolean };
   flowId: string;
   accountId: number;
@@ -870,6 +874,7 @@ async function getAgent(id: number, accountId: number) {
         vectorStoreId: true,
         debounce: true,
         service_tier: true,
+        modelTranscription: true,
       },
     });
     if (!agent) throw new Error("AgentAI not found");
@@ -944,8 +949,35 @@ export const NodeAgentAI = async ({
   // lista de mensagens recebidas enquanto estava esperando o debounce acabar
 
   const messages = cacheMessagesDebouceAgentAI.get(keyMap) || [];
-  const nextMessages = [...messages, message];
-  cacheMessagesDebouceAgentAI.set(keyMap, nextMessages);
+  if (props.audioPath) {
+    if (agent.modelTranscription) {
+      const audioPathSpeed = await speedUpAudioFile(props.audioPath, 1.3);
+      handleFileTemp.cleanFile(props.audioPath);
+      const openai = new OpenAI({ apiKey: agent.apiKey });
+      const transcription = await openai.audio.transcriptions.create({
+        file: createReadStream(audioPathSpeed),
+        model: agent.modelTranscription,
+        language: "pt",
+      });
+      await handleFileTemp.cleanFile(audioPathSpeed);
+      cacheMessagesDebouceAgentAI.set(keyMap, [
+        ...messages,
+        { isDev: false, value: transcription.text },
+      ]);
+    } else {
+      cacheMessagesDebouceAgentAI.set(keyMap, [
+        ...messages,
+        {
+          isDev: false,
+          value:
+            "O usuário enviou um arquivo de áudio, mas você não está habilitado a processar ou compreender áudios.",
+        },
+      ]);
+      await handleFileTemp.cleanFile(props.audioPath);
+    }
+  } else {
+    cacheMessagesDebouceAgentAI.set(keyMap, [...messages, message]);
+  }
 
   // verifica se já existe um debounce sendo executado.
   // e muda o cache para TREU caso já esteja sendo executado.
@@ -985,7 +1017,6 @@ export const NodeAgentAI = async ({
 
   // cria um novo debounce
   async function execute() {
-    console.log("ABRIU O DEBOUNCE");
     cacheDebouceAgentAIRun.set(keyMap, true);
     async function runDebounceAgentAI(): Promise<ResultDebounceAgentAI> {
       return new Promise<ResultDebounceAgentAI>(async (resolve, reject) => {
@@ -1100,7 +1131,6 @@ export const NodeAgentAI = async ({
             let response: OpenAI.Responses.Response & {
               _request_id?: string | null;
             };
-            console.log(input);
             try {
               response = await openai.responses.create({
                 model: agent.model,
@@ -2297,7 +2327,6 @@ export const NodeAgentAI = async ({
                     }
                   }
 
-                  console.log({ outputs });
                   let responseRun: OpenAI.Responses.Response & {
                     _request_id?: string | null;
                   };
@@ -2323,13 +2352,11 @@ export const NodeAgentAI = async ({
                     } catch (error: any) {
                       const debounceJob = cacheDebounceAgentAI.get(keyMap);
                       const timeoutJob = scheduleTimeoutAgentAI.get(keyMap);
-                      console.log("Setou como o debounce parou. 2");
                       cacheDebouceAgentAIRun.set(keyMap, false);
                       debounceJob?.cancel();
                       timeoutJob?.cancel();
                       cacheDebounceAgentAI.delete(keyMap);
                       scheduleTimeoutAgentAI.delete(keyMap);
-                      console.log(cacheNextInputsCurrentAgents);
                       cacheMessagesDebouceAgentAI.delete(keyMap);
                       cacheNewMessageWhileDebouceAgentAIRun.delete(keyMap);
                       reject({ ...error.error, line: "2270" });
@@ -2366,10 +2393,8 @@ export const NodeAgentAI = async ({
                 },
               },
             });
-            console.log({ isExit: executeNow });
             if (nextresponse.restart) {
               const getNewMessages = cacheMessagesDebouceAgentAI.get(keyMap);
-              console.log("Chamou o executeProcess 2");
               return await executeProcess(
                 [...msgs, ...(getNewMessages || [])],
                 nextresponse.id,
@@ -2392,7 +2417,6 @@ export const NodeAgentAI = async ({
                     );
                   }
                 }
-                console.log("Chamou o executeProcess 3");
                 await new Promise((s) => setTimeout(s, 2000));
                 await executeProcess(newlistMsg, nextresponse.id);
               } else {
@@ -2402,13 +2426,11 @@ export const NodeAgentAI = async ({
             } else {
               const debounceJob = cacheDebounceAgentAI.get(keyMap);
               const timeoutJob = scheduleTimeoutAgentAI.get(keyMap);
-              console.log("Setou como o debounce parou. 2");
               cacheDebouceAgentAIRun.set(keyMap, false);
               debounceJob?.cancel();
               timeoutJob?.cancel();
               cacheDebounceAgentAI.delete(keyMap);
               scheduleTimeoutAgentAI.delete(keyMap);
-              console.log(cacheNextInputsCurrentAgents);
               cacheMessagesDebouceAgentAI.delete(keyMap);
               cacheNewMessageWhileDebouceAgentAIRun.delete(keyMap);
 
@@ -2435,7 +2457,6 @@ export const NodeAgentAI = async ({
     }
     try {
       const res = await runDebounceAgentAI();
-      console.log("Setou como o debounce parou. 1");
       cacheDebouceAgentAIRun.set(keyMap, false);
       if (res?.run === "exit") return;
     } catch (error) {

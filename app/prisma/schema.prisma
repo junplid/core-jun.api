@@ -1916,6 +1916,7 @@ model AgentAI {
   emojiLevel            TypeEmojiLevel         @default(none)
   language              String                 @default("PT-BR")
   model                 String
+  modelTranscription    String?
   temperature           Decimal                @default(0.1) @db.Decimal(2, 1)
   createAt              DateTime               @default(now())
   updateAt              DateTime               @default(now()) @updatedAt

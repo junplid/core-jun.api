@@ -21,6 +21,7 @@ export interface UpdateAgentAIBodyDTO_I {
   timeout?: number;
   debounce?: number;
   service_tier?: TypeServiceTier;
+  modelTranscription?: string | null;
 }
 
 export type UpdateAgentAIDTO_I = UpdateAgentAIBodyDTO_I &

@@ -6,6 +6,7 @@ import { cacheFlowInExecution } from "../../adapters/Baileys/Cache";
 import { cacheExecuteTimeoutAgentAI } from "./cache";
 import { webSocketEmitToRoom } from "../../infra/websocket";
 import { resolveHourAndMinute } from "../../utils/resolveHour:mm";
+import { handleFileTemp } from "../../utils/handleFileTemp";
 
 interface Edges {
   source: string;
@@ -60,7 +61,7 @@ export type IPropsControler = {
   | {
       type: "running";
       message: string;
-      audio?: any;
+      audioPath?: string;
       reactionText?: string;
       isMidia?: boolean;
       contactsWAOnAccountReactionId?: number;
@@ -249,6 +250,7 @@ export const NodeControler = ({
       //       return res();
       //     });
       // }
+
       if (currentNode.type === "NodeInitial") {
         if (props.actions?.onExecutedNode) {
           await props.actions?.onExecutedNode({
@@ -274,6 +276,15 @@ export const NodeControler = ({
         });
         return;
       }
+
+      if (
+        props.type === "running" &&
+        currentNode.type !== "NodeAgentAI" &&
+        props.audioPath
+      ) {
+        await handleFileTemp.cleanFile(props.audioPath);
+      }
+
       if (currentNode.type === "NodeFinish") {
         if (props.actions?.onExecutedNode) {
           await props.actions?.onExecutedNode({
@@ -1301,6 +1312,7 @@ export const NodeControler = ({
                             : props.action,
                     }
                   : { value: props.message, isDev: false },
+                audioPath: props.audioPath,
               }),
           actions: {
             onErrorClient: async () => {

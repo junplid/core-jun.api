@@ -11,6 +11,7 @@ export class GetAgentAIUseCase {
       select: {
         name: true,
         model: true,
+        modelTranscription: true,
         emojiLevel: true,
         knowledgeBase: true,
         language: true,
