@@ -11,7 +11,8 @@ export class UpdateAccountUseCase {
     accountId,
     number,
     currentPassword,
-    nextPassword,
+    newPassword,
+    repeatNewPassword,
     email,
     ...dto
   }: UpdateAccountDTO_I) {
@@ -41,25 +42,42 @@ export class UpdateAccountUseCase {
     });
     if (!account) throw new ErrorResponse(401);
 
-    let newPassword: string | undefined = undefined;
-    if (currentPassword && nextPassword) {
-      if (currentPassword === nextPassword) {
+    let newPasswordCrypto: string | undefined = undefined;
+    if (currentPassword && newPassword && repeatNewPassword) {
+      if (currentPassword === newPassword) {
         throw new ErrorResponse(400).input({
-          text: `A nova senha não pode ser igual a atual`,
-          path: "nextPassword",
+          text: `Nova senha deve ser diferente da atual.`,
+          path: "new_password",
+        });
+      }
+      if (newPassword !== repeatNewPassword) {
+        throw new ErrorResponse(400)
+          .input({
+            text: `As senhas não coincidem.`,
+            path: "new_password",
+          })
+          .input({
+            path: "repeat_new_password",
+            text: "As senhas não coincidem.",
+          });
+      }
+
+      if (!(await compare(currentPassword, account.password))) {
+        throw new ErrorResponse(400).input({
+          text: `Senha atual inválida.`,
+          path: "current",
         });
       }
 
-      const oldPasswordValid = compare(currentPassword, account.password);
-      if (!oldPasswordValid) {
+      if (await compare(newPassword, account.password)) {
         throw new ErrorResponse(400).input({
-          text: `Senha atual inválida`,
-          path: "currentPassword",
+          text: `Nova senha deve ser diferente da atual.`,
+          path: "new_password",
         });
       }
 
       const salt = await genSalt(8);
-      newPassword = await hashBcrypt(nextPassword, salt);
+      newPasswordCrypto = await hashBcrypt(newPassword, salt);
     }
     let contactWAId: number | undefined = undefined;
 
@@ -84,7 +102,7 @@ export class UpdateAccountUseCase {
       data: {
         ...dto,
         ...(email && { emailHash: hashForLookup(email) }),
-        password: newPassword,
+        password: newPasswordCrypto,
         contactWAId,
       },
     });

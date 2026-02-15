@@ -5,5 +5,6 @@ export interface UpdateAccountDTO_I {
   number?: string;
   onboarded?: boolean;
   currentPassword?: string;
-  nextPassword?: string;
+  newPassword?: string;
+  repeatNewPassword?: string;
 }

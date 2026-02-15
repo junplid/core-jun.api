@@ -15,8 +15,9 @@ export const updateAccountValidation = (
     email: Joi.string().email().optional(),
     onboarded: Joi.boolean(),
     currentPassword: Joi.string().optional(),
-    nextPassword: Joi.string().optional(),
-  }).and("currentPassword", "nextPassword");
+    newPassword: Joi.string().optional(),
+    repeatNewPassword: Joi.string().optional(),
+  }).and("currentPassword", "newPassword", "repeatNewPassword");
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });
 
