@@ -59,6 +59,8 @@ import { createConnectionIgValidation } from "../../../../../core/createConnecti
 import { createConnectionIgController } from "../../../../../core/createConnectionIg";
 import { createDeltaValidation } from "../../../../../core/createDelta/Validation";
 import { createDeltaController } from "../../../../../core/createDelta";
+import { closeAccountValidation } from "../../../../../core/closeAccount/Validation";
+import { closeAccountController } from "../../../../../core/closeAccount";
 
 const RouterV1Private_Post = Router();
 
@@ -311,6 +313,13 @@ RouterV1Private_Post.post(
   csrfMiddleware,
   createDeltaValidation,
   createDeltaController,
+);
+
+RouterV1Private_Post.post(
+  "/close-account",
+  csrfMiddleware,
+  closeAccountValidation,
+  closeAccountController,
 );
 
 export default RouterV1Private_Post;
