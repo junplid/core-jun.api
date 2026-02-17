@@ -10,7 +10,7 @@ import { ErrorResponse } from "../../utils/ErrorResponse";
 
 export class UpdateDisconnectConnectionWhatsappUseCase {
   constructor(
-    private repository: UpdateDisconnectConnectionWhatsappRepository_I
+    private repository: UpdateDisconnectConnectionWhatsappRepository_I,
   ) {}
 
   async run(dto: UpdateDisconnectConnectionWhatsappDTO_I) {
@@ -24,43 +24,10 @@ export class UpdateDisconnectConnectionWhatsappUseCase {
     }
     await killConnectionWA(dto.id, dto.accountId);
 
-    let path = "";
-    if (process.env?.NODE_ENV === "production") {
-      path = resolve(__dirname, `../bin/connections.json`);
-    } else {
-      path = resolve(__dirname, `../../../bin/connections.json`);
-    }
-
-    try {
-      await new Promise<void>((res, rej) =>
-        readFile(path, (err, file) => {
-          if (err) {
-            console.error("Error reading connections file:", err);
-            return rej("Error na leitura no arquivo de conexões");
-          }
-          const listConnections: CacheSessionsBaileysWA[] = JSON.parse(
-            file.toString()
-          );
-          const nextList = JSON.stringify(
-            listConnections.filter(
-              ({ connectionWhatsId }) => connectionWhatsId !== dto.id
-            )
-          );
-          writeFileSync(path, nextList);
-          return res();
-        })
-      );
-      return {
-        message: "OK!",
-        status: 200,
-        connectionWA: { status: "close" },
-      };
-    } catch (error) {
-      console.error("Error ao atualizar conexões:", error);
-      throw new ErrorResponse(400).toast({
-        title: `Não foi possivel desligar a conexão`,
-        type: "error",
-      });
-    }
+    return {
+      message: "OK!",
+      status: 200,
+      connectionWA: { status: "close" },
+    };
   }
 }

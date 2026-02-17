@@ -1,6 +1,7 @@
 import { Boom } from "@hapi/boom";
 import pino from "pino";
 import makeWASocket, {
+  Browsers,
   DisconnectReason,
   WAConnectionState,
   WAPrivacyOnlineValue,
@@ -142,6 +143,13 @@ export const killConnectionWA = async (
   }
   const bot = sessionsBaileysWA.get(connectionId);
   if (bot) {
+    bot.ev.removeAllListeners("group-participants.update");
+    bot.ev.removeAllListeners("connection.update");
+    bot.ev.removeAllListeners("messages.upsert");
+    bot.ev.removeAllListeners("groups.update");
+    bot.ev.removeAllListeners("creds.update");
+    bot.ev.removeAllListeners("messages.reaction");
+
     if (cacheConnectionsWAOnline.get(connectionId)) {
       try {
         await bot.logout();
@@ -154,7 +162,7 @@ export const killConnectionWA = async (
     sessionsBaileysWA.delete(connectionId);
   }
 
-  cacheConnectionsWAOnline.set(connectionId, false);
+  cacheConnectionsWAOnline.delete(connectionId);
 
   if (process.env.NODE_ENV === "production") {
     path = resolve(__dirname, `../database-whatsapp/${connectionId}`);
@@ -283,8 +291,8 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
           version: baileysVersion.version,
           logger,
           defaultQueryTimeoutMs: undefined,
-          qrTimeout: 40000,
-          browser: [`Junplid - ${nameCon.name}`, "Chrome", "114.0.5735.198"],
+          qrTimeout: 1000 * 60 * 3,
+          browser: Browsers.macOS("Chrome"),
           markOnlineOnConnect: true,
           cachedGroupMetadata: async (jid) => groupCache.get(jid),
           getMessage: async (key) => {
@@ -378,6 +386,9 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
         // });
 
         bot.ev.on("groups.update", async ([event]) => {
+          if (!bot?.ws || !bot.ws.isOpen) {
+            return;
+          }
           if (event?.id) {
             const metadata = await bot.groupMetadata(event.id);
             groupCache.set(event.id, metadata);
@@ -413,7 +424,6 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     [],
                   );
               } else {
-                console.log("veio aqui criar o qrcode!");
                 webSocketEmitToRoom()
                   .account(props.accountId)
                   .emit(`qr-code-${props.connectionWhatsId}`, qr, []);
@@ -918,978 +928,196 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
         });
 
         bot.ev.on("messages.upsert", async (body) => {
-          const isGroup = !!body.messages[0].key.remoteJid?.includes("@g.us");
-          const numberConnection = bot.user?.id.split(":")[0];
-          const identifierLead = body.messages[0].key.remoteJid;
-          if (!identifierLead) {
-            console.log("Deu erro para recuperar número do lead");
-            return;
-          }
+          for (const m of body.messages) {
+            if (m.message?.protocolMessage?.historySyncNotification) continue;
 
-          // body.messages[0].messageStubType === proto.WebMessageInfo.StubType.GROUP_PARTICIPANT_ADD;
-          // const isRemovedGroup = body.messages[0].messageStubType === proto.WebMessageInfo.StubType.GROUP_PARTICIPANT_REMOVE;;
-          // if (!isGroup && !body.messages[0].key.fromMe) {
-          //   console.log({
-          //     // reaction: body.messages[0].message?.reactionMessage?.text,
-          //     // messageKey: body.messages[0].key.id,
-          //     message: body.messages[0].message,
-          //   });
-          // }
+            if (m.message && !m.message.protocolMessage) {
+              const key = m.key;
+              const identifierLead = key.remoteJid;
+              const fromMe = key.fromMe;
+              const isGroup = !!identifierLead?.includes("@g.us");
+              const numberConnection = bot.user?.id.split(":")[0];
 
-          const fromMe = body.messages[0].key.fromMe;
+              if (!identifierLead || !numberConnection) continue;
 
-          if (!isGroup && fromMe && body.type === "append") {
-            if (!body.messages[0].key.id) return;
+              // ====== 1. Caso de mensagens enviadas por nós (append) ======
+              if (!isGroup && fromMe && body.type === "append") {
+                const msgId = key.id;
 
-            try {
-              const findMessage = await prisma.messages.findFirstOrThrow({
-                where: { messageKey: body.messages[0].key.id },
-                select: { id: true },
-              });
-              await prisma.messages.update({
-                where: { id: findMessage.id },
-                data: { status: "DELIVERED" },
-                select: { id: true },
-              });
-              const ticket = await prisma.tickets.findFirst({
-                where: {
-                  ContactsWAOnAccount: {
-                    ContactsWA: { completeNumber: identifierLead },
-                  },
-                  connectionWAId: props.connectionWhatsId,
-                },
-                select: {
-                  InboxDepartment: { select: { businessId: true } },
-                  id: true,
-                },
-              });
-              if (!ticket) return;
-              webSocketEmitToRoom()
-                .account(props.accountId)
-                .ticket_chat(ticket.id)
-                .message_eco(
-                  {
-                    id: findMessage.id,
-                  },
-                  [],
-                );
-            } catch (error) {
-              return;
-            }
-          }
-
-          if (
-            !isGroup &&
-            body.type === "notify" &&
-            !fromMe &&
-            !body.messages[0].message?.reactionMessage &&
-            !body.messages[0].reactions?.length
-          ) {
-            await mongo();
-
-            const keyMapLeadAwaiting = `${props.connectionWhatsId}+${identifierLead}`;
-
-            if (!identifierLead) {
-              console.log("Deu erro para recuperar número do lead");
-              return;
-            }
-            // await bot.readMessages(body.messages.map((m) => m.key));
-            // console.log({ audio: body.messages[0].message?.audioMessage?.url });
-
-            const isAudioMessage =
-              !!body.messages[0].message?.audioMessage?.url;
-            const isImageMessage = !!body.messages[0].message?.imageMessage;
-            const isDocumentMessage =
-              !!body.messages[0].message?.documentMessage;
-            const isVideoMessage = !!body.messages[0].message?.videoMessage;
-            const contactMessage =
-              body.messages[0].message?.contactMessage?.vcard;
-            // const isArrayContactMessage =
-            //   body.messages[0].message?.contactsArrayMessage?.contacts?.length;
-            const locationMessage = body.messages[0].message?.locationMessage;
-
-            const messageText =
-              body.messages[0].message?.extendedTextMessage?.text ??
-              body.messages[0].message?.conversation;
-
-            if (!numberConnection) {
-              console.log("Error, Número da conexão", `${numberConnection}`);
-              return;
-            }
-
-            const profilePicUrl = await bot
-              .profilePictureUrl(identifierLead)
-              .then((s) => s)
-              .catch(() => undefined);
-
-            const { ContactsWAOnAccount, ...contactWA } =
-              await prisma.contactsWA.upsert({
-                where: {
-                  completeNumber_page_id_channel: {
-                    completeNumber: identifierLead,
-                    channel: "whatsapp",
-                    page_id: "whatsapp_default",
-                  },
-                },
-                create: {
-                  img: profilePicUrl,
-                  completeNumber: identifierLead,
-                  page_id: "whatsapp_default",
-                  channel: "whatsapp",
-                  ContactsWAOnAccount: {
-                    create: {
-                      accountId: props.accountId,
-                      name: body.messages[0].pushName ?? "SEM NOME",
-                    },
-                  },
-                },
-                update: { img: profilePicUrl },
-                select: {
-                  id: true,
-                  ContactsWAOnAccount: {
-                    where: { accountId: props.accountId },
+                try {
+                  const findMessage = await prisma.messages.findFirstOrThrow({
+                    where: { messageKey: msgId },
                     select: { id: true },
-                  },
-                },
-              });
-
-            if (!ContactsWAOnAccount.length) {
-              const { id } = await prisma.contactsWAOnAccount.create({
-                data: {
-                  name: body.messages[0].pushName ?? "SEM NOME",
-                  accountId: props.accountId,
-                  contactWAId: contactWA.id,
-                },
-                select: { id: true },
-              });
-              ContactsWAOnAccount.push({ id });
-            }
-
-            // Verifica se o lead está aguardando processamento
-            if (leadAwaiting.get(keyMapLeadAwaiting)) {
-              console.log("EM PROCESSAMENTO!");
-              return;
-            }
-
-            const messageAudio = body.messages[0].message?.audioMessage;
-            const messageImage = body.messages[0].message?.imageMessage;
-            const messageVideo = body.messages[0].message?.videoMessage?.url;
-            const capitionImage =
-              body.messages[0].message?.imageMessage?.caption;
-
-            const doc = body.messages[0].message?.documentMessage;
-            const docWithCaption =
-              body.messages[0].message?.documentWithCaptionMessage?.message
-                ?.documentMessage;
-
-            const ticket = await prisma.tickets.findFirst({
-              where: {
-                status: { in: ["OPEN", "NEW"] },
-                ContactsWAOnAccount: {
-                  ContactsWA: { completeNumber: identifierLead },
-                },
-                ConnectionWA: { number: numberConnection },
-              },
-              select: {
-                accountId: true,
-                protocol: true,
-                InboxDepartment: {
-                  select: { businessId: true, id: true, name: true },
-                },
-                id: true,
-                inboxUserId: true,
-                status: true,
-                ContactsWAOnAccount: { select: { name: true } },
-              },
-            });
-            if (ticket) {
-              if (!!messageText) {
-                const isValidText = messageText.trim().length > 0;
-                if (!isValidText) {
-                  console.log("Mensagem de texto inválida ou vazia.");
-                  return;
-                }
-              }
-              let fileName = "";
-              let fileNameOriginal = "";
-              if (messageAudio) {
-                const ext = mime.extension(
-                  messageAudio.mimetype || "audio/mpeg",
-                );
-                fileName = `image_inbox_${Date.now()}.${ext}`;
-                try {
-                  const buffer = await downloadMediaMessage(
-                    body.messages[0],
-                    "buffer",
-                    {},
-                  );
-                  writeFileSync(
-                    pathStatic + `/${fileName}`,
-                    new Uint8Array(buffer),
-                  );
-                  leadAwaiting.set(keyMapLeadAwaiting, false);
-                } catch (error) {
-                  const hash = ulid();
-                  cacheRootSocket.forEach((sockId) =>
-                    socketIo.to(sockId).emit(`geral-logs`, {
-                      hash,
-                      entity: "baileys",
-                      type: "WARN",
-                      value: `Conexão: #${
-                        props.connectionWhatsId
-                      } - Account: #${
-                        props.accountId
-                      } | Error ao tentar salvar AUDIO recebido, line: 934. >> ${JSON.stringify(
-                        error,
-                      )}`,
-                    }),
-                  );
-                  await prisma.geralLogDate.create({
-                    data: {
-                      hash,
-                      entity: "baileys",
-                      type: "WARN",
-                      value: `Conexão: #${
-                        props.connectionWhatsId
-                      } - Account: #${
-                        props.accountId
-                      } | Error ao tentar salvar AUDIO recebido, line: 934. >> ${JSON.stringify(
-                        error,
-                      )}`,
+                  });
+                  await prisma.messages.update({
+                    where: { id: findMessage.id },
+                    data: { status: "DELIVERED" },
+                    select: { id: true },
+                  });
+                  const ticket = await prisma.tickets.findFirst({
+                    where: {
+                      ContactsWAOnAccount: {
+                        ContactsWA: { completeNumber: identifierLead },
+                      },
+                      connectionWAId: props.connectionWhatsId,
+                    },
+                    select: {
+                      InboxDepartment: { select: { businessId: true } },
+                      id: true,
                     },
                   });
-                  console.log(error);
-                }
-              }
-              if (messageImage) {
-                const ext = mime.extension(
-                  messageImage.mimetype || "image/jpeg",
-                );
-                fileName = `image_inbox_${Date.now()}.${ext}`;
-                try {
-                  const buffer = await downloadMediaMessage(
-                    body.messages[0],
-                    "buffer",
-                    {},
-                  );
-
-                  await writeFile(
-                    pathStatic + `/${fileName}`,
-                    new Uint8Array(buffer),
-                  );
-                } catch (error) {
-                  const hash = ulid();
-                  cacheRootSocket.forEach((sockId) =>
-                    socketIo.to(sockId).emit(`geral-logs`, {
-                      hash,
-                      entity: "baileys",
-                      type: "WARN",
-                      value: `Conexão: #${
-                        props.connectionWhatsId
-                      } - Account: #${
-                        props.accountId
-                      } | Error ao tentar salvar IMAGEM recebido >> ${JSON.stringify(
-                        error,
-                      )}`,
-                    }),
-                  );
-                  await prisma.geralLogDate.create({
-                    data: {
-                      hash,
-                      entity: "baileys",
-                      type: "WARN",
-                      value: `Conexão: #${
-                        props.connectionWhatsId
-                      } - Account: #${
-                        props.accountId
-                      } | Error ao tentar salvar IMAGEM recebido >> ${JSON.stringify(
-                        error,
-                      )}`,
-                    },
-                  });
-                  console.log(error);
-                }
-              }
-              if (doc) {
-                const ext = mime.extension(
-                  doc?.mimetype || "text/html; charset=utf-8",
-                );
-                fileName = `file_inbox_${Date.now()}.${ext}`;
-                fileNameOriginal = doc.fileName || "";
-                try {
-                  const buffer = await downloadMediaMessage(
-                    body.messages[0],
-                    "buffer",
-                    {},
-                  );
-                  if (!buffer || buffer.length === 0) {
-                    console.log("Buffer de mídia vazio.");
-                    return;
+                  if (ticket) {
+                    webSocketEmitToRoom()
+                      .account(props.accountId)
+                      .ticket_chat(ticket.id)
+                      .message_eco(
+                        {
+                          id: findMessage.id,
+                        },
+                        [],
+                      );
                   }
-                  await writeFile(
-                    pathStatic + `/${fileName}`,
-                    new Uint8Array(buffer),
-                  );
                 } catch (error) {
-                  const hash = ulid();
-                  cacheRootSocket.forEach((sockId) =>
-                    socketIo.to(sockId).emit(`geral-logs`, {
-                      hash,
-                      entity: "baileys",
-                      type: "WARN",
-                      value: `Conexão: #${
-                        props.connectionWhatsId
-                      } - Account: #${
-                        props.accountId
-                      } | Error ao tentar salvar FILE recebido >> ${JSON.stringify(
-                        error,
-                      )}`,
-                    }),
-                  );
-                  await prisma.geralLogDate.create({
-                    data: {
-                      hash,
-                      entity: "baileys",
-                      type: "WARN",
-                      value: `Conexão: #${
-                        props.connectionWhatsId
-                      } - Account: #${
-                        props.accountId
-                      } | Error ao tentar salvar FILE recebido >> ${JSON.stringify(
-                        error,
-                      )}`,
+                  // não achou a mensagem;
+                }
+                continue;
+              }
+
+              // ====== 2. Novas mensagens recebidas em tempo real ======
+              if (body.type === "notify" && !fromMe && !isGroup) {
+                const incoming = m.message;
+                const hasReaction = !!incoming?.reactionMessage;
+                const hasReactionsList = !!m.reactions?.length;
+                if (hasReaction || hasReactionsList) continue;
+                await mongo();
+
+                const keyMapLeadAwaiting = `${props.connectionWhatsId}+${identifierLead}`;
+                // await bot.readMessages(body.messages.map((m) => m.key));
+                // console.log({ audio: m.message?.audioMessage?.url });
+
+                const isAudioMessage = !!m.message?.audioMessage?.url;
+                const isImageMessage = !!m.message?.imageMessage;
+                const isDocumentMessage = !!m.message?.documentMessage;
+                const isVideoMessage = !!m.message?.videoMessage;
+                const contactMessage = m.message?.contactMessage?.vcard;
+                // const isArrayContactMessage =
+                //   m.message?.contactsArrayMessage?.contacts?.length;
+                const locationMessage = m.message?.locationMessage;
+
+                const messageText =
+                  m.message?.extendedTextMessage?.text ??
+                  m.message?.conversation;
+
+                const profilePicUrl = await bot
+                  .profilePictureUrl(identifierLead)
+                  .then((s) => s)
+                  .catch(() => undefined);
+
+                const { ContactsWAOnAccount, ...contactWA } =
+                  await prisma.contactsWA.upsert({
+                    where: {
+                      completeNumber_page_id_channel: {
+                        completeNumber: identifierLead,
+                        channel: "whatsapp",
+                        page_id: "whatsapp_default",
+                      },
+                    },
+                    create: {
+                      img: profilePicUrl,
+                      completeNumber: identifierLead,
+                      page_id: "whatsapp_default",
+                      channel: "whatsapp",
+                      ContactsWAOnAccount: {
+                        create: {
+                          accountId: props.accountId,
+                          name: m.pushName ?? "SEM NOME",
+                        },
+                      },
+                    },
+                    update: { img: profilePicUrl },
+                    select: {
+                      id: true,
+                      ContactsWAOnAccount: {
+                        where: { accountId: props.accountId },
+                        select: { id: true },
+                      },
                     },
                   });
-                  console.log(error);
-                }
-              }
-              if (docWithCaption) {
-                const ext = mime.extension(
-                  doc?.mimetype || "text/html; charset=utf-8",
-                );
-                fileName = `file_inbox_${Date.now()}.${ext}`;
-                fileNameOriginal = docWithCaption.fileName || "";
-                try {
-                  const buffer = await downloadMediaMessage(
-                    body.messages[0],
-                    "buffer",
-                    {},
-                  );
-                  if (!buffer || buffer.length === 0) {
-                    console.log("Buffer de mídia vazio.");
-                    return;
-                  }
-                  await writeFile(
-                    pathStatic + `/${fileName}`,
-                    new Uint8Array(buffer),
-                  );
-                } catch (error) {
-                  const hash = ulid();
-                  cacheRootSocket.forEach((sockId) =>
-                    socketIo.to(sockId).emit(`geral-logs`, {
-                      hash,
-                      entity: "baileys",
-                      type: "WARN",
-                      value: `Conexão: #${
-                        props.connectionWhatsId
-                      } - Account: #${
-                        props.accountId
-                      } | Error ao tentar salvar FILE-COM-CAPTION recebido >> ${JSON.stringify(
-                        error,
-                      )}`,
-                    }),
-                  );
-                  await prisma.geralLogDate.create({
+
+                if (!ContactsWAOnAccount.length) {
+                  const { id } = await prisma.contactsWAOnAccount.create({
                     data: {
-                      hash,
-                      entity: "baileys",
-                      type: "WARN",
-                      value: `Conexão: #${
-                        props.connectionWhatsId
-                      } - Account: #${
-                        props.accountId
-                      } | Error ao tentar salvar FILE-COM-CAPTION recebido >> ${JSON.stringify(
-                        error,
-                      )}`,
+                      name: m.pushName ?? "SEM NOME",
+                      accountId: props.accountId,
+                      contactWAId: contactWA.id,
                     },
+                    select: { id: true },
                   });
-                  console.log(error);
+                  ContactsWAOnAccount.push({ id });
                 }
-              }
 
-              //   const objectVcard = {};
-              //   if (contactMessage) {
-              //     contactMessage.split("\n").forEach((item) => {
-              //       if (/waid=(\d*)/.test(item)) {
-              //         Object.assign(objectVcard, {
-              //           number: item.match(/waid=(\d*)/)?.[1],
-              //         });
-              //         return;
-              //       }
-              //       if (/FN:(.*)/.test(item)) {
-              //         Object.assign(objectVcard, {
-              //           fullName: item.match(/FN:(.*)/)?.[1],
-              //         });
-              //         return;
-              //       }
-              //     });
-              //   }
+                // Verifica se o lead está aguardando processamento
+                if (leadAwaiting.get(keyMapLeadAwaiting)) {
+                  console.log("EM PROCESSAMENTO!");
+                  continue;
+                }
 
-              //   verificar se o atendente esta na pagina do ticket;
+                const messageAudio = m.message?.audioMessage;
+                const messageImage = m.message?.imageMessage;
+                const messageVideo = m.message?.videoMessage?.url;
+                const capitionImage = m.message?.imageMessage?.caption;
 
-              let isCurrentTicket = false;
-              if (!ticket.inboxUserId) {
-                // é o account que esta no socket
-                //   const user = CacheStateUserSocket.get(ticket.sectorsAttendantsId);
-                //   isCurrentTicket = user?.currentTicket === ticket.id;
-                const user = cacheAccountSocket.get(props.accountId);
-                if (user) isCurrentTicket = user.currentTicket === ticket.id;
-              }
+                const doc = m.message?.documentMessage;
+                const docWithCaption =
+                  m.message?.documentWithCaptionMessage?.message
+                    ?.documentMessage;
 
-              const msg = await prisma.messages.create({
-                data: {
-                  ticketsId: ticket.id,
-                  message: "",
-                  type: "text",
-                  ...(messageText && { type: "text", message: messageText }),
-                  ...(messageAudio && { type: "audio", fileName }),
-                  ...(messageImage && {
-                    type: "image",
-                    fileName: fileName,
-                    ...(messageImage.caption && {
-                      caption: messageImage.caption,
-                    }),
-                  }),
-                  ...(doc && {
-                    type: "file",
-                    fileName: fileName,
-                    fileNameOriginal,
-                    ...(doc.caption && { caption: doc.caption }),
-                  }),
-                  ...(docWithCaption && {
-                    type: "file",
-                    fileName: fileName,
-                    fileNameOriginal,
-                    ...(docWithCaption.caption && {
-                      caption: docWithCaption.caption,
-                    }),
-                  }),
-                  // ...(contactMessage && { type: "contact", ...objectVcard }),
-                  // ...(locationMessage && {
-                  //   type: "location",
-                  //   degreesLatitude: String(locationMessage.degreesLatitude!),
-                  //   degreesLongitude: String(locationMessage.degreesLongitude!),
-                  //   address: locationMessage.address ?? "",
-                  //   name: locationMessage.name ?? "",
-                  // }),
-                  by: "contact",
-                  messageKey: body.messages[0].key.id,
-                  read: isCurrentTicket,
-                  status: "DELIVERED",
-                },
-                select: { createAt: true, id: true },
-              });
-
-              await NotificationApp({
-                accountId: props.accountId,
-                title_txt: `${ticket.ContactsWAOnAccount.name}`,
-                title_html: `${ticket.ContactsWAOnAccount.name}`,
-                tag: `msg-ticket-${ticket.id}`,
-                body_txt: !messageText
-                  ? `🎤📷 arquivo de mídia`
-                  : messageText.slice(0, 24),
-
-                body_html: `<span className="font-medium text-sm line-clamp-1">
-${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
-</span> 
-<span className="text-xs font-light">${ticket.ContactsWAOnAccount.name}</span>`,
-                url_redirect: `$self/?open_ticket=${ticket.id}&bId=${ticket.InboxDepartment.businessId}&name=${ticket.ContactsWAOnAccount.name}`,
-                onFilterSocket(sockets) {
-                  return sockets
-                    .filter(
-                      (s) =>
-                        s.focused !== `modal-player-chat-${ticket.id}` ||
-                        s.focused !== `modal-player-only-chat-${ticket.id}`,
-                    )
-                    .map((s) => s.id);
-                },
-              });
-
-              const { ticket_chat, player_department } =
-                webSocketEmitToRoom().account(props.accountId);
-
-              player_department(ticket.InboxDepartment.id).message_ticket_list(
-                // @ts-expect-error
-                {
-                  createAt: msg.createAt,
-                  status: "DELIVERED",
-                  by: "contact",
-                  ticketId: ticket.id,
-                  ...(messageAudio && { type: "audio" }),
-                  ...(messageImage && { type: "image" }),
-                  ...((doc || docWithCaption) && { type: "file" }),
-                  ...(messageText && { type: "text", text: messageText }),
-                },
-                [],
-              );
-
-              ticket_chat(ticket.id).message(
-                {
-                  content: {
-                    ...msg,
-                    ...(messageText && { type: "text", text: messageText }),
-                    ...(messageAudio && {
-                      type: "audio",
-                      fileName,
-                      ptt: messageAudio.ptt,
-                    }),
-                    ...(messageImage && {
-                      type: "image",
-                      fileName,
-                      ...(messageImage.caption && {
-                        caption: messageImage?.caption,
-                      }),
-                    }),
-                    ...(doc && {
-                      type: "file",
-                      fileName: fileName,
-                      fileNameOriginal,
-                      ...(doc.caption && { caption: doc.caption }),
-                    }),
-                    ...(docWithCaption && {
-                      type: "file",
-                      fileName: fileName,
-                      fileNameOriginal,
-                      ...(docWithCaption.caption && {
-                        caption: docWithCaption.caption,
-                      }),
-                    }),
-                  },
-                  by: "contact",
-                  departmentId: ticket.InboxDepartment.id,
-                  notifyMsc: !isCurrentTicket, // quem controla a notificação é a função NotificationApp
-                  userId: ticket.inboxUserId, // caso seja enviado para um usuário.
-                  lastInteractionDate: msg.createAt,
-                },
-                [],
-              );
-
-              //   businessSpace.emit("synchronize-message", {
-              //     ticketId: ticket.id,
-              //     ...(ticket.sectorsAttendantsId && {
-              //       userId: ticket.sectorsAttendantsId,
-              //     }),
-              //     data: {
-              //       clear: false,
-              //       ...(messageAudio && { type: "audio", fileName: filenameAudio }),
-              //       ...(messageImage && {
-              //         type: "image",
-              //         fileName: filenameImg,
-              //         caption: capitionImage,
-              //       }),
-              //       ...(messageText && {
-              //         type: "text",
-              //         message: messageText,
-              //       }),
-              //       ...(contactMessage && { type: "contact", ...objectVcard }),
-              //       ...(locationMessage && {
-              //         type: "location",
-              //         degreesLatitude: locationMessage.degreesLatitude,
-              //         degreesLongitude: locationMessage.degreesLongitude,
-              //         address: locationMessage.address ?? "",
-              //         name: locationMessage.name ?? "",
-              //       }),
-              //       ...((doc || docWithCaption) && {
-              //         type: "file",
-              //         fileName: nameFileWithExt,
-              //         caption: docWithCaption?.caption ?? "",
-              //       }),
-              //       createAt: moment(mess.createAt)
-              //         .tz("America/Sao_Paulo")
-              //         .toDate(),
-              //       id: mess.id,
-              //       read: isCurrentTicket,
-              //       sentBy: "lead",
-              //     },
-              //   } as PropsSynchronizeTicketMessageHumanService);
-
-              //   leadAwaiting.set(keyMapLeadAwaiting, false);
-              return;
-            }
-
-            const chatbot = await prisma.chatbot.findFirst({
-              where: {
-                connectionWAId: props.connectionWhatsId,
-                accountId: props.accountId,
-                status: true,
-              },
-              select: {
-                id: true,
-                flowId: true,
-                fallback: true,
-                addToLeadTagsIds: true,
-                addLeadToAudiencesIds: true,
-                status: true,
-                Business: { select: { name: true, id: true } },
-                OperatingDays: {
-                  select: {
-                    dayOfWeek: true,
-                    WorkingTimes: { select: { end: true, start: true } },
-                  },
-                },
-                TimeToRestart: { select: { type: true, value: true } },
-                trigger: true,
-                flowBId: true,
-              },
-            });
-
-            if (chatbot) {
-              let currentIndexNodeLead = await prisma.flowState.findFirst({
-                where: {
-                  connectionWAId: props.connectionWhatsId,
-                  contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                  isFinish: false,
-                },
-                select: {
-                  indexNode: true,
-                  id: true,
-                  previous_response_id: true,
-                },
-              });
-              if (!currentIndexNodeLead) {
-                currentIndexNodeLead = await prisma.flowState.create({
-                  data: {
-                    connectionWAId: props.connectionWhatsId,
-                    contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                    indexNode: "0",
-                    flowId: chatbot.flowId,
-                    chatbotId: chatbot.id,
+                const ticket = await prisma.tickets.findFirst({
+                  where: {
+                    status: { in: ["OPEN", "NEW"] },
+                    ContactsWAOnAccount: {
+                      ContactsWA: { completeNumber: identifierLead },
+                    },
+                    ConnectionWA: { number: numberConnection },
                   },
                   select: {
-                    indexNode: true,
+                    accountId: true,
+                    protocol: true,
+                    InboxDepartment: {
+                      select: { businessId: true, id: true, name: true },
+                    },
                     id: true,
-                    previous_response_id: true,
+                    inboxUserId: true,
+                    status: true,
+                    ContactsWAOnAccount: { select: { name: true } },
                   },
                 });
-                webSocketEmitToRoom()
-                  .account(props.accountId)
-                  .dashboard.dashboard_services({
-                    delta: +1,
-                    hour: resolveHourAndMinute(),
-                  });
-              }
-
-              if (!messageText && !messageAudio) {
-                const isSendMessageSuportText =
-                  cacheSendMessageSuportText.get(keyMapLeadAwaiting);
-
-                if (!isSendMessageSuportText) {
-                  await prisma.messages.create({
-                    data: {
-                      by: "contact",
-                      message: "<Enviou mídia>",
-                      type: "text",
-                      messageKey: body.messages[0].key.id,
-                      status: "DELIVERED",
-                      flowStateId: currentIndexNodeLead.id,
-                    },
-                  });
-
-                  const msg = await SendMessageText({
-                    connectionId: props.connectionWhatsId,
-                    text: "*Mensagem automática*\nEste chat oferece suporte a mensagens de texto ou áudio.",
-                    toNumber: identifierLead,
-                    quoted: body.messages[0],
-                  });
-
-                  if (msg?.key?.id) {
-                    await prisma.messages.create({
-                      data: {
-                        by: "system",
-                        message:
-                          "*Mensagem automática*\nEste chat oferece suporte a mensagens de texto ou áudio.",
-                        type: "text",
-                        messageKey: msg.key.id,
-                        flowStateId: currentIndexNodeLead.id,
-                      },
-                    });
-                  }
-
-                  return;
-                }
-                return;
-              }
-              cacheSendMessageSuportText.delete(keyMapLeadAwaiting);
-
-              const isToRestartChatbot = chatbotRestartInDate.get(
-                `${numberConnection}+${identifierLead}`,
-              );
-              if (!!isToRestartChatbot) {
-                const isbefore = moment()
-                  .tz("America/Sao_Paulo")
-                  .isBefore(isToRestartChatbot);
-                console.log({ isbefore });
-                if (isbefore) {
-                  return;
-                } else {
-                  chatbotRestartInDate.delete(
-                    `${numberConnection}+${identifierLead}`,
-                  );
-                }
-              }
-
-              if (chatbot.addToLeadTagsIds.length) {
-                const tags = await prisma.tag.findMany({
-                  where: { id: { in: chatbot.addToLeadTagsIds } },
-                  select: { id: true },
-                });
-                for await (const { id } of tags) {
-                  const isExist =
-                    await prisma.tagOnContactsWAOnAccount.findFirst({
-                      where: {
-                        contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                        tagId: id,
-                      },
-                    });
-                  if (!isExist) {
-                    await prisma.tagOnContactsWAOnAccount.create({
-                      data: {
-                        contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                        tagId: id,
-                      },
-                    });
-                  }
-                }
-              }
-
-              if (chatbot.status) {
-                const validMsgChatbot = async () => {
-                  let flow: any = null;
-                  if (
-                    (chatbot.trigger && chatbot.trigger === messageText) ||
-                    !chatbot.trigger
-                  ) {
-                    flow = cacheFlowsMap.get(chatbot.flowId);
-                    if (!flow) {
-                      const flowFetch = await ModelFlows.aggregate([
-                        {
-                          $match: {
-                            accountId: props.accountId,
-                            _id: chatbot.flowId,
-                          },
-                        },
-                        {
-                          $project: {
-                            businessIds: 1,
-                            nodes: {
-                              $map: {
-                                input: "$data.nodes",
-                                in: {
-                                  id: "$$this.id",
-                                  type: "$$this.type",
-                                  data: "$$this.data",
-                                },
-                              },
-                            },
-                            edges: {
-                              $map: {
-                                input: "$data.edges",
-                                in: {
-                                  id: "$$this.id",
-                                  source: "$$this.source",
-                                  target: "$$this.target",
-                                  sourceHandle: "$$this.sourceHandle",
-                                },
-                              },
-                            },
-                          },
-                        },
-                      ]);
-                      if (!flowFetch?.length) {
-                        const hash = ulid();
-                        cacheRootSocket.forEach((sockId) =>
-                          socketIo.to(sockId).emit(`geral-logs`, {
-                            hash,
-                            entity: "flows",
-                            type: "WARN",
-                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
-                          }),
-                        );
-                        await prisma.geralLogDate.create({
-                          data: {
-                            hash,
-                            entity: "flows",
-                            type: "WARN",
-                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
-                          },
-                        });
-                        return console.log(`Flow not found. 2`);
-                      }
-                      const { edges, nodes, businessIds } = flowFetch[0];
-                      flow = { edges, nodes, businessIds };
-                      cacheFlowsMap.set(chatbot.flowId, flow);
+                if (ticket) {
+                  if (!!messageText) {
+                    const isValidText = messageText.trim().length > 0;
+                    if (!isValidText) {
+                      console.log("Mensagem de texto inválida ou vazia.");
+                      continue;
                     }
                   }
-
-                  if (chatbot.trigger && chatbot.trigger !== messageText) {
-                    if (!chatbot.flowBId) return;
-                    flow = cacheFlowsMap.get(chatbot.flowBId);
-                    if (!flow) {
-                      const flowFetch = await ModelFlows.aggregate([
-                        {
-                          $match: {
-                            accountId: props.accountId,
-                            _id: chatbot.flowBId,
-                          },
-                        },
-                        {
-                          $project: {
-                            businessIds: 1,
-                            nodes: {
-                              $map: {
-                                input: "$data.nodes",
-                                in: {
-                                  id: "$$this.id",
-                                  type: "$$this.type",
-                                  data: "$$this.data",
-                                },
-                              },
-                            },
-                            edges: {
-                              $map: {
-                                input: "$data.edges",
-                                in: {
-                                  id: "$$this.id",
-                                  source: "$$this.source",
-                                  target: "$$this.target",
-                                  sourceHandle: "$$this.sourceHandle",
-                                },
-                              },
-                            },
-                          },
-                        },
-                      ]);
-                      if (!flowFetch?.length) {
-                        const hash = ulid();
-                        cacheRootSocket.forEach((sockId) =>
-                          socketIo.to(sockId).emit(`geral-logs`, {
-                            hash,
-                            entity: "flows",
-                            type: "WARN",
-                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
-                          }),
-                        );
-                        await prisma.geralLogDate.create({
-                          data: {
-                            hash,
-                            entity: "flows",
-                            type: "WARN",
-                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
-                          },
-                        });
-                        return console.log(`Flow not found. 3`);
-                      }
-                      const { edges, nodes, businessIds } = flowFetch[0];
-                      flow = { edges, nodes, businessIds };
-                      cacheFlowsMap.set(chatbot.flowId, flow);
-                    }
-                  }
-
-                  if (!flow) {
-                    const hash = ulid();
-                    cacheRootSocket.forEach((sockId) =>
-                      socketIo.to(sockId).emit(`geral-logs`, {
-                        hash,
-                        entity: "flows",
-                        type: "WARN",
-                        value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
-                      }),
-                    );
-                    await prisma.geralLogDate.create({
-                      data: {
-                        hash,
-                        entity: "flows",
-                        type: "WARN",
-                        value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
-                      },
-                    });
-                    return console.log(`Flow não encontrado.`);
-                  }
-
-                  const businessInfo = await prisma.connectionWA.findFirst({
-                    where: { id: props.connectionWhatsId },
-                    select: { Business: { select: { name: true } } },
-                  });
-                  if (!businessInfo) {
-                    console.log("Connection not found");
-                    const hash = ulid();
-                    cacheRootSocket.forEach((sockId) =>
-                      socketIo.to(sockId).emit(`geral-logs`, {
-                        hash,
-                        entity: "connectionWA",
-                        type: "WARN",
-                        value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Tentou buscar o nome do projeto pela tabela de conexão`,
-                      }),
-                    );
-                    await prisma.geralLogDate.create({
-                      data: {
-                        hash,
-                        entity: "connectionWA",
-                        type: "WARN",
-                        value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Tentou buscar o nome do projeto pela tabela de conexão`,
-                      },
-                    });
-                    return;
-                  }
-
-                  let audioFilePath = "";
+                  let fileName = "";
+                  let fileNameOriginal = "";
                   if (messageAudio) {
-                    const durationSeconds = messageAudio.seconds || 0;
-                    if (!durationSeconds) {
-                      await prisma.messages.create({
-                        data: {
-                          by: "system",
-                          message:
-                            "Log: Duração não disponível. Ignorando por segurança.",
-                          type: "text",
-                          flowStateId: currentIndexNodeLead.id,
-                        },
-                      });
-                      return;
-                    }
-                    const durationMinutes = durationSeconds / 60;
-                    const maxDuration = Math.floor(6 * 1.3);
-                    if (durationMinutes > maxDuration) {
-                      const msg = await SendMessageText({
-                        connectionId: props.connectionWhatsId,
-                        text: `*Mensagem automática*\nO áudio enviado excedeu o limite máximo permitido(${maxDuration}min).`,
-                        toNumber: identifierLead,
-                        quoted: body.messages[0],
-                      });
-
-                      if (msg?.key?.id) {
-                        await prisma.messages.create({
-                          data: {
-                            by: "system",
-                            message: `*Mensagem automática*\nO áudio enviado excedeu o limite máximo permitido(${maxDuration}min).`,
-                            type: "text",
-                            messageKey: msg.key.id,
-                            flowStateId: currentIndexNodeLead.id,
-                          },
-                        });
-                      }
-                      return;
-                    }
-
+                    const ext = mime.extension(
+                      messageAudio.mimetype || "audio/mpeg",
+                    );
+                    fileName = `image_inbox_${Date.now()}.${ext}`;
                     try {
-                      const originalBufferAudio = (await downloadMediaMessage(
-                        body.messages[0],
+                      const buffer = await downloadMediaMessage(
+                        m,
                         "buffer",
                         {},
-                      )) as Buffer;
-                      const tempPath =
-                        await handleFileTemp.saveBuffer(originalBufferAudio);
-                      audioFilePath = tempPath;
+                      );
+                      writeFileSync(
+                        pathStatic + `/${fileName}`,
+                        new Uint8Array(buffer),
+                      );
+                      leadAwaiting.set(keyMapLeadAwaiting, false);
                     } catch (error) {
                       const hash = ulid();
                       cacheRootSocket.forEach((sockId) =>
@@ -1897,7 +1125,13 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                           hash,
                           entity: "baileys",
                           type: "WARN",
-                          value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Error ao tentar salvar AUDIO recebido no chatbot`,
+                          value: `Conexão: #${
+                            props.connectionWhatsId
+                          } - Account: #${
+                            props.accountId
+                          } | Error ao tentar salvar AUDIO recebido, line: 934. >> ${JSON.stringify(
+                            error,
+                          )}`,
                         }),
                       );
                       await prisma.geralLogDate.create({
@@ -1905,163 +1139,1020 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                           hash,
                           entity: "baileys",
                           type: "WARN",
-                          value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Error ao tentar salvar AUDIO recebido no chatbot`,
+                          value: `Conexão: #${
+                            props.connectionWhatsId
+                          } - Account: #${
+                            props.accountId
+                          } | Error ao tentar salvar AUDIO recebido, line: 934. >> ${JSON.stringify(
+                            error,
+                          )}`,
+                        },
+                      });
+                      console.log(error);
+                    }
+                  }
+                  if (messageImage) {
+                    const ext = mime.extension(
+                      messageImage.mimetype || "image/jpeg",
+                    );
+                    fileName = `image_inbox_${Date.now()}.${ext}`;
+                    try {
+                      const buffer = await downloadMediaMessage(
+                        m,
+                        "buffer",
+                        {},
+                      );
+
+                      await writeFile(
+                        pathStatic + `/${fileName}`,
+                        new Uint8Array(buffer),
+                      );
+                    } catch (error) {
+                      const hash = ulid();
+                      cacheRootSocket.forEach((sockId) =>
+                        socketIo.to(sockId).emit(`geral-logs`, {
+                          hash,
+                          entity: "baileys",
+                          type: "WARN",
+                          value: `Conexão: #${
+                            props.connectionWhatsId
+                          } - Account: #${
+                            props.accountId
+                          } | Error ao tentar salvar IMAGEM recebido >> ${JSON.stringify(
+                            error,
+                          )}`,
+                        }),
+                      );
+                      await prisma.geralLogDate.create({
+                        data: {
+                          hash,
+                          entity: "baileys",
+                          type: "WARN",
+                          value: `Conexão: #${
+                            props.connectionWhatsId
+                          } - Account: #${
+                            props.accountId
+                          } | Error ao tentar salvar IMAGEM recebido >> ${JSON.stringify(
+                            error,
+                          )}`,
+                        },
+                      });
+                      console.log(error);
+                    }
+                  }
+                  if (doc) {
+                    const ext = mime.extension(
+                      doc?.mimetype || "text/html; charset=utf-8",
+                    );
+                    fileName = `file_inbox_${Date.now()}.${ext}`;
+                    fileNameOriginal = doc.fileName || "";
+                    try {
+                      const buffer = await downloadMediaMessage(
+                        m,
+                        "buffer",
+                        {},
+                      );
+                      if (!buffer || buffer.length === 0) {
+                        console.log("Buffer de mídia vazio.");
+                        continue;
+                      }
+                      await writeFile(
+                        pathStatic + `/${fileName}`,
+                        new Uint8Array(buffer),
+                      );
+                    } catch (error) {
+                      const hash = ulid();
+                      cacheRootSocket.forEach((sockId) =>
+                        socketIo.to(sockId).emit(`geral-logs`, {
+                          hash,
+                          entity: "baileys",
+                          type: "WARN",
+                          value: `Conexão: #${
+                            props.connectionWhatsId
+                          } - Account: #${
+                            props.accountId
+                          } | Error ao tentar salvar FILE recebido >> ${JSON.stringify(
+                            error,
+                          )}`,
+                        }),
+                      );
+                      await prisma.geralLogDate.create({
+                        data: {
+                          hash,
+                          entity: "baileys",
+                          type: "WARN",
+                          value: `Conexão: #${
+                            props.connectionWhatsId
+                          } - Account: #${
+                            props.accountId
+                          } | Error ao tentar salvar FILE recebido >> ${JSON.stringify(
+                            error,
+                          )}`,
+                        },
+                      });
+                      console.log(error);
+                    }
+                  }
+                  if (docWithCaption) {
+                    const ext = mime.extension(
+                      doc?.mimetype || "text/html; charset=utf-8",
+                    );
+                    fileName = `file_inbox_${Date.now()}.${ext}`;
+                    fileNameOriginal = docWithCaption.fileName || "";
+                    try {
+                      const buffer = await downloadMediaMessage(
+                        m,
+                        "buffer",
+                        {},
+                      );
+                      if (!buffer || buffer.length === 0) {
+                        console.log("Buffer de mídia vazio.");
+                        continue;
+                      }
+                      await writeFile(
+                        pathStatic + `/${fileName}`,
+                        new Uint8Array(buffer),
+                      );
+                    } catch (error) {
+                      const hash = ulid();
+                      cacheRootSocket.forEach((sockId) =>
+                        socketIo.to(sockId).emit(`geral-logs`, {
+                          hash,
+                          entity: "baileys",
+                          type: "WARN",
+                          value: `Conexão: #${
+                            props.connectionWhatsId
+                          } - Account: #${
+                            props.accountId
+                          } | Error ao tentar salvar FILE-COM-CAPTION recebido >> ${JSON.stringify(
+                            error,
+                          )}`,
+                        }),
+                      );
+                      await prisma.geralLogDate.create({
+                        data: {
+                          hash,
+                          entity: "baileys",
+                          type: "WARN",
+                          value: `Conexão: #${
+                            props.connectionWhatsId
+                          } - Account: #${
+                            props.accountId
+                          } | Error ao tentar salvar FILE-COM-CAPTION recebido >> ${JSON.stringify(
+                            error,
+                          )}`,
                         },
                       });
                       console.log(error);
                     }
                   }
 
-                  await NodeControler({
-                    businessName: chatbot.Business.name,
-                    flowId: chatbot.flowId,
-                    flowBusinessIds: flow.businessIds,
-                    type: "running",
-                    businessId: chatbot.Business.id,
-                    audioPath: audioFilePath,
-                    connectionId: props.connectionWhatsId,
-                    chatbotId: chatbot.id,
-                    oldNodeId: currentIndexNodeLead?.indexNode || "0",
-                    previous_response_id:
-                      currentIndexNodeLead.previous_response_id || undefined,
-                    external_adapter: {
-                      type: "baileys",
-                      clientWA: bot,
-                    },
-                    isSavePositionLead: true,
-                    flowStateId: currentIndexNodeLead.id,
-                    contactAccountId: ContactsWAOnAccount[0].id,
-                    lead_id: identifierLead,
-                    currentNodeId: currentIndexNodeLead?.indexNode || "0",
-                    edges: flow.edges,
-                    nodes: flow.nodes,
-                    message: messageText ?? "",
-                    accountId: props.accountId,
-                    action: null,
-                    actions: {
-                      onErrorClient: async (vl) => {
-                        if (currentIndexNodeLead) {
-                          const scheduleExecutionCache =
-                            scheduleExecutionsReply.get(
-                              numberConnection +
-                                "@s.whatsapp.net" +
-                                body.messages[0].key.remoteJid!,
-                            );
-                          if (scheduleExecutionCache) {
-                            scheduleExecutionCache.cancel();
-                          }
-                          console.log("TA CAINDO AQUI, finalizando fluxo");
-                          await prisma.flowState.update({
-                            where: { id: currentIndexNodeLead.id },
-                            data: { isFinish: true, finishedAt: new Date() },
-                          });
+                  //   const objectVcard = {};
+                  //   if (contactMessage) {
+                  //     contactMessage.split("\n").forEach((item) => {
+                  //       if (/waid=(\d*)/.test(item)) {
+                  //         Object.assign(objectVcard, {
+                  //           number: item.match(/waid=(\d*)/)?.[1],
+                  //         });
+                  //         return;
+                  //       }
+                  //       if (/FN:(.*)/.test(item)) {
+                  //         Object.assign(objectVcard, {
+                  //           fullName: item.match(/FN:(.*)/)?.[1],
+                  //         });
+                  //         return;
+                  //       }
+                  //     });
+                  //   }
 
-                          webSocketEmitToRoom()
-                            .account(props.accountId)
-                            .dashboard.dashboard_services({
-                              delta: -1,
-                              hour: resolveHourAndMinute(),
-                            });
-                          if (chatbot.TimeToRestart) {
-                            const nextDate = moment()
-                              .tz("America/Sao_Paulo")
-                              .add(
-                                chatbot.TimeToRestart.value,
-                                chatbot.TimeToRestart.type,
-                              )
-                              .toDate();
-                            chatbotRestartInDate.set(
-                              `${numberConnection}+${identifierLead}`,
-                              nextDate,
-                            );
-                          }
-                        }
+                  //   verificar se o atendente esta na pagina do ticket;
+
+                  let isCurrentTicket = false;
+                  if (!ticket.inboxUserId) {
+                    // é o account que esta no socket
+                    //   const user = CacheStateUserSocket.get(ticket.sectorsAttendantsId);
+                    //   isCurrentTicket = user?.currentTicket === ticket.id;
+                    const user = cacheAccountSocket.get(props.accountId);
+                    if (user)
+                      isCurrentTicket = user.currentTicket === ticket.id;
+                  }
+
+                  const msg = await prisma.messages.create({
+                    data: {
+                      ticketsId: ticket.id,
+                      message: "",
+                      type: "text",
+                      ...(messageText && {
+                        type: "text",
+                        message: messageText,
+                      }),
+                      ...(messageAudio && { type: "audio", fileName }),
+                      ...(messageImage && {
+                        type: "image",
+                        fileName: fileName,
+                        ...(messageImage.caption && {
+                          caption: messageImage.caption,
+                        }),
+                      }),
+                      ...(doc && {
+                        type: "file",
+                        fileName: fileName,
+                        fileNameOriginal,
+                        ...(doc.caption && { caption: doc.caption }),
+                      }),
+                      ...(docWithCaption && {
+                        type: "file",
+                        fileName: fileName,
+                        fileNameOriginal,
+                        ...(docWithCaption.caption && {
+                          caption: docWithCaption.caption,
+                        }),
+                      }),
+                      // ...(contactMessage && { type: "contact", ...objectVcard }),
+                      // ...(locationMessage && {
+                      //   type: "location",
+                      //   degreesLatitude: String(locationMessage.degreesLatitude!),
+                      //   degreesLongitude: String(locationMessage.degreesLongitude!),
+                      //   address: locationMessage.address ?? "",
+                      //   name: locationMessage.name ?? "",
+                      // }),
+                      by: "contact",
+                      messageKey: m.key.id,
+                      read: isCurrentTicket,
+                      status: "DELIVERED",
+                    },
+                    select: { createAt: true, id: true },
+                  });
+
+                  await NotificationApp({
+                    accountId: props.accountId,
+                    title_txt: `${ticket.ContactsWAOnAccount.name}`,
+                    title_html: `${ticket.ContactsWAOnAccount.name}`,
+                    tag: `msg-ticket-${ticket.id}`,
+                    body_txt: !messageText
+                      ? `🎤📷 arquivo de mídia`
+                      : messageText.slice(0, 24),
+
+                    body_html: `<span className="font-medium text-sm line-clamp-1">
+${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
+</span> 
+<span className="text-xs font-light">${ticket.ContactsWAOnAccount.name}</span>`,
+                    url_redirect: `$self/?open_ticket=${ticket.id}&bId=${ticket.InboxDepartment.businessId}&name=${ticket.ContactsWAOnAccount.name}`,
+                    onFilterSocket(sockets) {
+                      return sockets
+                        .filter(
+                          (s) =>
+                            s.focused !== `modal-player-chat-${ticket.id}` ||
+                            s.focused !== `modal-player-only-chat-${ticket.id}`,
+                        )
+                        .map((s) => s.id);
+                    },
+                  });
+
+                  const { ticket_chat, player_department } =
+                    webSocketEmitToRoom().account(props.accountId);
+
+                  player_department(
+                    ticket.InboxDepartment.id,
+                  ).message_ticket_list(
+                    // @ts-expect-error
+                    {
+                      createAt: msg.createAt,
+                      status: "DELIVERED",
+                      by: "contact",
+                      ticketId: ticket.id,
+                      ...(messageAudio && { type: "audio" }),
+                      ...(messageImage && { type: "image" }),
+                      ...((doc || docWithCaption) && { type: "file" }),
+                      ...(messageText && { type: "text", text: messageText }),
+                    },
+                    [],
+                  );
+
+                  ticket_chat(ticket.id).message(
+                    {
+                      content: {
+                        ...msg,
+                        ...(messageText && { type: "text", text: messageText }),
+                        ...(messageAudio && {
+                          type: "audio",
+                          fileName,
+                          ptt: messageAudio.ptt,
+                        }),
+                        ...(messageImage && {
+                          type: "image",
+                          fileName,
+                          ...(messageImage.caption && {
+                            caption: messageImage?.caption,
+                          }),
+                        }),
+                        ...(doc && {
+                          type: "file",
+                          fileName: fileName,
+                          fileNameOriginal,
+                          ...(doc.caption && { caption: doc.caption }),
+                        }),
+                        ...(docWithCaption && {
+                          type: "file",
+                          fileName: fileName,
+                          fileNameOriginal,
+                          ...(docWithCaption.caption && {
+                            caption: docWithCaption.caption,
+                          }),
+                        }),
                       },
-                      onFinish: async (vl) => {
-                        if (currentIndexNodeLead) {
-                          const scheduleExecutionCache =
-                            scheduleExecutionsReply.get(
-                              numberConnection +
-                                "@s.whatsapp.net" +
-                                body.messages[0].key.remoteJid!,
-                            );
-                          if (scheduleExecutionCache) {
-                            scheduleExecutionCache.cancel();
-                          }
-                          console.log("TA CAINDO AQUI, finalizando fluxo");
-                          await prisma.flowState.update({
-                            where: { id: currentIndexNodeLead.id },
-                            data: { isFinish: true, finishedAt: new Date() },
-                          });
-                          webSocketEmitToRoom()
-                            .account(props.accountId)
-                            .dashboard.dashboard_services({
-                              delta: -1,
-                              hour: resolveHourAndMinute(),
-                            });
-                          if (chatbot.TimeToRestart) {
-                            const nextDate = moment()
-                              .tz("America/Sao_Paulo")
-                              .add(
-                                chatbot.TimeToRestart.value,
-                                chatbot.TimeToRestart.type,
-                              )
-                              .toDate();
-                            chatbotRestartInDate.set(
-                              `${numberConnection}+${identifierLead}`,
-                              nextDate,
-                            );
-                          }
-                        }
+                      by: "contact",
+                      departmentId: ticket.InboxDepartment.id,
+                      notifyMsc: !isCurrentTicket, // quem controla a notificação é a função NotificationApp
+                      userId: ticket.inboxUserId, // caso seja enviado para um usuário.
+                      lastInteractionDate: msg.createAt,
+                    },
+                    [],
+                  );
+
+                  //   businessSpace.emit("synchronize-message", {
+                  //     ticketId: ticket.id,
+                  //     ...(ticket.sectorsAttendantsId && {
+                  //       userId: ticket.sectorsAttendantsId,
+                  //     }),
+                  //     data: {
+                  //       clear: false,
+                  //       ...(messageAudio && { type: "audio", fileName: filenameAudio }),
+                  //       ...(messageImage && {
+                  //         type: "image",
+                  //         fileName: filenameImg,
+                  //         caption: capitionImage,
+                  //       }),
+                  //       ...(messageText && {
+                  //         type: "text",
+                  //         message: messageText,
+                  //       }),
+                  //       ...(contactMessage && { type: "contact", ...objectVcard }),
+                  //       ...(locationMessage && {
+                  //         type: "location",
+                  //         degreesLatitude: locationMessage.degreesLatitude,
+                  //         degreesLongitude: locationMessage.degreesLongitude,
+                  //         address: locationMessage.address ?? "",
+                  //         name: locationMessage.name ?? "",
+                  //       }),
+                  //       ...((doc || docWithCaption) && {
+                  //         type: "file",
+                  //         fileName: nameFileWithExt,
+                  //         caption: docWithCaption?.caption ?? "",
+                  //       }),
+                  //       createAt: moment(mess.createAt)
+                  //         .tz("America/Sao_Paulo")
+                  //         .toDate(),
+                  //       id: mess.id,
+                  //       read: isCurrentTicket,
+                  //       sentBy: "lead",
+                  //     },
+                  //   } as PropsSynchronizeTicketMessageHumanService);
+
+                  //   leadAwaiting.set(keyMapLeadAwaiting, false);
+                  continue;
+                }
+
+                const chatbot = await prisma.chatbot.findFirst({
+                  where: {
+                    connectionWAId: props.connectionWhatsId,
+                    accountId: props.accountId,
+                    status: true,
+                  },
+                  select: {
+                    id: true,
+                    flowId: true,
+                    fallback: true,
+                    addToLeadTagsIds: true,
+                    addLeadToAudiencesIds: true,
+                    status: true,
+                    Business: { select: { name: true, id: true } },
+                    OperatingDays: {
+                      select: {
+                        dayOfWeek: true,
+                        WorkingTimes: { select: { end: true, start: true } },
                       },
-                      onExecutedNode: async (node) => {
-                        if (currentIndexNodeLead?.id) {
-                          try {
-                            await prisma.flowState
-                              .update({
-                                where: { id: currentIndexNodeLead.id },
-                                data: { indexNode: node.id },
-                              })
-                              .catch((err) => console.log(err));
-                          } catch (error) {
+                    },
+                    TimeToRestart: { select: { type: true, value: true } },
+                    trigger: true,
+                    flowBId: true,
+                  },
+                });
+
+                if (chatbot) {
+                  let currentIndexNodeLead = await prisma.flowState.findFirst({
+                    where: {
+                      connectionWAId: props.connectionWhatsId,
+                      contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                      isFinish: false,
+                    },
+                    select: {
+                      indexNode: true,
+                      id: true,
+                      previous_response_id: true,
+                    },
+                  });
+                  if (!currentIndexNodeLead) {
+                    currentIndexNodeLead = await prisma.flowState.create({
+                      data: {
+                        connectionWAId: props.connectionWhatsId,
+                        contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                        indexNode: "0",
+                        flowId: chatbot.flowId,
+                        chatbotId: chatbot.id,
+                      },
+                      select: {
+                        indexNode: true,
+                        id: true,
+                        previous_response_id: true,
+                      },
+                    });
+                    webSocketEmitToRoom()
+                      .account(props.accountId)
+                      .dashboard.dashboard_services({
+                        delta: +1,
+                        hour: resolveHourAndMinute(),
+                      });
+                  }
+
+                  if (!messageText && !messageAudio) {
+                    const isSendMessageSuportText =
+                      cacheSendMessageSuportText.get(keyMapLeadAwaiting);
+
+                    if (!isSendMessageSuportText) {
+                      await prisma.messages.create({
+                        data: {
+                          by: "contact",
+                          message: "<Enviou mídia>",
+                          type: "text",
+                          messageKey: m.key.id,
+                          status: "DELIVERED",
+                          flowStateId: currentIndexNodeLead.id,
+                        },
+                      });
+
+                      const msg = await SendMessageText({
+                        connectionId: props.connectionWhatsId,
+                        text: "*Mensagem automática*\nEste chat oferece suporte a mensagens de texto ou áudio.",
+                        toNumber: identifierLead,
+                        quoted: m,
+                      });
+
+                      if (msg?.key?.id) {
+                        await prisma.messages.create({
+                          data: {
+                            by: "system",
+                            message:
+                              "*Mensagem automática*\nEste chat oferece suporte a mensagens de texto ou áudio.",
+                            type: "text",
+                            messageKey: msg.key.id,
+                            flowStateId: currentIndexNodeLead.id,
+                          },
+                        });
+                      }
+                    }
+                    continue;
+                  }
+                  cacheSendMessageSuportText.delete(keyMapLeadAwaiting);
+
+                  const isToRestartChatbot = chatbotRestartInDate.get(
+                    `${numberConnection}+${identifierLead}`,
+                  );
+                  if (!!isToRestartChatbot) {
+                    const isbefore = moment()
+                      .tz("America/Sao_Paulo")
+                      .isBefore(isToRestartChatbot);
+                    console.log({ isbefore });
+                    if (isbefore) {
+                      continue;
+                    } else {
+                      chatbotRestartInDate.delete(
+                        `${numberConnection}+${identifierLead}`,
+                      );
+                    }
+                  }
+
+                  if (chatbot.addToLeadTagsIds.length) {
+                    const tags = await prisma.tag.findMany({
+                      where: { id: { in: chatbot.addToLeadTagsIds } },
+                      select: { id: true },
+                    });
+                    for await (const { id } of tags) {
+                      const isExist =
+                        await prisma.tagOnContactsWAOnAccount.findFirst({
+                          where: {
+                            contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                            tagId: id,
+                          },
+                        });
+                      if (!isExist) {
+                        await prisma.tagOnContactsWAOnAccount.create({
+                          data: {
+                            contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                            tagId: id,
+                          },
+                        });
+                      }
+                    }
+                  }
+
+                  if (chatbot.status) {
+                    const validMsgChatbot = async () => {
+                      let flow: any = null;
+                      if (
+                        (chatbot.trigger && chatbot.trigger === messageText) ||
+                        !chatbot.trigger
+                      ) {
+                        flow = cacheFlowsMap.get(chatbot.flowId);
+                        if (!flow) {
+                          const flowFetch = await ModelFlows.aggregate([
+                            {
+                              $match: {
+                                accountId: props.accountId,
+                                _id: chatbot.flowId,
+                              },
+                            },
+                            {
+                              $project: {
+                                businessIds: 1,
+                                nodes: {
+                                  $map: {
+                                    input: "$data.nodes",
+                                    in: {
+                                      id: "$$this.id",
+                                      type: "$$this.type",
+                                      data: "$$this.data",
+                                    },
+                                  },
+                                },
+                                edges: {
+                                  $map: {
+                                    input: "$data.edges",
+                                    in: {
+                                      id: "$$this.id",
+                                      source: "$$this.source",
+                                      target: "$$this.target",
+                                      sourceHandle: "$$this.sourceHandle",
+                                    },
+                                  },
+                                },
+                              },
+                            },
+                          ]);
+                          if (!flowFetch?.length) {
                             const hash = ulid();
                             cacheRootSocket.forEach((sockId) =>
                               socketIo.to(sockId).emit(`geral-logs`, {
                                 hash,
-                                entity: "flowState",
+                                entity: "flows",
                                 type: "WARN",
-                                value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flowState: #${currentIndexNodeLead.id} | Error ao atualizar flowState`,
+                                value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
                               }),
                             );
                             await prisma.geralLogDate.create({
                               data: {
                                 hash,
-                                entity: "flowState",
+                                entity: "flows",
                                 type: "WARN",
-                                value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flowState: #${currentIndexNodeLead.id} | Error ao atualizar flowState`,
+                                value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
                               },
                             });
-                            console.log("Error ao atualizar flowState!");
+                            return console.log(`Flow not found. 2`);
                           }
+                          const { edges, nodes, businessIds } = flowFetch[0];
+                          flow = { edges, nodes, businessIds };
+                          cacheFlowsMap.set(chatbot.flowId, flow);
                         }
-                      },
-                      onEnterNode: async (node) => {
-                        const indexCurrentAlreadyExist =
-                          await prisma.flowState.findFirst({
-                            where: {
-                              connectionWAId: props.connectionWhatsId,
-                              contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                      }
+
+                      if (chatbot.trigger && chatbot.trigger !== messageText) {
+                        if (!chatbot.flowBId) return;
+                        flow = cacheFlowsMap.get(chatbot.flowBId);
+                        if (!flow) {
+                          const flowFetch = await ModelFlows.aggregate([
+                            {
+                              $match: {
+                                accountId: props.accountId,
+                                _id: chatbot.flowBId,
+                              },
                             },
-                            select: { id: true },
+                            {
+                              $project: {
+                                businessIds: 1,
+                                nodes: {
+                                  $map: {
+                                    input: "$data.nodes",
+                                    in: {
+                                      id: "$$this.id",
+                                      type: "$$this.type",
+                                      data: "$$this.data",
+                                    },
+                                  },
+                                },
+                                edges: {
+                                  $map: {
+                                    input: "$data.edges",
+                                    in: {
+                                      id: "$$this.id",
+                                      source: "$$this.source",
+                                      target: "$$this.target",
+                                      sourceHandle: "$$this.sourceHandle",
+                                    },
+                                  },
+                                },
+                              },
+                            },
+                          ]);
+                          if (!flowFetch?.length) {
+                            const hash = ulid();
+                            cacheRootSocket.forEach((sockId) =>
+                              socketIo.to(sockId).emit(`geral-logs`, {
+                                hash,
+                                entity: "flows",
+                                type: "WARN",
+                                value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
+                              }),
+                            );
+                            await prisma.geralLogDate.create({
+                              data: {
+                                hash,
+                                entity: "flows",
+                                type: "WARN",
+                                value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
+                              },
+                            });
+                            return console.log(`Flow not found. 3`);
+                          }
+                          const { edges, nodes, businessIds } = flowFetch[0];
+                          flow = { edges, nodes, businessIds };
+                          cacheFlowsMap.set(chatbot.flowId, flow);
+                        }
+                      }
+
+                      if (!flow) {
+                        const hash = ulid();
+                        cacheRootSocket.forEach((sockId) =>
+                          socketIo.to(sockId).emit(`geral-logs`, {
+                            hash,
+                            entity: "flows",
+                            type: "WARN",
+                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
+                          }),
+                        );
+                        await prisma.geralLogDate.create({
+                          data: {
+                            hash,
+                            entity: "flows",
+                            type: "WARN",
+                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
+                          },
+                        });
+                        return console.log(`Flow não encontrado.`);
+                      }
+
+                      const businessInfo = await prisma.connectionWA.findFirst({
+                        where: { id: props.connectionWhatsId },
+                        select: { Business: { select: { name: true } } },
+                      });
+                      if (!businessInfo) {
+                        console.log("Connection not found");
+                        const hash = ulid();
+                        cacheRootSocket.forEach((sockId) =>
+                          socketIo.to(sockId).emit(`geral-logs`, {
+                            hash,
+                            entity: "connectionWA",
+                            type: "WARN",
+                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Tentou buscar o nome do projeto pela tabela de conexão`,
+                          }),
+                        );
+                        await prisma.geralLogDate.create({
+                          data: {
+                            hash,
+                            entity: "connectionWA",
+                            type: "WARN",
+                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Tentou buscar o nome do projeto pela tabela de conexão`,
+                          },
+                        });
+                        return;
+                      }
+
+                      let audioFilePath = "";
+                      if (messageAudio) {
+                        const durationSeconds = messageAudio.seconds || 0;
+                        if (!durationSeconds) {
+                          await prisma.messages.create({
+                            data: {
+                              by: "system",
+                              message:
+                                "Log: Duração não disponível. Ignorando por segurança.",
+                              type: "text",
+                              flowStateId: currentIndexNodeLead.id,
+                            },
                           });
-                        if (!indexCurrentAlreadyExist) {
+                          return;
+                        }
+                        const durationMinutes = durationSeconds / 60;
+                        const maxDuration = Math.floor(6 * 1.3);
+                        if (durationMinutes > maxDuration) {
+                          const msg = await SendMessageText({
+                            connectionId: props.connectionWhatsId,
+                            text: `*Mensagem automática*\nO áudio enviado excedeu o limite máximo permitido(${maxDuration}min).`,
+                            toNumber: identifierLead,
+                            quoted: m,
+                          });
+
+                          if (msg?.key?.id) {
+                            await prisma.messages.create({
+                              data: {
+                                by: "system",
+                                message: `*Mensagem automática*\nO áudio enviado excedeu o limite máximo permitido(${maxDuration}min).`,
+                                type: "text",
+                                messageKey: msg.key.id,
+                                flowStateId: currentIndexNodeLead.id,
+                              },
+                            });
+                          }
+                          return;
+                        }
+
+                        try {
+                          const originalBufferAudio =
+                            (await downloadMediaMessage(
+                              m,
+                              "buffer",
+                              {},
+                            )) as Buffer;
+                          const tempPath =
+                            await handleFileTemp.saveBuffer(
+                              originalBufferAudio,
+                            );
+                          audioFilePath = tempPath;
+                        } catch (error) {
+                          const hash = ulid();
+                          cacheRootSocket.forEach((sockId) =>
+                            socketIo.to(sockId).emit(`geral-logs`, {
+                              hash,
+                              entity: "baileys",
+                              type: "WARN",
+                              value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Error ao tentar salvar AUDIO recebido no chatbot`,
+                            }),
+                          );
+                          await prisma.geralLogDate.create({
+                            data: {
+                              hash,
+                              entity: "baileys",
+                              type: "WARN",
+                              value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Error ao tentar salvar AUDIO recebido no chatbot`,
+                            },
+                          });
+                          console.log(error);
+                        }
+                      }
+
+                      await NodeControler({
+                        businessName: chatbot.Business.name,
+                        flowId: chatbot.flowId,
+                        flowBusinessIds: flow.businessIds,
+                        type: "running",
+                        businessId: chatbot.Business.id,
+                        audioPath: audioFilePath,
+                        connectionId: props.connectionWhatsId,
+                        chatbotId: chatbot.id,
+                        oldNodeId: currentIndexNodeLead?.indexNode || "0",
+                        previous_response_id:
+                          currentIndexNodeLead.previous_response_id ||
+                          undefined,
+                        external_adapter: {
+                          type: "baileys",
+                          clientWA: bot,
+                        },
+                        isSavePositionLead: true,
+                        flowStateId: currentIndexNodeLead.id,
+                        contactAccountId: ContactsWAOnAccount[0].id,
+                        lead_id: identifierLead,
+                        currentNodeId: currentIndexNodeLead?.indexNode || "0",
+                        edges: flow.edges,
+                        nodes: flow.nodes,
+                        message: messageText ?? "",
+                        accountId: props.accountId,
+                        action: null,
+                        actions: {
+                          onErrorClient: async (vl) => {
+                            if (currentIndexNodeLead) {
+                              const scheduleExecutionCache =
+                                scheduleExecutionsReply.get(
+                                  numberConnection +
+                                    "@s.whatsapp.net" +
+                                    m.key.remoteJid!,
+                                );
+                              if (scheduleExecutionCache) {
+                                scheduleExecutionCache.cancel();
+                              }
+                              console.log("TA CAINDO AQUI, finalizando fluxo");
+                              await prisma.flowState.update({
+                                where: { id: currentIndexNodeLead.id },
+                                data: {
+                                  isFinish: true,
+                                  finishedAt: new Date(),
+                                },
+                              });
+
+                              webSocketEmitToRoom()
+                                .account(props.accountId)
+                                .dashboard.dashboard_services({
+                                  delta: -1,
+                                  hour: resolveHourAndMinute(),
+                                });
+                              if (chatbot.TimeToRestart) {
+                                const nextDate = moment()
+                                  .tz("America/Sao_Paulo")
+                                  .add(
+                                    chatbot.TimeToRestart.value,
+                                    chatbot.TimeToRestart.type,
+                                  )
+                                  .toDate();
+                                chatbotRestartInDate.set(
+                                  `${numberConnection}+${identifierLead}`,
+                                  nextDate,
+                                );
+                              }
+                            }
+                          },
+                          onFinish: async (vl) => {
+                            if (currentIndexNodeLead) {
+                              const scheduleExecutionCache =
+                                scheduleExecutionsReply.get(
+                                  numberConnection +
+                                    "@s.whatsapp.net" +
+                                    m.key.remoteJid!,
+                                );
+                              if (scheduleExecutionCache) {
+                                scheduleExecutionCache.cancel();
+                              }
+                              console.log("TA CAINDO AQUI, finalizando fluxo");
+                              await prisma.flowState.update({
+                                where: { id: currentIndexNodeLead.id },
+                                data: {
+                                  isFinish: true,
+                                  finishedAt: new Date(),
+                                },
+                              });
+                              webSocketEmitToRoom()
+                                .account(props.accountId)
+                                .dashboard.dashboard_services({
+                                  delta: -1,
+                                  hour: resolveHourAndMinute(),
+                                });
+                              if (chatbot.TimeToRestart) {
+                                const nextDate = moment()
+                                  .tz("America/Sao_Paulo")
+                                  .add(
+                                    chatbot.TimeToRestart.value,
+                                    chatbot.TimeToRestart.type,
+                                  )
+                                  .toDate();
+                                chatbotRestartInDate.set(
+                                  `${numberConnection}+${identifierLead}`,
+                                  nextDate,
+                                );
+                              }
+                            }
+                          },
+                          onExecutedNode: async (node) => {
+                            if (currentIndexNodeLead?.id) {
+                              try {
+                                await prisma.flowState
+                                  .update({
+                                    where: { id: currentIndexNodeLead.id },
+                                    data: { indexNode: node.id },
+                                  })
+                                  .catch((err) => console.log(err));
+                              } catch (error) {
+                                const hash = ulid();
+                                cacheRootSocket.forEach((sockId) =>
+                                  socketIo.to(sockId).emit(`geral-logs`, {
+                                    hash,
+                                    entity: "flowState",
+                                    type: "WARN",
+                                    value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flowState: #${currentIndexNodeLead.id} | Error ao atualizar flowState`,
+                                  }),
+                                );
+                                await prisma.geralLogDate.create({
+                                  data: {
+                                    hash,
+                                    entity: "flowState",
+                                    type: "WARN",
+                                    value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flowState: #${currentIndexNodeLead.id} | Error ao atualizar flowState`,
+                                  },
+                                });
+                                console.log("Error ao atualizar flowState!");
+                              }
+                            }
+                          },
+                          onEnterNode: async (node) => {
+                            const indexCurrentAlreadyExist =
+                              await prisma.flowState.findFirst({
+                                where: {
+                                  connectionWAId: props.connectionWhatsId,
+                                  contactsWAOnAccountId:
+                                    ContactsWAOnAccount[0].id,
+                                },
+                                select: { id: true },
+                              });
+                            if (!indexCurrentAlreadyExist) {
+                              await prisma.flowState.create({
+                                data: {
+                                  indexNode: node.id,
+                                  flowId: node.flowId,
+                                  connectionWAId: props.connectionWhatsId,
+                                  contactsWAOnAccountId:
+                                    ContactsWAOnAccount[0].id,
+                                },
+                              });
+                              webSocketEmitToRoom()
+                                .account(props.accountId)
+                                .dashboard.dashboard_services({
+                                  delta: +1,
+                                  hour: resolveHourAndMinute(),
+                                });
+                            } else {
+                              await prisma.flowState.update({
+                                where: { id: indexCurrentAlreadyExist.id },
+                                data: {
+                                  indexNode: node.id,
+                                  flowId: node.flowId,
+                                  agentId: node.agentId || null,
+                                },
+                              });
+                            }
+                          },
+                        },
+                      }).finally(() => {
+                        leadAwaiting.set(keyMapLeadAwaiting, false);
+                      });
+                    };
+
+                    if (!chatbot.OperatingDays.length) {
+                      await validMsgChatbot();
+                      continue;
+                    }
+
+                    const nowTime = moment().tz("America/Sao_Paulo");
+                    const dayOfWeek = nowTime.get("weekday");
+
+                    const validTime = chatbot.OperatingDays.some((day) => {
+                      if (day.dayOfWeek === dayOfWeek) {
+                        if (day.WorkingTimes?.length) {
+                          const valid = day.WorkingTimes.some(
+                            ({ end, start }) => {
+                              const isbet = nowTime.isBetween(
+                                getTimeBR(start),
+                                getTimeBR(end),
+                              );
+                              console.log({ isbet, end, start, nowTime });
+                              return isbet;
+                            },
+                          );
+                          return valid;
+                        } else {
+                          return true;
+                        }
+                      }
+                    });
+
+                    if (!validTime) {
+                      if (chatbot.fallback) {
+                        const flowState = await prisma.flowState.findFirst({
+                          where: {
+                            connectionWAId: props.connectionWhatsId,
+                            contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                            isFinish: false,
+                          },
+                          select: { id: true, fallbackSent: true },
+                        });
+                        if (!flowState) {
+                          await new Promise((resolve) =>
+                            setTimeout(resolve, 1000 * 4),
+                          );
+                          await TypingDelay({
+                            connectionId: props.connectionWhatsId,
+                            toNumber: identifierLead + "@s.whatsapp.net",
+                            delay: CalculeTypingDelay(chatbot.fallback),
+                          });
+                          await SendMessageText({
+                            connectionId: props.connectionWhatsId,
+                            text: chatbot.fallback,
+                            toNumber: identifierLead + "@s.whatsapp.net",
+                          });
                           await prisma.flowState.create({
                             data: {
-                              indexNode: node.id,
-                              flowId: node.flowId,
                               connectionWAId: props.connectionWhatsId,
                               contactsWAOnAccountId: ContactsWAOnAccount[0].id,
+                              indexNode: "0",
+                              flowId: chatbot.flowId,
+                              fallbackSent: true,
                             },
+                            select: { id: true },
                           });
                           webSocketEmitToRoom()
                             .account(props.accountId)
@@ -2070,565 +2161,526 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                               hour: resolveHourAndMinute(),
                             });
                         } else {
+                          if (!flowState.fallbackSent) {
+                            await new Promise((resolve) =>
+                              setTimeout(resolve, 1000 * 4),
+                            );
+                            await TypingDelay({
+                              connectionId: props.connectionWhatsId,
+                              toNumber: identifierLead + "@s.whatsapp.net",
+                              delay: CalculeTypingDelay(chatbot.fallback),
+                            });
+                            await SendMessageText({
+                              connectionId: props.connectionWhatsId,
+                              text: chatbot.fallback,
+                              toNumber: identifierLead + "@s.whatsapp.net",
+                            });
+                            await prisma.flowState.update({
+                              where: { id: flowState.id },
+                              data: { fallbackSent: true },
+                            });
+                          }
+                        }
+                      }
+
+                      const minutesToNextExecutionInQueue = Math.min(
+                        ...chatbot.OperatingDays.map((day) => {
+                          const nowDate = moment().tz("America/Sao_Paulo");
+                          const listNextWeeks = day.WorkingTimes.map((time) => {
+                            const [hour, minute] = time.start
+                              .split(":")
+                              .map(Number);
+                            let next = moment()
+                              .tz("America/Sao_Paulo")
+                              .day(day.dayOfWeek)
+                              .hour(hour)
+                              .minute(minute)
+                              .second(0);
+                            if (next.isBefore(nowDate))
+                              next = next.add(1, "week");
+                            return next.diff(nowDate, "minutes");
+                          });
+
+                          return Math.min(...listNextWeeks);
+                        }).filter((s) => s >= 0),
+                      );
+
+                      console.log({ minutesToNextExecutionInQueue });
+                      if (minutesToNextExecutionInQueue > 239) continue;
+
+                      const dateNextExecution = moment()
+                        .tz("America/Sao_paulo")
+                        .add(minutesToNextExecutionInQueue, "minutes");
+
+                      const dataLeadQueue = {
+                        number: identifierLead,
+                        pushName: m.pushName ?? "SEM NOME",
+                        messageText,
+                        messageAudio: messageAudio?.url,
+                        messageImage: messageImage?.url,
+                        messageImageCation: capitionImage,
+                        messageVideo,
+                      };
+
+                      const pathOriginal =
+                        pathChatbotQueue + `/${chatbot.id}.json`;
+
+                      console.log({ pathOriginal });
+                      if (!existsSync(pathOriginal)) {
+                        console.info("======= Path não existia");
+                        try {
+                          console.info("======= Escrevendo PATH");
+
+                          await writeFile(
+                            pathOriginal,
+                            JSON.stringify({
+                              "next-execution": dateNextExecution,
+                              queue: [dataLeadQueue],
+                            } as ChatbotQueue),
+                          );
+                        } catch (error) {
+                          console.error(
+                            "======= Error ao tentar escrever path",
+                          );
+                          console.log(error);
+                        }
+                      } else {
+                        const chatbotQueue =
+                          readFileSync(pathOriginal).toString();
+
+                        if (chatbotQueue !== "") {
+                          const JSONQueue: ChatbotQueue =
+                            JSON.parse(chatbotQueue);
+                          if (
+                            !JSONQueue.queue.some(
+                              (s) => s.number === identifierLead,
+                            )
+                          ) {
+                            JSONQueue.queue.push(dataLeadQueue);
+                          }
+                          try {
+                            await writeFile(
+                              pathOriginal,
+                              JSON.stringify(JSONQueue),
+                            );
+                          } catch (error) {
+                            console.log(error);
+                          }
+                        } else {
+                          try {
+                            await writeFile(
+                              pathOriginal,
+                              JSON.stringify({
+                                "next-execution": dateNextExecution,
+                                queue: [dataLeadQueue],
+                              } as ChatbotQueue),
+                            );
+                          } catch (error) {
+                            console.log(error);
+                          }
+                        }
+                        console.log("AQUI 2");
+                      }
+                      const cacheThisChatbot = cacheJobsChatbotQueue.get(
+                        chatbot.id,
+                      );
+                      if (!cacheThisChatbot) {
+                        await startChatbotQueue(chatbot.id);
+                      }
+                    } else {
+                      await validMsgChatbot();
+                      continue;
+                    }
+                  }
+                  continue;
+                }
+
+                const campaignOfConnection = await prisma.campaign.findFirst({
+                  where: {
+                    accountId: props.accountId,
+                    status: "running",
+                    ConnectionOnCampaign: {
+                      some: { connectionWAId: props.connectionWhatsId },
+                    },
+                    FlowState: {
+                      some: {
+                        isFinish: false,
+                        ContactsWAOnAccount: {
+                          ContactsWA: { completeNumber: identifierLead },
+                        },
+                      },
+                    },
+                  },
+                  select: {
+                    id: true,
+                    flowId: true,
+                  },
+                });
+
+                if (!!campaignOfConnection) {
+                  const flowState = await prisma.flowState.findFirst({
+                    where: {
+                      campaignId: campaignOfConnection?.id,
+                      ContactsWAOnAccount: {
+                        ContactsWA: { completeNumber: identifierLead },
+                      },
+                    },
+                    select: {
+                      id: true,
+                      indexNode: true,
+                      flowId: true,
+                      ContactsWAOnAccount: { select: { id: true } },
+                      previous_response_id: true,
+                    },
+                  });
+
+                  if (!flowState) {
+                    const hash = ulid();
+                    cacheRootSocket.forEach((sockId) =>
+                      socketIo.to(sockId).emit(`geral-logs`, {
+                        hash,
+                        entity: "flowState",
+                        type: "ERROR",
+                        value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${campaignOfConnection?.id} | Flow state da campanha não encontrada`,
+                      }),
+                    );
+                    await prisma.geralLogDate.create({
+                      data: {
+                        hash,
+                        entity: "flowState",
+                        type: "ERROR",
+                        value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${campaignOfConnection?.id} | Flow state da campanha não encontrada`,
+                      },
+                    });
+                    console.log("FlowState not found for lead");
+                    continue;
+                  }
+
+                  if (!messageText && !messageAudio) {
+                    const isSendMessageSuportText =
+                      cacheSendMessageSuportText.get(keyMapLeadAwaiting);
+
+                    if (!isSendMessageSuportText) {
+                      await prisma.messages.create({
+                        data: {
+                          by: "contact",
+                          message: "<Enviou mídia>",
+                          type: "text",
+                          messageKey: m.key.id,
+                          status: "DELIVERED",
+                          flowStateId: flowState.id,
+                        },
+                      });
+
+                      const msg = await SendMessageText({
+                        connectionId: props.connectionWhatsId,
+                        text: "*Mensagem automática*\nEste chat oferece suporte a mensagens de texto ou áudio.",
+                        toNumber: identifierLead,
+                        quoted: m,
+                      });
+
+                      if (msg?.key?.id) {
+                        await prisma.messages.create({
+                          data: {
+                            by: "system",
+                            message:
+                              "*Mensagem automática*\nEste chat oferece suporte a mensagens de texto ou áudio.",
+                            type: "text",
+                            messageKey: msg.key.id,
+                            flowStateId: flowState.id,
+                          },
+                        });
+                      }
+                    }
+                    continue;
+                  }
+                  cacheSendMessageSuportText.delete(keyMapLeadAwaiting);
+
+                  leadAwaiting.set(keyMapLeadAwaiting, true);
+                  const { id, flowId } = flowState;
+
+                  let currentFlow = {} as {
+                    nodes: any;
+                    edges: any;
+                    businessIds: number[];
+                  };
+
+                  if (flowId) {
+                    let flowFetch = cacheFlowsMap.get(flowId);
+                    if (!flowFetch) {
+                      const getFlow = await ModelFlows.aggregate([
+                        { $match: { accountId: props.accountId, _id: flowId } },
+                        {
+                          $project: {
+                            businessIds: 1,
+                            nodes: {
+                              $map: {
+                                input: "$data.nodes",
+                                in: {
+                                  id: "$$this.id",
+                                  type: "$$this.type",
+                                  data: "$$this.data",
+                                },
+                              },
+                            },
+                            edges: {
+                              $map: {
+                                input: "$data.edges",
+                                in: {
+                                  id: "$$this.id",
+                                  source: "$$this.source",
+                                  target: "$$this.target",
+                                  sourceHandle: "$$this.sourceHandle",
+                                },
+                              },
+                            },
+                          },
+                        },
+                      ]);
+                      if (!getFlow) {
+                        const hash = ulid();
+                        cacheRootSocket.forEach((sockId) =>
+                          socketIo.to(sockId).emit(`geral-logs`, {
+                            hash,
+                            entity: "flow",
+                            type: "ERROR",
+                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${campaignOfConnection?.id} - flowId: #${flowId} | Flow não encontrado`,
+                          }),
+                        );
+                        await prisma.geralLogDate.create({
+                          data: {
+                            hash,
+                            entity: "flow",
+                            type: "ERROR",
+                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${campaignOfConnection?.id} - flowId: #${flowId} | Flow não encontrado`,
+                          },
+                        });
+                        console.log(`Flow not found. 4`);
+                        continue;
+                      }
+                      const { edges, nodes, businessIds } = getFlow[0];
+                      currentFlow = { nodes, edges, businessIds };
+                      cacheFlowsMap.set(flowId, currentFlow);
+                    } else {
+                      currentFlow = flowFetch;
+                    }
+                  } else {
+                    let flowFetch = cacheFlowsMap.get(
+                      campaignOfConnection.flowId,
+                    );
+                    if (!flowFetch) {
+                      const getFlow = await ModelFlows.aggregate([
+                        {
+                          $match: {
+                            accountId: props.accountId,
+                            _id: campaignOfConnection.flowId,
+                          },
+                        },
+                        {
+                          $project: {
+                            businessIds: 1,
+                            nodes: {
+                              $map: {
+                                input: "$data.nodes",
+                                in: {
+                                  id: "$$this.id",
+                                  type: "$$this.type",
+                                  data: "$$this.data",
+                                },
+                              },
+                            },
+                            edges: {
+                              $map: {
+                                input: "$data.edges",
+                                in: {
+                                  id: "$$this.id",
+                                  source: "$$this.source",
+                                  target: "$$this.target",
+                                  sourceHandle: "$$this.sourceHandle",
+                                },
+                              },
+                            },
+                          },
+                        },
+                      ]);
+                      if (!getFlow) return console.log(`Flow not found. 5`);
+                      const { edges, nodes, businessIds } = getFlow[0];
+                      currentFlow = { nodes, edges, businessIds };
+                      cacheFlowsMap.set(
+                        campaignOfConnection.flowId,
+                        currentFlow,
+                      );
+                    } else {
+                      currentFlow = flowFetch;
+                    }
+                  }
+
+                  const businessInfo = await prisma.connectionWA.findFirst({
+                    where: { id: props.connectionWhatsId },
+                    select: { Business: { select: { name: true, id: true } } },
+                  });
+
+                  if (!flowState.ContactsWAOnAccount) {
+                    console.log("ContactsWAOnAccount not found for lead");
+                    continue;
+                  }
+
+                  if (!currentFlow.nodes) {
+                    console.log("Fluxo não encontrado, BAILEYS");
+                    continue;
+                  }
+
+                  const ss = true;
+                  if (ss) {
+                    console.log("Campanhas estão temporariamente desativadas");
+                    continue;
+                  }
+
+                  await NodeControler({
+                    businessName: businessInfo?.Business.name!,
+                    isSavePositionLead: true,
+                    flowId: flowId || campaignOfConnection.flowId,
+                    businessId: businessInfo!.Business.id,
+                    isMidia:
+                      isAudioMessage ||
+                      isImageMessage ||
+                      isDocumentMessage ||
+                      isVideoMessage ||
+                      !!contactMessage ||
+                      !!locationMessage,
+                    type: "running",
+                    previous_response_id:
+                      flowState.previous_response_id || undefined,
+                    connectionId: props.connectionWhatsId,
+                    external_adapter: {
+                      type: "baileys",
+                      clientWA: bot,
+                    },
+                    campaignId: campaignOfConnection?.id,
+                    oldNodeId: flowState.indexNode || "0",
+                    flowStateId: flowState.id,
+                    contactAccountId: flowState.ContactsWAOnAccount.id,
+                    lead_id: identifierLead,
+                    action: null,
+                    currentNodeId: flowState.indexNode || "0",
+                    edges: currentFlow.edges,
+                    nodes: currentFlow.nodes,
+                    message: messageText || "",
+                    accountId: props.accountId,
+                    actions: {
+                      onFinish: async (vl) => {
+                        try {
                           await prisma.flowState.update({
-                            where: { id: indexCurrentAlreadyExist.id },
+                            where: { id: flowState.id },
+                            data: { isFinish: true, finishedAt: new Date() },
+                          });
+                          webSocketEmitToRoom()
+                            .account(props.accountId)
+                            .dashboard.dashboard_services({
+                              delta: -1,
+                              hour: resolveHourAndMinute(),
+                            });
+                        } catch (error) {
+                          console.log("Lead já foi finalizado nesse fluxo!");
+                        }
+                        // verificar se todos foram encerrados
+                        const contactsInFlow = await prisma.flowState.count({
+                          where: {
+                            isFinish: false,
+                            campaignId: campaignOfConnection?.id,
+                          },
+                        });
+                        if (!contactsInFlow) {
+                          await prisma.campaign.update({
+                            where: { id: campaignOfConnection?.id },
+                            data: { status: "finished" },
+                          });
+                          cacheAccountSocket
+                            .get(props.accountId)
+                            ?.listSocket.forEach((socketId) => {
+                              socketIo.to(socketId.id).emit("status-campaign", {
+                                campaignId: id,
+                                status: "finished" as TypeStatusCampaign,
+                              });
+                            });
+                        }
+                        console.log("Finalizou!");
+                      },
+                      onEnterNode: async (nodeId) => {
+                        await prisma.flowState
+                          .update({
+                            where: { id: flowState.id },
+                            data: {
+                              indexNode: nodeId.id,
+                              flowId: nodeId.flowId,
+                            },
+                          })
+                          .catch((err) => console.log(err));
+                      },
+                      onErrorClient: async () => {
+                        const hash = ulid();
+                        cacheRootSocket.forEach((sockId) =>
+                          socketIo.to(sockId).emit(`geral-logs`, {
+                            hash,
+                            entity: "flow",
+                            type: "ERROR",
+                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${id} | Error no cliente da conexão WA`,
+                          }),
+                        );
+                        await prisma.geralLogDate.create({
+                          data: {
+                            hash,
+                            entity: "flow",
+                            type: "ERROR",
+                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${id} | Error no cliente da conexão WA`,
+                          },
+                        });
+                        console.log(
+                          "Erro no cliente, não foi possível enviar a mensagem",
+                        );
+                      },
+                      onErrorNumber: async () => {
+                        const hash = ulid();
+                        cacheRootSocket.forEach((sockId) =>
+                          socketIo.to(sockId).emit(`geral-logs`, {
+                            hash,
+                            entity: "flow",
+                            type: "ERROR",
+                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${id} | Error no número do LEAD`,
+                          }),
+                        );
+                        await prisma.geralLogDate.create({
+                          data: {
+                            hash,
+                            entity: "flow",
+                            type: "ERROR",
+                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${id} | Error no número do LEAD`,
+                          },
+                        });
+                        console.log(
+                          "Erro no número, não foi possível enviar a mensagem",
+                        );
+                      },
+                      onExecutedNode: async (node, isShots) => {
+                        await prisma.flowState
+                          .update({
+                            where: { id: flowState.id },
                             data: {
                               indexNode: node.id,
                               flowId: node.flowId,
-                              agentId: node.agentId || null,
+                              ...(isShots && { isSent: isShots }),
                             },
-                          });
-                        }
+                          })
+                          .catch((err) => console.log(err));
                       },
                     },
                   }).finally(() => {
                     leadAwaiting.set(keyMapLeadAwaiting, false);
                   });
-                };
-
-                if (!chatbot.OperatingDays.length) {
-                  return await validMsgChatbot();
                 }
-
-                const nowTime = moment().tz("America/Sao_Paulo");
-                const dayOfWeek = nowTime.get("weekday");
-
-                const validTime = chatbot.OperatingDays.some((day) => {
-                  if (day.dayOfWeek === dayOfWeek) {
-                    if (day.WorkingTimes?.length) {
-                      const valid = day.WorkingTimes.some(({ end, start }) => {
-                        const isbet = nowTime.isBetween(
-                          getTimeBR(start),
-                          getTimeBR(end),
-                        );
-                        console.log({ isbet, end, start, nowTime });
-                        return isbet;
-                      });
-                      return valid;
-                    } else {
-                      return true;
-                    }
-                  }
-                });
-
-                if (!validTime) {
-                  if (chatbot.fallback) {
-                    const flowState = await prisma.flowState.findFirst({
-                      where: {
-                        connectionWAId: props.connectionWhatsId,
-                        contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                        isFinish: false,
-                      },
-                      select: { id: true, fallbackSent: true },
-                    });
-                    if (!flowState) {
-                      await new Promise((resolve) =>
-                        setTimeout(resolve, 1000 * 4),
-                      );
-                      await TypingDelay({
-                        connectionId: props.connectionWhatsId,
-                        toNumber: identifierLead + "@s.whatsapp.net",
-                        delay: CalculeTypingDelay(chatbot.fallback),
-                      });
-                      await SendMessageText({
-                        connectionId: props.connectionWhatsId,
-                        text: chatbot.fallback,
-                        toNumber: identifierLead + "@s.whatsapp.net",
-                      });
-                      await prisma.flowState.create({
-                        data: {
-                          connectionWAId: props.connectionWhatsId,
-                          contactsWAOnAccountId: ContactsWAOnAccount[0].id,
-                          indexNode: "0",
-                          flowId: chatbot.flowId,
-                          fallbackSent: true,
-                        },
-                        select: { id: true },
-                      });
-                      webSocketEmitToRoom()
-                        .account(props.accountId)
-                        .dashboard.dashboard_services({
-                          delta: +1,
-                          hour: resolveHourAndMinute(),
-                        });
-                    } else {
-                      if (!flowState.fallbackSent) {
-                        await new Promise((resolve) =>
-                          setTimeout(resolve, 1000 * 4),
-                        );
-                        await TypingDelay({
-                          connectionId: props.connectionWhatsId,
-                          toNumber: identifierLead + "@s.whatsapp.net",
-                          delay: CalculeTypingDelay(chatbot.fallback),
-                        });
-                        await SendMessageText({
-                          connectionId: props.connectionWhatsId,
-                          text: chatbot.fallback,
-                          toNumber: identifierLead + "@s.whatsapp.net",
-                        });
-                        await prisma.flowState.update({
-                          where: { id: flowState.id },
-                          data: { fallbackSent: true },
-                        });
-                      }
-                    }
-                  }
-
-                  const minutesToNextExecutionInQueue = Math.min(
-                    ...chatbot.OperatingDays.map((day) => {
-                      const nowDate = moment().tz("America/Sao_Paulo");
-                      const listNextWeeks = day.WorkingTimes.map((time) => {
-                        const [hour, minute] = time.start
-                          .split(":")
-                          .map(Number);
-                        let next = moment()
-                          .tz("America/Sao_Paulo")
-                          .day(day.dayOfWeek)
-                          .hour(hour)
-                          .minute(minute)
-                          .second(0);
-                        if (next.isBefore(nowDate)) next = next.add(1, "week");
-                        return next.diff(nowDate, "minutes");
-                      });
-
-                      return Math.min(...listNextWeeks);
-                    }).filter((s) => s >= 0),
-                  );
-
-                  console.log({ minutesToNextExecutionInQueue });
-                  if (minutesToNextExecutionInQueue > 239) return;
-
-                  const dateNextExecution = moment()
-                    .tz("America/Sao_paulo")
-                    .add(minutesToNextExecutionInQueue, "minutes");
-
-                  const dataLeadQueue = {
-                    number: identifierLead,
-                    pushName: body.messages[0].pushName ?? "SEM NOME",
-                    messageText,
-                    messageAudio: messageAudio?.url,
-                    messageImage: messageImage?.url,
-                    messageImageCation: capitionImage,
-                    messageVideo,
-                  };
-
-                  const pathOriginal = pathChatbotQueue + `/${chatbot.id}.json`;
-
-                  console.log({ pathOriginal });
-                  if (!existsSync(pathOriginal)) {
-                    console.info("======= Path não existia");
-                    try {
-                      console.info("======= Escrevendo PATH");
-
-                      await writeFile(
-                        pathOriginal,
-                        JSON.stringify({
-                          "next-execution": dateNextExecution,
-                          queue: [dataLeadQueue],
-                        } as ChatbotQueue),
-                      );
-                    } catch (error) {
-                      console.error("======= Error ao tentar escrever path");
-                      console.log(error);
-                    }
-                  } else {
-                    const chatbotQueue = readFileSync(pathOriginal).toString();
-
-                    if (chatbotQueue !== "") {
-                      const JSONQueue: ChatbotQueue = JSON.parse(chatbotQueue);
-                      if (
-                        !JSONQueue.queue.some(
-                          (s) => s.number === identifierLead,
-                        )
-                      ) {
-                        JSONQueue.queue.push(dataLeadQueue);
-                      }
-                      try {
-                        await writeFile(
-                          pathOriginal,
-                          JSON.stringify(JSONQueue),
-                        );
-                      } catch (error) {
-                        console.log(error);
-                      }
-                    } else {
-                      try {
-                        await writeFile(
-                          pathOriginal,
-                          JSON.stringify({
-                            "next-execution": dateNextExecution,
-                            queue: [dataLeadQueue],
-                          } as ChatbotQueue),
-                        );
-                      } catch (error) {
-                        console.log(error);
-                      }
-                    }
-                    console.log("AQUI 2");
-                  }
-                  const cacheThisChatbot = cacheJobsChatbotQueue.get(
-                    chatbot.id,
-                  );
-                  if (!cacheThisChatbot) {
-                    await startChatbotQueue(chatbot.id);
-                  }
-                } else {
-                  return await validMsgChatbot();
-                }
+                continue;
               }
-              return;
             }
-
-            const campaignOfConnection = await prisma.campaign.findFirst({
-              where: {
-                accountId: props.accountId,
-                status: "running",
-                ConnectionOnCampaign: {
-                  some: { connectionWAId: props.connectionWhatsId },
-                },
-                FlowState: {
-                  some: {
-                    isFinish: false,
-                    ContactsWAOnAccount: {
-                      ContactsWA: { completeNumber: identifierLead },
-                    },
-                  },
-                },
-              },
-              select: {
-                id: true,
-                flowId: true,
-              },
-            });
-
-            if (!!campaignOfConnection) {
-              if (!messageText) {
-                const isSendMessageSuportText =
-                  cacheSendMessageSuportText.get(keyMapLeadAwaiting);
-                if (!isSendMessageSuportText) {
-                  await SendMessageText({
-                    connectionId: props.connectionWhatsId,
-                    text: "*Mensagem automática*\nEste chat ainda só oferece suporte a mensagens de texto.",
-                    toNumber: identifierLead,
-                    quoted: body.messages[0],
-                  });
-                  return;
-                }
-                return;
-              }
-              cacheSendMessageSuportText.delete(keyMapLeadAwaiting);
-
-              const flowState = await prisma.flowState.findFirst({
-                where: {
-                  campaignId: campaignOfConnection?.id,
-                  ContactsWAOnAccount: {
-                    ContactsWA: { completeNumber: identifierLead },
-                  },
-                },
-                select: {
-                  id: true,
-                  indexNode: true,
-                  flowId: true,
-                  ContactsWAOnAccount: { select: { id: true } },
-                  previous_response_id: true,
-                },
-              });
-
-              if (!flowState) {
-                const hash = ulid();
-                cacheRootSocket.forEach((sockId) =>
-                  socketIo.to(sockId).emit(`geral-logs`, {
-                    hash,
-                    entity: "flowState",
-                    type: "ERROR",
-                    value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${campaignOfConnection?.id} | Flow state da campanha não encontrada`,
-                  }),
-                );
-                await prisma.geralLogDate.create({
-                  data: {
-                    hash,
-                    entity: "flowState",
-                    type: "ERROR",
-                    value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${campaignOfConnection?.id} | Flow state da campanha não encontrada`,
-                  },
-                });
-                return console.log("FlowState not found for lead");
-              }
-
-              leadAwaiting.set(keyMapLeadAwaiting, true);
-              const { id, flowId } = flowState;
-
-              let currentFlow = {} as {
-                nodes: any;
-                edges: any;
-                businessIds: number[];
-              };
-
-              if (flowId) {
-                let flowFetch = cacheFlowsMap.get(flowId);
-                if (!flowFetch) {
-                  const getFlow = await ModelFlows.aggregate([
-                    { $match: { accountId: props.accountId, _id: flowId } },
-                    {
-                      $project: {
-                        businessIds: 1,
-                        nodes: {
-                          $map: {
-                            input: "$data.nodes",
-                            in: {
-                              id: "$$this.id",
-                              type: "$$this.type",
-                              data: "$$this.data",
-                            },
-                          },
-                        },
-                        edges: {
-                          $map: {
-                            input: "$data.edges",
-                            in: {
-                              id: "$$this.id",
-                              source: "$$this.source",
-                              target: "$$this.target",
-                              sourceHandle: "$$this.sourceHandle",
-                            },
-                          },
-                        },
-                      },
-                    },
-                  ]);
-                  if (!getFlow) {
-                    const hash = ulid();
-                    cacheRootSocket.forEach((sockId) =>
-                      socketIo.to(sockId).emit(`geral-logs`, {
-                        hash,
-                        entity: "flow",
-                        type: "ERROR",
-                        value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${campaignOfConnection?.id} - flowId: #${flowId} | Flow não encontrado`,
-                      }),
-                    );
-                    await prisma.geralLogDate.create({
-                      data: {
-                        hash,
-                        entity: "flow",
-                        type: "ERROR",
-                        value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${campaignOfConnection?.id} - flowId: #${flowId} | Flow não encontrado`,
-                      },
-                    });
-                    return console.log(`Flow not found. 4`);
-                  }
-                  const { edges, nodes, businessIds } = getFlow[0];
-                  currentFlow = { nodes, edges, businessIds };
-                  cacheFlowsMap.set(flowId, currentFlow);
-                } else {
-                  currentFlow = flowFetch;
-                }
-              } else {
-                let flowFetch = cacheFlowsMap.get(campaignOfConnection.flowId);
-                if (!flowFetch) {
-                  const getFlow = await ModelFlows.aggregate([
-                    {
-                      $match: {
-                        accountId: props.accountId,
-                        _id: campaignOfConnection.flowId,
-                      },
-                    },
-                    {
-                      $project: {
-                        businessIds: 1,
-                        nodes: {
-                          $map: {
-                            input: "$data.nodes",
-                            in: {
-                              id: "$$this.id",
-                              type: "$$this.type",
-                              data: "$$this.data",
-                            },
-                          },
-                        },
-                        edges: {
-                          $map: {
-                            input: "$data.edges",
-                            in: {
-                              id: "$$this.id",
-                              source: "$$this.source",
-                              target: "$$this.target",
-                              sourceHandle: "$$this.sourceHandle",
-                            },
-                          },
-                        },
-                      },
-                    },
-                  ]);
-                  if (!getFlow) return console.log(`Flow not found. 5`);
-                  const { edges, nodes, businessIds } = getFlow[0];
-                  currentFlow = { nodes, edges, businessIds };
-                  cacheFlowsMap.set(campaignOfConnection.flowId, currentFlow);
-                } else {
-                  currentFlow = flowFetch;
-                }
-              }
-
-              const businessInfo = await prisma.connectionWA.findFirst({
-                where: { id: props.connectionWhatsId },
-                select: { Business: { select: { name: true, id: true } } },
-              });
-
-              if (!flowState.ContactsWAOnAccount) {
-                console.log("ContactsWAOnAccount not found for lead");
-                return;
-              }
-
-              if (!currentFlow.nodes) {
-                console.log("Fluxo não encontrado, BAILEYS");
-                return;
-              }
-
-              const ss = true;
-              if (ss) {
-                console.log("Campanhas estão temporariamente desativadas");
-                return;
-              }
-
-              await NodeControler({
-                businessName: businessInfo?.Business.name!,
-                isSavePositionLead: true,
-                flowId: flowId || campaignOfConnection.flowId,
-                businessId: businessInfo!.Business.id,
-                isMidia:
-                  isAudioMessage ||
-                  isImageMessage ||
-                  isDocumentMessage ||
-                  isVideoMessage ||
-                  !!contactMessage ||
-                  !!locationMessage,
-                type: "running",
-                previous_response_id:
-                  flowState.previous_response_id || undefined,
-                connectionId: props.connectionWhatsId,
-                external_adapter: {
-                  type: "baileys",
-                  clientWA: bot,
-                },
-                campaignId: campaignOfConnection?.id,
-                oldNodeId: flowState.indexNode || "0",
-                flowStateId: flowState.id,
-                contactAccountId: flowState.ContactsWAOnAccount.id,
-                lead_id: identifierLead,
-                action: null,
-                currentNodeId: flowState.indexNode || "0",
-                edges: currentFlow.edges,
-                nodes: currentFlow.nodes,
-                message: messageText || "",
-                accountId: props.accountId,
-                actions: {
-                  onFinish: async (vl) => {
-                    try {
-                      await prisma.flowState.update({
-                        where: { id: flowState.id },
-                        data: { isFinish: true, finishedAt: new Date() },
-                      });
-                      webSocketEmitToRoom()
-                        .account(props.accountId)
-                        .dashboard.dashboard_services({
-                          delta: -1,
-                          hour: resolveHourAndMinute(),
-                        });
-                    } catch (error) {
-                      console.log("Lead já foi finalizado nesse fluxo!");
-                    }
-                    // verificar se todos foram encerrados
-                    const contactsInFlow = await prisma.flowState.count({
-                      where: {
-                        isFinish: false,
-                        campaignId: campaignOfConnection?.id,
-                      },
-                    });
-                    if (!contactsInFlow) {
-                      await prisma.campaign.update({
-                        where: { id: campaignOfConnection?.id },
-                        data: { status: "finished" },
-                      });
-                      cacheAccountSocket
-                        .get(props.accountId)
-                        ?.listSocket.forEach((socketId) => {
-                          socketIo.to(socketId.id).emit("status-campaign", {
-                            campaignId: id,
-                            status: "finished" as TypeStatusCampaign,
-                          });
-                        });
-                    }
-                    console.log("Finalizou!");
-                  },
-                  onEnterNode: async (nodeId) => {
-                    await prisma.flowState
-                      .update({
-                        where: { id: flowState.id },
-                        data: { indexNode: nodeId.id, flowId: nodeId.flowId },
-                      })
-                      .catch((err) => console.log(err));
-                  },
-                  onErrorClient: async () => {
-                    const hash = ulid();
-                    cacheRootSocket.forEach((sockId) =>
-                      socketIo.to(sockId).emit(`geral-logs`, {
-                        hash,
-                        entity: "flow",
-                        type: "ERROR",
-                        value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${id} | Error no cliente da conexão WA`,
-                      }),
-                    );
-                    await prisma.geralLogDate.create({
-                      data: {
-                        hash,
-                        entity: "flow",
-                        type: "ERROR",
-                        value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${id} | Error no cliente da conexão WA`,
-                      },
-                    });
-                    console.log(
-                      "Erro no cliente, não foi possível enviar a mensagem",
-                    );
-                  },
-                  onErrorNumber: async () => {
-                    const hash = ulid();
-                    cacheRootSocket.forEach((sockId) =>
-                      socketIo.to(sockId).emit(`geral-logs`, {
-                        hash,
-                        entity: "flow",
-                        type: "ERROR",
-                        value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${id} | Error no número do LEAD`,
-                      }),
-                    );
-                    await prisma.geralLogDate.create({
-                      data: {
-                        hash,
-                        entity: "flow",
-                        type: "ERROR",
-                        value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${id} | Error no número do LEAD`,
-                      },
-                    });
-                    console.log(
-                      "Erro no número, não foi possível enviar a mensagem",
-                    );
-                  },
-                  onExecutedNode: async (node, isShots) => {
-                    await prisma.flowState
-                      .update({
-                        where: { id: flowState.id },
-                        data: {
-                          indexNode: node.id,
-                          flowId: node.flowId,
-                          ...(isShots && { isSent: isShots }),
-                        },
-                      })
-                      .catch((err) => console.log(err));
-                  },
-                },
-              }).finally(() => {
-                leadAwaiting.set(keyMapLeadAwaiting, false);
-              });
-            }
-            return;
           }
         });
       } catch (error) {
