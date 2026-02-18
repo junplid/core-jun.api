@@ -61,7 +61,7 @@ RouterV1Private_Put.put(
 );
 
 RouterV1Private_Put.put(
-  "/disconnect-connection-whatsapp/:id",
+  "/disconnect-connection-wa/:id",
   csrfMiddleware,
   updateDisconnectConnectionWhatsappValidation,
   updateDisconnectConnectionWhatsappController,

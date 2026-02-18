@@ -81,7 +81,7 @@ export class UpdateChatbotUseCase {
       if (!oldChatbots) {
         throw new ErrorResponse(400).input({
           path: "connectionWAId",
-          text: "Conexão WA não encontrada.",
+          text: "conexão não encontrada.",
         });
       }
 
@@ -94,7 +94,7 @@ export class UpdateChatbotUseCase {
           ) {
             throw new ErrorResponse(400).input({
               path: "connectionWAId",
-              text: `O bot "${oldChatbot.name}", que opera 24/7, já utiliza a conexão WA.`,
+              text: `O bot "${oldChatbot.name}", que opera 24/7, já utiliza a conexão.`,
             });
           }
 
@@ -103,7 +103,7 @@ export class UpdateChatbotUseCase {
             oldChatbot.OperatingDays.map((day) => ({
               dayOfWeek: day.dayOfWeek,
               workingTimes: day.WorkingTimes,
-            }))
+            })),
           );
 
           if (conflicts.length) {

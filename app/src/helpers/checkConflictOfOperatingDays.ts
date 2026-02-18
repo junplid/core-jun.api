@@ -26,7 +26,7 @@ interface OperatingDay {
 
 export default function checkConflictOfOperatingDays(
   newOp: OperatingDay[],
-  oldOp: OperatingDay[]
+  oldOp: OperatingDay[],
 ) {
   const conflict: Conflict[] = [];
   for (const oldDay of oldOp) {
@@ -35,7 +35,7 @@ export default function checkConflictOfOperatingDays(
         if (!newDay.workingTimes?.length || !oldDay.workingTimes?.length) {
           conflict.push({
             dayOfWeek: newDay.dayOfWeek,
-            text: "Conflito de dia da semana com a conexão WA.",
+            text: "Conflito de dia da semana com a conexão.",
           });
         }
 
@@ -69,25 +69,25 @@ export default function checkConflictOfOperatingDays(
               oldStart,
               oldEnd,
               undefined,
-              "[]"
+              "[]",
             );
             const isNewEndBettwen = newEnd.isBetween(
               oldStart,
               oldEnd,
               undefined,
-              "[]"
+              "[]",
             );
             const isOldStartBettwen = oldStart.isBetween(
               newStart,
               newEnd,
               undefined,
-              "[]"
+              "[]",
             );
             const isOldEndBettwen = oldEnd.isBetween(
               newStart,
               newEnd,
               undefined,
-              "[]"
+              "[]",
             );
             if (
               isNewStartBettwen ||
@@ -98,7 +98,7 @@ export default function checkConflictOfOperatingDays(
               conflict.push({
                 dayOfWeek: newDay.dayOfWeek,
                 indexTime: newIndex,
-                text: "Conflito de horário com a conexão WA.",
+                text: "Conflito de horário com a conexão.",
               });
             }
           }

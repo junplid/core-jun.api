@@ -49,7 +49,7 @@ export class CreateMenuOnlineUseCase {
 
     if (!cacheConnectionsWAOnline.get(dto.connectionWAId)) {
       throw new ErrorResponse(400).input({
-        text: "Selecione uma conexão WA ativa.",
+        text: "Selecione uma conexão ativa.",
         path: "connectionWAId",
       });
     }

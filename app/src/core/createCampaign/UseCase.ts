@@ -87,8 +87,8 @@ export class CreateCampaignUseCase {
         path: "connectionIds",
         text:
           dto.connectionIds.length > 1
-            ? "Algumas Conexões WA estão invalidas ou desativadas."
-            : "Conexão WA inválida ou desativada.",
+            ? "Algumas Conexões estão invalidas ou desativadas."
+            : "conexão inválida ou desativada.",
       });
     }
 

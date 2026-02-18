@@ -244,7 +244,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               hash,
               entity: "baileys",
               type: "ERROR",
-              value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | saveCreds no cliente da conexão WA não encontrado`,
+              value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | saveCreds no cliente da conexão não encontrado`,
             }),
           );
           await prisma.geralLogDate.create({
@@ -252,7 +252,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               hash,
               entity: "baileys",
               type: "ERROR",
-              value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | saveCreds no cliente da conexão WA não encontrado`,
+              value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | saveCreds no cliente da conexão não encontrado`,
             },
           });
           return;
@@ -269,7 +269,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               hash,
               entity: "baileys",
               type: "ERROR",
-              value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Erro ao recuperar o nome da conexão WA`,
+              value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Erro ao recuperar o nome da conexão`,
             }),
           );
           await prisma.geralLogDate.create({
@@ -277,7 +277,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               hash,
               entity: "baileys",
               type: "ERROR",
-              value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Erro ao recuperar o nome da conexão WA`,
+              value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Erro ao recuperar o nome da conexão`,
             },
           });
           console.error(
@@ -2624,7 +2624,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                             hash,
                             entity: "flow",
                             type: "ERROR",
-                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${id} | Error no cliente da conexão WA`,
+                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${id} | Error no cliente da conexão`,
                           }),
                         );
                         await prisma.geralLogDate.create({
@@ -2632,7 +2632,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                             hash,
                             entity: "flow",
                             type: "ERROR",
-                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${id} | Error no cliente da conexão WA`,
+                            value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - campaignId: #${id} | Error no cliente da conexão`,
                           },
                         });
                         console.log(
@@ -2692,7 +2692,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
             type: "ERROR",
             value: `Conexão: #${props.connectionWhatsId} - Account: #${
               props.accountId
-            } | Error na conexão WA >> ${JSON.stringify(error)}`,
+            } | Error na conexão >> ${JSON.stringify(error)}`,
           }),
         );
         await prisma.geralLogDate.create({
@@ -2702,7 +2702,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
             type: "ERROR",
             value: `Conexão: #${props.connectionWhatsId} - Account: #${
               props.accountId
-            } | Error na conexão WA >> ${JSON.stringify(error)}`,
+            } | Error na conexão >> ${JSON.stringify(error)}`,
           },
         });
       }

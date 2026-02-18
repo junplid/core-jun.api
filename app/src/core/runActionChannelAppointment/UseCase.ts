@@ -78,7 +78,7 @@ export class RunActionChannelOrderUseCase {
     if (!order.ConnectionWA?.id) {
       throw new ErrorResponse(400).toast({
         title: "Ação não executada.",
-        description: "Conexão WA não encontrada.",
+        description: "conexão não encontrada.",
         type: "error",
       });
     }
@@ -111,7 +111,7 @@ export class RunActionChannelOrderUseCase {
       if (!botOnline) {
         throw new ErrorResponse(400).toast({
           title: "Ação não executada.",
-          description: "Conexão WA OFFLINE.",
+          description: "conexão OFFLINE.",
           type: "error",
         });
       }

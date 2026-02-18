@@ -145,7 +145,7 @@ export const startCampaign = async ({
 
     if (!clientsWA.length) {
       return rej({
-        message: "Conexões WA não encontradas ou estão off-line",
+        message: "Conexões não encontradas ou estão off-line",
         id,
       });
     }
@@ -292,7 +292,7 @@ export const startCampaign = async ({
       const connectionWA = sessionsBaileysWA.get(connection.id);
       if (!connectionWA) {
         console.log(
-          `Conexão WA com ID ${connection.id} não encontrada ou está off-line`,
+          `conexão com ID ${connection.id} não encontrada ou está off-line`,
         );
         continue;
       }
@@ -660,7 +660,7 @@ export const startCampaign = async ({
 
       for await (let stateFlow of clientsWA[i]!.flowStates) {
         if (!clientsWA[i]?.status) {
-          console.log("Conexão WA ficou invalida.");
+          console.log("conexão ficou invalida.");
           continue;
         }
         await checkDay();

@@ -21,7 +21,7 @@ export class UpdateConnectionWAUseCase {
 
     if (!exist) {
       throw new ErrorResponse(400).toast({
-        title: `Conexão WA não encontrada`,
+        title: `conexão não encontrada`,
         type: "error",
       });
     }
@@ -153,7 +153,7 @@ export class UpdateConnectionWAUseCase {
         });
       }
       throw new ErrorResponse(400).toast({
-        title: `Error ao tentar atualizar conexão WA`,
+        title: `Error ao tentar atualizar conexão`,
         type: "error",
       });
     }
