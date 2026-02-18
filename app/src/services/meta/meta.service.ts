@@ -64,11 +64,11 @@ export async function getMetaIgId(props: {
 
 export async function metaSubscribedApps(props: {
   account_access_token: string;
-  account_id: string;
+  page_id: string;
 }) {
   const client = createMetaHttpClient();
   const { data } = await client.post(
-    `/${props.account_id}/subscribed_apps`,
+    `/${props.page_id}/subscribed_apps`,
     null,
     {
       params: {
@@ -77,5 +77,34 @@ export async function metaSubscribedApps(props: {
       },
     },
   );
+  return data;
+}
+
+export async function metaUnsubscribeApps(props: {
+  account_access_token: string;
+  page_id: string;
+}) {
+  const client = createMetaHttpClient();
+
+  const { data } = await client.delete(`/${props.page_id}/subscribed_apps`, {
+    params: {
+      access_token: props.account_access_token,
+    },
+  });
+
+  return data;
+}
+
+export async function revokeUserPermissions(props: {
+  user_access_token: string;
+}) {
+  const client = createMetaHttpClient();
+
+  const { data } = await client.delete(`/me/permissions`, {
+    params: {
+      access_token: props.user_access_token,
+    },
+  });
+
   return data;
 }

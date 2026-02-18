@@ -153,7 +153,7 @@ export class CreateChatbotUseCase {
       try {
         await metaSubscribedApps({
           account_access_token,
-          account_id: getconnectionig.page_id,
+          page_id: getconnectionig.page_id,
         });
       } catch (error) {
         throw new ErrorResponse(400).toast({

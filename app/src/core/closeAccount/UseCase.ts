@@ -10,6 +10,11 @@ import {
   CacheSessionsBaileysWA,
   sessionsBaileysWA,
 } from "../../adapters/Baileys";
+import {
+  metaUnsubscribeApps,
+  revokeUserPermissions,
+} from "../../services/meta/meta.service";
+import { decrypte } from "../../libs/encryption";
 
 let pathConnections = "";
 if (process.env?.NODE_ENV === "production") {
@@ -26,7 +31,12 @@ export class CloseAccountUseCase {
       where: { id: accountId },
       select: {
         password: true,
-        Business: { select: { ConnectionWA: { select: { id: true } } } },
+        Business: {
+          select: {
+            ConnectionWA: { select: { id: true } },
+            ConnectionIg: { select: { credentials: true, page_id: true } },
+          },
+        },
       },
     });
     if (!account) throw new ErrorResponse(401);
@@ -37,6 +47,32 @@ export class CloseAccountUseCase {
         path: "current",
       });
     }
+
+    const listConnectionsIg = account.Business.map(
+      (s) => s.ConnectionIg,
+    ).flat();
+
+    await Promise.all(
+      listConnectionsIg.map(async (ig) => {
+        try {
+          const payload = decrypte(ig.credentials);
+          await metaUnsubscribeApps({
+            page_id: ig.page_id,
+            account_access_token: payload.account_access_token,
+          });
+          await revokeUserPermissions({
+            user_access_token: payload.account_access_token,
+          });
+        } catch (error) {
+          await prisma.logSystem.create({
+            data: {
+              name: "error_delete_data_meta_account",
+              description: JSON.stringify(error, null, 2),
+            },
+          });
+        }
+      }),
+    );
 
     await prisma.messages.deleteMany({
       where: { Tickets: { accountId } },
