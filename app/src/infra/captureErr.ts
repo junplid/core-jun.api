@@ -16,7 +16,6 @@ async function shutdown() {
     tag: `server-kill`,
     title_txt: "🚨🚨🚨",
     body_txt: "Servidor caiu ‼️",
-    onFilterSocket: () => [],
   });
 
   process.exit(1);

@@ -136,11 +136,6 @@ export const NodeTransferDepartment = async (
   ...
 </span>`,
       url_redirect: `$self/?open_ticket=${id}&bId=${department.businessId}&name=${ContactsWAOnAccount.name}`,
-      onFilterSocket(sockets) {
-        return sockets
-          .filter((s) => s.focused !== `modal-department-${props.data.id}`)
-          .map((s) => s.id);
-      },
     });
 
     const socketAccount = webSocketEmitToRoom().account(props.accountId);

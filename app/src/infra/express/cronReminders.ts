@@ -119,7 +119,6 @@ cron.schedule("*/4 * * * *", () => {
             title_txt: "Lembrete de agendamento",
             body_txt,
             tag: `appointment-${id}`,
-            onFilterSocket: () => [],
             url_redirect: "/auth/appointments",
           });
           let flow: any = null;

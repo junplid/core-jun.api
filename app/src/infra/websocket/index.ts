@@ -633,6 +633,9 @@ export const webSocketEmitToRoom = () => {
     account: (accountId: number) => {
       let to = `account:${accountId}`;
       return {
+        toast_notification: (args: any, ignore: string[]) => {
+          io.to(to).except(ignore).emit("notification", args);
+        },
         emit: (emit: string, args: any, ignore: string[]) => {
           io.to(to).except(ignore).emit(emit, args);
         },

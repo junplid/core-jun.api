@@ -61,6 +61,10 @@ import { createDeltaValidation } from "../../../../../core/createDelta/Validatio
 import { createDeltaController } from "../../../../../core/createDelta";
 import { closeAccountValidation } from "../../../../../core/closeAccount/Validation";
 import { closeAccountController } from "../../../../../core/closeAccount";
+import { createSetupIntents_StripeValidation } from "../../../../../core/createSetupIntents_Stripe/Validation";
+import { createSetupIntents_StripeController } from "../../../../../core/createSetupIntents_Stripe";
+import { createSubscription_StripeValidation } from "../../../../../core/createSubscription_Stripe/Validation";
+import { createSubscription_StripeController } from "../../../../../core/createSubscription_Stripe";
 
 const RouterV1Private_Post = Router();
 
@@ -320,6 +324,20 @@ RouterV1Private_Post.post(
   csrfMiddleware,
   closeAccountValidation,
   closeAccountController,
+);
+
+RouterV1Private_Post.post(
+  "/setup-intents-stripe",
+  csrfMiddleware,
+  createSetupIntents_StripeValidation,
+  createSetupIntents_StripeController,
+);
+
+RouterV1Private_Post.post(
+  "/subscription-stripe",
+  csrfMiddleware,
+  createSubscription_StripeValidation,
+  createSubscription_StripeController,
 );
 
 export default RouterV1Private_Post;

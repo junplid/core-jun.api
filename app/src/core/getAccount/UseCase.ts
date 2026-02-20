@@ -17,6 +17,12 @@ export class GetAccountUseCase {
           onboarded: true,
           isPremium: true,
           Business: { select: { id: true } },
+          Subscription: {
+            select: {
+              subscriptionStatus: true,
+              stripeSubscriptionId: true,
+            },
+          },
         },
       });
 
@@ -48,12 +54,14 @@ export class GetAccountUseCase {
       //   nextNumber.splice(4, 0, "9");
       // }
 
-      const { Business, ...rest } = account;
+      const { Business, Subscription, ...rest } = account;
       return {
         message: "OK",
         status: 200,
         account: {
           ...rest,
+          isSub: !!Subscription?.stripeSubscriptionId,
+          subStatus: Subscription?.subscriptionStatus,
           isPremium: !!rest.isPremium,
           id: dto.accountId,
           name: rest.name ?? decrypte(rest.emailEncrypted),

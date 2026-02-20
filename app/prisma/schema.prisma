@@ -108,6 +108,17 @@ model RootConnectionWA {
 //   @@index([id, geolocationId, businessId])
 // }
 
+enum TypeSubscriptionStatus {
+  active
+  canceled
+  incomplete
+  incomplete_expired
+  past_due
+  paused
+  trialing
+  unpaid
+}
+
 model Account {
   id                  Int     @id @default(autoincrement())
   hash                String  @unique @default(uuid())
@@ -119,10 +130,10 @@ model Account {
   emailEncrypted   String  @unique
   emailHash        String  @unique
 
-  isPremium           Boolean?              @default(false)
-  emailVerified       Boolean               @default(false)
-  password            String
-  customerId          String?
+  isPremium     Boolean? @default(false)
+  emailVerified Boolean  @default(false)
+  password      String
+
   createAt            DateTime              @default(now())
   updateAt            DateTime              @default(now()) @updatedAt
   status              Boolean               @default(false)
@@ -158,8 +169,20 @@ model Account {
   pushTokens          PushTokens[]
   Appointments        Appointments[]
   followUps           FollowUp[]
+  Subscription        AccountSubscription?
 
   @@index([id, emailHash, hash, cpfCnpjHash, status, available, isUsedFreeTrialTime])
+}
+
+model AccountSubscription {
+  customerId           String                  @unique
+  stripeSubscriptionId String?
+  subscriptionStatus   TypeSubscriptionStatus?
+  cardFingerprint      String?
+  accountId            Int?
+  Account              Account                 @relation(fields: [accountId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([subscriptionStatus, cardFingerprint])
 }
 
 model InboxUsers {

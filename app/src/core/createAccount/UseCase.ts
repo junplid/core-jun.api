@@ -4,6 +4,7 @@ import { createTokenAuth } from "../../helpers/authToken";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { encrypt, hashForLookup } from "../../libs/encryption";
+import { stripe } from "../../services/stripe/stripe.client";
 
 export class CreateAccountUseCase {
   constructor() {}
@@ -44,6 +45,11 @@ export class CreateAccountUseCase {
           });
       }
 
+      const customer = await stripe.customers.create({
+        email,
+        name: dto.name,
+      });
+
       const salt = await genSalt(8);
       const nextPassword = await hashBcrypt(dto.password, salt);
 
@@ -64,6 +70,7 @@ export class CreateAccountUseCase {
           contactWAId,
           assetsUsedId: assetsUsedId.id,
           Business: { create: { name: "Master" } },
+          Subscription: { create: { customerId: customer.id } },
         },
         select: { id: true, hash: true },
       });

@@ -164,11 +164,6 @@ export const NodeUpdateOrder = async (
       body_txt: `#${getOrder.n_order} - ${name}`,
       body_html: `<span className="font-medium text-sm line-clamp-1">Pedido atualizado</span><span className="text-xs font-light">#${getOrder.n_order} - ${name}</span>`,
       url_redirect: "/auth/orders",
-      onFilterSocket(sockets) {
-        return sockets
-          .filter((s) => s.focused !== `page-orders`)
-          .map((s) => s.id);
-      },
     });
 
     webSocketEmitToRoom()

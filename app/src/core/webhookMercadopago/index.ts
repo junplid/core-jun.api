@@ -263,7 +263,6 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
     getCharge.total.toNumber(),
   )}</span>
 </span>`,
-            onFilterSocket: (sockets) => [],
           });
         }
 

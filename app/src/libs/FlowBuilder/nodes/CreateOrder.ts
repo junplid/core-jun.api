@@ -244,11 +244,6 @@ export const NodeCreateOrder = async (
         body_txt: `${restData.name} - #${n_order}`,
         body_html: `<span className="font-medium text-sm line-clamp-1">Novo pedido</span><span className="text-xs font-light">${restData.name} - #${n_order}</span>`,
         url_redirect: "/auth/orders",
-        onFilterSocket(sockets) {
-          return sockets
-            .filter((s) => s.focused !== `page-orders`)
-            .map((s) => s.id);
-        },
       });
     }
 

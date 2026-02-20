@@ -442,7 +442,6 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     accountId: props.accountId,
                     title_txt: "🚨🚨🚨",
                     body_txt: "Uma conexão caiu.",
-                    onFilterSocket: () => [],
                     tag: "wa-close",
                   });
                   await killAndClean(
@@ -1398,15 +1397,6 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
 </span> 
 <span className="text-xs font-light">${ticket.ContactsWAOnAccount.name}</span>`,
                     url_redirect: `$self/?open_ticket=${ticket.id}&bId=${ticket.InboxDepartment.businessId}&name=${ticket.ContactsWAOnAccount.name}`,
-                    onFilterSocket(sockets) {
-                      return sockets
-                        .filter(
-                          (s) =>
-                            s.focused !== `modal-player-chat-${ticket.id}` ||
-                            s.focused !== `modal-player-only-chat-${ticket.id}`,
-                        )
-                        .map((s) => s.id);
-                    },
                   });
 
                   const { ticket_chat, player_department } =

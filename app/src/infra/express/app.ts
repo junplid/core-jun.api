@@ -13,6 +13,7 @@ import { resolve } from "path";
 import OpenAI from "openai";
 import "./cronReminders";
 import "./cronFollowUps";
+import { stripeWebhook } from "../../services/stripe/stripe.webhook";
 
 interface VectorStoreTest {
   apiKey: string;
@@ -90,6 +91,13 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(cookieParser());
+
+app.post(
+  "/v1/webhook-stripe",
+  express.raw({ type: "application/json" }),
+  stripeWebhook,
+);
+
 app.use(express.json());
 // app.options("*", cors(corsOptions));
 app.use(router);

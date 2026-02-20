@@ -129,6 +129,9 @@ import { getAppointmentDetailsValidation } from "../../../../../core/getAppointm
 import { getAppointmentDetailsController } from "../../../../../core/getAppointmentDetails";
 import { getServicesTodayValidation } from "../../../../../core/getServicesToday/Validation";
 import { getServicesTodayController } from "../../../../../core/getServicesToday";
+import { getSubscriptionValidation } from "../../../../../core/getSubscription/Validation";
+import { getSubscriptionController } from "../../../../../core/getSubscription";
+import { csrfMiddleware } from "../../../../middlewares/csrf";
 
 const RouterV1Private_Get = Router();
 
@@ -489,6 +492,13 @@ RouterV1Private_Get.get(
   // csrfMiddleware,
   getServicesTodayValidation,
   getServicesTodayController,
+);
+
+RouterV1Private_Get.get(
+  "/subscription",
+  csrfMiddleware,
+  getSubscriptionValidation,
+  getSubscriptionController,
 );
 
 export default RouterV1Private_Get;

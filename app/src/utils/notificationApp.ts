@@ -1,8 +1,7 @@
 import { TypeChannelsNotification } from "@prisma/client";
 import { prisma } from "../adapters/Prisma/client";
-import { cacheAccountSocket } from "../infra/websocket/cache";
-import { socketIo } from "../infra/express";
 import { sendPushNotification } from "../services/push/sendPushNotification";
+import { webSocketEmitToRoom } from "../infra/websocket";
 
 type Props = {
   type?: string;
@@ -15,20 +14,12 @@ type Props = {
   toast_duration?: number;
   url_redirect?: string; // `$self/?open_ticket=1` ///// o self significa que a url deve ser incrementada
   accountId: number | null;
-  onFilterSocket?(
-    sockets: {
-      id: string;
-      platform: "android" | "ios" | "desktop";
-      isMobile: boolean;
-      isPWA: boolean;
-      focused: null | string;
-    }[],
-  ): string[];
+  sendTo?: ("push" | "toast")[];
 };
 
 export async function NotificationApp({
   accountId,
-  onFilterSocket,
+  sendTo,
   tag,
   ...props
 }: Props) {
@@ -39,23 +30,9 @@ export async function NotificationApp({
     return;
   }
 
-  const accountSocket = cacheAccountSocket.get(accountId);
   let channel: TypeChannelsNotification = "websocket";
 
-  let listSocket: string[] = [];
-  if (accountSocket) {
-    if (onFilterSocket) {
-      listSocket = onFilterSocket(accountSocket.listSocket);
-    } else {
-      accountSocket.listSocket.map((s) => s.id);
-    }
-  }
-
-  if (listSocket.length) {
-    listSocket.forEach(async (skt) => {
-      socketIo.to(skt).emit("notification", { ...props, tag: undefined });
-    });
-  } else {
+  if (!sendTo || sendTo.includes("push")) {
     channel = "push";
     await sendPushNotification(accountId, {
       title: props.title_txt,
@@ -63,6 +40,10 @@ export async function NotificationApp({
       url: props.url_redirect,
       tag,
     });
+  }
+
+  if (!sendTo || sendTo.includes("toast")) {
+    webSocketEmitToRoom().account(accountId).toast_notification(props, []);
   }
 
   await prisma.notifications.create({
