@@ -1,4 +1,4 @@
-import { Moment } from "moment-timezone";
+import NodeCache from "node-cache";
 
 /**
  * Cache com a lista de lead que solicitou a interrupção do fluxo
@@ -15,3 +15,8 @@ export const cacheWaitForCompletionChatAI = new Map<string, boolean>();
 export const cacheControllers = new Map<number, string>();
 
 export const cacheExecuteTimeoutAgentAI = new Map<string, boolean>();
+
+export const cacheTestAgentTemplate = new NodeCache({
+  useClones: false,
+  stdTTL: 86400, // dia
+});
