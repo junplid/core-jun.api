@@ -9,25 +9,64 @@ import { sendMetaTextMessage } from "../../../services/meta/modules/sendTextMess
 import { sendMetaTyping } from "../../../services/meta/modules/typing";
 import { isWithin24Hours } from "../../../services/meta/modules/checkWindowDay";
 
-interface PropsNodeMessage {
-  lead_id: string;
-  contactAccountId: number;
-  connectionId: number;
-  sendBy: "user" | "bot";
-  external_adapter:
-    | { type: "baileys" }
-    | { type: "instagram"; page_token: string };
-  data: NodeMessageData;
-  accountId: number;
-  ticketProtocol?: string;
-  nodeId?: string;
-  action: { onErrorClient?(): void };
-  flowStateId: number;
-}
+type PropsNodeMessage =
+  | {
+      lead_id: string;
+      contactAccountId: number;
+      connectionId: number;
+      sendBy: "user" | "bot";
+      external_adapter:
+        | { type: "baileys" }
+        | { type: "instagram"; page_token: string };
+      data: NodeMessageData;
+      accountId: number;
+      ticketProtocol?: string;
+      nodeId?: string;
+      action: { onErrorClient?(): void };
+      flowStateId: number;
+      mode: "prod";
+    }
+  | {
+      mode: "testing";
+      sendBy: "user" | "bot";
+      accountId: number;
+      nodeId?: string;
+      data: NodeMessageData;
+      token_modal_chat_template: string;
+      contactAccountId: number;
+      lead_id: string;
+    };
 
 export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
   return new Promise(async (res, rej) => {
     if (!props.data.messages?.length) return res();
+
+    if (props.mode === "testing") {
+      for await (const message of props.data.messages) {
+        await TypingDelay({
+          delay: Number(message.interval || 0),
+          token_modal_chat_template: props.token_modal_chat_template,
+          mode: "testing",
+          accountId: props.accountId,
+        });
+        const text = await resolveTextVariables({
+          accountId: props.accountId,
+          contactsWAOnAccountId: props.contactAccountId,
+          text: message.text,
+          numberLead: props.lead_id,
+          nodeId: props.nodeId,
+        });
+        await SendMessageText({
+          token_modal_chat_template: props.token_modal_chat_template,
+          role: "agent",
+          accountId: props.accountId,
+          text,
+          mode: "testing",
+        });
+      }
+
+      return res();
+    }
 
     for await (const message of props.data.messages) {
       try {
@@ -36,6 +75,7 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
             delay: Number(message.interval || 0),
             toNumber: props.lead_id,
             connectionId: props.connectionId,
+            mode: "prod",
           });
         }
         if (props.external_adapter.type === "instagram") {
@@ -71,6 +111,7 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
             connectionId: props.connectionId,
             toNumber: props.lead_id,
             text: nextText,
+            mode: "prod",
           });
           if (!msg?.key?.id) return rej("Error ao enviar mensagem");
           msgkey = msg?.key?.id;
@@ -109,7 +150,6 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
           await NodeAddVariables({
             data: { list: [{ id: message.varId, value: msgkey }] },
             contactAccountId: props.contactAccountId,
-            flowStateId: props.flowStateId,
             nodeId: props.nodeId,
             accountId: props.accountId,
             numberLead: props.lead_id,

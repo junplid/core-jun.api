@@ -18,7 +18,7 @@ export const testAgentTemplateValidation = (
     content: Joi.string().required(),
     providerCredentialId: Joi.number().optional(),
     apiKey: Joi.string().allow("").optional(),
-    token_modal_template: Joi.string().required(),
+    token_modal_chat_template: Joi.string().required(),
 
     templatedId: Joi.number().required(),
     fields: Joi.object()

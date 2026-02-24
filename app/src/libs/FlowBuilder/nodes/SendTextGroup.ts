@@ -29,6 +29,7 @@ export const NodeSendTextGroup = (props: PropsNodeMessage): Promise<void> => {
             delay: Number(message.interval || 0),
             toNumber: props.numberLead,
             connectionId: props.connectionId,
+            mode: "prod",
           });
         } catch (error) {
           props.action.onErrorClient?.();
@@ -64,7 +65,6 @@ export const NodeSendTextGroup = (props: PropsNodeMessage): Promise<void> => {
           await NodeAddVariables({
             data: { list: [{ id: message.varId, value: msg.key.id }] },
             contactAccountId: props.contactAccountId,
-            flowStateId: props.flowStateId,
             nodeId: props.nodeId,
             accountId: props.accountId,
             numberLead: props.numberLead,
@@ -76,7 +76,6 @@ export const NodeSendTextGroup = (props: PropsNodeMessage): Promise<void> => {
               list: [{ id: message.varId_groupJid, value: msg.key.remoteJid }],
             },
             contactAccountId: props.contactAccountId,
-            flowStateId: props.flowStateId,
             nodeId: props.nodeId,
             accountId: props.accountId,
             numberLead: props.numberLead,

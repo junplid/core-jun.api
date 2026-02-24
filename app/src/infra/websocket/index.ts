@@ -37,6 +37,7 @@ import {
   DefaultEventsMap,
 } from "socket.io/dist/typed-events";
 import { resolveHourAndMinute } from "../../utils/resolveHour:mm";
+import { cacheTestAgentTemplate } from "../../libs/FlowBuilder/cache";
 
 interface PropsCreateSessionWA_I {
   connectionWhatsId: number;
@@ -199,6 +200,10 @@ export const WebSocketIo = (io: Server) => {
           JSON.stringify(updatedVsTest, null, 2),
         );
       }
+    });
+
+    socket.on("agent-template:clear-tokenTest", async (tokenTest: string) => {
+      cacheTestAgentTemplate.del(tokenTest);
     });
 
     socket.on("disconnect", async (reason) => {
@@ -374,9 +379,7 @@ export const WebSocketIo = (io: Server) => {
           });
           if (!flowState) return;
 
-          let external_adapter:
-            | (IPropsControler["external_adapter"] & { businessName: string })
-            | null = null;
+          let external_adapter: (any & { businessName: string }) | null = null;
 
           if (flowState.ConnectionWA?.id) {
             let attempt = 0;
@@ -447,6 +450,7 @@ export const WebSocketIo = (io: Server) => {
 
           await NodeControler({
             businessName: external_adapter.businessName,
+            mode: "prod",
             flowId: order.flowId,
             businessId: order.businessId,
             flowBusinessIds: flow.businessIds,

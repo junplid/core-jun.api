@@ -5,30 +5,55 @@ import { socketIo } from "../../../infra/express";
 import { cacheAccountSocket } from "../../../infra/websocket/cache";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import moment from "moment-timezone";
+import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 
-interface PropsCreateOrder {
-  numberLead: string;
-  contactsWAOnAccountId: number;
-  connectionWhatsId: number;
-  data: NodeCreateAppointmentData;
-  accountId: number;
-  businessName: string;
-  nodeId: string;
-  flowStateId: number;
-  flowId: string;
-  action?: string;
-  actions?: {
-    onCodeAppointment(code: string): void;
-  };
+type PropsCreateOrder =
+  | {
+      numberLead: string;
+      contactsWAOnAccountId: number;
+      connectionWhatsId: number;
+      data: NodeCreateAppointmentData;
+      accountId: number;
+      businessName: string;
+      nodeId: string;
+      flowStateId: number;
+      flowId: string;
+      action?: string;
+      actions?: {
+        onCodeAppointment(code: string): void;
+      };
 
-  external_adapter:
-    | { type: "baileys" }
-    | { type: "instagram"; page_token: string };
-}
+      external_adapter:
+        | { type: "baileys" }
+        | { type: "instagram"; page_token: string };
+      mode: "prod";
+    }
+  | {
+      mode: "testing";
+      token_modal_chat_template: string;
+      accountId: number;
+      actions?: {
+        onCodeAppointment(code: string): void;
+      };
+    };
 
 export const NodeCreateAppointment = async (
   props: PropsCreateOrder,
 ): Promise<string | undefined> => {
+  if (props.mode === "testing") {
+    const n_appointment = genNumCode(7);
+    props.actions?.onCodeAppointment(n_appointment);
+    await SendMessageText({
+      token_modal_chat_template: props.token_modal_chat_template,
+      role: "system",
+      accountId: props.accountId,
+      text: `Tentou atualizar agendamento(${n_appointment}), mas só funciona apenas em chat real`,
+      mode: "testing",
+    });
+
+    return;
+  }
+
   try {
     if (props.action) return props.action;
 

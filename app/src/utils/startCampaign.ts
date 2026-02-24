@@ -424,6 +424,7 @@ export const startCampaign = async ({
 
         NodeControler({
           businessName: infoConnection?.Business.name!,
+          mode: "prod",
           businessId: infoConnection.Business.id,
           external_adapter: { type: "baileys", clientWA: connectionWA },
           connectionId: connection.id,
@@ -695,6 +696,7 @@ export const startCampaign = async ({
 
         stateFlow.status = true;
         NodeControler({
+          mode: "prod",
           businessName: infoConnection?.Business.name!,
           businessId: infoConnection.Business.id,
           external_adapter: { type: "baileys", clientWA: clientsWA[i]!.bot! },

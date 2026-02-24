@@ -39,6 +39,8 @@ import { NodeCharge } from "../Charge";
 import { speedUpAudioFile } from "./speedUpAudio";
 import { handleFileTemp } from "../../../../utils/handleFileTemp";
 import { createReadStream } from "fs-extra";
+import { cacheTestAgentTemplate } from "../../cache";
+import { ICacheTestAgentTemplate } from "../../../../core/testAgentTemplate/UseCase";
 
 const MAX_RETRIES = 5;
 const BASE_DELAY = 500; // ms
@@ -893,33 +895,56 @@ const getNextTimeOut = (
   }
 };
 
-interface PropsNodeAgentAI {
-  lead_id: string;
-  contactAccountId: number;
-  connectionId: number;
-  external_adapter:
-    | { type: "baileys" }
-    | { type: "instagram"; page_token: string };
+type PropsNodeAgentAI =
+  | {
+      lead_id: string;
+      contactAccountId: number;
+      connectionId: number;
+      external_adapter:
+        | { type: "baileys" }
+        | { type: "instagram"; page_token: string };
 
-  data: NodeAgentAIData;
-  audioPath?: string;
-  message?: { value: string; isDev: boolean };
-  flowId: string;
-  accountId: number;
-  nodeId: string;
-  previous_response_id?: string;
-  flowStateId: number;
-  businessName: string;
-  businessId: number;
-  actions: {
-    onErrorClient?(): void;
-    onExecuteTimeout?: (pre_res_id: string) => Promise<void>;
-    onExitNode?(name: string, previous_response_id?: string | null): void;
-    onSendFlow?(flowIs: string, previous_response_id?: string | null): void;
-    onTransferDepartment?(previous_response_id?: string | null): void;
-    onFinishService?(previous_response_id?: string | null): void;
-  };
-}
+      data: NodeAgentAIData;
+      audioPath?: string;
+      message?: { value: string; isDev: boolean };
+      flowId: string;
+      accountId: number;
+      nodeId: string;
+      previous_response_id?: string;
+      flowStateId: number;
+      businessName: string;
+      businessId: number;
+      actions: {
+        onErrorClient?(): void;
+        onExecuteTimeout?: (pre_res_id: string) => Promise<void>;
+        onExitNode?(name: string, previous_response_id?: string | null): void;
+        onSendFlow?(flowIs: string, previous_response_id?: string | null): void;
+        onTransferDepartment?(previous_response_id?: string | null): void;
+        onFinishService?(previous_response_id?: string | null): void;
+      };
+      mode: "prod";
+    }
+  | {
+      mode: "testing";
+      lead_id: string;
+      contactAccountId: number;
+      data: NodeAgentAIData;
+      message?: { value: string; isDev: boolean };
+      flowId: string;
+      accountId: number;
+      nodeId: string;
+      previous_response_id?: string;
+      businessId: number;
+      token_modal_chat_template: string;
+      actions: {
+        onErrorClient?(): void;
+        onExecuteTimeout?: (pre_res_id: string) => Promise<void>;
+        onExitNode?(name: string, previous_response_id?: string | null): void;
+        onSendFlow?(flowIs: string, previous_response_id?: string | null): void;
+        onTransferDepartment?(previous_response_id?: string | null): void;
+        onFinishService?(previous_response_id?: string | null): void;
+      };
+    };
 
 type ResultPromise =
   | { action: "return" }
@@ -927,7 +952,13 @@ type ResultPromise =
   | { action: "failAttempt" }
   | { action: "sucess"; sourceHandle: string };
 
-async function getAgent(id: number, accountId: number) {
+async function getAgent(id: number | string, accountId: number) {
+  if (typeof id === "string") {
+    let testInProgress =
+      cacheTestAgentTemplate.get<ICacheTestAgentTemplate>(id);
+    if (!testInProgress) throw new Error("AgentAI not found");
+    return testInProgress.agent;
+  }
   let agentAIf = cacheInfoAgentAI.get(id);
   if (!agentAIf) {
     const agent = await prisma.agentAI.findFirst({
@@ -987,7 +1018,12 @@ export const NodeAgentAI = async ({
   //   const agent = await getAgent(props.data.agentId, props.accountId);
   //   const openai = new OpenAI({ apiKey: agent.apiKey });
   // }
-  const keyMap = `${props.connectionId}+${props.lead_id}+${props.data.agentId}`;
+  let keyMap = "";
+  if (props.mode === "prod") {
+    keyMap = `${props.connectionId}+${props.lead_id}+${props.data.agentId}`;
+  } else {
+    keyMap = `${props.token_modal_chat_template}+${props.lead_id}+${props.data.agentId}`;
+  }
 
   function createTimeoutJob(timeout: number, pre_res_id: string) {
     if (!timeout) {
@@ -1016,7 +1052,14 @@ export const NodeAgentAI = async ({
   //   cacheDebounceAgentAI.delete(keyMap);
   // }
 
-  const agent = await getAgent(props.data.agentId, props.accountId);
+  let agent: any = null;
+  if (props.mode === "prod") {
+    agent = await getAgent(props.data.agentId, props.accountId);
+  } else {
+    agent = await getAgent(props.token_modal_chat_template, props.accountId);
+  }
+
+  if (!agent) throw new Error("AgentAI not found");
 
   // if (!message) {
   //   const getTimeoutJob = scheduleTimeoutAgentAI.get(keyMap);
@@ -1026,7 +1069,7 @@ export const NodeAgentAI = async ({
   // lista de mensagens recebidas enquanto estava esperando o debounce acabar
 
   const messages = cacheMessagesDebouceAgentAI.get(keyMap) || [];
-  if (props.audioPath) {
+  if (props.mode === "prod" && props.audioPath) {
     if (agent.modelTranscription) {
       const audioPathSpeed = await speedUpAudioFile(props.audioPath, 1.3);
       handleFileTemp.cleanFile(props.audioPath);
@@ -1094,13 +1137,33 @@ export const NodeAgentAI = async ({
 
   // cria um novo debounce
   async function execute() {
+    if (props.mode === "testing") {
+      await SendMessageText({
+        mode: "testing",
+        accountId: props.accountId,
+        role: "system",
+        text: `Assistente em execução...`,
+        token_modal_chat_template: props.token_modal_chat_template,
+      });
+    }
+
     cacheDebouceAgentAIRun.set(keyMap, true);
     async function runDebounceAgentAI(): Promise<ResultDebounceAgentAI> {
       return new Promise<ResultDebounceAgentAI>(
         async (resolveDebounce, rejectDebounce) => {
           cacheNewMessageWhileDebouceAgentAIRun.set(keyMap, false);
 
-          const agent = await getAgent(props.data.agentId, props.accountId);
+          let agent: any = null;
+          if (props.mode === "prod") {
+            agent = await getAgent(props.data.agentId, props.accountId);
+          } else {
+            agent = await getAgent(
+              props.token_modal_chat_template,
+              props.accountId,
+            );
+          }
+
+          if (!agent) throw new Error("AgentAI not found");
           const openai = new OpenAI({ apiKey: agent.apiKey });
 
           const property0 = await resolveTextVariables({
@@ -1187,17 +1250,19 @@ export const NodeAgentAI = async ({
                     ];
                   }
                   // usando recuperar as notificações que o agente recebeu de outro agente.
-                  const nextinputs = cacheNextInputsCurrentAgents.get(
-                    props.flowStateId,
-                  );
-                  if (nextinputs?.length) {
-                    input = [
-                      ...nextinputs.map((content) => ({
-                        role: "developer",
-                        content,
-                      })),
-                      ...input,
-                    ];
+                  if (props.mode === "prod") {
+                    const nextinputs = cacheNextInputsCurrentAgents.get(
+                      props.flowStateId,
+                    );
+                    if (nextinputs?.length) {
+                      input = [
+                        ...nextinputs.map((content) => ({
+                          role: "developer",
+                          content,
+                        })),
+                        ...input,
+                      ];
+                    }
                   }
 
                   let temperature: undefined | number = undefined;
@@ -1216,6 +1281,16 @@ export const NodeAgentAI = async ({
                     _request_id?: string | null;
                   };
                   try {
+                    if (props.mode === "testing") {
+                      await SendMessageText({
+                        mode: "testing",
+                        accountId: props.accountId,
+                        role: "system",
+                        text: `Log: Esperando resposta do assistente`,
+                        token_modal_chat_template:
+                          props.token_modal_chat_template,
+                      });
+                    }
                     response = await openai.responses.create({
                       model: agent.model,
                       temperature,
@@ -1243,6 +1318,16 @@ export const NodeAgentAI = async ({
                     const shouldRetry = isRetryable(status);
 
                     if (!shouldRetry || bail || attempt > MAX_RETRIES) {
+                      if (props.mode === "testing") {
+                        await SendMessageText({
+                          mode: "testing",
+                          accountId: props.accountId,
+                          role: "system",
+                          text: `Teste encerrado: Error (${status}) provedor OpenAI`,
+                          token_modal_chat_template:
+                            props.token_modal_chat_template,
+                        });
+                      }
                       const debounceJob = cacheDebounceAgentAI.get(keyMap);
                       const timeoutJob = scheduleTimeoutAgentAI.get(keyMap);
                       cacheDebouceAgentAIRun.set(keyMap, false);
@@ -1363,14 +1448,37 @@ export const NodeAgentAI = async ({
                                   if (!text.trim()) continue;
                                   try {
                                     await TypingDelay({
-                                      connectionId: props.connectionId,
-                                      toNumber: props.lead_id,
-                                      delay: CalculeTypingDelay(text),
+                                      ...(props.mode === "prod"
+                                        ? {
+                                            connectionId: props.connectionId,
+                                            toNumber: props.lead_id,
+                                            delay: CalculeTypingDelay(text),
+                                            mode: "prod",
+                                          }
+                                        : {
+                                            mode: "testing",
+                                            accountId: props.accountId,
+                                            token_modal_chat_template:
+                                              props.token_modal_chat_template,
+                                            delay: CalculeTypingDelay(text),
+                                          }),
                                     });
                                     await SendMessageText({
-                                      connectionId: props.connectionId,
-                                      text: text,
-                                      toNumber: props.lead_id,
+                                      ...(props.mode === "prod"
+                                        ? {
+                                            mode: "prod",
+                                            connectionId: props.connectionId,
+                                            text: text,
+                                            toNumber: props.lead_id,
+                                          }
+                                        : {
+                                            mode: "testing",
+                                            accountId: props.accountId,
+                                            role: "agent",
+                                            text,
+                                            token_modal_chat_template:
+                                              props.token_modal_chat_template,
+                                          }),
                                     });
                                   } catch (error) {
                                     const debounceJob =
@@ -1799,6 +1907,15 @@ export const NodeAgentAI = async ({
                                 continue;
                               }
                               case "enviar_fluxo": {
+                                if (props.mode === "testing") {
+                                  outputs.push({
+                                    type: "function_call_output",
+                                    call_id: c.call_id,
+                                    output:
+                                      "Não é possivel transferir para outro fluxo em modo de teste.",
+                                  });
+                                  continue;
+                                }
                                 await mongo();
                                 const flow = await ModelFlows.findOne(
                                   { name: args.name },
@@ -1827,24 +1944,49 @@ export const NodeAgentAI = async ({
                               case "notificar_whatsapp": {
                                 let isError = false;
                                 await NodeNotifyWA({
-                                  accountId: props.accountId,
-                                  businessName: props.businessName,
-                                  connectionId: props.connectionId,
-                                  contactAccountId: props.contactAccountId,
-                                  flowStateId: props.flowStateId,
-                                  lead_id: props.lead_id,
-                                  external_adapter: props.external_adapter,
-                                  action: {
-                                    onErrorClient() {
-                                      isError = true;
-                                    },
-                                  },
-                                  nodeId: props.nodeId,
-                                  data: {
-                                    text: args.text,
-                                    numbers: [{ key: "1", number: args.phone }],
-                                    tagIds: [],
-                                  },
+                                  ...(props.mode === "prod"
+                                    ? {
+                                        mode: "prod",
+                                        accountId: props.accountId,
+                                        businessName: props.businessName,
+                                        connectionId: props.connectionId,
+                                        contactAccountId:
+                                          props.contactAccountId,
+                                        flowStateId: props.flowStateId,
+                                        lead_id: props.lead_id,
+                                        external_adapter:
+                                          props.external_adapter,
+                                        action: {
+                                          onErrorClient() {
+                                            isError = true;
+                                          },
+                                        },
+                                        nodeId: props.nodeId,
+                                        data: {
+                                          text: args.text,
+                                          numbers: [
+                                            { key: "1", number: args.phone },
+                                          ],
+                                          tagIds: [],
+                                        },
+                                      }
+                                    : {
+                                        mode: "testing",
+                                        accountId: props.accountId,
+                                        contactAccountId:
+                                          props.contactAccountId,
+                                        lead_id: props.lead_id,
+                                        nodeId: props.nodeId,
+                                        data: {
+                                          text: args.text,
+                                          numbers: [
+                                            { key: "1", number: args.phone },
+                                          ],
+                                          tagIds: [],
+                                        },
+                                        token_modal_chat_template:
+                                          props.token_modal_chat_template,
+                                      }),
                                 });
                                 if (isError) {
                                   outputs.push({
@@ -1864,6 +2006,15 @@ export const NodeAgentAI = async ({
 
                               case "enviar_arquivo": {
                                 let isError = false;
+                                if (props.mode === "testing") {
+                                  outputs.push({
+                                    type: "function_call_output",
+                                    call_id: c.call_id,
+                                    output:
+                                      "Não é possivel enviar arquivo em modo de teste.",
+                                  });
+                                  continue;
+                                }
                                 await NodeSendFiles({
                                   accountId: props.accountId,
                                   action: {
@@ -1888,6 +2039,7 @@ export const NodeAgentAI = async ({
                                     ],
                                   },
                                 });
+
                                 if (isError) {
                                   outputs.push({
                                     type: "function_call_output",
@@ -1906,6 +2058,15 @@ export const NodeAgentAI = async ({
 
                               case "enviar_video": {
                                 let isError = false;
+                                if (props.mode === "testing") {
+                                  outputs.push({
+                                    type: "function_call_output",
+                                    call_id: c.call_id,
+                                    output:
+                                      "Não é possivel enviar video em modo de teste.",
+                                  });
+                                  continue;
+                                }
                                 await NodeSendVideos({
                                   accountId: props.accountId,
                                   action: {
@@ -1942,6 +2103,15 @@ export const NodeAgentAI = async ({
 
                               case "enviar_imagem": {
                                 let isError = false;
+                                if (props.mode === "testing") {
+                                  outputs.push({
+                                    type: "function_call_output",
+                                    call_id: c.call_id,
+                                    output:
+                                      "Não é possivel enviar imagem em modo de teste.",
+                                  });
+                                  continue;
+                                }
                                 await NodeSendImages({
                                   accountId: props.accountId,
                                   action: {
@@ -1978,6 +2148,16 @@ export const NodeAgentAI = async ({
 
                               case "enviar_audio": {
                                 let isError = false;
+                                if (props.mode === "testing") {
+                                  outputs.push({
+                                    type: "function_call_output",
+                                    call_id: c.call_id,
+                                    output:
+                                      "Não é possivel enviar audio em modo de teste.",
+                                  });
+                                  continue;
+                                }
+
                                 if (!!args.ppt) {
                                   await NodeSendAudiosLive({
                                     accountId: props.accountId,
@@ -2049,7 +2229,17 @@ export const NodeAgentAI = async ({
                                   event: "transferir_para_atendimento_humano",
                                   value: args._id,
                                 };
+                                if (props.mode === "testing") {
+                                  outputs.push({
+                                    type: "function_call_output",
+                                    call_id: c.call_id,
+                                    output:
+                                      "Não é possivel transferir para atendimento humano em modo de teste.",
+                                  });
+                                  continue;
+                                }
                                 await NodeTransferDepartment({
+                                  mode: "prod",
                                   accountId: props.accountId,
                                   connectionId: props.connectionId,
                                   contactAccountId: props.contactAccountId,
@@ -2078,8 +2268,18 @@ export const NodeAgentAI = async ({
 
                               case "criar_evento": {
                                 try {
+                                  if (props.mode === "testing") {
+                                    outputs.push({
+                                      type: "function_call_output",
+                                      call_id: c.call_id,
+                                      output:
+                                        "Não é possivel agendamento pedido em modo de teste.",
+                                    });
+                                    continue;
+                                  }
                                   let codeAppointment = "";
                                   await NodeCreateAppointment({
+                                    mode: "prod",
                                     accountId: props.accountId,
                                     connectionWhatsId: props.connectionId,
                                     flowId: props.flowId,
@@ -2158,7 +2358,17 @@ export const NodeAgentAI = async ({
 
                               case "criar_pedido": {
                                 let codeOrder = "";
+                                if (props.mode === "testing") {
+                                  outputs.push({
+                                    type: "function_call_output",
+                                    call_id: c.call_id,
+                                    output:
+                                      "Não é possivel criar pedido em modo de teste.",
+                                  });
+                                  continue;
+                                }
                                 await NodeCreateOrder({
+                                  mode: "prod",
                                   accountId: props.accountId,
                                   connectionId: props.connectionId,
                                   flowId: props.flowId,
@@ -2198,8 +2408,17 @@ export const NodeAgentAI = async ({
                               case "atualizar_pedido": {
                                 const { event_code, ...rest } = args;
                                 const keys2 = Object.keys(rest);
-
+                                if (props.mode === "testing") {
+                                  outputs.push({
+                                    type: "function_call_output",
+                                    call_id: c.call_id,
+                                    output:
+                                      "Não é possivel atualizar pedido em modo de teste.",
+                                  });
+                                  continue;
+                                }
                                 await NodeUpdateOrder({
+                                  mode: "prod",
                                   accountId: props.accountId,
                                   numberLead: props.lead_id,
                                   businessName: props.businessName,
@@ -2367,7 +2586,18 @@ export const NodeAgentAI = async ({
                                 let codeOrder: any = {};
 
                                 try {
+                                  if (props.mode === "testing") {
+                                    outputs.push({
+                                      type: "function_call_output",
+                                      call_id: c.call_id,
+                                      output:
+                                        "Não é possivel criar cobrança PIX em modo de teste.",
+                                    });
+                                    continue;
+                                  }
+
                                   const status = await NodeCharge({
+                                    mode: "prod",
                                     accountId: props.accountId,
                                     actions: {
                                       onDataCharge(code) {
@@ -2455,27 +2685,43 @@ export const NodeAgentAI = async ({
                   try {
                     const nextresponse = await fnCallPromise(response);
 
-                    await prisma.flowState.update({
-                      where: { id: props.flowStateId },
-                      data: {
-                        previous_response_id: nextresponse.id,
-                        totalTokens: {
-                          increment:
-                            (nextresponse.usage?.total_tokens || 0) +
-                            total_tokens,
+                    if (props.mode === "prod") {
+                      await prisma.flowState.update({
+                        where: { id: props.flowStateId },
+                        data: {
+                          previous_response_id: nextresponse.id,
+                          totalTokens: {
+                            increment:
+                              (nextresponse.usage?.total_tokens || 0) +
+                              total_tokens,
+                          },
+                          inputTokens: {
+                            increment:
+                              (nextresponse.usage?.input_tokens || 0) +
+                              input_tokens,
+                          },
+                          outputTokens: {
+                            increment:
+                              (nextresponse.usage?.output_tokens || 0) +
+                              output_tokens,
+                          },
                         },
-                        inputTokens: {
-                          increment:
-                            (nextresponse.usage?.input_tokens || 0) +
-                            input_tokens,
-                        },
-                        outputTokens: {
-                          increment:
-                            (nextresponse.usage?.output_tokens || 0) +
-                            output_tokens,
-                        },
-                      },
-                    });
+                      });
+                    } else {
+                      const current =
+                        cacheTestAgentTemplate.get<ICacheTestAgentTemplate>(
+                          props.token_modal_chat_template,
+                        );
+                      if (current) {
+                        cacheTestAgentTemplate.set(
+                          props.token_modal_chat_template,
+                          {
+                            ...current,
+                            previous_response_id: nextresponse.id,
+                          },
+                        );
+                      }
+                    }
                     if (nextresponse.restart) {
                       const getNewMessages =
                         cacheMessagesDebouceAgentAI.get(keyMap);
@@ -2510,7 +2756,11 @@ export const NodeAgentAI = async ({
                         await executeProcess(newlistMsg, nextresponse.id);
                         return;
                       } else {
-                        cacheNextInputsCurrentAgents.delete(props.flowStateId);
+                        if (props.mode === "prod") {
+                          cacheNextInputsCurrentAgents.delete(
+                            props.flowStateId,
+                          );
+                        }
                         createTimeoutJob(agent!.timeout, nextresponse.id);
                       }
                       return resExecute(undefined);
@@ -2570,8 +2820,18 @@ export const NodeAgentAI = async ({
     return { action: "return" };
   }
 
+  if (props.mode === "testing") {
+    await SendMessageText({
+      mode: "testing",
+      accountId: props.accountId,
+      role: "system",
+      text: `Limite de frequencia pelos proximos ${agent.debounce > 1 ? `${agent.debounce} segundos` : `${agent.debounce} segundo`}`,
+      token_modal_chat_template: props.token_modal_chat_template,
+    });
+  }
   const debounceJob = scheduleJob(
     moment()
+      .tz("America/Sao_Paulo")
       .add(agent.debounce || 1, "seconds")
       .toDate(),
     execute,

@@ -136,9 +136,7 @@ RouterV1Public_Post.post("/webhook/trello", (req: Request, res: Response) => {
         return;
       }
 
-      let external_adapter:
-        | (IPropsControler["external_adapter"] & { businessName: string })
-        | null = null;
+      let external_adapter: (any & { businessName: string }) | null = null;
 
       if (getFlowState.ConnectionWA?.id) {
         let attempt = 0;
@@ -252,6 +250,7 @@ RouterV1Public_Post.post("/webhook/trello", (req: Request, res: Response) => {
           await NodeControler({
             forceFinish: true,
             action: null,
+            mode: "prod",
             businessName: external_adapter.businessName,
             flowId: getFlowState.flowId!,
             flowBusinessIds: flow.businessIds,

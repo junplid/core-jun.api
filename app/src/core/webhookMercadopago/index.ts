@@ -268,9 +268,7 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
         }
 
         if (!nextNode) return;
-        let external_adapter:
-          | (IPropsControler["external_adapter"] & { businessName: string })
-          | null = null;
+        let external_adapter: (any & { businessName: string }) | null = null;
 
         if (flowState.ConnectionWA?.id) {
           let attempt = 0;
@@ -324,6 +322,7 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
 
         await NodeControler({
           businessName: external_adapter.businessName,
+          mode: "prod",
           flowId: flowState.flowId,
           businessId: getCharge.businessId!,
           flowBusinessIds: flow.businessIds,

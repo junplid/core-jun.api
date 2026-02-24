@@ -1,23 +1,29 @@
 import { cacheConnectionsWAOnline } from "../../../adapters/Baileys/Cache";
+import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { prisma } from "../../../adapters/Prisma/client";
-import { socketIo } from "../../../infra/express";
 import { webSocketEmitToRoom } from "../../../infra/websocket";
-import { cacheAccountSocket } from "../../../infra/websocket/cache";
 import { NotificationApp } from "../../../utils/notificationApp";
 import { NodeTransferDepartmentData } from "../Payload";
 
-interface PropsNodeTransferDepartment {
-  contactAccountId: number;
-  connectionId: number;
-  data: NodeTransferDepartmentData;
-  flowStateId: number;
-  nodeId: string;
-  accountId: number;
+type PropsNodeTransferDepartment =
+  | {
+      contactAccountId: number;
+      connectionId: number;
+      data: NodeTransferDepartmentData;
+      flowStateId: number;
+      nodeId: string;
+      accountId: number;
 
-  external_adapter:
-    | { type: "baileys" }
-    | { type: "instagram"; page_token: string };
-}
+      external_adapter:
+        | { type: "baileys" }
+        | { type: "instagram"; page_token: string };
+      mode: "prod";
+    }
+  | {
+      mode: "testing";
+      accountId: number;
+      token_modal_chat_template: string;
+    };
 
 function getRandomNumber(min: number, max: number) {
   return String(Math.floor(Math.random() * (max - min + 1)) + min);
@@ -27,6 +33,17 @@ export const NodeTransferDepartment = async (
   props: PropsNodeTransferDepartment,
 ): Promise<"OK" | "ERROR"> => {
   try {
+    if (props.mode === "testing") {
+      await SendMessageText({
+        token_modal_chat_template: props.token_modal_chat_template,
+        role: "system",
+        accountId: props.accountId,
+        text: "Tentou tranferir para departamento humano, mas só funciona apenas em chat real",
+        mode: "testing",
+      });
+
+      return "OK";
+    }
     const department = await prisma.inboxDepartments.findUnique({
       where: { id: props.data.id, accountId: props.accountId },
       select: { name: true, businessId: true },

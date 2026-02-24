@@ -88,7 +88,7 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
 
         if (!infoChatbot) return;
 
-        let external_adapter: IPropsControler["external_adapter"] | null = null;
+        let external_adapter: any | null = null;
 
         if (infoChatbot.ConnectionWA?.id) {
           let attempt = 0;
@@ -210,6 +210,7 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
           console.log("20");
           await NodeControler({
             businessName: infoChatbot.Business.name,
+            mode: "prod",
             flowId: infoChatbot.flowId,
             type: "running",
             action: null,

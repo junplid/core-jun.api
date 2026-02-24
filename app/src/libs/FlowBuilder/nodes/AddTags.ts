@@ -3,7 +3,6 @@ import { NodeAddTagsData } from "../Payload";
 
 interface PropsNodeAction {
   data: NodeAddTagsData;
-  flowStateId: number;
   contactAccountId: number;
   nodeId: string;
 }

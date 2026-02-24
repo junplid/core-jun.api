@@ -85,7 +85,7 @@ export class RunActionChannelOrderUseCase {
       });
     }
 
-    let external_adapter: IPropsControler["external_adapter"] | null = null;
+    let external_adapter: any | null = null;
 
     if (order.ConnectionWA?.id) {
       let attempt = 0;
@@ -204,6 +204,7 @@ export class RunActionChannelOrderUseCase {
 
     NodeControler({
       forceFinish: true,
+      mode: "prod",
       businessName: order.Business.name,
       flowId: order.flowId,
       flowBusinessIds: flow!.businessIds,

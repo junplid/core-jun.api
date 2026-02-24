@@ -4,7 +4,6 @@ import { resolveTextVariables } from "../utils/ResolveTextVariables";
 
 interface PropsNodeAction {
   data: NodeAddVariablesData;
-  flowStateId: number;
   contactAccountId: number;
   nodeId: string;
   accountId: number;

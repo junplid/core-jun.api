@@ -1,4 +1,6 @@
 import NodeCache from "node-cache";
+import { ICacheTestAgentTemplate } from "../../core/testAgentTemplate/UseCase";
+import { SendMessageText } from "../../adapters/Baileys/modules/sendMessage";
 
 /**
  * Cache com a lista de lead que solicitou a interrupção do fluxo
@@ -18,5 +20,21 @@ export const cacheExecuteTimeoutAgentAI = new Map<string, boolean>();
 
 export const cacheTestAgentTemplate = new NodeCache({
   useClones: false,
-  stdTTL: 86400, // dia
+  stdTTL: 600, // 10min
 });
+
+const onUpdateTestTemplateSocket = (
+  key: string,
+  data: ICacheTestAgentTemplate,
+) => {
+  SendMessageText({
+    mode: "testing",
+    accountId: data.accountId,
+    role: "system",
+    text: `System: Teste finalizado!`,
+    token_modal_chat_template: key,
+  });
+};
+
+cacheTestAgentTemplate.on("expired", onUpdateTestTemplateSocket);
+cacheTestAgentTemplate.on("del", onUpdateTestTemplateSocket);
