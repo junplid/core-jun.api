@@ -63,6 +63,8 @@ import { closeAccountValidation } from "../../../../../core/closeAccount/Validat
 import { closeAccountController } from "../../../../../core/closeAccount";
 import { testAgentTemplateController } from "../../../../../core/testAgentTemplate";
 import { testAgentTemplateValidation } from "../../../../../core/testAgentTemplate/Validation";
+import { createAgentTemplateValidation } from "../../../../../core/createAgentTemplate/Validation";
+import { createAgentTemplateController } from "../../../../../core/createAgentTemplate";
 
 const RouterV1Private_Post = Router();
 
@@ -329,6 +331,13 @@ RouterV1Private_Post.post(
   csrfMiddleware,
   testAgentTemplateValidation,
   testAgentTemplateController,
+);
+
+RouterV1Private_Post.post(
+  "/agent-template",
+  csrfMiddleware,
+  createAgentTemplateValidation,
+  createAgentTemplateController,
 );
 
 export default RouterV1Private_Post;

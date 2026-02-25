@@ -7,52 +7,30 @@ export const createAgentTemplateValidation = (
   res: Response,
   next: NextFunction,
 ) => {
+  const valueSchema = Joi.alternatives().try(
+    Joi.number(),
+    Joi.string(),
+    Joi.array().items(Joi.number()),
+    Joi.array().items(Joi.string()),
+  );
+
   const schemaValidation = Joi.object({
-    title: Joi.string().required(),
-    card_desc: Joi.string().required(),
-    markdown_desc: Joi.string().required(),
-    config_flow: Joi.string().required(),
-    script_runner: Joi.string().required(),
-    script_build_agentai_for_test: Joi.string().required(),
+    content: Joi.string().required(),
+    providerCredentialId: Joi.number().optional(),
+    apiKey: Joi.string().allow("").optional(),
+    token_modal_chat_template: Joi.string().required(),
 
-    sections: Joi.array()
-      .items(
-        Joi.object({
-          name: Joi.string().required(),
-          title: Joi.string().required(),
-          collapsible: Joi.boolean().optional(),
-          desc: Joi.string().optional().allow(""),
-
-          inputs: Joi.array()
-            .items(
-              Joi.object({
-                name: Joi.string().required(),
-                label: Joi.string().required(),
-                type: Joi.string()
-                  .valid(
-                    "number",
-                    "text",
-                    "select",
-                    "select_variables",
-                    "select_variable",
-                    "textarea",
-                  )
-                  .required(),
-                placeholder: Joi.string().optional().allow(""),
-                defaultValue: Joi.string().optional().allow(""),
-                helperText: Joi.string().optional().allow(""),
-                required: Joi.boolean().optional(),
-              }),
-            )
-            .required(),
-        }),
+    templatedId: Joi.number().required(),
+    fields: Joi.object()
+      .pattern(
+        Joi.string(), // chave externa dinâmica
+        Joi.object().pattern(
+          Joi.string(), // chave interna dinâmica
+          valueSchema,
+        ),
       )
       .required(),
-
-    chat_demo: Joi.string().required(),
-    variables: Joi.array().items(Joi.string()).optional(),
-    tags: Joi.array().items(Joi.string()).optional(),
-  });
+  }).or("providerCredentialId", "apiKey");
 
   const validation = schemaValidation.validate(req.body, { abortEarly: false });
 
@@ -64,6 +42,6 @@ export const createAgentTemplateValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
+  req.body.accountId = req.user?.id!;
   next();
 };

@@ -9,6 +9,7 @@ import { transformSync } from "esbuild";
 import { NodeControler } from "../../libs/FlowBuilder/Control";
 import { nanoid } from "nanoid";
 import { SendMessageText } from "../../adapters/Baileys/modules/sendMessage";
+import Joi from "joi";
 
 export interface ICacheTestAgentTemplate {
   nodeId: string;
@@ -17,6 +18,32 @@ export interface ICacheTestAgentTemplate {
   flow: { nodes: any; edges: any };
   flowId: string;
   accountId: number;
+}
+
+function mapInputType(type: Input["type"], isMult?: boolean) {
+  switch (type) {
+    case "text":
+    case "textarea":
+      return Joi.string();
+    case "number":
+      return Joi.number();
+    case "select":
+      if (isMult) {
+        return Joi.array().items(Joi.string());
+      }
+      return Joi.string();
+    case "tags-input":
+      return Joi.array().items(Joi.string());
+  }
+}
+
+interface Input {
+  name: string;
+  required?: boolean;
+  max?: number;
+  min?: number;
+  isMulti?: boolean;
+  type: "text" | "number" | "textarea" | "select" | "tags-input";
 }
 
 export class TestAgentTemplateUseCase {
@@ -37,7 +64,6 @@ export class TestAgentTemplateUseCase {
     );
 
     if (!testInProgress) {
-      console.log("TESTE NÃO ENCONTRADO ==");
       let apiKey: null | string = null;
 
       if (dto.providerCredentialId) {
@@ -102,6 +128,7 @@ export class TestAgentTemplateUseCase {
           config_flow: true,
           tags: true,
           variables: true,
+          Sections: { select: { name: true, inputs: true } },
         },
       });
 
@@ -111,6 +138,57 @@ export class TestAgentTemplateUseCase {
           description: "Não foi possivel encontrar o template.",
           type: "error",
         });
+      }
+
+      const schemaValidation = Joi.object(
+        findTemplate.Sections.reduce<Record<string, Joi.ObjectSchema>>(
+          (acc, section) => {
+            const inputsSchema = section.inputs.reduce<
+              Record<string, Joi.Schema>
+            >((inputsAcc, input) => {
+              // @ts-expect-error
+              const inputJson = input as Input;
+
+              let fieldSchema = mapInputType(inputJson.type);
+
+              if (inputJson.min) {
+                fieldSchema = fieldSchema.min(inputJson.min);
+              }
+
+              if (inputJson.max) {
+                fieldSchema = fieldSchema.max(inputJson.max);
+              }
+
+              if (inputJson.required) {
+                fieldSchema = fieldSchema.required();
+              } else {
+                fieldSchema = fieldSchema.optional();
+              }
+
+              inputsAcc[inputJson.name] = fieldSchema;
+              return inputsAcc;
+            }, {});
+
+            acc[section.name] = Joi.object(inputsSchema);
+            return acc;
+          },
+          {},
+        ),
+      );
+
+      const validation = schemaValidation.validate(dto.fields, {
+        abortEarly: false,
+      });
+      if (validation.error) {
+        const errorRespo = new ErrorResponse(400);
+
+        for (const element of validation.error.details) {
+          errorRespo.input({
+            path: `fields.${element.path.join(".")}`,
+            text: "Campo obrigatório.",
+          });
+        }
+        throw errorRespo;
       }
 
       const jsCode = transformSync(findTemplate.script_build_agentai_for_test, {
@@ -128,7 +206,7 @@ export class TestAgentTemplateUseCase {
       try {
         const script = new vm.Script(`
   (() => {
-    ${jsCode} 
+    ${jsCode}
     if (typeof runner_agent_test === 'function') {
       return runner_agent_test(props);
     }
@@ -213,18 +291,6 @@ export class TestAgentTemplateUseCase {
           return node;
         });
 
-        // for (let index = 0; index < variabels.length; index++) {
-        //   const tag = variabels[index];
-        //   findTemplate.config_flow = findTemplate.config_flow.replaceAll(
-        //     `'$vars.[${index}].id'`,
-        //     String(tag.id),
-        //   );
-        //   findTemplate.config_flow = findTemplate.config_flow.replaceAll(
-        //     `'$vars.[${index}].name'`,
-        //     tag.name,
-        //   );
-        // }
-
         const dataTestInProgress = {
           agent: { ...result, apiKey },
           nodeId: "0",
@@ -244,8 +310,10 @@ export class TestAgentTemplateUseCase {
           type: "error",
         });
       }
-    } else {
-      console.log("TESTE AINDA EM CACHE");
+    }
+
+    if (!testInProgress) {
+      return { status: 200 };
     }
 
     const { ContactsWAOnAccount, ...contactWA } =
