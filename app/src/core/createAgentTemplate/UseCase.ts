@@ -1,12 +1,8 @@
 import OpenAI from "openai";
 import { prisma } from "../../adapters/Prisma/client";
-import { ErrorResponse } from "../../utils/ErrorResponse";
 import { CreateAgentTemplateDTO_I } from "./DTO";
-import { cacheTestAgentTemplate } from "../../libs/FlowBuilder/cache";
-
 import vm from "node:vm";
 import { transformSync } from "esbuild";
-import { NodeControler } from "../../libs/FlowBuilder/Control";
 import Joi from "joi";
 import { webSocketEmitToRoom } from "../../infra/websocket";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
@@ -61,17 +57,12 @@ type DataSocketMapCreate =
 
 const modelNotFlex = ["gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o3-mini"];
 
+const sleep = (time: number) => new Promise((s) => setTimeout(s, time * 1000));
+
 export class CreateAgentTemplateUseCase {
   constructor() {}
 
   async run(dto: CreateAgentTemplateDTO_I) {
-    // validando ambiente
-    // criar as dependencias
-    // criar agente
-    // criar fluxo
-    // criar conexão
-    // criar chatbot
-
     (async () => {
       const socketAccount = webSocketEmitToRoom().account(dto.accountId);
       await new Promise((s) => setTimeout(s, 400));
@@ -79,11 +70,11 @@ export class CreateAgentTemplateUseCase {
         `modal-agent-template-${dto.modalHash}`,
         {
           id: "1",
-          label: "Validando ambiente...",
           type: "runner",
         } as DataSocketMapCreate,
         [],
       );
+      await sleep(2);
 
       const business = await prisma.business.findFirst({
         where: { accountId: dto.accountId },
@@ -357,7 +348,6 @@ export class CreateAgentTemplateUseCase {
         `modal-agent-template-${dto.modalHash}`,
         {
           id: "1",
-          label: "Ambiente valido.",
           type: "success",
         } as DataSocketMapCreate,
         [],
@@ -374,11 +364,11 @@ export class CreateAgentTemplateUseCase {
           `modal-agent-template-${dto.modalHash}`,
           {
             id: "2",
-            label: "Criando dependências...",
             type: "runner",
           } as DataSocketMapCreate,
           [],
         );
+        await sleep(3);
 
         const jsCode = transformSync(
           findTemplate.script_build_agentai_for_test,
@@ -488,6 +478,14 @@ export class CreateAgentTemplateUseCase {
           tagsId: tags.map((s) => s.id),
           variablesId: variabels.map((s) => s.id),
         };
+        socketAccount.emit(
+          `modal-agent-template-${dto.modalHash}`,
+          {
+            id: "2",
+            type: "success",
+          } as DataSocketMapCreate,
+          [],
+        );
       } catch (error) {
         socketAccount.emit(
           `modal-agent-template-${dto.modalHash}`,
@@ -501,16 +499,6 @@ export class CreateAgentTemplateUseCase {
         return;
       }
 
-      socketAccount.emit(
-        `modal-agent-template-${dto.modalHash}`,
-        {
-          id: "2",
-          label: "Dependências criadas.",
-          type: "success",
-        } as DataSocketMapCreate,
-        [],
-      );
-
       const nodeUnique = Math.floor(Date.now() / 1000);
       let agentAIId: number | null = null;
       try {
@@ -518,11 +506,11 @@ export class CreateAgentTemplateUseCase {
           `modal-agent-template-${dto.modalHash}`,
           {
             id: "3",
-            label: "Criando Assistente de IA...",
             type: "runner",
           } as DataSocketMapCreate,
           [],
         );
+        await sleep(4);
 
         const { id } = await prisma.agentAI.create({
           data: {
@@ -545,7 +533,6 @@ export class CreateAgentTemplateUseCase {
           `modal-agent-template-${dto.modalHash}`,
           {
             id: "3",
-            label: "Assistente de IA.",
             type: "success",
           } as DataSocketMapCreate,
           [],
@@ -569,11 +556,12 @@ export class CreateAgentTemplateUseCase {
           `modal-agent-template-${dto.modalHash}`,
           {
             id: "4",
-            label: "Criando Fluxo de conversa...",
             type: "runner",
           } as DataSocketMapCreate,
           [],
         );
+        await sleep(2);
+
         await mongo();
         const flow = await ModelFlows.create({
           name: `Flow for ${dataDependence.agent.name} - ${nodeUnique}`,
@@ -592,8 +580,7 @@ export class CreateAgentTemplateUseCase {
           `modal-agent-template-${dto.modalHash}`,
           {
             id: "4",
-            label: "Fluxo de conversa.",
-            type: "runner",
+            type: "success",
           } as DataSocketMapCreate,
           [],
         );
@@ -616,11 +603,12 @@ export class CreateAgentTemplateUseCase {
           `modal-agent-template-${dto.modalHash}`,
           {
             id: "5",
-            label: "Criando Conexão WhatsApp...",
             type: "runner",
           } as DataSocketMapCreate,
           [],
         );
+        await sleep(1);
+
         const { id } = await prisma.connectionWA.create({
           data: {
             name: `Connection for ${dataDependence.agent.name} - ${nodeUnique}`,
@@ -636,8 +624,7 @@ export class CreateAgentTemplateUseCase {
           `modal-agent-template-${dto.modalHash}`,
           {
             id: "5",
-            label: "Conexão WhatsApp.",
-            type: "runner",
+            type: "success",
           } as DataSocketMapCreate,
           [],
         );
@@ -659,11 +646,12 @@ export class CreateAgentTemplateUseCase {
           `modal-agent-template-${dto.modalHash}`,
           {
             id: "6",
-            label: "Criando Chatbot...",
             type: "runner",
           } as DataSocketMapCreate,
           [],
         );
+        await sleep(3);
+
         const jsCode = transformSync(findTemplate.script_runner, {
           loader: "ts",
         }).code;

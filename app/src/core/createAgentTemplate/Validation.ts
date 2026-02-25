@@ -15,10 +15,10 @@ export const createAgentTemplateValidation = (
   );
 
   const schemaValidation = Joi.object({
-    content: Joi.string().required(),
     providerCredentialId: Joi.number().optional(),
     apiKey: Joi.string().allow("").optional(),
-    token_modal_chat_template: Joi.string().required(),
+    nameProvider: Joi.string().allow("").optional(),
+    modalHash: Joi.string().required(),
 
     templatedId: Joi.number().required(),
     fields: Joi.object()
