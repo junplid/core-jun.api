@@ -1,24 +1,47 @@
 import { sessionsBaileysWA } from "..";
+import { webSocketEmitToRoom } from "../../../infra/websocket";
 import { cacheConnectionsWAOnline } from "../Cache";
 
-interface Props {
-  connectionId: number;
-  toNumber: string;
-  delay?: number;
-}
+type Props =
+  | {
+      connectionId: number;
+      toNumber: string;
+      delay?: number;
+      mode: "prod";
+    }
+  | {
+      mode: "testing";
+      delay?: number;
+      token_modal_chat_template: string;
+      accountId: number;
+    };
 
-export const TypingDelay = async ({
-  connectionId,
-  ...props
-}: Props): Promise<void> => {
+export const TypingDelay = async (props: Props): Promise<void> => {
   const delay = Math.max(props.delay || 0, 0);
   if (!delay) return;
-  const MAX_ATTEMPTS = 5;
   const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+  if (props.mode === "testing") {
+    const { emit } = webSocketEmitToRoom().account(props.accountId);
+    emit(
+      `test-agent-template-${props.token_modal_chat_template}`,
+      { role: "agent", content: "", compose: true },
+      [],
+    );
+    await wait(delay * 1_000);
+    emit(
+      `test-agent-template-${props.token_modal_chat_template}`,
+      { role: "agent", content: "", compose: false },
+      [],
+    );
+    return;
+  }
+
+  const MAX_ATTEMPTS = 5;
+
   const tryAtt = async (): Promise<void> => {
-    const bot = sessionsBaileysWA.get(connectionId);
-    if (!bot || !cacheConnectionsWAOnline.get(connectionId))
+    const bot = sessionsBaileysWA.get(props.connectionId);
+    if (!bot || !cacheConnectionsWAOnline.get(props.connectionId))
       throw new Error("CONEXÃO OFFLINE");
     await bot.sendPresenceUpdate("composing", props.toNumber);
     await wait(delay * 1_000);

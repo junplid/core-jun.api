@@ -5,21 +5,44 @@ import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import moment from "moment-timezone";
 import { parseDirtyStringToNumber } from "../../../utils/parseDirtyStringToNumber";
 import { decrypte } from "../../encryption";
+import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 
-interface PropsNodeCharge {
-  data: NodeChargeData;
-  contactsWAOnAccountId: number;
-  nodeId: string;
-  accountId: number;
-  flowStateId: number;
-  actions?: {
-    onDataCharge(props: { code: string; qrcode: string; link: string }): void;
-  };
-}
+type PropsNodeCharge =
+  | {
+      data: NodeChargeData;
+      contactsWAOnAccountId: number;
+      nodeId: string;
+      accountId: number;
+      flowStateId: number;
+      actions?: {
+        onDataCharge(props: {
+          code: string;
+          qrcode: string;
+          link: string;
+        }): void;
+      };
+      mode: "prod";
+    }
+  | {
+      mode: "testing";
+      accountId: number;
+      token_modal_chat_template: string;
+    };
 
 export const NodeCharge = async (
   props: PropsNodeCharge,
 ): Promise<"error" | "success"> => {
+  if (props.mode === "testing") {
+    await SendMessageText({
+      token_modal_chat_template: props.token_modal_chat_template,
+      role: "system",
+      accountId: props.accountId,
+      text: "Tentou criar de cobrança PIX, mas só funciona apenas em chat real",
+      mode: "testing",
+    });
+
+    return "success";
+  }
   const getIntegration = await prisma.paymentIntegrations.findFirst({
     where: { id: props.data.paymentIntegrationId, deleted: false },
     select: {

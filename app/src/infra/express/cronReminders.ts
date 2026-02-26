@@ -196,9 +196,8 @@ cron.schedule("*/4 * * * *", () => {
             );
           }
           if (nextNode) {
-            let external_adapter:
-              | (IPropsControler["external_adapter"] & { businessName: string })
-              | null = null;
+            let external_adapter: (any & { businessName: string }) | null =
+              null;
 
             if (Appointment.ConnectionWA?.id) {
               let attempt = 0;
@@ -256,6 +255,7 @@ cron.schedule("*/4 * * * *", () => {
 
             NodeControler({
               businessName: external_adapter.businessName,
+              mode: "prod",
               flowId: Appointment.flowId,
               flowBusinessIds: flow.businessIds,
               businessId: Appointment.businessId,

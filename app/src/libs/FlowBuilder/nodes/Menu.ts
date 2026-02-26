@@ -25,22 +25,35 @@ const getNextTimeOut = (
   }
 };
 
-interface PropsNodeReply {
-  lead_id: string;
-  contactAccountId: number;
-  connectionId: number;
-  external_adapter:
-    | { type: "baileys" }
-    | { type: "instagram"; page_token: string };
+type PropsNodeReply =
+  | {
+      lead_id: string;
+      contactAccountId: number;
+      connectionId: number;
+      external_adapter:
+        | { type: "baileys" }
+        | { type: "instagram"; page_token: string };
 
-  data: NodeMenuData;
-  message?: string;
-  onExecuteSchedule?: () => Promise<void>;
-  action: { onErrorClient?(): void };
-  flowStateId: number;
-  accountId: number;
-  nodeId: string;
-}
+      data: NodeMenuData;
+      message?: string;
+      onExecuteSchedule?: () => Promise<void>;
+      action: { onErrorClient?(): void };
+      flowStateId: number;
+      accountId: number;
+      nodeId: string;
+      mode: "prod";
+    }
+  | {
+      mode: "testing";
+      data: NodeMenuData;
+      message?: string;
+      onExecuteSchedule?: () => Promise<void>;
+      accountId: number;
+      nodeId: string;
+      lead_id: string;
+      contactAccountId: number;
+      token_modal_chat_template: string;
+    };
 
 type ResultPromise =
   | { action: "return" }
@@ -51,7 +64,12 @@ type ResultPromise =
 export const NodeMenu = async (
   props: PropsNodeReply,
 ): Promise<ResultPromise> => {
-  const keyMap = `${props.connectionId}+${props.lead_id}`;
+  let keyMap = "";
+  if (props.mode === "prod") {
+    keyMap = `${props.connectionId}+${props.lead_id}`;
+  } else {
+    keyMap = `${props.token_modal_chat_template}+${props.lead_id}`;
+  }
   const scheduleExecution = scheduleExecutionsMenu.get(keyMap);
   let countAttempts = countAttemptsMenu.get(keyMap) || 0;
 
@@ -67,28 +85,52 @@ export const NodeMenu = async (
     }
     if (props.data.footer) text += `\n_${props.data.footer}_`;
 
-    await NodeMessage({
-      accountId: props.accountId,
-      action: props.action,
-      sendBy: "bot",
-      connectionId: props.connectionId,
-      contactAccountId: props.contactAccountId,
-      data: {
-        messages: [
-          {
-            key: "1",
-            text,
-            interval: props.data.interval
-              ? Number(props.data.interval)
-              : undefined,
-          },
-        ],
-      },
-      external_adapter: props.external_adapter,
-      flowStateId: props.flowStateId,
-      lead_id: props.lead_id,
-      nodeId: props.nodeId,
-    });
+    if (props.mode === "prod") {
+      await NodeMessage({
+        accountId: props.accountId,
+        action: props.action,
+        sendBy: "bot",
+        connectionId: props.connectionId,
+        contactAccountId: props.contactAccountId,
+        data: {
+          messages: [
+            {
+              key: "1",
+              text,
+              interval: props.data.interval
+                ? Number(props.data.interval)
+                : undefined,
+            },
+          ],
+        },
+        external_adapter: props.external_adapter,
+        flowStateId: props.flowStateId,
+        lead_id: props.lead_id,
+        nodeId: props.nodeId,
+        mode: "prod",
+      });
+    } else {
+      await NodeMessage({
+        accountId: props.accountId,
+        sendBy: "bot",
+        contactAccountId: props.contactAccountId,
+        data: {
+          messages: [
+            {
+              key: "1",
+              text,
+              interval: props.data.interval
+                ? Number(props.data.interval)
+                : undefined,
+            },
+          ],
+        },
+        token_modal_chat_template: props.token_modal_chat_template,
+        lead_id: props.lead_id,
+        nodeId: props.nodeId,
+        mode: "testing",
+      });
+    }
 
     if (props.onExecuteSchedule) {
       const { type, value } = props.data.timeout || {};
@@ -126,31 +168,55 @@ export const NodeMenu = async (
 
       if (messageErrorAttempts?.value) {
         try {
-          await NodeMessage({
-            accountId: props.accountId,
-            action: props.action,
-            connectionId: props.connectionId,
-            contactAccountId: props.contactAccountId,
-            sendBy: "bot",
-            data: {
-              messages: [
-                {
-                  key: "1",
-                  text: messageErrorAttempts.value,
-                  interval: messageErrorAttempts.interval
-                    ? Number(messageErrorAttempts.interval)
-                    : undefined,
-                },
-              ],
-            },
-            external_adapter: props.external_adapter,
-            flowStateId: props.flowStateId,
-            lead_id: props.lead_id,
-            nodeId: props.nodeId,
-          });
+          if (props.mode === "prod") {
+            await NodeMessage({
+              accountId: props.accountId,
+              action: props.action,
+              sendBy: "bot",
+              connectionId: props.connectionId,
+              contactAccountId: props.contactAccountId,
+              data: {
+                messages: [
+                  {
+                    key: "1",
+                    text: messageErrorAttempts.value,
+                    interval: messageErrorAttempts.interval
+                      ? Number(messageErrorAttempts.interval)
+                      : undefined,
+                  },
+                ],
+              },
+              external_adapter: props.external_adapter,
+              flowStateId: props.flowStateId,
+              lead_id: props.lead_id,
+              nodeId: props.nodeId,
+              mode: "prod",
+            });
+          } else {
+            await NodeMessage({
+              accountId: props.accountId,
+              sendBy: "bot",
+              contactAccountId: props.contactAccountId,
+              data: {
+                messages: [
+                  {
+                    key: "1",
+                    text: messageErrorAttempts.value,
+                    interval: messageErrorAttempts.interval
+                      ? Number(messageErrorAttempts.interval)
+                      : undefined,
+                  },
+                ],
+              },
+              token_modal_chat_template: props.token_modal_chat_template,
+              lead_id: props.lead_id,
+              nodeId: props.nodeId,
+              mode: "testing",
+            });
+          }
         } catch (error) {
           console.log(error);
-          props.action.onErrorClient?.();
+          if (props.mode === "prod") props.action.onErrorClient?.();
           throw new Error("Failed to send message");
         }
       }
@@ -184,30 +250,54 @@ export const NodeMenu = async (
 
       if (messageErrorAttempts?.value) {
         try {
-          await NodeMessage({
-            accountId: props.accountId,
-            action: props.action,
-            connectionId: props.connectionId,
-            contactAccountId: props.contactAccountId,
-            data: {
-              messages: [
-                {
-                  key: "1",
-                  text: messageErrorAttempts.value,
-                  interval: messageErrorAttempts.interval
-                    ? Number(messageErrorAttempts.interval)
-                    : undefined,
-                },
-              ],
-            },
-            external_adapter: props.external_adapter,
-            flowStateId: props.flowStateId,
-            lead_id: props.lead_id,
-            nodeId: props.nodeId,
-            sendBy: "bot",
-          });
+          if (props.mode === "prod") {
+            await NodeMessage({
+              accountId: props.accountId,
+              action: props.action,
+              sendBy: "bot",
+              connectionId: props.connectionId,
+              contactAccountId: props.contactAccountId,
+              data: {
+                messages: [
+                  {
+                    key: "1",
+                    text: messageErrorAttempts.value,
+                    interval: messageErrorAttempts.interval
+                      ? Number(messageErrorAttempts.interval)
+                      : undefined,
+                  },
+                ],
+              },
+              external_adapter: props.external_adapter,
+              flowStateId: props.flowStateId,
+              lead_id: props.lead_id,
+              nodeId: props.nodeId,
+              mode: "prod",
+            });
+          } else {
+            await NodeMessage({
+              accountId: props.accountId,
+              sendBy: "bot",
+              contactAccountId: props.contactAccountId,
+              data: {
+                messages: [
+                  {
+                    key: "1",
+                    text: messageErrorAttempts.value,
+                    interval: messageErrorAttempts.interval
+                      ? Number(messageErrorAttempts.interval)
+                      : undefined,
+                  },
+                ],
+              },
+              token_modal_chat_template: props.token_modal_chat_template,
+              lead_id: props.lead_id,
+              nodeId: props.nodeId,
+              mode: "testing",
+            });
+          }
         } catch (error) {
-          props.action.onErrorClient?.();
+          if (props.mode === "prod") props.action.onErrorClient?.();
           console.log(error);
           throw new Error("Failed to send message");
         }

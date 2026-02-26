@@ -1,24 +1,42 @@
 import { NodeUpdateOrderData } from "../Payload";
 import { prisma } from "../../../adapters/Prisma/client";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
-import { cacheAccountSocket } from "../../../infra/websocket/cache";
-import { socketIo } from "../../../infra/express";
 import { NotificationApp } from "../../../utils/notificationApp";
 import { webSocketEmitToRoom } from "../../../infra/websocket";
+import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 
-interface PropsUpdateOrder {
-  numberLead: string;
-  contactsWAOnAccountId: number;
-  data: NodeUpdateOrderData;
-  accountId: number;
-  businessName: string;
-  nodeId: string;
-  flowStateId: number;
-}
+type PropsUpdateOrder =
+  | {
+      numberLead: string;
+      contactsWAOnAccountId: number;
+      data: NodeUpdateOrderData;
+      accountId: number;
+      businessName: string;
+      nodeId: string;
+      flowStateId: number;
+      mode: "prod";
+    }
+  | {
+      mode: "testing";
+      token_modal_chat_template: string;
+      accountId: number;
+    };
 
 export const NodeUpdateOrder = async (
   props: PropsUpdateOrder,
 ): Promise<"not_found" | "ok"> => {
+  if (props.mode === "testing") {
+    await SendMessageText({
+      token_modal_chat_template: props.token_modal_chat_template,
+      role: "system",
+      accountId: props.accountId,
+      text: "Tentou atualizar pedido, mas só funciona apenas em chat real",
+      mode: "testing",
+    });
+
+    return "ok";
+  }
+
   try {
     let chargeId: number | null = null;
     const { charge_transactionId, nOrder, fields, notify, ...restData } =

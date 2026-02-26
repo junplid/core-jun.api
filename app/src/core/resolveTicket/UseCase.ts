@@ -125,9 +125,7 @@ export class ResolveTicketUseCase {
         return { message: "OK!", status: 201 };
       }
 
-      let external_adapter:
-        | (IPropsControler["external_adapter"] & { businessName: string })
-        | null = null;
+      let external_adapter: (any & { businessName: string }) | null = null;
 
       if (rest.ConnectionWA?.id) {
         let attempt = 0;
@@ -245,6 +243,7 @@ export class ResolveTicketUseCase {
       const connectionId = (rest.ConnectionWA?.id || rest.ConnectionIg?.id)!;
 
       NodeControler({
+        mode: "prod",
         external_adapter: external_adapter,
         connectionId,
         businessId: InboxDepartment.businessId,

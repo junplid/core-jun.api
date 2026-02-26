@@ -3,7 +3,6 @@ import { NodeRemoveVariablesData } from "../Payload";
 
 interface PropsRemoveAction {
   data: NodeRemoveVariablesData;
-  flowStateId: number;
   contactAccountId: number;
   nodeId: string;
 }

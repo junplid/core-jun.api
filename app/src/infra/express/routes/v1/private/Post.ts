@@ -61,6 +61,10 @@ import { createDeltaValidation } from "../../../../../core/createDelta/Validatio
 import { createDeltaController } from "../../../../../core/createDelta";
 import { closeAccountValidation } from "../../../../../core/closeAccount/Validation";
 import { closeAccountController } from "../../../../../core/closeAccount";
+import { testAgentTemplateController } from "../../../../../core/testAgentTemplate";
+import { testAgentTemplateValidation } from "../../../../../core/testAgentTemplate/Validation";
+import { createAgentTemplateValidation } from "../../../../../core/createAgentTemplate/Validation";
+import { createAgentTemplateController } from "../../../../../core/createAgentTemplate";
 
 const RouterV1Private_Post = Router();
 
@@ -320,6 +324,20 @@ RouterV1Private_Post.post(
   csrfMiddleware,
   closeAccountValidation,
   closeAccountController,
+);
+
+RouterV1Private_Post.post(
+  "/agent-template/test",
+  csrfMiddleware,
+  testAgentTemplateValidation,
+  testAgentTemplateController,
+);
+
+RouterV1Private_Post.post(
+  "/agent-template",
+  csrfMiddleware,
+  createAgentTemplateValidation,
+  createAgentTemplateController,
 );
 
 export default RouterV1Private_Post;

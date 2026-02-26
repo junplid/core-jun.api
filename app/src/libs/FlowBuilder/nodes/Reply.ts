@@ -26,17 +26,29 @@ const getNextTimeOut = (
   }
 };
 
-interface PropsNodeReply {
-  lead_id: string;
-  contactAccountId: number;
-  connectionId: number;
-  data?: NodeReplyData;
-  message?: string;
-  flowStateId: number;
-  accountId: number;
-  flowBusinessIds?: number[];
-  onExecuteSchedule?: () => Promise<void>;
-}
+type PropsNodeReply =
+  | {
+      lead_id: string;
+      contactAccountId: number;
+      connectionId: number;
+      data?: NodeReplyData;
+      message?: string;
+      flowStateId: number;
+      accountId: number;
+      flowBusinessIds?: number[];
+      onExecuteSchedule?: () => Promise<void>;
+      mode: "prod";
+    }
+  | {
+      accountId: number;
+      mode: "testing";
+      message?: string;
+      contactAccountId: number;
+      lead_id: string;
+      token_modal_chat_template: string;
+      data?: NodeReplyData;
+      onExecuteSchedule?: () => Promise<void>;
+    };
 
 type ResultPromise = { action: "NEXT" | "RETURN"; line?: string };
 
@@ -45,18 +57,25 @@ export const NodeReply = async (
 ): Promise<ResultPromise> => {
   const { message, data } = props;
   console.log({ message, time: data?.timeout });
-  const keyMap = `${props.connectionId}+${props.lead_id}`;
+  let keyMap = "";
+  if (props.mode === "prod") {
+    keyMap = `${props.connectionId}+${props.lead_id}`;
+  } else {
+    keyMap = `${props.token_modal_chat_template}+${props.lead_id}`;
+  }
 
   const scheduleExecution = scheduleExecutionsReply.get(keyMap);
   if (message) {
-    await prisma.messages.create({
-      data: {
-        by: "contact",
-        message,
-        type: "text",
-        flowStateId: props.flowStateId,
-      },
-    });
+    if (props.mode === "prod") {
+      await prisma.messages.create({
+        data: {
+          by: "contact",
+          message,
+          type: "text",
+          flowStateId: props.flowStateId,
+        },
+      });
+    }
     scheduleExecution?.cancel();
 
     if (!data?.isSave) {

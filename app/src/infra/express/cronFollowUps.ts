@@ -167,9 +167,8 @@ cron.schedule("*/1 * * * *", () => {
             );
           }
           if (nextNode) {
-            let external_adapter:
-              | (IPropsControler["external_adapter"] & { businessName: string })
-              | null = null;
+            let external_adapter: (any & { businessName: string }) | null =
+              null;
 
             if (FlowState.ConnectionWA?.id) {
               let attempt = 0;
@@ -225,6 +224,7 @@ cron.schedule("*/1 * * * *", () => {
 
             NodeControler({
               businessName: external_adapter.businessName,
+              mode: "prod",
               flowId: FlowState.flowId,
               flowBusinessIds: flow.businessIds,
               businessId: FlowState.Chatbot!.businessId,

@@ -16,7 +16,7 @@ export class CreateRootUseCase {
 
     if (exist) {
       throw new ErrorResponse(500).container(
-        "Já existe um usuário root cadastrado."
+        "Já existe um usuário root cadastrado.",
       );
     }
 
@@ -27,7 +27,7 @@ export class CreateRootUseCase {
 
     const token = await createTokenAuth(
       { type: "root", id, hash: hashAccount },
-      "secret123"
+      process.env.SECRET_TOKEN_AUTH!,
     );
 
     return { status: 201, token };

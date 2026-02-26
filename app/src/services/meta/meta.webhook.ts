@@ -540,6 +540,7 @@ export async function metaWebhook(req: Request, res: Response) {
                 // }
 
                 await NodeControler({
+                  mode: "prod",
                   businessName: chatbot.Business.name,
                   flowId: chatbot.flowId,
                   businessId: chatbot.Business.id,

@@ -63,6 +63,7 @@ export class SendTicketMessageUseCase {
             connectionId: exist.connectionWAId,
             toNumber: ContactsWAOnAccount.ContactsWA.completeNumber,
             text: dto.text,
+            mode: "prod",
           });
           if (!msg?.key?.id) {
             return {

@@ -8,31 +8,51 @@ import { resolveMoney } from "../utils/ResolveMoney";
 import { cacheConnectionsWAOnline } from "../../../adapters/Baileys/Cache";
 import { NotificationApp } from "../../../utils/notificationApp";
 import { webSocketEmitToRoom } from "../../../infra/websocket";
+import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 
-interface PropsCreateOrder {
-  lead_id: string;
-  contactAccountId: number;
-  connectionId: number;
+type PropsCreateOrder =
+  | {
+      lead_id: string;
+      contactAccountId: number;
+      connectionId: number;
 
-  external_adapter:
-    | { type: "baileys" }
-    | { type: "instagram"; page_token: string };
+      external_adapter:
+        | { type: "baileys" }
+        | { type: "instagram"; page_token: string };
 
-  data: NodeCreateOrderData;
-  accountId: number;
-  businessName: string;
-  nodeId: string;
-  flowStateId: number;
-  flowId: string;
-  action?: string;
-  actions?: {
-    onCodeAppointment(code: string): void;
-  };
-}
+      data: NodeCreateOrderData;
+      accountId: number;
+      businessName: string;
+      nodeId: string;
+      flowStateId: number;
+      flowId: string;
+      action?: string;
+      actions?: {
+        onCodeAppointment(code: string): void;
+      };
+      mode: "prod";
+    }
+  | {
+      mode: "testing";
+      token_modal_chat_template: string;
+      accountId: number;
+    };
 
 export const NodeCreateOrder = async (
   props: PropsCreateOrder,
 ): Promise<string | undefined> => {
+  if (props.mode === "testing") {
+    await SendMessageText({
+      token_modal_chat_template: props.token_modal_chat_template,
+      role: "system",
+      accountId: props.accountId,
+      text: "Tentou criar pedido, mas só funciona apenas em chat real",
+      mode: "testing",
+    });
+
+    return "success";
+  }
+
   try {
     if (props.action) return props.action;
 

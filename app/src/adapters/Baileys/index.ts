@@ -873,6 +873,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                 }
 
                 await NodeControler({
+                  mode: "prod",
                   forceFinish: true,
                   businessName: businessInfo.Business.name,
                   flowId: msg!.FlowState!.flowId!,
@@ -1596,6 +1597,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                         text: "*Mensagem automática*\nEste chat oferece suporte a mensagens de texto ou áudio.",
                         toNumber: identifierLead,
                         quoted: m,
+                        mode: "prod",
                       });
 
                       if (msg?.key?.id) {
@@ -1859,6 +1861,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                             text: `*Mensagem automática*\nO áudio enviado excedeu o limite máximo permitido(${maxDuration}min).`,
                             toNumber: identifierLead,
                             quoted: m,
+                            mode: "prod",
                           });
 
                           if (msg?.key?.id) {
@@ -1910,6 +1913,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                       }
 
                       await NodeControler({
+                        mode: "prod",
                         businessName: chatbot.Business.name,
                         flowId: chatbot.flowId,
                         flowBusinessIds: flow.businessIds,
@@ -2138,11 +2142,13 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                             connectionId: props.connectionWhatsId,
                             toNumber: identifierLead + "@s.whatsapp.net",
                             delay: CalculeTypingDelay(chatbot.fallback),
+                            mode: "prod",
                           });
                           await SendMessageText({
                             connectionId: props.connectionWhatsId,
                             text: chatbot.fallback,
                             toNumber: identifierLead + "@s.whatsapp.net",
+                            mode: "prod",
                           });
                           await prisma.flowState.create({
                             data: {
@@ -2169,11 +2175,13 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                               connectionId: props.connectionWhatsId,
                               toNumber: identifierLead + "@s.whatsapp.net",
                               delay: CalculeTypingDelay(chatbot.fallback),
+                              mode: "prod",
                             });
                             await SendMessageText({
                               connectionId: props.connectionWhatsId,
                               text: chatbot.fallback,
                               toNumber: identifierLead + "@s.whatsapp.net",
+                              mode: "prod",
                             });
                             await prisma.flowState.update({
                               where: { id: flowState.id },
@@ -2377,6 +2385,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                         text: "*Mensagem automática*\nEste chat oferece suporte a mensagens de texto ou áudio.",
                         toNumber: identifierLead,
                         quoted: m,
+                        mode: "prod",
                       });
 
                       if (msg?.key?.id) {
@@ -2537,6 +2546,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                   }
 
                   await NodeControler({
+                    mode: "prod",
                     businessName: businessInfo?.Business.name!,
                     isSavePositionLead: true,
                     flowId: flowId || campaignOfConnection.flowId,

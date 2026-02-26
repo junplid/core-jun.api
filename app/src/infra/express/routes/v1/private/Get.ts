@@ -129,6 +129,10 @@ import { getAppointmentDetailsValidation } from "../../../../../core/getAppointm
 import { getAppointmentDetailsController } from "../../../../../core/getAppointmentDetails";
 import { getServicesTodayValidation } from "../../../../../core/getServicesToday/Validation";
 import { getServicesTodayController } from "../../../../../core/getServicesToday";
+import { getAgentTemplatesValidation } from "../../../../../core/getAgentTemplates/Validation";
+import { getAgentTemplatesController } from "../../../../../core/getAgentTemplates";
+import { getAgentTemplateValidation } from "../../../../../core/getAgentTemplate/Validation";
+import { getAgentTemplateController } from "../../../../../core/getAgentTemplate";
 
 const RouterV1Private_Get = Router();
 
@@ -489,6 +493,18 @@ RouterV1Private_Get.get(
   // csrfMiddleware,
   getServicesTodayValidation,
   getServicesTodayController,
+);
+
+RouterV1Private_Get.get(
+  "/template-agents",
+  getAgentTemplatesValidation,
+  getAgentTemplatesController,
+);
+
+RouterV1Private_Get.get(
+  "/template-agents/:id",
+  getAgentTemplateValidation,
+  getAgentTemplateController,
 );
 
 export default RouterV1Private_Get;

@@ -2367,3 +2367,38 @@ model FollowUp {
 
   @@index([code, flowStateId])
 }
+
+model AgentTemplateInputsSection {
+  id          Int            @id @default(autoincrement())
+  hash        String
+  name        String // nome da seção
+  title       String // titulo da seção
+  collapsible Boolean        @default(false)
+  desc        String?
+  inputs      Json[] // inputs
+  sequence    Int
+  templateId  Int
+  Template    AgentTemplates @relation(fields: [templateId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([name])
+}
+
+model AgentTemplates {
+  id                            Int                          @id @default(autoincrement())
+  title                         String
+  card_desc                     String
+  markdown_desc                 String                       @db.Text
+  config_flow                   String                       @db.Text
+  count_usage                   Int                          @default(0)
+  chat_demo                     Json
+  script_runner                 String                       @db.Text
+  script_build_agentai_for_test String                       @db.Text
+  variables                     String[] // busca o ID pelo nome ou cria 
+  tags                          String[] // busca o ID pelo nome ou cria
+  created_by                    String
+  updateAt                      DateTime                     @default(now())
+  createAt                      DateTime                     @default(now())
+  Sections                      AgentTemplateInputsSection[]
+
+  @@index([count_usage, createAt])
+}

@@ -68,7 +68,7 @@ export class CreateFlowUseCase {
     }
 
     const flow = await ModelFlows.create({
-      ...{ ...dto, agentId: agentIdDto, _id: ulid() },
+      ...{ ...dto, agentId: agentIdDto, _id: ulid(), businessIds },
       data: {
         metrics: {},
         nodes,
