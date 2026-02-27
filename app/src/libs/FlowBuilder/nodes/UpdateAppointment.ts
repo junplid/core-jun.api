@@ -5,6 +5,7 @@ import { cacheAccountSocket } from "../../../infra/websocket/cache";
 import { socketIo } from "../../../infra/express";
 import { StatusAppointments } from "@prisma/client";
 import moment from "moment-timezone";
+import { NotificationApp } from "../../../utils/notificationApp";
 
 interface PropsUpdateOrder {
   numberLead: string;
@@ -16,7 +17,7 @@ interface PropsUpdateOrder {
 }
 
 export const NodeUpdateAppointment = async (
-  props: PropsUpdateOrder
+  props: PropsUpdateOrder,
 ): Promise<
   | { n: "not_found" | "ok" }
   | {
@@ -93,63 +94,91 @@ export const NodeUpdateAppointment = async (
     let nextStartAt: Date | undefined = undefined;
     let dateReminders: { notify_at: Date; moment: string }[] = [];
 
-    if (fields?.includes("startAt")) {
-      const startAt2 = moment(nextStart).tz("America/Sao_Paulo").add(3, "hour");
-      const current = moment().tz("America/Sao_Paulo");
-      const min = startAt2.subtract(30, "minute");
-      const diffMin = min.diff(current, "minute");
+    const isCanceled =
+      restData.status === "expired" || restData.status === "canceled";
 
-      if (diffMin >= 0) {
-        dateReminders.push({
-          notify_at: min.toDate(),
-          moment: "minute",
-        });
+    if (!isCanceled) {
+      if (fields?.includes("startAt")) {
+        const startAt2 = moment(nextStart)
+          .tz("America/Sao_Paulo")
+          .add(3, "hour");
+        const current = moment().tz("America/Sao_Paulo");
+        const min = startAt2.subtract(30, "minute");
+        const diffMin = min.diff(current, "minute");
 
-        const hour = startAt2.subtract(2, "hour");
-        const diffHour = hour.diff(current, "minute") / 60;
-        if (diffHour >= 0) {
+        if (diffMin >= 0) {
           dateReminders.push({
-            notify_at: hour.toDate(),
-            moment: "hour",
+            notify_at: min.toDate(),
+            moment: "minute",
           });
 
-          const day = startAt2.subtract(1, "day").add(2, "hour");
-          const diffDay = day.diff(current, "hour");
-          console.log({ diffDay, day });
-
-          if (diffDay >= 0) {
+          const hour = startAt2.subtract(2, "hour");
+          const diffHour = hour.diff(current, "minute") / 60;
+          if (diffHour >= 0) {
             dateReminders.push({
-              notify_at: day.toDate(),
-              moment: "day",
+              notify_at: hour.toDate(),
+              moment: "hour",
             });
+
+            const day = startAt2.subtract(1, "day").add(2, "hour");
+            const diffDay = day.diff(current, "hour");
+
+            if (diffDay >= 0) {
+              dateReminders.push({
+                notify_at: day.toDate(),
+                moment: "day",
+              });
+            }
           }
         }
+        nextStartAt = moment(nextStart)
+          .tz("America/Sao_Paulo")
+          .add(3, "hour")
+          .toDate();
       }
-      nextStartAt = moment(nextStart)
-        .tz("America/Sao_Paulo")
-        .add(3, "hour")
-        .toDate();
     }
 
-    const { flowNodeId } = await prisma.appointments.update({
+    const {
+      flowNodeId,
+      startAt: startAtCurrent,
+      id,
+    } = await prisma.appointments.update({
       where: { id: getAppointment.id },
       data: {
-        ...restData,
+        title: restData.title || undefined,
+        desc: restData.desc || undefined,
+        status: restData.status || undefined,
         startAt: nextStartAt,
         actionChannels: restData.actionChannels?.map((s) => s.text),
       },
-      select: { updateAt: true, flowNodeId: true },
+      select: { flowNodeId: true, startAt: true, id: true },
     });
 
-    if (dateReminders.length) {
+    if (isCanceled || dateReminders.length) {
       await prisma.appointmentReminders.deleteMany({
         where: { appointmentId: getAppointment.id },
       });
+    }
+    if (dateReminders.length) {
       await prisma.appointmentReminders.createMany({
         data: dateReminders.map((d) => ({
           ...d,
           appointmentId: getAppointment.id,
         })),
+      });
+    }
+
+    if (isCanceled) {
+      const resolvedate = moment(startAtCurrent)
+        .subtract(3, "hour")
+        .format("HH:mm YYYY-MM-DD");
+      await NotificationApp({
+        accountId: props.accountId,
+        title_txt: "❌ Agendamento cancelado",
+        body_txt: `Data: ${resolvedate}`,
+        tag: `appointment-cancel-${id}`,
+        onFilterSocket: () => [],
+        url_redirect: "/auth/appointments",
       });
     }
 

@@ -19,6 +19,7 @@ export class GetAppointmentsUseCase {
           title: true,
           startAt: true,
           connectionIgId: true,
+          status: true,
           // endAt: true,
           // tickets
           // ContactsWAOnAccount: {

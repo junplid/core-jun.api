@@ -15,6 +15,7 @@ if (process.env.NODE_ENV === "production") {
   path = resolve(__dirname, `../../../static/storage`);
 }
 const modelNotFlex = ["gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o3-mini"];
+const modelNotPriority = ["gpt-5-nano", "o3-mini"];
 
 export async function ensureFileByName(
   openai: OpenAI,
@@ -112,8 +113,10 @@ export class UpdateAgentAIUseCase {
         where: { id },
         data: {
           ...rest,
-          service_tier: modelNotFlex.some((f) => f === dto.service_tier)
-            ? undefined
+          service_tier: [...modelNotPriority, ...modelNotFlex].some(
+            (f) => f === dto.service_tier,
+          )
+            ? "default"
             : dto.service_tier,
           ...(businessIds?.length && {
             AgentAIOnBusiness: {

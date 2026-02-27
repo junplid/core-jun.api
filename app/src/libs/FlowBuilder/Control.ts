@@ -294,8 +294,6 @@ export const NodeControler = ({
       //     });
       // }
 
-      console.log(currentNode.type);
-
       if (currentNode.type === "NodeInitial") {
         if (props.mode === "testing") {
           await SendMessageText({
@@ -1607,9 +1605,10 @@ export const NodeControler = ({
                           flowId: props.flowId,
                         });
                         cacheFlowInExecution.delete(keyMap);
-                        await prisma.flowState.update({
+                        await prisma.flowState.upsert({
                           where: { id: props.flowStateId },
-                          data: { agentId: null },
+                          update: { agentId: null },
+                          create: {},
                         });
                         return res();
                       }

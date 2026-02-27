@@ -6,6 +6,7 @@ import { cacheAccountSocket } from "../../../infra/websocket/cache";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import moment from "moment-timezone";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
+import { NotificationApp } from "../../../utils/notificationApp";
 
 type PropsCreateOrder =
   | {
@@ -138,9 +139,7 @@ export const NodeCreateAppointment = async (
     }
     const nextStartAt = moment(nextStart)
       .tz("America/Sao_Paulo")
-      .add(3, "hour")
-      .toDate();
-
+      .add(3, "hour");
     const { id } = await prisma.appointments.create({
       data: {
         accountId: props.accountId,
@@ -155,8 +154,8 @@ export const NodeCreateAppointment = async (
           : { connectionIgId: props.connectionWhatsId }),
 
         ...restData,
-        startAt: nextStartAt,
-        endAt: nextStartAt,
+        startAt: nextStartAt.toDate(),
+        endAt: nextStartAt.toDate(),
         status: restData.status || "pending_confirmation",
         ...(actionChannels?.length && {
           actionChannels: actionChannels.map((s) => s.text),
@@ -204,6 +203,34 @@ export const NodeCreateAppointment = async (
         }
       }
     }
+
+    const now = moment().tz("America/Sao_Paulo");
+    const diffMinutes = nextStartAt.diff(now, "minutes");
+    let body_txt = "";
+
+    if (diffMinutes >= 1440) {
+      const days = Math.floor(diffMinutes / 1440);
+      if (days < 1) {
+        body_txt = `Hoje, às ${nextStartAt.format("HH:mm")}`;
+      } else if (days === 1) {
+        body_txt = `Amanhã, às ${nextStartAt.format("HH:mm")}`;
+      } else {
+        body_txt = `Em ${days} dia${days > 1 ? "s" : ""}, às ${nextStartAt.format("HH:mm")}`;
+      }
+    } else if (diffMinutes >= 60) {
+      body_txt = `Hoje, às ${nextStartAt.format("HH:mm")}`;
+    } else {
+      body_txt = `Em ${diffMinutes} minuto${diffMinutes > 1 ? "s" : ""}`;
+    }
+
+    await NotificationApp({
+      accountId: props.accountId,
+      title_txt: restData.title,
+      body_txt,
+      tag: `appointment-add-${id}`,
+      onFilterSocket: () => [],
+      url_redirect: "/auth/appointments",
+    });
 
     cacheAccountSocket
       .get(props.accountId)

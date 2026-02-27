@@ -36,7 +36,6 @@ export const NodeExtractVariable = async ({
       },
     });
     if (!target || !source) return;
-
     let targetValue: string = "";
 
     if (target.name) {
@@ -55,8 +54,9 @@ export const NodeExtractVariable = async ({
         numberLead: props.numberLead,
         nodeId: props.nodeId,
       });
-    } else return;
-
+    } else {
+      return;
+    }
     const flags = data.flags?.length ? data.flags.join("") : undefined;
     let regex: RE2;
 
@@ -72,7 +72,6 @@ export const NodeExtractVariable = async ({
     } catch (err) {
       return;
     }
-
     const valueResolved = await resolveTextVariables({
       accountId: props.accountId,
       contactsWAOnAccountId: props.contactsWAOnAccountId,
@@ -82,7 +81,6 @@ export const NodeExtractVariable = async ({
     });
 
     let nextValue = "";
-
     if (!data.tools || data.tools === "match") {
       const match = targetValue.match(regex);
       function resolveMatch(model: string) {
@@ -98,13 +96,6 @@ export const NodeExtractVariable = async ({
       nextValue = targetValue.replace(regex, valueResolved || "");
     }
 
-    console.log({
-      nextValue,
-      targetValue,
-      dataValue: data.value,
-      valueResolved,
-    });
-
     const nextValueResolved = await resolveTextVariables({
       accountId: props.accountId,
       contactsWAOnAccountId: props.contactsWAOnAccountId,
@@ -112,7 +103,6 @@ export const NodeExtractVariable = async ({
       numberLead: props.numberLead,
       nodeId: props.nodeId,
     });
-
     if (!source.ContactsWAOnAccountVariable.length) {
       await prisma.contactsWAOnAccountVariable.create({
         data: {

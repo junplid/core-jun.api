@@ -63,24 +63,34 @@ export interface NodeSendFlowData {
 }
 
 export interface NodeIfData {
-  list?: {
-    key: string;
-    name: "has-tags" | "no-tags" | "var";
-    operatorComparison:
-      | "==="
-      | "!=="
-      | ">="
-      | "<="
-      | ">"
-      | "<"
-      | "regex"
-      | "[...]";
-    operatorLogic: "&&" | "||";
-    tagIds: number[];
-    value1: string;
-    value2: string;
-    flags?: string[];
-  }[];
+  list?: (
+    | {
+        key: string;
+        name: "has-tags" | "no-tags" | "var" | "appointment";
+        operatorComparison:
+          | "==="
+          | "!=="
+          | ">="
+          | "<="
+          | ">"
+          | "<"
+          | "regex"
+          | "[...]";
+        operatorLogic: "&&" | "||";
+        tagIds: number[];
+        value1: string;
+        value2: string;
+        flags?: string[];
+      }
+    | {
+        key: string;
+        name: "appointment";
+        operatorComparison: "===" | "!==" | ">=" | "<=" | ">" | "<";
+        operatorLogic: "&&" | "||";
+        tagIds: number[];
+        value1: string;
+      }
+  )[];
 }
 
 export type NodeTimerData = {

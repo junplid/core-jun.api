@@ -41,6 +41,7 @@ import { handleFileTemp } from "../../../../utils/handleFileTemp";
 import { createReadStream } from "fs-extra";
 import { cacheTestAgentTemplate } from "../../cache";
 import { ICacheTestAgentTemplate } from "../../../../core/testAgentTemplate/UseCase";
+import { NodeMessage } from "../Message";
 
 const MAX_RETRIES = 5;
 const BASE_DELAY = 500; // ms
@@ -473,7 +474,7 @@ const tools: OpenAI.Responses.Tool[] = [
   },
   {
     type: "function",
-    name: "criar_evento",
+    name: "criar_agendamento",
     description: "Use para adicionar um compromisso na agenda.",
     parameters: {
       type: "object",
@@ -514,8 +515,9 @@ const tools: OpenAI.Responses.Tool[] = [
   },
   {
     type: "function",
-    name: "atualizar_evento",
-    description: "Use para atualizar um compromisso na agenda.",
+    name: "atualizar_agendamento",
+    description:
+      "Use para atualizar um compromisso na agenda. Não invente parâmetros adicionais!",
     parameters: {
       type: "object",
       additionalProperties: false,
@@ -749,16 +751,20 @@ const tools: OpenAI.Responses.Tool[] = [
           ],
           description: "Dia da semana normalizado, sem acentos",
         },
+        referencia: {
+          type: "string",
+          enum: ["proxima", "atual"],
+        },
       },
-      required: ["dia_semana"],
+      required: ["dia_semana", "referencia"],
     },
     strict: true,
   },
   {
     type: "function",
-    name: "buscar_eventos_por_data",
+    name: "buscar_agendamentos",
     description:
-      "Use quando precisar buscar eventos em um dia específico ou um intervalo de dias",
+      "Use quando precisar buscar agendamentos em um dia específico ou um intervalo de dias",
     parameters: {
       type: "object",
       additionalProperties: false,
@@ -822,6 +828,18 @@ const tools: OpenAI.Responses.Tool[] = [
         },
       },
       // required: [],
+    },
+    strict: false,
+  },
+  {
+    type: "function",
+    name: "buscar_agendamentos_do_usuario",
+    description: "Use quando precisar buscar os agendamentos do usuário",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+      additionalProperties: false,
     },
     strict: false,
   },
@@ -1166,6 +1184,29 @@ export const NodeAgentAI = async ({
           if (!agent) throw new Error("AgentAI not found");
           const openai = new OpenAI({ apiKey: agent.apiKey });
 
+          let instructions = "";
+          if (!props.previous_response_id) {
+            const knowledgeBase = await resolveTextVariables({
+              accountId: props.accountId,
+              contactsWAOnAccountId: props.contactAccountId,
+              numberLead: props.lead_id,
+              text: agent.knowledgeBase || "",
+            });
+            const instructions1 = await resolveTextVariables({
+              accountId: props.accountId,
+              contactsWAOnAccountId: props.contactAccountId,
+              numberLead: props.lead_id,
+              text: agent.instructions || "",
+            });
+            instructions = buildInstructions({
+              name: agent.name,
+              emojiLevel: agent.emojiLevel,
+              personality: agent.personality || undefined,
+              knowledgeBase: knowledgeBase,
+              instructions: instructions1,
+            });
+          }
+
           const property0 = await resolveTextVariables({
             accountId: props.accountId,
             contactsWAOnAccountId: props.contactAccountId,
@@ -1177,25 +1218,6 @@ export const NodeAgentAI = async ({
             contactsWAOnAccountId: props.contactAccountId,
             numberLead: props.lead_id,
             text: property0 || "",
-          });
-          const knowledgeBase = await resolveTextVariables({
-            accountId: props.accountId,
-            contactsWAOnAccountId: props.contactAccountId,
-            numberLead: props.lead_id,
-            text: agent.knowledgeBase || "",
-          });
-          const instructions1 = await resolveTextVariables({
-            accountId: props.accountId,
-            contactsWAOnAccountId: props.contactAccountId,
-            numberLead: props.lead_id,
-            text: agent.instructions || "",
-          });
-          const instructions = buildInstructions({
-            name: agent.name,
-            emojiLevel: agent.emojiLevel,
-            personality: agent.personality || undefined,
-            knowledgeBase: knowledgeBase,
-            instructions: instructions1,
           });
 
           if (agent.vectorStoreId) {
@@ -1447,37 +1469,75 @@ export const NodeAgentAI = async ({
                                 for await (const text of texts) {
                                   if (!text.trim()) continue;
                                   try {
-                                    await TypingDelay({
+                                    await NodeMessage({
                                       ...(props.mode === "prod"
                                         ? {
-                                            connectionId: props.connectionId,
-                                            toNumber: props.lead_id,
-                                            delay: CalculeTypingDelay(text),
                                             mode: "prod",
+                                            accountId: props.accountId,
+                                            action: {
+                                              onErrorClient() {
+                                                const debounceJob =
+                                                  cacheDebounceAgentAI.get(
+                                                    keyMap,
+                                                  );
+                                                const timeoutJob =
+                                                  scheduleTimeoutAgentAI.get(
+                                                    keyMap,
+                                                  );
+                                                debounceJob?.cancel();
+                                                timeoutJob?.cancel();
+                                                cacheDebounceAgentAI.delete(
+                                                  keyMap,
+                                                );
+                                                scheduleTimeoutAgentAI.delete(
+                                                  keyMap,
+                                                );
+                                                cacheMessagesDebouceAgentAI.delete(
+                                                  keyMap,
+                                                );
+                                                props.actions.onErrorClient?.();
+                                                rejectCall();
+                                              },
+                                            },
+                                            connectionId: props.connectionId,
+                                            contactAccountId:
+                                              props.contactAccountId,
+                                            data: {
+                                              messages: [
+                                                {
+                                                  interval:
+                                                    CalculeTypingDelay(text),
+                                                  key: "1",
+                                                  text: text.replace(/—/g, "-"),
+                                                },
+                                              ],
+                                            },
+                                            external_adapter: {
+                                              type: "baileys",
+                                            },
+                                            flowStateId: props.flowStateId,
+                                            lead_id: props.lead_id,
+                                            sendBy: "bot",
                                           }
                                         : {
                                             mode: "testing",
                                             accountId: props.accountId,
+                                            contactAccountId:
+                                              props.contactAccountId,
+                                            data: {
+                                              messages: [
+                                                {
+                                                  interval:
+                                                    CalculeTypingDelay(text),
+                                                  key: "1",
+                                                  text: text.replace(/—/g, "-"),
+                                                },
+                                              ],
+                                            },
+                                            lead_id: props.lead_id,
                                             token_modal_chat_template:
                                               props.token_modal_chat_template,
-                                            delay: CalculeTypingDelay(text),
-                                          }),
-                                    });
-                                    await SendMessageText({
-                                      ...(props.mode === "prod"
-                                        ? {
-                                            mode: "prod",
-                                            connectionId: props.connectionId,
-                                            text: text,
-                                            toNumber: props.lead_id,
-                                          }
-                                        : {
-                                            mode: "testing",
-                                            accountId: props.accountId,
-                                            role: "agent",
-                                            text,
-                                            token_modal_chat_template:
-                                              props.token_modal_chat_template,
+                                            sendBy: "bot",
                                           }),
                                     });
                                   } catch (error) {
@@ -2266,7 +2326,7 @@ export const NodeAgentAI = async ({
                                 continue;
                               }
 
-                              case "criar_evento": {
+                              case "criar_agendamento": {
                                 try {
                                   if (props.mode === "testing") {
                                     outputs.push({
@@ -2324,15 +2384,22 @@ export const NodeAgentAI = async ({
                                 continue;
                               }
 
-                              case "atualizar_evento": {
+                              case "atualizar_agendamento": {
                                 const { event_code, ...rest } = args;
-                                const keys = Object.keys(rest);
+                                const argsData = {
+                                  desc: rest.desc,
+                                  status: rest.status,
+                                  title: rest.title,
+                                  startAt: rest.startAt,
+                                  actionChannels: rest.actionChannels,
+                                };
+                                const keys = Object.keys(argsData);
                                 await NodeUpdateAppointment({
                                   accountId: props.accountId,
                                   isIA: true,
                                   numberLead: props.lead_id,
                                   data: {
-                                    ...rest,
+                                    ...argsData,
                                     fields: keys,
                                     n_appointment: event_code,
                                     ...(args.actionChannels?.length && {
@@ -2492,8 +2559,9 @@ export const NodeAgentAI = async ({
                                 }
 
                                 let dataBase = now.clone();
-                                if (referencia === "proxima")
+                                if (referencia === "proxima") {
                                   dataBase.add(1, "week");
+                                }
                                 dataBase.day(target);
 
                                 if (
@@ -2512,6 +2580,24 @@ export const NodeAgentAI = async ({
                                   continue;
                                 }
 
+                                const diffDias = dataBase.diff(now, "days");
+
+                                let relativo:
+                                  | "hoje"
+                                  | "amanha"
+                                  | "depois_de_amanha"
+                                  | undefined;
+
+                                if (diffDias === 0) {
+                                  relativo = "hoje";
+                                } else if (diffDias === 1) {
+                                  relativo = "amanha";
+                                } else if (diffDias === 2) {
+                                  relativo = "depois_de_amanha";
+                                } else {
+                                  relativo = undefined;
+                                }
+
                                 outputs.push({
                                   type: "function_call_output",
                                   call_id: c.call_id,
@@ -2521,12 +2607,13 @@ export const NodeAgentAI = async ({
                                     resolved_date:
                                       dataBase.format("YYYY-MM-DD"),
                                     iso: dataBase.toISOString(),
+                                    ...(relativo && { relativo }),
                                   }),
                                 });
                                 continue;
                               }
 
-                              case "buscar_eventos_por_data": {
+                              case "buscar_agendamentos": {
                                 const { inicio, tipo, fim } = args;
                                 let start = null;
                                 let end = null;
@@ -2556,6 +2643,10 @@ export const NodeAgentAI = async ({
                                         gte: start.toDate(),
                                         lt: end.toDate(),
                                       },
+                                      deleted: false,
+                                      status: {
+                                        notIn: ["canceled", "expired"],
+                                      },
                                     },
                                     select: { startAt: true, status: true },
                                   });
@@ -2577,6 +2668,83 @@ export const NodeAgentAI = async ({
                                           .format("YYYY-MM-DDTHH:mm"),
                                       ),
                                     ),
+                                  });
+                                }
+                                continue;
+                              }
+
+                              case "buscar_agendamentos_do_usuario": {
+                                if (props.mode === "testing") {
+                                  outputs.push({
+                                    type: "function_call_output",
+                                    call_id: c.call_id,
+                                    output:
+                                      "Não é possivel buscar agendamentos em modo de teste.",
+                                  });
+                                  continue;
+                                }
+
+                                const momento_atual =
+                                  moment().tz("America/Sao_Paulo");
+
+                                const events =
+                                  await prisma.appointments.findMany({
+                                    where: {
+                                      startAt: { gte: momento_atual.toDate() },
+                                      contactsWAOnAccountId:
+                                        props.contactAccountId,
+                                      deleted: false,
+                                      status: {
+                                        notIn: ["canceled", "expired"],
+                                      },
+                                    },
+                                    select: {
+                                      startAt: true,
+                                      status: true,
+                                      title: true,
+                                      desc: true,
+                                      n_appointment: true,
+                                      appointmentReminders: {
+                                        select: { notify_at: true },
+                                        where: {
+                                          status: "pending",
+                                          deleted: false,
+                                        },
+                                      },
+                                    },
+                                  });
+
+                                if (!events.length) {
+                                  outputs.push({
+                                    type: "function_call_output",
+                                    call_id: c.call_id,
+                                    output: "Não há agendamentos",
+                                  });
+                                } else {
+                                  outputs.push({
+                                    type: "function_call_output",
+                                    call_id: c.call_id,
+                                    output: JSON.stringify({
+                                      count: events.length,
+                                      list: events.map(
+                                        ({
+                                          startAt,
+                                          n_appointment,
+                                          appointmentReminders,
+                                          ...rest
+                                        }) => {
+                                          return {
+                                            ...rest,
+                                            has_reminders:
+                                              !!appointmentReminders.length,
+                                            code: n_appointment,
+                                            date: moment(startAt)
+                                              .subtract(3, "hour")
+                                              .format("YYYY-MM-DDTHH:mm"),
+                                          };
+                                        },
+                                      ),
+                                    }),
                                   });
                                 }
                                 continue;

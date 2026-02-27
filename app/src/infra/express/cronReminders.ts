@@ -10,7 +10,7 @@ import {
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { mongo } from "../../adapters/mongo/connection";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
-import { IPropsControler, NodeControler } from "../../libs/FlowBuilder/Control";
+import { NodeControler } from "../../libs/FlowBuilder/Control";
 import momentLib from "moment-timezone";
 import { NotificationApp } from "../../utils/notificationApp";
 import { decrypte } from "../../libs/encryption";

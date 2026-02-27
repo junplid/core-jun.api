@@ -30,6 +30,7 @@ export async function ensureFileByName(
 }
 
 const modelNotFlex = ["gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o3-mini"];
+const modelNotPriority = ["gpt-5-nano", "o3-mini"];
 
 export class CreateAgentAIUseCase {
   constructor() {}
@@ -156,8 +157,10 @@ export class CreateAgentAIUseCase {
           knowledgeBase: dto.knowledgeBase,
           personality: dto.personality,
           temperature: dto.temperature || 1,
-          service_tier: modelNotFlex.some((f) => f === dto.model)
-            ? undefined
+          service_tier: [...modelNotPriority, ...modelNotFlex].some(
+            (f) => f === dto.model,
+          )
+            ? "default"
             : dto.service_tier,
         },
         select: {

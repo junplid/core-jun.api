@@ -1,6 +1,7 @@
 import { prisma } from "../../../adapters/Prisma/client";
 import { NodeIfData } from "../Payload";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
+import moment from "moment-timezone";
 
 interface PropsNodeIf {
   data: NodeIfData;
@@ -88,6 +89,59 @@ export const NodeIf = (props: PropsNodeIf): Promise<boolean> =>
               resumConditions.push(Number(nextValue1) <= Number(nextValue2));
             }
           }
+          resumConditions.push(item.operatorLogic);
+          continue;
+        }
+
+        try {
+          const flags = item.flags?.length ? item.flags.join("") : undefined;
+          const regex = new RegExp(`/${item.value2}/`, flags);
+          const isValid = regex.test(item.value1);
+          resumConditions.push(isValid, item.operatorLogic);
+        } catch (e) {
+          resumConditions.push(false, item.operatorLogic);
+        }
+        continue;
+      }
+      if (item.name === "appointment") {
+        if (item.operatorComparison !== "regex") {
+          const nextValue1 = await resolveTextVariables({
+            accountId: props.accountId,
+            contactsWAOnAccountId: props.contactAccountId,
+            text: item.value1,
+            numberLead: props.numberLead,
+            nodeId: props.nodeId,
+          });
+          const momento_atual = moment().tz("America/Sao_Paulo");
+          const appointments = await prisma.appointments.count({
+            where: {
+              contactsWAOnAccountId: props.contactAccountId,
+              deleted: false,
+              startAt: { gte: momento_atual.toDate() },
+              status: { notIn: ["canceled", "expired"] },
+            },
+          });
+          const valueNumber: number = Number(nextValue1);
+          if (isNaN(valueNumber)) {
+            resumConditions.push(false);
+          } else {
+            if (item.operatorComparison === "===") {
+              resumConditions.push(valueNumber === appointments);
+            } else if (item.operatorComparison === "!==") {
+              resumConditions.push(valueNumber !== appointments);
+            } else if (item.operatorComparison === "<") {
+              resumConditions.push(appointments < Number(nextValue1));
+            } else if (item.operatorComparison === ">") {
+              resumConditions.push(appointments > Number(nextValue1));
+            } else if (item.operatorComparison === "<=") {
+              resumConditions.push(appointments <= Number(nextValue1));
+            } else if (item.operatorComparison === ">=") {
+              resumConditions.push(appointments >= Number(nextValue1));
+            } else {
+              resumConditions.push(false);
+            }
+          }
+
           resumConditions.push(item.operatorLogic);
           continue;
         }
