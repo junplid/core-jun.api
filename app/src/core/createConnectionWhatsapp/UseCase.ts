@@ -135,7 +135,6 @@ export class CreateConnectionWAUseCase {
           text: "Já existe uma conexão com este nome.",
         });
       }
-
       const data = await prisma.connectionWA.create({
         data: {
           name: dto.name,

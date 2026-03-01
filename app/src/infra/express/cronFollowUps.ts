@@ -10,7 +10,7 @@ import {
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { mongo } from "../../adapters/mongo/connection";
 import { sessionsBaileysWA } from "../../adapters/Baileys";
-import { IPropsControler, NodeControler } from "../../libs/FlowBuilder/Control";
+import { NodeControler } from "../../libs/FlowBuilder/Control";
 import momentLib from "moment-timezone";
 import { decrypte } from "../../libs/encryption";
 import { webSocketEmitToRoom } from "../websocket";
@@ -279,7 +279,6 @@ cron.schedule("*/1 * * * *", () => {
                     FlowState!.Chatbot?.TimeToRestart
                   ) {
                     const nextDate = momentLib()
-                      .tz("America/Sao_Paulo")
                       .add(
                         FlowState!.Chatbot.TimeToRestart.value,
                         FlowState!.Chatbot.TimeToRestart.type,

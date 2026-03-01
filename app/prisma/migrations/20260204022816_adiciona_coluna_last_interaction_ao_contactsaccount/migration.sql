@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "ContactsWAOnAccount" ADD COLUMN     "last_interaction" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

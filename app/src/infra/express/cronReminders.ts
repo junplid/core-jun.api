@@ -100,8 +100,8 @@ cron.schedule("*/4 * * * *", () => {
             data: { status: "sent" },
           });
           let body_txt = "";
-          const now = momentLib();
-          const start = momentLib(Appointment.startAt);
+          const now = momentLib().tz("America/Sao_Paulo");
+          const start = momentLib(Appointment.startAt).tz("America/Sao_Paulo");
           const diffMinutes = start.diff(now, "minutes");
 
           if (diffMinutes >= 1440) {
@@ -313,7 +313,6 @@ cron.schedule("*/4 * * * *", () => {
                     Appointment.FlowState!.Chatbot?.TimeToRestart
                   ) {
                     const nextDate = momentLib()
-                      .tz("America/Sao_Paulo")
                       .add(
                         Appointment.FlowState!.Chatbot.TimeToRestart.value,
                         Appointment.FlowState!.Chatbot.TimeToRestart.type,

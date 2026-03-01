@@ -3,17 +3,18 @@ import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import moment from "moment-timezone";
 
-const tz = "America/Sao_Paulo";
-
 export class GetServicesTodayUseCase {
   constructor() {}
 
   async run({ ...dto }: GetServicesTodayDTO_I) {
     try {
+      const tz = "America/Sao_Paulo";
+
       const startOfDayMoment = moment().tz(tz).startOf("day");
+
       const startOfNextDayMoment = startOfDayMoment.clone().add(1, "day");
 
-      const startOfDay = startOfDayMoment.clone();
+      const startOfDay = startOfDayMoment.toDate();
       const startOfNextDay = startOfNextDayMoment.toDate();
 
       const rawData = await prisma.$queryRaw<
@@ -24,7 +25,7 @@ SELECT
   COUNT(fs.id)::int AS count
 
 FROM generate_series(
-  ${startOfDay.toDate()}::timestamptz,
+  ${startOfDay}::timestamptz,
   ${startOfNextDay}::timestamptz - interval '5 minutes',
   interval '5 minutes'
 ) AS gs(bucket)
@@ -32,7 +33,7 @@ FROM generate_series(
 LEFT JOIN "FlowState" fs
   ON tstzrange(
        fs."createAt",
-       COALESCE(fs."finishedAt", 'infinity')
+       COALESCE(fs."finishedAt", 'infinity'::timestamptz)
      ) &&
      tstzrange(
        gs.bucket,
@@ -59,7 +60,7 @@ ORDER BY gs.bucket;
       const result: Record<string, number | null> = {};
 
       let cursor = startOfDayMoment.clone();
-      const now = moment().tz(tz);
+      const now = moment();
 
       while (cursor.isBefore(startOfNextDay)) {
         const key = cursor.format("HH:mm");

@@ -95,10 +95,7 @@ export const NodeCharge = async (
         nodeId: props.nodeId,
       });
 
-      const date_of_expiration = moment()
-        .tz("America/Sao_Paulo")
-        .add(30, "minutes")
-        .format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+      const date_of_expiration = moment().add(30, "minutes").toISOString();
 
       const charge = await payment.create({
         body: {

@@ -15,6 +15,7 @@ export class GetAppointmentDetailsUseCase {
           desc: true,
           title: true,
           startAt: true,
+          endAt: true,
           ConnectionWA: { select: { name: true, id: true } },
           ConnectionIg: { select: { ig_username: true, id: true } },
           // endAt: true,

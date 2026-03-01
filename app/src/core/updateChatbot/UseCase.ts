@@ -1,28 +1,28 @@
-import moment from "moment-timezone";
+// import moment from "moment-timezone";
 import { UpdateChatbotDTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 import checkConflictOfOperatingDays from "../../helpers/checkConflictOfOperatingDays";
 
-interface PickConnection_I {
-  Chatbot: {
-    name: string;
-    operatingDays?: {
-      dayOfWeek: number;
-      workingTimes?: { start: string; end: string }[];
-    }[];
-  }[];
-}
+// interface PickConnection_I {
+//   Chatbot: {
+//     name: string;
+//     operatingDays?: {
+//       dayOfWeek: number;
+//       workingTimes?: { start: string; end: string }[];
+//     }[];
+//   }[];
+// }
 
-function getTimeBR(time: string) {
-  return moment()
-    .tz("America/Sao_Paulo")
-    .set({
-      hours: Number(time.slice(0, 2)),
-      minutes: Number(time.slice(3, 5)),
-    });
-}
+// function getTimeBR(time: string) {
+//   return moment()
+//     .tz("America/Sao_Paulo")
+//     .set({
+//       hours: Number(time.slice(0, 2)),
+//       minutes: Number(time.slice(3, 5)),
+//     });
+// }
 
 export class UpdateChatbotUseCase {
   constructor() {}

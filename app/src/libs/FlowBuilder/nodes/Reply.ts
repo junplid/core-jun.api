@@ -13,13 +13,12 @@ const getNextTimeOut = (
     if (type === "MINUTES" && value > 10080) value = 10080;
     if (type === "HOURS" && value > 168) value = 168;
     if (type === "DAYS" && value > 7) value = 7;
-    const nowDate = moment().tz("America/Sao_Paulo");
     const typeTimeOut = type.toLowerCase() as
       | "minutes"
       | "hours"
       | "days"
       | "seconds";
-    return new Date(nowDate.add(value, typeTimeOut).toString());
+    return moment().add(value, typeTimeOut).toDate();
   } catch (error) {
     console.error("Error in getNextTimeOut:", error);
     throw new Error("Failed to calculate next timeout");

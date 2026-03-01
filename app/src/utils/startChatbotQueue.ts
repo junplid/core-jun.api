@@ -46,15 +46,11 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
     const nextTimeShorts = Math.floor(Math.random() * (400 - 800)) + 400;
     await new Promise((ress) => setTimeout(ress, nextTimeShorts));
 
-    const nextExecution = moment(content["next-execution"]).tz(
-      "America/Sao_Paulo",
-    );
+    const nextExecution = moment(content["next-execution"]);
+    const nowMoment = moment();
+    const isBeforeNextExecution = nextExecution.isBefore(nowMoment);
 
-    const isBeforeNextExecution = nextExecution.isBefore(
-      moment().tz("America/Sao_Paulo"),
-    );
-
-    const nextDate = moment().tz("America/Sao_Paulo").add(4, "second").toDate();
+    const nextDate = nowMoment.add(4, "second").toDate();
 
     scheduleJob(
       isBeforeNextExecution ? nextDate : nextExecution.toDate(),

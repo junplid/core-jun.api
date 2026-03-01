@@ -8,14 +8,10 @@ export class CreateDeltaUseCase {
   constructor() {}
 
   async run({ accountId, delta }: CreateDeltaDTO_I) {
-    const date = moment().tz(tz);
-    const minutes = date.minutes();
-    const roundedMinutes = Math.floor(minutes / 5) * 5;
-    const hour = date
-      .clone()
-      .minutes(roundedMinutes)
-      .seconds(0)
-      .milliseconds(0)
+    const hour = moment()
+      .tz(tz)
+      .startOf("minute")
+      .minutes(Math.floor(moment().tz(tz).minutes() / 5) * 5)
       .format("HH:mm");
 
     webSocketEmitToRoom().account(accountId).dashboard.dashboard_services({

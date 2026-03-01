@@ -124,12 +124,13 @@ interface ChatbotQueue {
 }
 
 function getTimeBR(time: string) {
-  return moment()
+  return moment
     .tz("America/Sao_Paulo")
     .set({
       hours: Number(time.slice(0, 2)),
       minutes: Number(time.slice(3, 5)),
-    });
+    })
+    .utc();
 }
 
 function CalculeTypingDelay(text: string, ms = 150) {
@@ -308,9 +309,7 @@ export async function metaWebhook(req: Request, res: Response) {
             const isToRestartChatbot = chatbotRestartInDate.get(keyMapLead);
 
             if (!!isToRestartChatbot) {
-              const isbefore = moment()
-                .tz("America/Sao_Paulo")
-                .isBefore(isToRestartChatbot);
+              const isbefore = moment().isBefore(isToRestartChatbot);
               console.log({ isbefore });
               if (isbefore) {
                 continue;
@@ -586,7 +585,6 @@ export async function metaWebhook(req: Request, res: Response) {
                           });
                         if (chatbot.TimeToRestart) {
                           const nextDate = moment()
-                            .tz("America/Sao_Paulo")
                             .add(
                               chatbot.TimeToRestart.value,
                               chatbot.TimeToRestart.type,
@@ -616,7 +614,6 @@ export async function metaWebhook(req: Request, res: Response) {
                           });
                         if (chatbot.TimeToRestart) {
                           const nextDate = moment()
-                            .tz("America/Sao_Paulo")
                             .add(
                               chatbot.TimeToRestart.value,
                               chatbot.TimeToRestart.type,
@@ -677,7 +674,7 @@ export async function metaWebhook(req: Request, res: Response) {
                 return await validMsgChatbot();
               }
 
-              const nowTime = moment().tz("America/Sao_Paulo");
+              const nowTime = moment();
               const dayOfWeek = nowTime.get("weekday");
 
               const validTime = chatbot.OperatingDays.some((day) => {
@@ -737,15 +734,16 @@ export async function metaWebhook(req: Request, res: Response) {
 
                 const minutesToNextExecutionInQueue = Math.min(
                   ...chatbot.OperatingDays.map((day) => {
-                    const nowDate = moment().tz("America/Sao_Paulo");
+                    const nowDate = moment();
                     const listNextWeeks = day.WorkingTimes.map((time) => {
                       const [hour, minute] = time.start.split(":").map(Number);
-                      let next = moment()
+                      let next = moment
                         .tz("America/Sao_Paulo")
                         .day(day.dayOfWeek)
                         .hour(hour)
                         .minute(minute)
-                        .second(0);
+                        .second(0)
+                        .utc();
                       if (next.isBefore(nowDate)) next = next.add(1, "week");
                       return next.diff(nowDate, "minutes");
                     });
@@ -757,9 +755,10 @@ export async function metaWebhook(req: Request, res: Response) {
                 console.log({ minutesToNextExecutionInQueue });
                 if (minutesToNextExecutionInQueue > 239) return;
 
-                const dateNextExecution = moment()
-                  .tz("America/Sao_paulo")
-                  .add(minutesToNextExecutionInQueue, "minutes");
+                const dateNextExecution = moment().add(
+                  minutesToNextExecutionInQueue,
+                  "minutes",
+                );
 
                 const dataLeadQueue = {
                   number: identifierLead,

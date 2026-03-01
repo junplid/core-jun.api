@@ -61,12 +61,10 @@ function CalculeTypingDelay(text: string, ms = 150) {
 }
 
 function getTimeBR(time: string) {
-  return moment()
-    .tz("America/Sao_Paulo")
-    .set({
-      hours: Number(time.slice(0, 2)),
-      minutes: Number(time.slice(3, 5)),
-    });
+  return moment.tz("America/Sao_Paulo").set({
+    hours: Number(time.slice(0, 2)),
+    minutes: Number(time.slice(3, 5)),
+  });
 }
 
 interface ChatbotQueue {
@@ -1502,7 +1500,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                   //         caption: docWithCaption?.caption ?? "",
                   //       }),
                   //       createAt: moment(mess.createAt)
-                  //         .tz("America/Sao_Paulo")
+                  //
                   //         .toDate(),
                   //       id: mess.id,
                   //       read: isCurrentTicket,
@@ -1621,9 +1619,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                     `${numberConnection}+${identifierLead}`,
                   );
                   if (!!isToRestartChatbot) {
-                    const isbefore = moment()
-                      .tz("America/Sao_Paulo")
-                      .isBefore(isToRestartChatbot);
+                    const isbefore = moment().isBefore(isToRestartChatbot);
                     console.log({ isbefore });
                     if (isbefore) {
                       continue;
@@ -1969,7 +1965,6 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                                 });
                               if (chatbot.TimeToRestart) {
                                 const nextDate = moment()
-                                  .tz("America/Sao_Paulo")
                                   .add(
                                     chatbot.TimeToRestart.value,
                                     chatbot.TimeToRestart.type,
@@ -2009,7 +2004,6 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                                 });
                               if (chatbot.TimeToRestart) {
                                 const nextDate = moment()
-                                  .tz("America/Sao_Paulo")
                                   .add(
                                     chatbot.TimeToRestart.value,
                                     chatbot.TimeToRestart.type,
@@ -2101,7 +2095,7 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                       continue;
                     }
 
-                    const nowTime = moment().tz("America/Sao_Paulo");
+                    const nowTime = moment();
                     const dayOfWeek = nowTime.get("weekday");
 
                     const validTime = chatbot.OperatingDays.some((day) => {
@@ -2110,8 +2104,8 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                           const valid = day.WorkingTimes.some(
                             ({ end, start }) => {
                               const isbet = nowTime.isBetween(
-                                getTimeBR(start),
-                                getTimeBR(end),
+                                getTimeBR(start).utc(),
+                                getTimeBR(end).utc(),
                               );
                               console.log({ isbet, end, start, nowTime });
                               return isbet;
@@ -2193,13 +2187,12 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
 
                       const minutesToNextExecutionInQueue = Math.min(
                         ...chatbot.OperatingDays.map((day) => {
-                          const nowDate = moment().tz("America/Sao_Paulo");
+                          const nowDate = moment();
                           const listNextWeeks = day.WorkingTimes.map((time) => {
                             const [hour, minute] = time.start
                               .split(":")
                               .map(Number);
                             let next = moment()
-                              .tz("America/Sao_Paulo")
                               .day(day.dayOfWeek)
                               .hour(hour)
                               .minute(minute)
@@ -2216,9 +2209,10 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                       console.log({ minutesToNextExecutionInQueue });
                       if (minutesToNextExecutionInQueue > 239) continue;
 
-                      const dateNextExecution = moment()
-                        .tz("America/Sao_paulo")
-                        .add(minutesToNextExecutionInQueue, "minutes");
+                      const dateNextExecution = moment().add(
+                        minutesToNextExecutionInQueue,
+                        "minutes",
+                      );
 
                       const dataLeadQueue = {
                         number: identifierLead,

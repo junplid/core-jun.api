@@ -1,27 +1,22 @@
 import { NextFunction, Request, Response } from "express";
 import { Joi } from "express-validation";
-import {
-  UpdateAppointmentBodyDTO_I,
-  UpdateAppointmentParamsDTO_I,
-  UpdateAppointmentQueryDTO_I,
-} from "./DTO";
+import { CreateAppointmentDTO_I } from "./DTO";
 
-export const updateAppointmentValidation = (
-  req: Request<
-    UpdateAppointmentParamsDTO_I,
-    any,
-    UpdateAppointmentBodyDTO_I,
-    UpdateAppointmentQueryDTO_I
-  >,
+export const createAppointmentValidation = (
+  req: Request<any, any, CreateAppointmentDTO_I, any>,
   res: Response,
   next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    id: Joi.number().required(),
     title: Joi.string().required(),
     desc: Joi.string().optional(),
     socketIgnore: Joi.string().optional(),
-    startAt: Joi.date().required(),
+    dateStartAt: Joi.string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .required(),
+    timeStartAt: Joi.string()
+      .regex(/^([01]\d|2[0-3]):([0-5]\d)$/)
+      .required(),
     endAt: Joi.valid(
       "10min",
       "30min",
@@ -36,22 +31,9 @@ export const updateAppointmentValidation = (
       "1d",
       "2d",
     ).required(),
-    status: Joi.string()
-      .valid(
-        "suggested",
-        "pending_confirmation",
-        "confirmed",
-        "canceled",
-        "completed",
-        "expired",
-      )
-      .optional(),
   });
 
-  const validation = schemaValidation.validate(
-    { ...req.body, ...req.params, ...req.query },
-    { abortEarly: false },
-  );
+  const validation = schemaValidation.validate(req.body, { abortEarly: false });
 
   if (validation.error) {
     const errors = validation.error.details.map((detail) => ({
@@ -62,7 +44,6 @@ export const updateAppointmentValidation = (
     return res.status(400).json({ errors });
   }
 
-  req.params.id = Number(req.params.id);
   req.body.accountId = req.user?.id!;
   next();
 };

@@ -3,19 +3,27 @@ import { Joi } from "express-validation";
 import {
   DeleteAppointmentBodyDTO_I,
   DeleteAppointmentParamsDTO_I,
+  DeleteAppointmentQueryDTO_I,
 } from "./DTO";
 
 export const deleteAppointmentValidation = (
-  req: Request<DeleteAppointmentParamsDTO_I, any, DeleteAppointmentBodyDTO_I>,
+  req: Request<
+    DeleteAppointmentParamsDTO_I,
+    any,
+    DeleteAppointmentBodyDTO_I,
+    DeleteAppointmentQueryDTO_I
+  >,
   res: Response,
   next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
+    socketIgnore: Joi.string().optional().allow(""),
+    message: Joi.string().optional().allow(""),
   });
 
   const validation = schemaValidation.validate(
-    { ...req.body, ...req.params },
+    { ...req.body, ...req.params, ...req.query },
     { abortEarly: false },
   );
 

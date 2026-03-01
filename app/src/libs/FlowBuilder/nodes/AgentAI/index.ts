@@ -508,6 +508,24 @@ const tools: OpenAI.Responses.Tool[] = [
             "Formato obrigatorio de cada item: YYYY-MM-DDTHH:mm (ISO 8601)",
           items: { type: "string" },
         },
+        endAt: {
+          type: "string",
+          enum: [
+            "10min",
+            "30min",
+            "1h",
+            "1h e 30min",
+            "2h",
+            "3h",
+            "4h",
+            "5h",
+            "10h",
+            "15h",
+            "1d",
+            "2d",
+          ],
+          description: "Tempo para terminar (opcional).",
+        },
       },
       required: ["title", "status", "startAt"],
     },
@@ -548,6 +566,24 @@ const tools: OpenAI.Responses.Tool[] = [
           type: "array",
           description: "Adiciona botões no card do evento",
           items: { type: "string" },
+        },
+        endAt: {
+          type: "string",
+          enum: [
+            "10min",
+            "30min",
+            "1h",
+            "1h e 30min",
+            "2h",
+            "3h",
+            "4h",
+            "5h",
+            "10h",
+            "15h",
+            "1d",
+            "2d",
+          ],
+          description: "Novo tempo para terminar (opcional).",
         },
       },
       required: ["event_code"],
@@ -905,8 +941,7 @@ const getNextTimeOut = (
     if (type === "minutes" && value > 10080) value = 10080;
     if (type === "hours" && value > 168) value = 168;
     if (type === "days" && value > 7) value = 7;
-    const nowDate = moment().tz("America/Sao_Paulo");
-    return new Date(nowDate.add(value, type).toString());
+    return moment().add(value, type).toDate();
   } catch (error) {
     console.error("Error in getNextTimeOut:", error);
     throw new Error("Failed to calculate next timeout");
@@ -2391,6 +2426,7 @@ export const NodeAgentAI = async ({
                                   status: rest.status,
                                   title: rest.title,
                                   startAt: rest.startAt,
+                                  endAt: rest.endAt,
                                   actionChannels: rest.actionChannels,
                                 };
                                 const keys = Object.keys(argsData);
@@ -2619,19 +2655,24 @@ export const NodeAgentAI = async ({
                                 let end = null;
 
                                 if (tipo === "dia") {
-                                  start = moment(inicio)
-                                    .tz("America/Sao_Paulo")
-                                    .add(3, "hour")
+                                  start = moment
+                                    .tz(
+                                      inicio,
+                                      "YYYY-MM-DD",
+                                      "America/Sao_Paulo",
+                                    )
                                     .startOf("day");
                                   end = start.clone().add(1, "day");
                                 } else {
-                                  start = moment(inicio)
-                                    .tz("America/Sao_Paulo")
-                                    .add(3, "hour")
+                                  start = moment
+                                    .tz(
+                                      inicio,
+                                      "YYYY-MM-DD",
+                                      "America/Sao_Paulo",
+                                    )
                                     .startOf("day");
-                                  end = moment(fim)
-                                    .tz("America/Sao_Paulo")
-                                    .add(3, "hour")
+                                  end = moment
+                                    .tz(fim, "YYYY-MM-DD", "America/Sao_Paulo")
                                     .add(1, "day")
                                     .startOf("day");
                                 }
@@ -2648,7 +2689,7 @@ export const NodeAgentAI = async ({
                                         notIn: ["canceled", "expired"],
                                       },
                                     },
-                                    select: { startAt: true, status: true },
+                                    select: { startAt: true, endAt: true },
                                   });
 
                                 if (!events.length) {
@@ -2662,11 +2703,19 @@ export const NodeAgentAI = async ({
                                     type: "function_call_output",
                                     call_id: c.call_id,
                                     output: JSON.stringify(
-                                      events.map((e) =>
-                                        moment(e.startAt)
-                                          .subtract(3, "hour")
-                                          .format("YYYY-MM-DDTHH:mm"),
-                                      ),
+                                      events.map((e) => {
+                                        const start = moment(e.startAt).tz(
+                                          "America/Sao_Paulo",
+                                        );
+                                        const end = moment(e.endAt).tz(
+                                          "America/Sao_Paulo",
+                                        );
+                                        if (start.isSame(end)) {
+                                          return start;
+                                        } else {
+                                          return `${start.format("YYYY-MM-DDTHH:mm")} - ${end.subtract(1, "minute").format("YYYY-MM-DDTHH:mm")}`;
+                                        }
+                                      }),
                                     ),
                                   });
                                 }
@@ -2684,13 +2733,10 @@ export const NodeAgentAI = async ({
                                   continue;
                                 }
 
-                                const momento_atual =
-                                  moment().tz("America/Sao_Paulo");
-
                                 const events =
                                   await prisma.appointments.findMany({
                                     where: {
-                                      startAt: { gte: momento_atual.toDate() },
+                                      startAt: { gte: new Date() },
                                       contactsWAOnAccountId:
                                         props.contactAccountId,
                                       deleted: false,
@@ -2739,7 +2785,7 @@ export const NodeAgentAI = async ({
                                               !!appointmentReminders.length,
                                             code: n_appointment,
                                             date: moment(startAt)
-                                              .subtract(3, "hour")
+                                              .tz("America/Sao_Paulo")
                                               .format("YYYY-MM-DDTHH:mm"),
                                           };
                                         },
@@ -2999,7 +3045,6 @@ export const NodeAgentAI = async ({
   }
   const debounceJob = scheduleJob(
     moment()
-      .tz("America/Sao_Paulo")
       .add(agent.debounce || 1, "seconds")
       .toDate(),
     execute,

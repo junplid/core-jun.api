@@ -1428,7 +1428,7 @@ export class TestAgentAIUseCase {
 
                   case "resolver_dia_da_semana": {
                     const { dia_semana, referencia } = args;
-                    const now = moment().startOf("day");
+                    const now = moment().tz("America/Sao_Paulo").startOf("day");
 
                     const mapa: Record<string, number> = {
                       domingo: 0,

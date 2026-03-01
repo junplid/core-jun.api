@@ -1,7 +1,6 @@
 import { prisma } from "../../../adapters/Prisma/client";
 import { NodeIfData } from "../Payload";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
-import moment from "moment-timezone";
 
 interface PropsNodeIf {
   data: NodeIfData;
@@ -112,12 +111,11 @@ export const NodeIf = (props: PropsNodeIf): Promise<boolean> =>
             numberLead: props.numberLead,
             nodeId: props.nodeId,
           });
-          const momento_atual = moment().tz("America/Sao_Paulo");
           const appointments = await prisma.appointments.count({
             where: {
               contactsWAOnAccountId: props.contactAccountId,
               deleted: false,
-              startAt: { gte: momento_atual.toDate() },
+              startAt: { gte: new Date() },
               status: { notIn: ["canceled", "expired"] },
             },
           });

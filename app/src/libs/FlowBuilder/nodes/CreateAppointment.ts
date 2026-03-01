@@ -1,12 +1,11 @@
 import { NodeCreateAppointmentData } from "../Payload";
 import { prisma } from "../../../adapters/Prisma/client";
 import { genNumCode } from "../../../utils/genNumCode";
-import { socketIo } from "../../../infra/express";
-import { cacheAccountSocket } from "../../../infra/websocket/cache";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import moment from "moment-timezone";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { NotificationApp } from "../../../utils/notificationApp";
+import { webSocketEmitToRoom } from "../../../infra/websocket";
 
 type PropsCreateOrder =
   | {
@@ -65,6 +64,7 @@ export const NodeCreateAppointment = async (
       varId_save_nAppointment,
       reminders,
       startAt,
+      endAt,
       ...restData
     } = props.data;
 
@@ -102,9 +102,10 @@ export const NodeCreateAppointment = async (
     let dateReminders: { notify_at: Date; moment: string }[] = [];
 
     if (!reminders?.length) {
-      const startAt2 = moment(nextStart).tz("America/Sao_Paulo").add(3, "hour");
-      const current = moment().tz("America/Sao_Paulo");
-      const min = startAt2.subtract(30, "minute");
+      const startAt2 = moment.tz(nextStart, "America/Sao_Paulo").utc();
+      const current = moment();
+
+      const min = startAt2.clone().subtract(30, "minute");
       const diffMin = min.diff(current, "minute");
       if (diffMin >= 0) {
         dateReminders.push({
@@ -112,7 +113,7 @@ export const NodeCreateAppointment = async (
           moment: "minute",
         });
 
-        const hour = startAt2.subtract(2, "hour");
+        const hour = startAt2.clone().subtract(2, "hour");
         const diffHour = hour.diff(current, "minute") / 60;
         if (diffHour >= 0) {
           dateReminders.push({
@@ -120,7 +121,7 @@ export const NodeCreateAppointment = async (
             moment: "hour",
           });
 
-          const day = startAt2.subtract(1, "day").add(2, "hour");
+          const day = startAt2.clone().subtract(1, "day");
           const diffDay = day.diff(current, "hour");
 
           if (diffDay >= 0) {
@@ -134,12 +135,41 @@ export const NodeCreateAppointment = async (
     } else {
       dateReminders = reminders.map((s) => ({
         moment: "feito_por_agente",
-        notify_at: moment(s).tz("America/Sao_Paulo").add(3, "hour").toDate(),
+        notify_at: moment.tz(s, "America/Sao_Paulo").utc().toDate(),
       }));
     }
-    const nextStartAt = moment(nextStart)
-      .tz("America/Sao_Paulo")
-      .add(3, "hour");
+    const nextStartAt = moment.tz(nextStart, "America/Sao_Paulo").utc();
+    const nextEndAt = nextStartAt.clone();
+    if (endAt) {
+      if (endAt === "10min") {
+        nextEndAt.add(10, "minute");
+      } else if (endAt === "30min") {
+        nextEndAt.add(30, "minute");
+      } else if (endAt === "1h") {
+        nextEndAt.add(1, "h");
+      } else if (endAt === "1h e 30min") {
+        nextEndAt.add(90, "minute");
+      } else if (endAt === "2h") {
+        nextEndAt.add(2, "h");
+      } else if (endAt === "3h") {
+        nextEndAt.add(3, "h");
+      } else if (endAt === "4h") {
+        nextEndAt.add(4, "h");
+      } else if (endAt === "5h") {
+        nextEndAt.add(5, "h");
+      } else if (endAt === "10h") {
+        nextEndAt.add(10, "h");
+      } else if (endAt === "15h") {
+        nextEndAt.add(15, "h");
+      } else if (endAt === "1d") {
+        nextEndAt.add(1, "day");
+      } else if (endAt === "2d") {
+        nextEndAt.add(2, "day");
+      }
+    } else {
+      nextEndAt.add(1, "h");
+    }
+
     const { id } = await prisma.appointments.create({
       data: {
         accountId: props.accountId,
@@ -155,7 +185,7 @@ export const NodeCreateAppointment = async (
 
         ...restData,
         startAt: nextStartAt.toDate(),
-        endAt: nextStartAt.toDate(),
+        endAt: nextEndAt.toDate(),
         status: restData.status || "pending_confirmation",
         ...(actionChannels?.length && {
           actionChannels: actionChannels.map((s) => s.text),
@@ -205,20 +235,21 @@ export const NodeCreateAppointment = async (
     }
 
     const now = moment().tz("America/Sao_Paulo");
-    const diffMinutes = nextStartAt.diff(now, "minutes");
+    const nextStartBR = nextStartAt.clone().tz("America/Sao_Paulo");
+    const diffMinutes = nextStartBR.diff(now, "minutes");
     let body_txt = "";
 
     if (diffMinutes >= 1440) {
       const days = Math.floor(diffMinutes / 1440);
       if (days < 1) {
-        body_txt = `Hoje, às ${nextStartAt.format("HH:mm")}`;
+        body_txt = `Hoje, às ${nextStartBR.format("HH:mm")}`;
       } else if (days === 1) {
-        body_txt = `Amanhã, às ${nextStartAt.format("HH:mm")}`;
+        body_txt = `Amanhã, às ${nextStartBR.format("HH:mm")}`;
       } else {
-        body_txt = `Em ${days} dia${days > 1 ? "s" : ""}, às ${nextStartAt.format("HH:mm")}`;
+        body_txt = `Em ${days} dia${days > 1 ? "s" : ""}, às ${nextStartBR.format("HH:mm")}`;
       }
     } else if (diffMinutes >= 60) {
-      body_txt = `Hoje, às ${nextStartAt.format("HH:mm")}`;
+      body_txt = `Hoje, às ${nextStartBR.format("HH:mm")}`;
     } else {
       body_txt = `Em ${diffMinutes} minuto${diffMinutes > 1 ? "s" : ""}`;
     }
@@ -232,20 +263,17 @@ export const NodeCreateAppointment = async (
       url_redirect: "/auth/appointments",
     });
 
-    cacheAccountSocket
-      .get(props.accountId)
-      ?.listSocket?.forEach(async (sockId) => {
-        socketIo.to(sockId.id).emit(`appointment:new`, {
-          accountId: props.accountId,
-          appointment: {
-            id,
-            title: restData.title,
-            desc: restData.desc,
-            startAt: nextStartAt,
-            channel: props.external_adapter.type,
-          },
-        });
-      });
+    webSocketEmitToRoom().account(props.accountId).appointments.new(
+      {
+        id,
+        title: restData.title,
+        desc: restData.desc,
+        startAt: nextStartAt.toDate(),
+        endAt: nextEndAt.toDate(),
+        channel: props.external_adapter.type,
+      },
+      [],
+    );
 
     return;
   } catch (error) {

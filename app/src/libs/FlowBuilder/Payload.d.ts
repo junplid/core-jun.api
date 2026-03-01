@@ -329,7 +329,19 @@ export type NodeCreateAppointmentData = {
   desc?: string;
   status: StatusAppointments;
   startAt: string;
-  // endAt: string;
+  endAt?:
+    | "10min"
+    | "30min"
+    | "1h"
+    | "1h e 30min"
+    | "2h"
+    | "3h"
+    | "4h"
+    | "5h"
+    | "10h"
+    | "15h"
+    | "1d"
+    | "2d";
   varId_save_nAppointment?: number;
   actionChannels: { key: string; text: string }[];
   reminders?: Date[];
@@ -340,11 +352,25 @@ export type NodeUpdateAppointmentData = {
   title?: string;
   desc?: string;
   startAt?: string;
+  endAt?:
+    | "10min"
+    | "30min"
+    | "1h"
+    | "1h e 30min"
+    | "2h"
+    | "3h"
+    | "4h"
+    | "5h"
+    | "10h"
+    | "15h"
+    | "1d"
+    | "2d";
   status?: StatusAppointments;
   actionChannels: { key: string; text: string }[];
   notify?: boolean;
   fields?: string[];
   transfer_direction?: boolean;
+  reminders?: Date[];
 };
 
 export type TypeNodesPayload =

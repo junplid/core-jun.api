@@ -1,7 +1,7 @@
 import moment from "moment-timezone";
 
 function getTimeBR(time: string) {
-  return moment()
+  return moment
     .tz("America/Sao_Paulo")
     .startOf("day")
     .set({
@@ -52,10 +52,10 @@ export default function checkConflictOfOperatingDays(
             newIndex++
           ) {
             const newTime = newDay.workingTimes![newIndex];
-            const oldStart = getTimeBR(oldTime.start);
-            const oldEnd = getTimeBR(oldTime.end);
-            const newStart = getTimeBR(newTime.start);
-            const newEnd = getTimeBR(newTime.end);
+            const oldStart = getTimeBR(oldTime.start).utc();
+            const oldEnd = getTimeBR(oldTime.end).utc();
+            const newStart = getTimeBR(newTime.start).utc();
+            const newEnd = getTimeBR(newTime.end).utc();
 
             if (moment(newEnd).isBefore(newStart)) {
               conflict.push({

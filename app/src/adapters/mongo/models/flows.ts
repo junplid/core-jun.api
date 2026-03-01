@@ -27,6 +27,6 @@ export const ModelFlows: Model<ModelFlowsDoc> = mongoose.model<ModelFlowsDoc>(
       businessIds: { type: [Number], required: false },
       agentId: { type: Number, required: false },
     },
-    { timestamps: true }
-  )
+    { timestamps: true },
+  ),
 );

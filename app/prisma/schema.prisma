@@ -60,12 +60,12 @@ model RootConnectionWA {
 //   description           String?
 //   amount                Int // refereci a quantidade que o recurso vai ter(TYPE: CONEXÕES, ...)
 //   textOnPage            String?
-//   periodValidityStart   DateTime?
-//   periodValidityEnd     DateTime?
+//   periodValidityStart   DateTime ? @db.Timestamptz
+//   periodValidityEnd     DateTime ? @db.Timestamptz
 //   cycle                 TypeCycleExtraPackages
 //   price                 Decimal                 @db.Decimal(6, 2)
-//   createAt              DateTime                @default(now())
-//   updateAt              DateTime                @default(now()) @updatedAt
+//   createAt              DateTime @db.Timestamptz                @default(now())
+//   updateAt              DateTime @db.Timestamptz                @default(now()) @updatedAt
 //   ExtraPackageOnPlans   ExtraPackageOnPlans[]
 //   AccountSubscriptions  AccountSubscriptions[]
 //   ApplicableCoupons     ApplicableCoupons[]
@@ -123,8 +123,8 @@ model Account {
   emailVerified       Boolean               @default(false)
   password            String
   customerId          String?
-  createAt            DateTime              @default(now())
-  updateAt            DateTime              @default(now()) @updatedAt
+  createAt            DateTime              @default(now()) @db.Timestamptz
+  updateAt            DateTime              @default(now()) @updatedAt @db.Timestamptz
   status              Boolean               @default(false)
   available           Boolean               @default(false)
   onboarded           Boolean               @default(false)
@@ -168,8 +168,8 @@ model InboxUsers {
   hash              String            @default(uuid())
   email             String            @unique @db.VarChar(200)
   password          String
-  createAt          DateTime          @default(now())
-  updateAt          DateTime          @default(now()) @updatedAt
+  createAt          DateTime          @default(now()) @db.Timestamptz
+  updateAt          DateTime          @default(now()) @updatedAt @db.Timestamptz
   accountId         Int
   inboxDepartmentId Int?
   Account           Account?          @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -189,8 +189,8 @@ model InboxDepartments {
   signUser       Boolean      @default(false)
   previewNumber  Boolean      @default(true)
   previewPhoto   Boolean      @default(true)
-  createAt       DateTime     @default(now())
-  updateAt       DateTime     @default(now()) @updatedAt
+  createAt       DateTime     @default(now()) @db.Timestamptz
+  updateAt       DateTime     @default(now()) @updatedAt @db.Timestamptz
   businessId     Int
   accountId      Int
   Business       Business     @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -218,8 +218,8 @@ model Tickets {
   protocol             String
   status               TypeStatusTicket      @default(NEW)
   destination          TypeDestinationTicket
-  createAt             DateTime              @default(now())
-  updateAt             DateTime              @default(now()) @updatedAt
+  createAt             DateTime              @default(now()) @db.Timestamptz
+  updateAt             DateTime              @default(now()) @updatedAt @db.Timestamptz
   accountId            Int
   Account              Account               @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   goBackFlowStateId    Int?
@@ -279,8 +279,8 @@ model Messages {
   FlowState        FlowState?        @relation(fields: [flowStateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   InboxUser        InboxUsers?       @relation(fields: [inboxUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   Tickets          Tickets?          @relation(fields: [ticketsId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  createAt         DateTime          @default(now())
-  updateAt         DateTime          @default(now()) @updatedAt
+  createAt         DateTime          @default(now()) @db.Timestamptz
+  updateAt         DateTime          @default(now()) @updatedAt @db.Timestamptz
 
   @@index([id, inboxUserId, ticketsId, flowStateId, messageKey, by, read])
 }
@@ -329,7 +329,7 @@ model AccountAssetsUsed {
 //   name                 String
 //   band                 TypeCreditCardBand
 //   numberCard           String
-//   createAt             DateTime               @default(now())
+//   createAt             DateTime @db.Timestamptz               @default(now())
 //   accountId            Int
 //   Account              Account                @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 //   AccountSubscriptions AccountSubscriptions[]
@@ -370,7 +370,7 @@ model AccountAssetsUsed {
 //   deleted            Boolean                  @default(false)
 //   type               TypeAccountSubscriptions
 //   billingType        BillingType
-//   dateOfCancellation DateTime?
+//   dateOfCancellation DateTime ? @db.Timestamptz
 //   planPeriodsId      Int?
 //   PlanPeriods        PlanPeriods?             @relation(fields: [planPeriodsId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 //   couponId           Int?
@@ -381,8 +381,8 @@ model AccountAssetsUsed {
 //   ExtraPackage       ExtraPackages?           @relation(fields: [extraPackageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 //   accountId          Int
 //   Account            Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-//   createAt           DateTime                 @default(now())
-//   updateAt           DateTime                 @default(now()) @updatedAt
+//   createAt           DateTime @db.Timestamptz                 @default(now())
+//   updateAt           DateTime @db.Timestamptz                 @default(now()) @updatedAt
 
 //   @@index([id, accountId, subscriptionsId, type])
 // }
@@ -394,8 +394,8 @@ model AccountAssetsUsed {
 //   name                        String                       @db.VarChar(50)
 //   email                       String                       @unique @db.VarChar(200)
 //   password                    String
-//   createAt                    DateTime                     @default(now())
-//   updateAt                    DateTime                     @default(now()) @updatedAt
+//   createAt                    DateTime @db.Timestamptz                     @default(now())
+//   updateAt                    DateTime @db.Timestamptz                     @default(now()) @updatedAt
 //   status                      Boolean                      @default(false)
 //   accountId                   Int
 //   Account                     Account                      @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -507,8 +507,8 @@ model AccountAssetsUsed {
 //   type        TypeIntegrations
 //   key         String?
 //   token       String?
-//   createAt    DateTime         @default(now())
-//   updateAt    DateTime         @default(now()) @updatedAt
+//   createAt    DateTime @db.Timestamptz         @default(now())
+//   updateAt    DateTime @db.Timestamptz         @default(now()) @updatedAt
 //   accountId   Int
 //   Account     Account          @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
@@ -518,7 +518,7 @@ model AccountAssetsUsed {
 // model CardsTrello {
 //   id        Int      @id @default(autoincrement())
 //   cardId    String   @unique
-//   createAt  DateTime @default(now())
+//   createAt  DateTime @db.Timestamptz @default(now())
 //   accountId Int
 //   Account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
@@ -552,14 +552,14 @@ model AccountAssetsUsed {
 //   activationCode       String                 @unique
 //   discountType         AmountType
 //   discountValue        Float
-//   validFrom            DateTime?
-//   validUntil           DateTime?
+//   validFrom            DateTime ? @db.Timestamptz
+//   validUntil           DateTime ? @db.Timestamptz
 //   maxQuantity          Int                    @default(0)
 //   quantityUsed         Int                    @default(0)
 //   isValidOnRenewal     Boolean                @default(false)
 //   applicableTo         String?
-//   createAt             DateTime               @default(now())
-//   updateAt             DateTime               @default(now()) @updatedAt
+//   createAt             DateTime @db.Timestamptz               @default(now())
+//   updateAt             DateTime @db.Timestamptz               @default(now()) @updatedAt
 //   ApplicableCoupons    ApplicableCoupons[]
 //   Affiliates           Affiliates[]
 //   AccountSubscriptions AccountSubscriptions[]
@@ -607,8 +607,8 @@ model AccountAssetsUsed {
 //   ContactWA               ContactsWA                @relation(fields: [contactWAId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 //   couponId                Int?
 //   Coupon                  Coupons?                  @relation(fields: [couponId], references: [id], onUpdate: Cascade, onDelete: SetNull)
-//   createAt                DateTime                  @default(now())
-//   updateAt                DateTime                  @default(now()) @updatedAt
+//   createAt                DateTime @db.Timestamptz                  @default(now())
+//   updateAt                DateTime @db.Timestamptz                  @default(now()) @updatedAt
 //   HandleAccountAffiliates HandleAccountAffiliates[]
 
 //   @@index([id, name, contactWAId, email, status])
@@ -620,8 +620,8 @@ model AccountAssetsUsed {
 //   Affiliate   Affiliates @relation(fields: [affiliateId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 //   accountId   Int
 //   Account     Account    @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-//   createAt    DateTime   @default(now())
-//   updateAt    DateTime   @default(now()) @updatedAt
+//   createAt    DateTime @db.Timestamptz   @default(now())
+//   updateAt    DateTime @db.Timestamptz   @default(now()) @updatedAt
 
 //   @@index([id, affiliateId, accountId])
 // }
@@ -632,8 +632,8 @@ model AccountAssetsUsed {
 //   periodId    Int?
 //   Plan        Plan         @relation(fields: [planId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 //   PlanPeriods PlanPeriods? @relation(fields: [periodId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-//   createAt    DateTime     @default(now())
-//   updateAt    DateTime     @default(now()) @updatedAt
+//   createAt    DateTime @db.Timestamptz     @default(now())
+//   updateAt    DateTime @db.Timestamptz     @default(now()) @updatedAt
 
 //   @@index([id])
 // }
@@ -658,8 +658,8 @@ model AccountAssetsUsed {
 //   isDefault              Boolean                  @default(false)
 //   free_trial_time        Int?
 //   type                   TypePlan
-//   createAt               DateTime                 @default(now())
-//   updateAt               DateTime                 @default(now()) @updatedAt
+//   createAt               DateTime @db.Timestamptz                 @default(now())
+//   updateAt               DateTime @db.Timestamptz                 @default(now()) @updatedAt
 //   PlanPeriods            PlanPeriods[]
 //   PlanOnPeriodsOnAccount PlanOnPeriodsOnAccount[]
 //   ExtraPackageOnPlans    ExtraPackageOnPlans[]
@@ -746,8 +746,8 @@ model Business {
   name                   String                   @db.VarChar(50)
   description            String?
   accountId              Int
-  createAt               DateTime                 @default(now())
-  updateAt               DateTime                 @default(now()) @updatedAt
+  createAt               DateTime                 @default(now()) @db.Timestamptz
+  updateAt               DateTime                 @default(now()) @updatedAt @db.Timestamptz
   Account                Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ConnectionWA           ConnectionWA[]
   TagOnBusiness          TagOnBusiness[]
@@ -780,8 +780,8 @@ model ConnectionWA {
   type                 TypeConnetion
   countShots           Int                    @default(0)
   number               String?
-  createAt             DateTime               @default(now())
-  updateAt             DateTime               @default(now()) @updatedAt
+  createAt             DateTime               @default(now()) @db.Timestamptz
+  updateAt             DateTime               @default(now()) @updatedAt @db.Timestamptz
   businessId           Int
   Business             Business               @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Chatbot              Chatbot[]
@@ -810,8 +810,8 @@ model ConnectionIg {
   ig_id        String
   ig_picture   String?        @db.Text
   credentials  String         @db.Text
-  createAt     DateTime       @default(now())
-  updateAt     DateTime       @default(now()) @updatedAt
+  createAt     DateTime       @default(now()) @db.Timestamptz
+  updateAt     DateTime       @default(now()) @updatedAt @db.Timestamptz
   businessId   Int
   Business     Business       @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Chatbot      Chatbot[]
@@ -887,8 +887,8 @@ model ConnectionConfig {
 //   rootCampaignParameterRangesConfigId Int
 //   RootCampaignParameterRangesConfig   RootCampaignParameterRangesConfig @relation(fields: [rootCampaignParameterRangesConfigId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 //   sendDuringHoliday                   Boolean
-//   createAt                            DateTime                          @default(now())
-//   updateAt                            DateTime                          @default(now()) @updatedAt
+//   createAt                            DateTime @db.Timestamptz                          @default(now())
+//   updateAt                            DateTime @db.Timestamptz                          @default(now()) @updatedAt
 //   accountId                           Int
 //   Account                             Account                           @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 //   Campaign                            Campaign[]
@@ -931,8 +931,8 @@ model Audience {
   interrupted          Boolean                @default(false)
   name                 String                 @db.VarChar(150)
   type                 TypeAudience
-  createAt             DateTime               @default(now())
-  updateAt             DateTime               @default(now()) @updatedAt
+  createAt             DateTime               @default(now()) @db.Timestamptz
+  updateAt             DateTime               @default(now()) @updatedAt @db.Timestamptz
   accountId            Int
   Account              Account                @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   AudienceOnBusiness   AudienceOnBusiness[]
@@ -945,8 +945,8 @@ model Audience {
 
 model ContactsWAOnAudience {
   id                   Int                 @id @default(autoincrement())
-  createAt             DateTime            @default(now())
-  updateAt             DateTime            @default(now()) @updatedAt
+  createAt             DateTime            @default(now()) @db.Timestamptz
+  updateAt             DateTime            @default(now()) @updatedAt @db.Timestamptz
   audienceId           Int
   contactWAOnAccountId Int
   Audience             Audience            @relation(fields: [audienceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -981,15 +981,15 @@ enum TypeFlowState {
 model FlowState {
   id                    Int                  @id @default(autoincrement())
   isSent                Boolean              @default(false)
-  firedOnDate           DateTime?
+  firedOnDate           DateTime?            @db.Timestamptz
   isFinish              Boolean?             @default(false)
-  finishedAt            DateTime?
+  finishedAt            DateTime?            @db.Timestamptz
   indexNode             String?
   agentId               Int?
   fbc                   String?
   fbp                   String?
   ua                    String?
-  expires_at            DateTime?
+  expires_at            DateTime?            @db.Timestamptz
   ip                    String?
   flowId                String?
   previous_response_id  String?
@@ -997,8 +997,8 @@ model FlowState {
   inputTokens           Int                  @default(0)
   outputTokens          Int                  @default(0)
   fallbackSent          Boolean              @default(false)
-  createAt              DateTime             @default(now())
-  updateAt              DateTime             @default(now()) @updatedAt
+  createAt              DateTime             @default(now()) @db.Timestamptz
+  updateAt              DateTime             @default(now()) @updatedAt @db.Timestamptz
   campaignId            Int?
   contactsWAOnAccountId Int?
   connectionWAId        Int?
@@ -1034,7 +1034,7 @@ model FlowState {
 //   flowStateId Int
 //   FlowState  FlowState @relation(fields: [flowStateId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 //   log        String
-//   createAt   DateTime @default(now())
+//   createAt   DateTime @db.Timestamptz @default(now())
 
 //   @@index([flowStateId])
 // }
@@ -1084,8 +1084,8 @@ model Campaign {
   status               TypeStatusCampaign     @default(processing)
   timeItWillStart      String?
   flowId               String
-  createAt             DateTime               @default(now())
-  updateAt             DateTime               @default(now()) @updatedAt
+  createAt             DateTime               @default(now()) @db.Timestamptz
+  updateAt             DateTime               @default(now()) @updatedAt @db.Timestamptz
   accountId            Int
   shootingSpeedId      Int
   Account              Account                @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -1150,8 +1150,8 @@ model Chatbot {
   Business              Business              @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   accountId             Int
   Account               Account               @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  createAt              DateTime              @default(now())
-  updateAt              DateTime              @default(now()) @updatedAt
+  createAt              DateTime              @default(now()) @db.Timestamptz
+  updateAt              DateTime              @default(now()) @updatedAt @db.Timestamptz
   OperatingDays         OperatingDays[]
   TimeToRestart         TimeToRestartChatbot?
   FlowState             FlowState[]
@@ -1183,8 +1183,8 @@ model ContactsWA {
   username String? @db.VarChar(150) // precisa remover, a ideia é fazer a request e cachear por 1 dia. (caso seja instagram)
 
   channel  TypeContact @default(whatsapp)
-  createAt DateTime    @default(now())
-  updateAt DateTime    @default(now()) @updatedAt
+  createAt DateTime    @default(now()) @db.Timestamptz
+  updateAt DateTime    @default(now()) @updatedAt @db.Timestamptz
 
   ContactsWAOnAccount ContactsWAOnAccount[]
   Account             Account[]
@@ -1199,9 +1199,9 @@ model ContactsWAOnAccount {
   name                        String                        @db.VarChar(150)
   accountId                   Int
   contactWAId                 Int
-  last_interaction            DateTime                      @default(now())
-  createAt                    DateTime                      @default(now())
-  updateAt                    DateTime                      @default(now()) @updatedAt
+  last_interaction            DateTime                      @default(now()) @db.Timestamptz
+  createAt                    DateTime                      @default(now()) @db.Timestamptz
+  updateAt                    DateTime                      @default(now()) @updatedAt @db.Timestamptz
   ContactsWA                  ContactsWA                    @relation(fields: [contactWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Account                     Account                       @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   TagOnContactsWAOnAccount    TagOnContactsWAOnAccount[]
@@ -1320,7 +1320,7 @@ model StoragePaths {
   fileName               String
   size                   Float
   mimetype               String?
-  createAt               DateTime                 @default(now())
+  createAt               DateTime                 @default(now()) @db.Timestamptz
   accountId              Int
   Account                Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   StoragePathsOnBusiness StoragePathsOnBusiness[]
@@ -1346,8 +1346,8 @@ model StoragePathsOnBusiness {
 //   score                           Int
 //   accountId                       Int
 //   Account                         Account                           @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-//   createAt                        DateTime                          @default(now())
-//   updateAt                        DateTime                          @default(now()) @updatedAt
+//   createAt                        DateTime @db.Timestamptz                          @default(now())
+//   updateAt                        DateTime @db.Timestamptz                          @default(now()) @updatedAt
 //   CheckpointOnBusiness            CheckpointOnBusiness[]
 //   CheckpointOnContactsWAOnAccount CheckpointOnContactsWAOnAccount[]
 
@@ -1367,8 +1367,8 @@ model StoragePathsOnBusiness {
 // model CheckpointOnContactsWAOnAccount {
 //   id                    Int                 @id @default(autoincrement())
 //   flowId                Int
-//   createAt              DateTime            @default(now())
-//   updateAt              DateTime            @default(now()) @updatedAt
+//   createAt              DateTime @db.Timestamptz            @default(now())
+//   updateAt              DateTime @db.Timestamptz            @default(now()) @updatedAt
 //   checkpointId          Int
 //   Checkpoint            Checkpoint          @relation(fields: [checkpointId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 //   contactsWAOnAccountId Int
@@ -1384,8 +1384,8 @@ model StoragePathsOnBusiness {
 //   name                  String
 //   username              String                  @unique
 //   password              String
-//   createAt              DateTime                @default(now())
-//   updateAt              DateTime                @default(now()) @updatedAt
+//   createAt              DateTime @db.Timestamptz                @default(now())
+//   updateAt              DateTime @db.Timestamptz                @default(now()) @updatedAt
 //   imageName             String?
 //   accountId             Int
 //   Account               Account                 @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -1440,8 +1440,8 @@ model StoragePathsOnBusiness {
 //   funnelKanbanId            Int?
 //   FunnelKanban              FunnelKanban?           @relation(fields: [funnelKanbanId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
-//   createAt DateTime @default(now())
-//   updateAt DateTime @default(now()) @updatedAt
+//   createAt DateTime @db.Timestamptz @default(now())
+//   updateAt DateTime @db.Timestamptz @default(now()) @updatedAt
 
 //   LackResponses        LackResponses?
 //   SectorsMessages      SectorsMessages?
@@ -1478,8 +1478,8 @@ model StoragePathsOnBusiness {
 //   previewTicketBusiness          Boolean                          @default(false)
 //   username                       String                           @unique
 //   password                       String
-//   createAt                       DateTime                         @default(now())
-//   updateAt                       DateTime                         @default(now()) @updatedAt
+//   createAt                       DateTime @db.Timestamptz                         @default(now())
+//   updateAt                       DateTime @db.Timestamptz                         @default(now()) @updatedAt
 //   imageName                      String?
 //   sectorsId                      Int?
 //   Sectors                        Sectors?                         @relation(fields: [sectorsId], references: [id], onDelete: SetNull, onUpdate: Cascade)
@@ -1514,8 +1514,8 @@ model StoragePathsOnBusiness {
 //   id                 Int                                   @id @default(autoincrement())
 //   subject            String
 //   content            String
-//   createAt           DateTime                              @default(now())
-//   updateAt           DateTime                              @default(now()) @updatedAt
+//   createAt           DateTime @db.Timestamptz                              @default(now())
+//   updateAt           DateTime @db.Timestamptz                              @default(now()) @updatedAt
 //   status             TypeStatusNotificationSectorAttendant @default(unread)
 //   sectorsAttendantId Int
 //   SectorsAttendants  SectorsAttendants                     @relation(fields: [sectorsAttendantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -1559,8 +1559,8 @@ model StoragePathsOnBusiness {
 //   id                Int                 @id @default(autoincrement())
 //   interrupted       Boolean             @default(false)
 //   name              String
-//   createAt          DateTime            @default(now())
-//   updateAt          DateTime            @default(now()) @updatedAt
+//   createAt          DateTime @db.Timestamptz            @default(now())
+//   updateAt          DateTime @db.Timestamptz            @default(now()) @updatedAt
 //   StepsFunnelKanban StepsFunnelKanban[]
 //   businessId        Int
 //   Business          Business            @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -1628,8 +1628,8 @@ model ShootingSpeed {
 //   id                                            Int                                         @id @default(autoincrement())
 //   type                                          TypeHumanServiceReportLead
 //   value                                         String
-//   createAt                                      DateTime                                    @default(now())
-//   updateAt                                      DateTime                                    @default(now()) @updatedAt
+//   createAt                                      DateTime @db.Timestamptz                                    @default(now())
+//   updateAt                                      DateTime @db.Timestamptz                                    @default(now()) @updatedAt
 //   humanServiceOnBusinessOnContactsWAOnAccountId Int
 //   HumanServiceOnBusinessOnContactsWAOnAccount   HumanServiceOnBusinessOnContactsWAOnAccount @relation(fields: [humanServiceOnBusinessOnContactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
@@ -1640,9 +1640,9 @@ model ShootingSpeed {
 //   id                    Int                 @id @default(autoincrement())
 //   message               String
 //   isSent                Boolean?            @default(false)
-//   date                  DateTime
-//   createAt              DateTime            @default(now())
-//   updateAt              DateTime            @default(now()) @updatedAt
+//   date                  DateTime @db.Timestamptz
+//   createAt              DateTime @db.Timestamptz            @default(now())
+//   updateAt              DateTime @db.Timestamptz            @default(now()) @updatedAt
 //   contactsWAOnAccountId Int
 //   ContactsWAOnAccount   ContactsWAOnAccount @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
@@ -1657,8 +1657,8 @@ model ShootingSpeed {
 //   secure                              Boolean?                              @default(false)
 //   user                                String
 //   pass                                String
-//   createAt                            DateTime                              @default(now())
-//   updateAt                            DateTime                              @default(now()) @updatedAt
+//   createAt                            DateTime @db.Timestamptz                              @default(now())
+//   updateAt                            DateTime @db.Timestamptz                              @default(now()) @updatedAt
 //   accountId                           Int
 //   Account                             Account                               @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 //   EmailServiceConfigurationOnBusiness EmailServiceConfigurationOnBusiness[]
@@ -1681,8 +1681,8 @@ model ShootingSpeed {
 //   interrupted             Boolean                   @default(false)
 //   name                    String
 //   link                    String
-//   createAt                DateTime                  @default(now())
-//   updateAt                DateTime                  @default(now()) @updatedAt
+//   createAt                DateTime @db.Timestamptz                  @default(now())
+//   updateAt                DateTime @db.Timestamptz                  @default(now()) @updatedAt
 //   accountId               Int
 //   Account                 Account                   @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 //   businessId              Int
@@ -1696,8 +1696,8 @@ model ShootingSpeed {
 //   id                    Int                  @id @default(autoincrement())
 //   event                 String
 //   value                 String
-//   createAt              DateTime             @default(now())
-//   updateAt              DateTime             @default(now()) @updatedAt
+//   createAt              DateTime @db.Timestamptz             @default(now())
+//   updateAt              DateTime @db.Timestamptz             @default(now()) @updatedAt
 //   contactsWAOnAccountId Int
 //   ContactsWAOnAccount   ContactsWAOnAccount  @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 //   campaignId            Int?
@@ -1737,8 +1737,8 @@ model ShootingSpeed {
 //   model                            ModelArtificialIntelligence
 //   type                             TypeArtificialIntelligence
 //   temperature                      Decimal?                           @default(0.1) @db.Decimal(2, 1)
-//   createAt                         DateTime                           @default(now())
-//   updateAt                         DateTime                           @default(now()) @updatedAt
+//   createAt                         DateTime @db.Timestamptz                           @default(now())
+//   updateAt                         DateTime @db.Timestamptz                           @default(now()) @updatedAt
 //   accountId                        Int
 //   Account                          Account                            @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 //   ArtificialIntelligenceOnBusiness ArtificialIntelligenceOnBusiness[]
@@ -1766,8 +1766,8 @@ model ShootingSpeed {
 //   role                    String?                   @db.Text
 //   definitions             String?                   @db.Text
 //   knowledgeBase           String?                   @db.Text
-//   createAt                DateTime                  @default(now())
-//   updateAt                DateTime                  @default(now()) @updatedAt
+//   createAt                DateTime @db.Timestamptz                  @default(now())
+//   updateAt                DateTime @db.Timestamptz                  @default(now()) @updatedAt
 //   aiId                    Int
 //   ArtificialIntelligence  ArtificialIntelligence    @relation(fields: [aiId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 //   accountId               Int
@@ -1804,8 +1804,8 @@ model FbPixel {
   pixel_id     String
   access_token String    @db.VarChar(240)
   status       Boolean   @default(true)
-  createAt     DateTime  @default(now())
-  updateAt     DateTime  @default(now()) @updatedAt
+  createAt     DateTime  @default(now()) @db.Timestamptz
+  updateAt     DateTime  @default(now()) @updatedAt @db.Timestamptz
   accountId    Int
   businessId   Int?
   Account      Account   @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -1845,7 +1845,7 @@ model AccountLogDate {
   type      AccountLogDateType
   accountId Int
   Account   Account            @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  createAt  DateTime           @default(now())
+  createAt  DateTime           @default(now()) @db.Timestamptz
 
   @@index([accountId, createAt, type])
 }
@@ -1865,7 +1865,7 @@ model GeralLogDate {
   type     GeralLogDateType
   entity   String
   value    String           @db.Text
-  createAt DateTime         @default(now())
+  createAt DateTime         @default(now()) @db.Timestamptz
 
   @@index([createAt, type])
 }
@@ -1881,7 +1881,7 @@ model ProviderCredential {
   apiKey    String
   accountId Int
   Account   Account                @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  createAt  DateTime               @default(now())
+  createAt  DateTime               @default(now()) @db.Timestamptz
   AgentAI   AgentAI[]
 
   @@unique([label, accountId, provider])
@@ -1918,8 +1918,8 @@ model AgentAI {
   model                 String
   modelTranscription    String?
   temperature           Decimal                @default(0.1) @db.Decimal(2, 1)
-  createAt              DateTime               @default(now())
-  updateAt              DateTime               @default(now()) @updatedAt
+  createAt              DateTime               @default(now()) @db.Timestamptz
+  updateAt              DateTime               @default(now()) @updatedAt @db.Timestamptz
   accountId             Int
   connectionWAId        Int?                   @unique
   connectionIgId        Int?                   @unique
@@ -1971,8 +1971,8 @@ model PaymentIntegrations {
   deleted     Boolean             @default(false)
   // certPfxEncrypted  Bytes?
   // certPasswordEnc   Bytes?
-  createAt    DateTime            @default(now())
-  updateAt    DateTime            @default(now()) @updatedAt
+  createAt    DateTime            @default(now()) @db.Timestamptz
+  updateAt    DateTime            @default(now()) @updatedAt @db.Timestamptz
   accountId   Int
   Account     Account             @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Charges     Charges[]
@@ -1984,9 +1984,9 @@ model PaymentIntegrations {
 model PixKey {
   id                   Int                 @id @default(autoincrement())
   key                  String
-  webhookRegisteredAt  DateTime? // usado no banco ITAU 
+  webhookRegisteredAt  DateTime?           @db.Timestamptz // usado no banco ITAU 
   deleted              Boolean             @default(false)
-  createdAt            DateTime            @default(now())
+  createdAt            DateTime            @default(now()) @db.Timestamptz
   paymentIntegrationId Int
   PaymentIntegration   PaymentIntegrations @relation(fields: [paymentIntegrationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Charges              Charges[]
@@ -2000,8 +2000,8 @@ model TrelloIntegration {
   status    Boolean  @default(true)
   key       String   @db.VarChar(240)
   token     String   @db.VarChar(240)
-  createAt  DateTime @default(now())
-  updateAt  DateTime @default(now()) @updatedAt
+  createAt  DateTime @default(now()) @db.Timestamptz
+  updateAt  DateTime @default(now()) @updatedAt @db.Timestamptz
   accountId Int
   Account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
@@ -2051,12 +2051,12 @@ model Orders {
   tracking_code         String?              @db.VarChar(150)
   delivery_code         String?              @db.VarChar(12)
   itens_count           Int?                 @default(0)
-  completedAt           DateTime?
+  completedAt           DateTime?            @db.Timestamptz
   data                  String?              @db.Text
   total                 Decimal?             @db.Decimal(10, 2)
   net_total             Decimal?             @db.Decimal(10, 2)
-  createAt              DateTime             @default(now())
-  updateAt              DateTime             @default(now()) @updatedAt
+  createAt              DateTime             @default(now()) @db.Timestamptz
+  updateAt              DateTime             @default(now()) @updatedAt @db.Timestamptz
   connectionWAId        Int?
   actionChannels        String[] // são listas de botão que aparece no pedido, e quando clica dispara uma ação no node que criou o pedido e a saida é com o valor clicado > e pode ser recuperado pelo proximo node REPLY ou SWFTH, 
   flowNodeId            String?
@@ -2088,7 +2088,7 @@ model Orders {
 //   orderId     Int
 //   status      TypeStatusOrder
 //   note             String?            @db.Text
-//   createAt    DateTime           @default(now())
+//   createAt    DateTime @db.Timestamptz           @default(now())
 //   Orders      Orders             @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
 //   @@index([id, orderId, status, createAt])
@@ -2124,15 +2124,15 @@ model Charges {
   method_type           TypeMethodCharge
   pix_link              String?              @db.Text
   pix_emv               String?              @db.Text
-  expires_at            DateTime?
-  paid_at               DateTime?
+  expires_at            DateTime?            @db.Timestamptz
+  paid_at               DateTime?            @db.Timestamptz
   e2e_id                String? // codigo do pagamento.
   content               String?              @db.Text
   metadata              Json?
   flowNodeId            String?
   contactsWAOnAccountId Int?
   businessId            Int?
-  createAt              DateTime             @default(now())
+  createAt              DateTime             @default(now()) @db.Timestamptz
   accountId             Int
   paymentIntegrationId  Int?
   orderId               Int?
@@ -2140,7 +2140,7 @@ model Charges {
   flowStateId           Int?
   inboxUserId           Int?
   ticketId              Int?
-  updatedAt             DateTime             @updatedAt
+  updatedAt             DateTime             @updatedAt @db.Timestamptz
   Account               Account              @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ContactsWAOnAccount   ContactsWAOnAccount? @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   Ticket                Tickets?             @relation(fields: [ticketId], references: [id], onDelete: SetNull, onUpdate: Cascade)
@@ -2161,7 +2161,7 @@ model LogSystem {
   accountId      Int?
   connectionWAId Int?
   connectionIgId Int?
-  createAt       DateTime      @default(now())
+  createAt       DateTime      @default(now()) @db.Timestamptz
   Account        Account?      @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ConnectionWA   ConnectionWA? @relation(fields: [connectionWAId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ConnectionIg   ConnectionIg? @relation(fields: [connectionIgId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -2181,7 +2181,7 @@ model MenusOnline {
   logoLabel      String?      @db.Text
   titlePage      String?
   status         Boolean?     @default(false)
-  createAt       DateTime     @default(now())
+  createAt       DateTime     @default(now()) @db.Timestamptz
   accountId      Int
   Account        Account      @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   connectionWAId Int
@@ -2203,7 +2203,7 @@ model SizesPizza {
   price    Decimal     @db.Decimal(6, 2)
   flavors  Int
   slices   Int?
-  createAt DateTime    @default(now())
+  createAt DateTime    @default(now()) @db.Timestamptz
   menuId   Int
   Menu     MenusOnline @relation(fields: [menuId], references: [id], onDelete: Cascade)
 
@@ -2226,8 +2226,8 @@ model MenusOnlineItems {
   beforePrice Decimal?     @db.Decimal(6, 2)
   afterPrice  Decimal?     @db.Decimal(6, 2)
   accountId   Int?
-  createAt    DateTime     @default(now())
-  updateAt    DateTime     @default(now())
+  createAt    DateTime     @default(now()) @db.Timestamptz
+  updateAt    DateTime     @default(now()) @db.Timestamptz
   menuId      Int
 
   Menu    MenusOnline @relation(fields: [menuId], references: [id], onDelete: Cascade)
@@ -2260,9 +2260,9 @@ model Notifications {
   toast_duration Int?
   status         TypeStatusChannelsNotification @default(unread)
   url_redirect   String?
-  readAt         DateTime?
-  createAt       DateTime                       @default(now())
-  updateAt       DateTime                       @default(now())
+  readAt         DateTime?                      @db.Timestamptz
+  createAt       DateTime                       @default(now()) @db.Timestamptz
+  updateAt       DateTime                       @default(now()) @db.Timestamptz
   accountId      Int? // caso não tenha o account, significa que todos serão notificados.
   Account        Account?                       @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
@@ -2271,8 +2271,8 @@ model PushTokens {
   id         Int      @id @default(autoincrement())
   token      String   @unique
   platform   String
-  lastUsedAt DateTime @default(now())
-  createAt   DateTime @default(now())
+  lastUsedAt DateTime @default(now()) @db.Timestamptz
+  createAt   DateTime @default(now()) @db.Timestamptz
   accountId  Int
   Account    Account  @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
@@ -2297,11 +2297,11 @@ model Appointments {
   desc                  String?                  @db.Text
   n_appointment         String
   status                StatusAppointments
-  startAt               DateTime
-  endAt                 DateTime
+  startAt               DateTime                 @db.Timestamptz
+  endAt                 DateTime                 @db.Timestamptz
   createdBy             TypeCreateByAppointments @default(bot)
-  createAt              DateTime                 @default(now())
-  updateAt              DateTime                 @default(now())
+  createAt              DateTime                 @default(now()) @db.Timestamptz
+  updateAt              DateTime                 @default(now()) @db.Timestamptz
   accountId             Int
   businessId            Int
   actionChannels        String[] // são listas de botão que aparece no compromisso, e quando clica dispara uma ação no node que criou o pedido e a saida é com o valor clicado > e pode ser recuperado pelo proximo node REPLY ou SWFTH, 
@@ -2330,15 +2330,15 @@ enum StatusAppointmentReminders {
 
 model AppointmentReminders {
   id            Int                        @id @default(autoincrement())
-  notify_at     DateTime
+  notify_at     DateTime                   @db.Timestamptz
   deleted       Boolean                    @default(false)
   status        StatusAppointmentReminders @default(pending)
   // saida do node
   moment        String // cada lembrete terá seu id do handle de saida referente ao tempo de notificação(24h, 2h, 20min)
   // nesse lembrete de notificar antes das 24h vai ter o id do handle de saida de 24h. 
   appointmentId Int
-  updateAt      DateTime                   @default(now())
-  createAt      DateTime                   @default(now())
+  updateAt      DateTime                   @default(now()) @db.Timestamptz
+  createAt      DateTime                   @default(now()) @db.Timestamptz
   Appointment   Appointments               @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
@@ -2353,14 +2353,14 @@ model FollowUp {
   id          Int                        @id @default(autoincrement())
   code        String
   body        String                     @db.Text
-  notify_at   DateTime
+  notify_at   DateTime                   @db.Timestamptz
   deleted     Boolean                    @default(false)
   status      StatusAppointmentReminders @default(pending)
   flowNodeId  String
   flowStateId Int
   accountId   Int
-  updateAt    DateTime                   @default(now())
-  createAt    DateTime                   @default(now())
+  updateAt    DateTime                   @default(now()) @db.Timestamptz
+  createAt    DateTime                   @default(now()) @db.Timestamptz
 
   FlowState FlowState @relation(fields: [flowStateId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Account   Account   @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -2396,8 +2396,8 @@ model AgentTemplates {
   variables                     String[] // busca o ID pelo nome ou cria 
   tags                          String[] // busca o ID pelo nome ou cria
   created_by                    String
-  updateAt                      DateTime                     @default(now())
-  createAt                      DateTime                     @default(now())
+  updateAt                      DateTime                     @default(now()) @db.Timestamptz
+  createAt                      DateTime                     @default(now()) @db.Timestamptz
   Sections                      AgentTemplateInputsSection[]
 
   @@index([count_usage, createAt])

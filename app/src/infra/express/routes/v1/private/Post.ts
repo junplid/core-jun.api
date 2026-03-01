@@ -65,6 +65,8 @@ import { testAgentTemplateController } from "../../../../../core/testAgentTempla
 import { testAgentTemplateValidation } from "../../../../../core/testAgentTemplate/Validation";
 import { createAgentTemplateValidation } from "../../../../../core/createAgentTemplate/Validation";
 import { createAgentTemplateController } from "../../../../../core/createAgentTemplate";
+import { createAppointmentValidation } from "../../../../../core/createAppointment/Validation";
+import { createAppointmentController } from "../../../../../core/createAppointment";
 
 const RouterV1Private_Post = Router();
 
@@ -338,6 +340,13 @@ RouterV1Private_Post.post(
   csrfMiddleware,
   createAgentTemplateValidation,
   createAgentTemplateController,
+);
+
+RouterV1Private_Post.post(
+  "/appointments",
+  csrfMiddleware,
+  createAppointmentValidation,
+  createAppointmentController,
 );
 
 export default RouterV1Private_Post;

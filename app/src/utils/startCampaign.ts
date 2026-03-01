@@ -18,12 +18,13 @@ interface PropsStartCampaign {
 }
 
 function getTimeBR(time: string) {
-  return moment()
+  return moment
     .tz("America/Sao_Paulo")
     .set({
       hours: Number(time.slice(0, 2)),
       minutes: Number(time.slice(3, 5)),
-    });
+    })
+    .utc();
 }
 
 export const startCampaign = async ({
@@ -234,7 +235,7 @@ export const startCampaign = async ({
         const check = async () => {
           if (campaign.OperatingDays?.length) {
             const validTime = campaign.OperatingDays.some((day) => {
-              const nowTime = moment().tz("America/Sao_Paulo");
+              const nowTime = moment();
               const currentDayWeek = nowTime.get("weekday");
 
               if (day.dayOfWeek === currentDayWeek) {
@@ -253,18 +254,18 @@ export const startCampaign = async ({
             } else {
               const minutesToNextExecutionInQueue = Math.min(
                 ...campaign.OperatingDays.map((day) => {
-                  const nowDate = moment().tz("America/Sao_Paulo");
+                  const nowDate = moment.tz("America/Sao_Paulo");
 
                   const listNextWeeks = day.WorkingTimes.map((time) => {
-                    const nextDayWeek = nowDate.startOf("day").set({
-                      weekday: day.dayOfWeek,
-                      hours: Number(time.start.slice(0, 2)),
-                      minutes: Number(time.start.slice(3, 5)),
-                    });
-                    return nextDayWeek.diff(
-                      moment().tz("America/Sao_Paulo"),
-                      "minutes",
-                    );
+                    const nextDayWeek = nowDate
+                      .startOf("day")
+                      .set({
+                        weekday: day.dayOfWeek,
+                        hours: Number(time.start.slice(0, 2)),
+                        minutes: Number(time.start.slice(3, 5)),
+                      })
+                      .utc();
+                    return nextDayWeek.diff(moment(), "minutes");
                   });
 
                   return Math.min(...listNextWeeks);
@@ -272,10 +273,7 @@ export const startCampaign = async ({
               );
 
               scheduleJob(
-                moment()
-                  .tz("America/Sao_Paulo")
-                  .add(minutesToNextExecutionInQueue, "minutes")
-                  .toDate(),
+                moment().add(minutesToNextExecutionInQueue, "minutes").toDate(),
                 checkDay,
               );
             }

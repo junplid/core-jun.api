@@ -6,14 +6,14 @@ import {
   writeFileSync,
 } from "fs-extra";
 import { resolve } from "path";
-import { BroadcastOperator, Server } from "socket.io";
+import { Server } from "socket.io";
 import {
   Baileys,
   CacheSessionsBaileysWA,
   killConnectionWA,
   sessionsBaileysWA,
 } from "../../adapters/Baileys";
-import { cacheAccountSocket, cacheRootSocket } from "./cache";
+import { cacheAccountSocket } from "./cache";
 import {
   cacheConnectionsWAOnline,
   cacheFlowsMap,
@@ -27,15 +27,11 @@ import OpenAI from "openai";
 import { TypeStatusMessage, TypeStatusOrder } from "@prisma/client";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { mongo } from "../../adapters/mongo/connection";
-import { IPropsControler, NodeControler } from "../../libs/FlowBuilder/Control";
+import { NodeControler } from "../../libs/FlowBuilder/Control";
 import moment from "moment-timezone";
 import { metaAccountsCache } from "../../services/meta/cache";
 import { decrypte } from "../../libs/encryption";
 import { getSocketIo } from "../express";
-import {
-  DecorateAcknowledgementsWithMultipleResponses,
-  DefaultEventsMap,
-} from "socket.io/dist/typed-events";
 import { resolveHourAndMinute } from "../../utils/resolveHour:mm";
 import { cacheTestAgentTemplate } from "../../libs/FlowBuilder/cache";
 
@@ -504,7 +500,6 @@ export const WebSocketIo = (io: Server) => {
                   });
                 if (flowState.chatbotId && flowState.Chatbot?.TimeToRestart) {
                   const nextDate = moment()
-                    .tz("America/Sao_Paulo")
                     .add(
                       flowState.Chatbot.TimeToRestart.value,
                       flowState.Chatbot.TimeToRestart.type,
@@ -626,6 +621,14 @@ export const WebSocketIo = (io: Server) => {
       socket.leave(`account:${auth.accountId}:connections`);
     });
 
+    socket.on("join_appointments", () => {
+      socket.join(`account:${auth.accountId}:appointments`);
+    });
+
+    socket.on("leave_appointments", () => {
+      socket.leave(`account:${auth.accountId}:appointments`);
+    });
+
     // atualizar status do evento.
   });
 };
@@ -653,6 +656,20 @@ export const webSocketEmitToRoom = () => {
           dashboard_services: (args: { delta: number; hour: string }) => {
             to = `${to}:dashboard`;
             io.to(to).emit("dashboard_services", args);
+          },
+        },
+        appointments: {
+          remove: (args: any, ignore: string[]) => {
+            to = `${to}:appointments`;
+            return io.to(to).except(ignore).emit("remove_appointment", args);
+          },
+          new: (args: any, ignore: string[]) => {
+            to = `${to}:appointments`;
+            return io.to(to).except(ignore).emit("new_appointment", args);
+          },
+          update: (args: any, ignore: string[]) => {
+            to = `${to}:appointments`;
+            return io.to(to).except(ignore).emit("update_appointment", args);
           },
         },
         orders: {

@@ -1,27 +1,17 @@
 import { Request, Response } from "express";
-import {
-  DeleteAppointmentBodyDTO_I,
-  DeleteAppointmentParamsDTO_I,
-  DeleteAppointmentQueryDTO_I,
-} from "./DTO";
-import { DeleteAppointmentUseCase } from "./UseCase";
+import { CreateAppointmentDTO_I } from "./DTO";
+import { CreateAppointmentUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
-export const DeleteAppointmentController = (
-  useCase: DeleteAppointmentUseCase,
+export const CreateAppointmentController = (
+  useCase: CreateAppointmentUseCase,
 ) => {
   const execute = async (
-    req: Request<
-      DeleteAppointmentParamsDTO_I,
-      any,
-      DeleteAppointmentBodyDTO_I,
-      DeleteAppointmentQueryDTO_I
-    >,
+    req: Request<any, any, CreateAppointmentDTO_I, any>,
     res: Response,
   ): Promise<Response> => {
     try {
-      const dto = { ...req.body, ...req.params, ...req.query };
-      const data = await useCase.run(dto);
+      const data = await useCase.run(req.body);
       return res.status(200).json(data);
     } catch (error: any) {
       if (error instanceof ErrorResponse) {

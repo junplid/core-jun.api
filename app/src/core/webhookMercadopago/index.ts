@@ -373,7 +373,6 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
                 });
               if (flowState.Chatbot?.id && flowState.Chatbot?.TimeToRestart) {
                 const nextDate = moment()
-                  .tz("America/Sao_Paulo")
                   .add(
                     flowState!.Chatbot.TimeToRestart.value,
                     flowState!.Chatbot.TimeToRestart.type,

@@ -8,6 +8,9 @@ CREATE TYPE "TypeDestinationTicket" AS ENUM ('department', 'user');
 CREATE TYPE "TypeSentBy" AS ENUM ('bot', 'contact', 'user', 'system');
 
 -- CreateEnum
+CREATE TYPE "TypeStatusMessage" AS ENUM ('SENT', 'DELIVERED');
+
+-- CreateEnum
 CREATE TYPE "TypeConnetion" AS ENUM ('chatbot', 'marketing');
 
 -- CreateEnum
@@ -42,6 +45,9 @@ CREATE TYPE "TypeTime" AS ENUM ('seconds', 'minutes', 'hours', 'days');
 
 -- CreateEnum
 CREATE TYPE "TypeChatbotInactivity" AS ENUM ('seconds', 'minutes', 'hours', 'days');
+
+-- CreateEnum
+CREATE TYPE "TypeContact" AS ENUM ('instagram', 'whatsapp', 'messenger');
 
 -- CreateEnum
 CREATE TYPE "TypeVariable" AS ENUM ('dynamics', 'constant', 'system');
@@ -132,8 +138,8 @@ CREATE TABLE "Account" (
     "emailVerified" BOOLEAN NOT NULL DEFAULT false,
     "password" TEXT NOT NULL,
     "customerId" TEXT,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "status" BOOLEAN NOT NULL DEFAULT false,
     "available" BOOLEAN NOT NULL DEFAULT false,
     "onboarded" BOOLEAN NOT NULL DEFAULT false,
@@ -150,8 +156,8 @@ CREATE TABLE "InboxUsers" (
     "hash" TEXT NOT NULL,
     "email" VARCHAR(200) NOT NULL,
     "password" TEXT NOT NULL,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "accountId" INTEGER NOT NULL,
     "inboxDepartmentId" INTEGER,
 
@@ -167,8 +173,8 @@ CREATE TABLE "InboxDepartments" (
     "signUser" BOOLEAN NOT NULL DEFAULT false,
     "previewNumber" BOOLEAN NOT NULL DEFAULT true,
     "previewPhoto" BOOLEAN NOT NULL DEFAULT true,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "businessId" INTEGER NOT NULL,
     "accountId" INTEGER NOT NULL,
 
@@ -181,14 +187,15 @@ CREATE TABLE "Tickets" (
     "protocol" TEXT NOT NULL,
     "status" "TypeStatusTicket" NOT NULL DEFAULT 'NEW',
     "destination" "TypeDestinationTicket" NOT NULL,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "accountId" INTEGER NOT NULL,
     "goBackFlowStateId" INTEGER,
     "inboxUserId" INTEGER,
     "inboxDepartmentId" INTEGER NOT NULL,
     "contactWAOnAccountId" INTEGER NOT NULL,
-    "connectionWAId" INTEGER NOT NULL,
+    "connectionWAId" INTEGER,
+    "connectionIgId" INTEGER,
 
     CONSTRAINT "Tickets_pkey" PRIMARY KEY ("id")
 );
@@ -212,11 +219,12 @@ CREATE TABLE "Messages" (
     "caption" TEXT NOT NULL DEFAULT '',
     "fileName" TEXT NOT NULL DEFAULT '',
     "messageKey" TEXT,
+    "status" "TypeStatusMessage" NOT NULL DEFAULT 'SENT',
     "flowStateId" INTEGER,
     "inboxUserId" INTEGER,
     "ticketsId" INTEGER,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Messages_pkey" PRIMARY KEY ("id")
 );
@@ -237,8 +245,8 @@ CREATE TABLE "Business" (
     "name" VARCHAR(50) NOT NULL,
     "description" TEXT,
     "accountId" INTEGER NOT NULL,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Business_pkey" PRIMARY KEY ("id")
 );
@@ -252,11 +260,29 @@ CREATE TABLE "ConnectionWA" (
     "type" "TypeConnetion" NOT NULL,
     "countShots" INTEGER NOT NULL DEFAULT 0,
     "number" TEXT,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "businessId" INTEGER NOT NULL,
 
     CONSTRAINT "ConnectionWA_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ConnectionIg" (
+    "id" SERIAL NOT NULL,
+    "interrupted" BOOLEAN NOT NULL DEFAULT false,
+    "description" TEXT,
+    "page_id" TEXT NOT NULL,
+    "page_name" TEXT NOT NULL,
+    "ig_username" TEXT NOT NULL,
+    "ig_id" TEXT NOT NULL,
+    "ig_picture" TEXT,
+    "credentials" TEXT NOT NULL,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "businessId" INTEGER NOT NULL,
+
+    CONSTRAINT "ConnectionIg_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -309,8 +335,8 @@ CREATE TABLE "Audience" (
     "interrupted" BOOLEAN NOT NULL DEFAULT false,
     "name" VARCHAR(150) NOT NULL,
     "type" "TypeAudience" NOT NULL,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "accountId" INTEGER NOT NULL,
 
     CONSTRAINT "Audience_pkey" PRIMARY KEY ("id")
@@ -319,8 +345,8 @@ CREATE TABLE "Audience" (
 -- CreateTable
 CREATE TABLE "ContactsWAOnAudience" (
     "id" SERIAL NOT NULL,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "audienceId" INTEGER NOT NULL,
     "contactWAOnAccountId" INTEGER NOT NULL,
 
@@ -349,14 +375,15 @@ CREATE TABLE "AudienceOnBusiness" (
 CREATE TABLE "FlowState" (
     "id" SERIAL NOT NULL,
     "isSent" BOOLEAN NOT NULL DEFAULT false,
-    "firedOnDate" TIMESTAMP(3),
+    "firedOnDate" TIMESTAMPTZ,
     "isFinish" BOOLEAN DEFAULT false,
+    "finishedAt" TIMESTAMPTZ,
     "indexNode" TEXT,
     "agentId" INTEGER,
     "fbc" TEXT,
     "fbp" TEXT,
     "ua" TEXT,
-    "expires_at" TIMESTAMP(3),
+    "expires_at" TIMESTAMPTZ,
     "ip" TEXT,
     "flowId" TEXT,
     "previous_response_id" TEXT,
@@ -364,11 +391,12 @@ CREATE TABLE "FlowState" (
     "inputTokens" INTEGER NOT NULL DEFAULT 0,
     "outputTokens" INTEGER NOT NULL DEFAULT 0,
     "fallbackSent" BOOLEAN NOT NULL DEFAULT false,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "campaignId" INTEGER,
     "contactsWAOnAccountId" INTEGER,
     "connectionWAId" INTEGER,
+    "connectionIgId" INTEGER,
     "audienceId" INTEGER,
     "chatbotId" INTEGER,
 
@@ -410,8 +438,8 @@ CREATE TABLE "Campaign" (
     "status" "TypeStatusCampaign" NOT NULL DEFAULT 'processing',
     "timeItWillStart" TEXT,
     "flowId" TEXT NOT NULL,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "accountId" INTEGER NOT NULL,
     "shootingSpeedId" INTEGER NOT NULL,
 
@@ -444,10 +472,11 @@ CREATE TABLE "Chatbot" (
     "addToLeadTagsIds" INTEGER[] DEFAULT ARRAY[]::INTEGER[],
     "trigger" VARCHAR(160),
     "flowBId" TEXT,
+    "connectionIgId" INTEGER,
     "businessId" INTEGER NOT NULL,
     "accountId" INTEGER NOT NULL,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Chatbot_pkey" PRIMARY KEY ("id")
 );
@@ -457,8 +486,12 @@ CREATE TABLE "ContactsWA" (
     "id" SERIAL NOT NULL,
     "img" VARCHAR(250) NOT NULL DEFAULT '',
     "completeNumber" TEXT NOT NULL,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "page_id" TEXT,
+    "name" VARCHAR(255),
+    "username" VARCHAR(150),
+    "channel" "TypeContact" NOT NULL DEFAULT 'whatsapp',
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "ContactsWA_pkey" PRIMARY KEY ("id")
 );
@@ -470,8 +503,9 @@ CREATE TABLE "ContactsWAOnAccount" (
     "name" VARCHAR(150) NOT NULL,
     "accountId" INTEGER NOT NULL,
     "contactWAId" INTEGER NOT NULL,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "last_interaction" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "ContactsWAOnAccount_pkey" PRIMARY KEY ("id")
 );
@@ -550,11 +584,12 @@ CREATE TABLE "ContactsWAOnAccountVariable" (
 CREATE TABLE "StoragePaths" (
     "id" SERIAL NOT NULL,
     "name" TEXT,
+    "attachment_id" TEXT,
     "originalName" TEXT NOT NULL,
     "fileName" TEXT NOT NULL,
     "size" DOUBLE PRECISION NOT NULL,
     "mimetype" TEXT,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "accountId" INTEGER NOT NULL,
 
     CONSTRAINT "StoragePaths_pkey" PRIMARY KEY ("id")
@@ -589,8 +624,8 @@ CREATE TABLE "FbPixel" (
     "pixel_id" TEXT NOT NULL,
     "access_token" VARCHAR(240) NOT NULL,
     "status" BOOLEAN NOT NULL DEFAULT true,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "accountId" INTEGER NOT NULL,
     "businessId" INTEGER,
 
@@ -602,7 +637,7 @@ CREATE TABLE "AccountLogDate" (
     "id" SERIAL NOT NULL,
     "type" "AccountLogDateType" NOT NULL,
     "accountId" INTEGER NOT NULL,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "AccountLogDate_pkey" PRIMARY KEY ("id")
 );
@@ -614,7 +649,7 @@ CREATE TABLE "GeralLogDate" (
     "type" "GeralLogDateType" NOT NULL,
     "entity" TEXT NOT NULL,
     "value" TEXT NOT NULL,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "GeralLogDate_pkey" PRIMARY KEY ("id")
 );
@@ -626,7 +661,7 @@ CREATE TABLE "ProviderCredential" (
     "label" TEXT NOT NULL,
     "apiKey" TEXT NOT NULL,
     "accountId" INTEGER NOT NULL,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "ProviderCredential_pkey" PRIMARY KEY ("id")
 );
@@ -645,11 +680,13 @@ CREATE TABLE "AgentAI" (
     "emojiLevel" "TypeEmojiLevel" NOT NULL DEFAULT 'none',
     "language" TEXT NOT NULL DEFAULT 'PT-BR',
     "model" TEXT NOT NULL,
+    "modelTranscription" TEXT,
     "temperature" DECIMAL(2,1) NOT NULL DEFAULT 0.1,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "accountId" INTEGER NOT NULL,
     "connectionWAId" INTEGER,
+    "connectionIgId" INTEGER,
     "chatbotId" INTEGER,
     "providerCredentialId" INTEGER NOT NULL,
 
@@ -683,8 +720,8 @@ CREATE TABLE "PaymentIntegrations" (
     "status" BOOLEAN NOT NULL DEFAULT true,
     "credentials" TEXT NOT NULL,
     "deleted" BOOLEAN NOT NULL DEFAULT false,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "accountId" INTEGER NOT NULL,
 
     CONSTRAINT "PaymentIntegrations_pkey" PRIMARY KEY ("id")
@@ -694,9 +731,9 @@ CREATE TABLE "PaymentIntegrations" (
 CREATE TABLE "PixKey" (
     "id" SERIAL NOT NULL,
     "key" TEXT NOT NULL,
-    "webhookRegisteredAt" TIMESTAMP(3),
+    "webhookRegisteredAt" TIMESTAMPTZ,
     "deleted" BOOLEAN NOT NULL DEFAULT false,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "paymentIntegrationId" INTEGER NOT NULL,
 
     CONSTRAINT "PixKey_pkey" PRIMARY KEY ("id")
@@ -709,8 +746,8 @@ CREATE TABLE "TrelloIntegration" (
     "status" BOOLEAN NOT NULL DEFAULT true,
     "key" VARCHAR(240) NOT NULL,
     "token" VARCHAR(240) NOT NULL,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "accountId" INTEGER NOT NULL,
 
     CONSTRAINT "TrelloIntegration_pkey" PRIMARY KEY ("id")
@@ -736,12 +773,12 @@ CREATE TABLE "Orders" (
     "tracking_code" VARCHAR(150),
     "delivery_code" VARCHAR(12),
     "itens_count" INTEGER DEFAULT 0,
-    "completedAt" TIMESTAMP(3),
+    "completedAt" TIMESTAMPTZ,
     "data" TEXT,
     "total" DECIMAL(10,2),
     "net_total" DECIMAL(10,2),
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "connectionWAId" INTEGER,
     "actionChannels" TEXT[],
     "flowNodeId" TEXT,
@@ -751,6 +788,7 @@ CREATE TABLE "Orders" (
     "contactsWAOnAccountId" INTEGER,
     "accountId" INTEGER NOT NULL,
     "businessId" INTEGER NOT NULL,
+    "connectionIgId" INTEGER,
 
     CONSTRAINT "Orders_pkey" PRIMARY KEY ("id")
 );
@@ -768,15 +806,15 @@ CREATE TABLE "Charges" (
     "method_type" "TypeMethodCharge" NOT NULL,
     "pix_link" TEXT,
     "pix_emv" TEXT,
-    "expires_at" TIMESTAMP(3),
-    "paid_at" TIMESTAMP(3),
+    "expires_at" TIMESTAMPTZ,
+    "paid_at" TIMESTAMPTZ,
     "e2e_id" TEXT,
     "content" TEXT,
     "metadata" JSONB,
     "flowNodeId" TEXT,
     "contactsWAOnAccountId" INTEGER,
     "businessId" INTEGER,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "accountId" INTEGER NOT NULL,
     "paymentIntegrationId" INTEGER,
     "orderId" INTEGER,
@@ -784,7 +822,7 @@ CREATE TABLE "Charges" (
     "flowStateId" INTEGER,
     "inboxUserId" INTEGER,
     "ticketId" INTEGER,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "updatedAt" TIMESTAMPTZ NOT NULL,
 
     CONSTRAINT "Charges_pkey" PRIMARY KEY ("id")
 );
@@ -796,7 +834,8 @@ CREATE TABLE "LogSystem" (
     "description" TEXT NOT NULL,
     "accountId" INTEGER,
     "connectionWAId" INTEGER,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "connectionIgId" INTEGER,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "LogSystem_pkey" PRIMARY KEY ("id")
 );
@@ -814,9 +853,10 @@ CREATE TABLE "MenusOnline" (
     "logoLabel" TEXT,
     "titlePage" TEXT,
     "status" BOOLEAN DEFAULT false,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "accountId" INTEGER NOT NULL,
     "connectionWAId" INTEGER NOT NULL,
+    "connectionIgId" INTEGER,
 
     CONSTRAINT "MenusOnline_pkey" PRIMARY KEY ("id")
 );
@@ -829,7 +869,7 @@ CREATE TABLE "SizesPizza" (
     "price" DECIMAL(6,2) NOT NULL,
     "flavors" INTEGER NOT NULL,
     "slices" INTEGER,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "menuId" INTEGER NOT NULL,
 
     CONSTRAINT "SizesPizza_pkey" PRIMARY KEY ("id")
@@ -847,8 +887,8 @@ CREATE TABLE "MenusOnlineItems" (
     "beforePrice" DECIMAL(6,2),
     "afterPrice" DECIMAL(6,2),
     "accountId" INTEGER,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "menuId" INTEGER NOT NULL,
 
     CONSTRAINT "MenusOnlineItems_pkey" PRIMARY KEY ("id")
@@ -867,9 +907,9 @@ CREATE TABLE "Notifications" (
     "toast_duration" INTEGER,
     "status" "TypeStatusChannelsNotification" NOT NULL DEFAULT 'unread',
     "url_redirect" TEXT,
-    "readAt" TIMESTAMP(3),
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "readAt" TIMESTAMPTZ,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "accountId" INTEGER,
 
     CONSTRAINT "Notifications_pkey" PRIMARY KEY ("id")
@@ -880,8 +920,8 @@ CREATE TABLE "PushTokens" (
     "id" SERIAL NOT NULL,
     "token" TEXT NOT NULL,
     "platform" TEXT NOT NULL,
-    "lastUsedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "lastUsedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "accountId" INTEGER NOT NULL,
 
     CONSTRAINT "PushTokens_pkey" PRIMARY KEY ("id")
@@ -894,11 +934,11 @@ CREATE TABLE "Appointments" (
     "desc" TEXT,
     "n_appointment" TEXT NOT NULL,
     "status" "StatusAppointments" NOT NULL,
-    "startAt" TIMESTAMP(3) NOT NULL,
-    "endAt" TIMESTAMP(3) NOT NULL,
+    "startAt" TIMESTAMPTZ NOT NULL,
+    "endAt" TIMESTAMPTZ NOT NULL,
     "createdBy" "TypeCreateByAppointments" NOT NULL DEFAULT 'bot',
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "accountId" INTEGER NOT NULL,
     "businessId" INTEGER NOT NULL,
     "actionChannels" TEXT[],
@@ -908,6 +948,7 @@ CREATE TABLE "Appointments" (
     "contactsWAOnAccountId" INTEGER,
     "connectionWAId" INTEGER,
     "deleted" BOOLEAN NOT NULL DEFAULT false,
+    "connectionIgId" INTEGER,
 
     CONSTRAINT "Appointments_pkey" PRIMARY KEY ("id")
 );
@@ -915,13 +956,13 @@ CREATE TABLE "Appointments" (
 -- CreateTable
 CREATE TABLE "AppointmentReminders" (
     "id" SERIAL NOT NULL,
-    "notify_at" TIMESTAMP(3) NOT NULL,
+    "notify_at" TIMESTAMPTZ NOT NULL,
     "deleted" BOOLEAN NOT NULL DEFAULT false,
     "status" "StatusAppointmentReminders" NOT NULL DEFAULT 'pending',
     "moment" TEXT NOT NULL,
     "appointmentId" INTEGER NOT NULL,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "AppointmentReminders_pkey" PRIMARY KEY ("id")
 );
@@ -931,16 +972,51 @@ CREATE TABLE "FollowUp" (
     "id" SERIAL NOT NULL,
     "code" TEXT NOT NULL,
     "body" TEXT NOT NULL,
-    "notify_at" TIMESTAMP(3) NOT NULL,
+    "notify_at" TIMESTAMPTZ NOT NULL,
     "deleted" BOOLEAN NOT NULL DEFAULT false,
     "status" "StatusAppointmentReminders" NOT NULL DEFAULT 'pending',
     "flowNodeId" TEXT NOT NULL,
     "flowStateId" INTEGER NOT NULL,
     "accountId" INTEGER NOT NULL,
-    "updateAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "FollowUp_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AgentTemplateInputsSection" (
+    "id" SERIAL NOT NULL,
+    "hash" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "collapsible" BOOLEAN NOT NULL DEFAULT false,
+    "desc" TEXT,
+    "inputs" JSONB[],
+    "sequence" INTEGER NOT NULL,
+    "templateId" INTEGER NOT NULL,
+
+    CONSTRAINT "AgentTemplateInputsSection_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AgentTemplates" (
+    "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+    "card_desc" TEXT NOT NULL,
+    "markdown_desc" TEXT NOT NULL,
+    "config_flow" TEXT NOT NULL,
+    "count_usage" INTEGER NOT NULL DEFAULT 0,
+    "chat_demo" JSONB NOT NULL,
+    "script_runner" TEXT NOT NULL,
+    "script_build_agentai_for_test" TEXT NOT NULL,
+    "variables" TEXT[],
+    "tags" TEXT[],
+    "created_by" TEXT NOT NULL,
+    "updateAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AgentTemplates_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -983,6 +1059,9 @@ CREATE INDEX "InboxDepartments_id_name_businessId_accountId_idx" ON "InboxDepart
 CREATE INDEX "Tickets_id_protocol_contactWAOnAccountId_status_destination_idx" ON "Tickets"("id", "protocol", "contactWAOnAccountId", "status", "destination", "inboxDepartmentId", "inboxUserId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Messages_messageKey_key" ON "Messages"("messageKey");
+
+-- CreateIndex
 CREATE INDEX "Messages_id_inboxUserId_ticketsId_flowStateId_messageKey_by_idx" ON "Messages"("id", "inboxUserId", "ticketsId", "flowStateId", "messageKey", "by", "read");
 
 -- CreateIndex
@@ -993,6 +1072,9 @@ CREATE INDEX "Business_id_accountId_idx" ON "Business"("id", "accountId");
 
 -- CreateIndex
 CREATE INDEX "ConnectionWA_id_name_type_number_idx" ON "ConnectionWA"("id", "name", "type", "number");
+
+-- CreateIndex
+CREATE INDEX "ConnectionIg_id_ig_username_idx" ON "ConnectionIg"("id", "ig_username");
 
 -- CreateIndex
 CREATE INDEX "ConnectionWAOnGroups_name_connectionWAId_id_idx" ON "ConnectionWAOnGroups"("name", "connectionWAId", "id");
@@ -1019,7 +1101,7 @@ CREATE INDEX "ContactsWAOnAudience_contactWAOnAccountId_audienceId_idx" ON "Cont
 CREATE INDEX "AudienceOnCampaign_campaignId_audienceId_idx" ON "AudienceOnCampaign"("campaignId", "audienceId");
 
 -- CreateIndex
-CREATE INDEX "FlowState_id_flowId_campaignId_contactsWAOnAccountId_connec_idx" ON "FlowState"("id", "flowId", "campaignId", "contactsWAOnAccountId", "connectionWAId", "audienceId", "isSent", "isFinish", "createAt");
+CREATE INDEX "FlowState_createAt_finishedAt_idx" ON "FlowState"("createAt", "finishedAt");
 
 -- CreateIndex
 CREATE INDEX "ConnectionOnCampaign_campaignId_connectionWAId_idx" ON "ConnectionOnCampaign"("campaignId", "connectionWAId");
@@ -1040,10 +1122,10 @@ CREATE INDEX "TimeToRestartChatbot_chatbotId_idx" ON "TimeToRestartChatbot"("cha
 CREATE INDEX "Chatbot_name_accountId_businessId_status_idx" ON "Chatbot"("name", "accountId", "businessId", "status");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ContactsWA_completeNumber_key" ON "ContactsWA"("completeNumber");
+CREATE INDEX "ContactsWA_id_completeNumber_createAt_idx" ON "ContactsWA"("id", "completeNumber", "createAt");
 
 -- CreateIndex
-CREATE INDEX "ContactsWA_id_completeNumber_createAt_idx" ON "ContactsWA"("id", "completeNumber", "createAt");
+CREATE UNIQUE INDEX "ContactsWA_completeNumber_page_id_channel_key" ON "ContactsWA"("completeNumber", "page_id", "channel");
 
 -- CreateIndex
 CREATE INDEX "ContactsWAOnAccount_id_contactWAId_createAt_idx" ON "ContactsWAOnAccount"("id", "contactWAId", "createAt");
@@ -1095,6 +1177,9 @@ CREATE UNIQUE INDEX "ProviderCredential_label_accountId_provider_key" ON "Provid
 
 -- CreateIndex
 CREATE UNIQUE INDEX "AgentAI_connectionWAId_key" ON "AgentAI"("connectionWAId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AgentAI_connectionIgId_key" ON "AgentAI"("connectionIgId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "AgentAI_chatbotId_key" ON "AgentAI"("chatbotId");
@@ -1156,6 +1241,12 @@ CREATE UNIQUE INDEX "PushTokens_token_key" ON "PushTokens"("token");
 -- CreateIndex
 CREATE INDEX "FollowUp_code_flowStateId_idx" ON "FollowUp"("code", "flowStateId");
 
+-- CreateIndex
+CREATE INDEX "AgentTemplateInputsSection_name_idx" ON "AgentTemplateInputsSection"("name");
+
+-- CreateIndex
+CREATE INDEX "AgentTemplates_count_usage_createAt_idx" ON "AgentTemplates"("count_usage", "createAt");
+
 -- AddForeignKey
 ALTER TABLE "RootConnectionWA" ADD CONSTRAINT "RootConnectionWA_connectionWAId_fkey" FOREIGN KEY ("connectionWAId") REFERENCES "ConnectionWA"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -1196,6 +1287,9 @@ ALTER TABLE "Tickets" ADD CONSTRAINT "Tickets_contactWAOnAccountId_fkey" FOREIGN
 ALTER TABLE "Tickets" ADD CONSTRAINT "Tickets_connectionWAId_fkey" FOREIGN KEY ("connectionWAId") REFERENCES "ConnectionWA"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Tickets" ADD CONSTRAINT "Tickets_connectionIgId_fkey" FOREIGN KEY ("connectionIgId") REFERENCES "ConnectionIg"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Messages" ADD CONSTRAINT "Messages_flowStateId_fkey" FOREIGN KEY ("flowStateId") REFERENCES "FlowState"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1209,6 +1303,9 @@ ALTER TABLE "Business" ADD CONSTRAINT "Business_accountId_fkey" FOREIGN KEY ("ac
 
 -- AddForeignKey
 ALTER TABLE "ConnectionWA" ADD CONSTRAINT "ConnectionWA_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ConnectionIg" ADD CONSTRAINT "ConnectionIg_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ConnectionWAOnGroups" ADD CONSTRAINT "ConnectionWAOnGroups_connectionWAId_fkey" FOREIGN KEY ("connectionWAId") REFERENCES "ConnectionWA"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1262,6 +1359,9 @@ ALTER TABLE "FlowState" ADD CONSTRAINT "FlowState_contactsWAOnAccountId_fkey" FO
 ALTER TABLE "FlowState" ADD CONSTRAINT "FlowState_connectionWAId_fkey" FOREIGN KEY ("connectionWAId") REFERENCES "ConnectionWA"("id") ON DELETE SET NULL ON UPDATE SET NULL;
 
 -- AddForeignKey
+ALTER TABLE "FlowState" ADD CONSTRAINT "FlowState_connectionIgId_fkey" FOREIGN KEY ("connectionIgId") REFERENCES "ConnectionIg"("id") ON DELETE SET NULL ON UPDATE SET NULL;
+
+-- AddForeignKey
 ALTER TABLE "ConnectionOnCampaign" ADD CONSTRAINT "ConnectionOnCampaign_connectionWAId_fkey" FOREIGN KEY ("connectionWAId") REFERENCES "ConnectionWA"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1290,6 +1390,9 @@ ALTER TABLE "TimeToRestartChatbot" ADD CONSTRAINT "TimeToRestartChatbot_chatbotI
 
 -- AddForeignKey
 ALTER TABLE "Chatbot" ADD CONSTRAINT "Chatbot_connectionWAId_fkey" FOREIGN KEY ("connectionWAId") REFERENCES "ConnectionWA"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Chatbot" ADD CONSTRAINT "Chatbot_connectionIgId_fkey" FOREIGN KEY ("connectionIgId") REFERENCES "ConnectionIg"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Chatbot" ADD CONSTRAINT "Chatbot_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1364,6 +1467,9 @@ ALTER TABLE "AgentAI" ADD CONSTRAINT "AgentAI_accountId_fkey" FOREIGN KEY ("acco
 ALTER TABLE "AgentAI" ADD CONSTRAINT "AgentAI_connectionWAId_fkey" FOREIGN KEY ("connectionWAId") REFERENCES "ConnectionWA"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "AgentAI" ADD CONSTRAINT "AgentAI_connectionIgId_fkey" FOREIGN KEY ("connectionIgId") REFERENCES "ConnectionIg"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "AgentAI" ADD CONSTRAINT "AgentAI_chatbotId_fkey" FOREIGN KEY ("chatbotId") REFERENCES "Chatbot"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1409,6 +1515,9 @@ ALTER TABLE "Orders" ADD CONSTRAINT "Orders_connectionWAId_fkey" FOREIGN KEY ("c
 ALTER TABLE "Orders" ADD CONSTRAINT "Orders_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Orders" ADD CONSTRAINT "Orders_connectionIgId_fkey" FOREIGN KEY ("connectionIgId") REFERENCES "ConnectionIg"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Charges" ADD CONSTRAINT "Charges_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1442,10 +1551,16 @@ ALTER TABLE "LogSystem" ADD CONSTRAINT "LogSystem_accountId_fkey" FOREIGN KEY ("
 ALTER TABLE "LogSystem" ADD CONSTRAINT "LogSystem_connectionWAId_fkey" FOREIGN KEY ("connectionWAId") REFERENCES "ConnectionWA"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "LogSystem" ADD CONSTRAINT "LogSystem_connectionIgId_fkey" FOREIGN KEY ("connectionIgId") REFERENCES "ConnectionIg"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "MenusOnline" ADD CONSTRAINT "MenusOnline_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "MenusOnline" ADD CONSTRAINT "MenusOnline_connectionWAId_fkey" FOREIGN KEY ("connectionWAId") REFERENCES "ConnectionWA"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MenusOnline" ADD CONSTRAINT "MenusOnline_connectionIgId_fkey" FOREIGN KEY ("connectionIgId") REFERENCES "ConnectionIg"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "SizesPizza" ADD CONSTRAINT "SizesPizza_menuId_fkey" FOREIGN KEY ("menuId") REFERENCES "MenusOnline"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1478,6 +1593,9 @@ ALTER TABLE "Appointments" ADD CONSTRAINT "Appointments_connectionWAId_fkey" FOR
 ALTER TABLE "Appointments" ADD CONSTRAINT "Appointments_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Appointments" ADD CONSTRAINT "Appointments_connectionIgId_fkey" FOREIGN KEY ("connectionIgId") REFERENCES "ConnectionIg"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "AppointmentReminders" ADD CONSTRAINT "AppointmentReminders_appointmentId_fkey" FOREIGN KEY ("appointmentId") REFERENCES "Appointments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1485,3 +1603,6 @@ ALTER TABLE "FollowUp" ADD CONSTRAINT "FollowUp_flowStateId_fkey" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "FollowUp" ADD CONSTRAINT "FollowUp_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AgentTemplateInputsSection" ADD CONSTRAINT "AgentTemplateInputsSection_templateId_fkey" FOREIGN KEY ("templateId") REFERENCES "AgentTemplates"("id") ON DELETE CASCADE ON UPDATE CASCADE;
