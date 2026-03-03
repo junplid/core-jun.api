@@ -122,9 +122,6 @@ export class CreateAgentAIUseCase {
     });
 
     if (exist) {
-      await prisma.providerCredential.delete({
-        where: { id: providerCredentialId },
-      });
       throw new ErrorResponse(400)
         .input({
           path: "name",

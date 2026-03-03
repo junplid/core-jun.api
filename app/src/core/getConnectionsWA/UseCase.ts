@@ -1,7 +1,7 @@
 import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 import { prisma } from "../../adapters/Prisma/client";
 import { decrypte } from "../../libs/encryption";
-import { getMetaAccountsIg } from "../../services/meta/meta.service";
+import { getMetaMeInfo } from "../../services/meta/meta.service";
 import { GetConnectionsWADTO_I } from "./DTO";
 
 export class GetConnectionsWAUseCase {
@@ -36,8 +36,8 @@ export class GetConnectionsWAUseCase {
     const nextConnectionsig = await Promise.all(
       connectionsig.map(async ({ ig_username, credentials, ...ig }) => {
         try {
-          // const { account_access_token } = decrypte(credentials);
-          // await getMetaAccountsIg(account_access_token);
+          const { account_access_token } = decrypte(credentials);
+          await getMetaMeInfo(account_access_token);
           return { ...ig, name: `@${ig_username}`, status: "open", type: "ig" };
         } catch (error) {
           return {

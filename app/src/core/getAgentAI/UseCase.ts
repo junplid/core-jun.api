@@ -23,6 +23,14 @@ export class GetAgentAIUseCase {
         debounce: true,
         timeout: true,
         connectionWAId: true,
+        ConnectionIg: {
+          select: {
+            id: true,
+            ig_username: true,
+            ig_picture: true,
+            page_name: true,
+          },
+        },
         chatbotId: true,
         service_tier: true,
         StoragePathsOnAgentAI: {
@@ -44,13 +52,15 @@ export class GetAgentAIUseCase {
       throw new ErrorResponse(400).container("Agente IA não encontrado.");
     }
 
-    const { AgentAIOnBusiness, StoragePathsOnAgentAI, ...rest } = data;
+    const { AgentAIOnBusiness, StoragePathsOnAgentAI, ConnectionIg, ...rest } =
+      data;
 
     return {
       message: "OK!",
       status: 200,
       agentAI: {
         ...rest,
+        connectionIg: ConnectionIg,
         businessIds: AgentAIOnBusiness.map((item) => item.businessId),
         files: StoragePathsOnAgentAI.map((item) => item.StoragePaths),
       },

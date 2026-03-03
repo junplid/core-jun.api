@@ -5,6 +5,10 @@ import { getShootingSpeedValidation } from "../../../../../core/getShootingSpeed
 import { getShootingSpeedController } from "../../../../../core/getShootingSpeed";
 import { getGeralLogsValidation } from "../../../../../core/getGeralLogs/Validation";
 import { getGeralLogsController } from "../../../../../core/getGeralLogs";
+import { getAgentTemplate_root_Validation } from "../../../../../core/getAgentTemplate_root/Validation";
+import { getAgentTemplate_root_Controller } from "../../../../../core/getAgentTemplate_root";
+import { getAgentTemplates_root_Validation } from "../../../../../core/getAgentTemplates_root/Validation";
+import { getAgentTemplates_root_Controller } from "../../../../../core/getAgentTemplates_root";
 
 const RouterV1Root_Get = Router();
 
@@ -15,19 +19,31 @@ RouterV1Root_Get.get("/verify-authorization", (_req, res, _next) => {
 RouterV1Root_Get.get(
   "/shooting-speeds",
   getShootingSpeedsValidation,
-  getShootingSpeedsController
+  getShootingSpeedsController,
 );
 
 RouterV1Root_Get.get(
   "/shooting-speeds/:id",
   getShootingSpeedValidation,
-  getShootingSpeedController
+  getShootingSpeedController,
 );
 
 RouterV1Root_Get.get(
   "/geral-logs",
   getGeralLogsValidation,
-  getGeralLogsController
+  getGeralLogsController,
+);
+
+RouterV1Root_Get.get(
+  "/agent-templates/:id",
+  getAgentTemplate_root_Validation,
+  getAgentTemplate_root_Controller,
+);
+
+RouterV1Root_Get.get(
+  "/agent-templates",
+  getAgentTemplates_root_Validation,
+  getAgentTemplates_root_Controller,
 );
 
 export default RouterV1Root_Get;

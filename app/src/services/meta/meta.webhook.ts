@@ -1,10 +1,6 @@
 import { Request, Response } from "express";
-import { getMetaAccessToken, getMetaLongAccessToken } from "./meta.auth";
-import { getMetaAccountsIg, getMetaLeadInfo } from "./meta.service";
+import { getMetaLeadInfo } from "./meta.service";
 import { prisma } from "../../adapters/Prisma/client";
-import { metaAccountsCache } from "./cache";
-import { socketIo } from "../../infra/express";
-import { AxiosError } from "axios";
 import { decrypte } from "../../libs/encryption";
 import {
   cacheFlowsMap,
@@ -25,6 +21,13 @@ import { sendMetaTyping } from "./modules/typing";
 import { resolve } from "path";
 import { webSocketEmitToRoom } from "../../infra/websocket";
 import { resolveHourAndMinute } from "../../utils/resolveHour:mm";
+import { mongo } from "../../adapters/mongo/connection";
+import axios from "axios";
+import { handleFileTemp } from "../../utils/handleFileTemp";
+
+import { exec } from "child_process";
+import util from "util";
+import { getAudioDuration } from "../../libs/FlowBuilder/nodes/AgentAI/speedUpAudio";
 
 const handleLead = async (props: {
   accountId: number;
@@ -56,36 +59,49 @@ const handleLead = async (props: {
         channel: "instagram",
         page_id: props.page_id,
       },
-      select: { id: true, name: true },
+      select: { id: true, name: true, username: true },
     });
 
     if (!getLead) {
       try {
-        const lead = await getMetaLeadInfo({
-          sender_id: props.lead_id,
-          page_token: props.account_access_token!,
-        });
-        const newLead = await prisma.contactsWA.create({
-          data: {
-            completeNumber: props.lead_id,
-            channel: "instagram",
-            page_id: props.page_id,
-            img: lead.picture,
-            name: lead.name,
-            username: lead.username,
-          },
-          select: { id: true },
-        });
-        const { id } = await prisma.contactsWAOnAccount.create({
-          data: {
-            contactWAId: newLead.id,
-            accountId: props.accountId,
-            name: lead.name,
-          },
-          select: { id: true },
-        });
-        contactAccountId = id;
-        name = lead.name;
+        // const lead = await getMetaLeadInfo({
+        //   sender_id: props.lead_id,
+        //   page_token: props.account_access_token!,
+        // });
+        const { ContactsWAOnAccount, ...contactWA } =
+          await prisma.contactsWA.upsert({
+            where: {
+              completeNumber_page_id_channel: {
+                completeNumber: props.lead_id,
+                channel: "instagram",
+                page_id: props.page_id,
+              },
+            },
+            create: { completeNumber: props.lead_id },
+            update: {},
+            select: {
+              id: true,
+              ContactsWAOnAccount: {
+                where: { accountId: props.accountId },
+                select: { id: true },
+              },
+            },
+          });
+
+        if (!ContactsWAOnAccount.length) {
+          const { id: newContact } = await prisma.contactsWAOnAccount.create({
+            data: {
+              name: props.lead_id,
+              accountId: props.accountId,
+              contactWAId: contactWA.id,
+            },
+            select: { id: true },
+          });
+          ContactsWAOnAccount.push({ id: newContact });
+        }
+
+        contactAccountId = ContactsWAOnAccount[0].id;
+        name = props.lead_id;
       } catch (error: any) {
         console.error(
           "Erro ao buscar perfil do Instagram:",
@@ -98,12 +114,12 @@ const handleLead = async (props: {
         data: {
           contactWAId: getLead.id,
           accountId: props.accountId,
-          name: getLead.name!,
+          name: (getLead.name || getLead.username)!,
         },
         select: { id: true },
       });
       contactAccountId = id;
-      name = getLead.name;
+      name = getLead.name || getLead.username;
     }
   }
 
@@ -149,10 +165,13 @@ export async function metaWebhook(req: Request, res: Response) {
   console.log("INSTAGRAM WEBHOOK:", JSON.stringify(req.body, null, 2));
   if (req.body.object === "instagram") {
     req.body.entry.forEach(async (entry: any) => {
-      const page_id = entry.id;
+      const page_or_ig_id = entry.id;
 
       const connectionIg = await prisma.connectionIg.findFirst({
-        where: { page_id, interrupted: false },
+        where: {
+          OR: [{ page_id: page_or_ig_id }, { ig_id: page_or_ig_id }],
+          interrupted: false,
+        },
         select: {
           id: true,
           credentials: true,
@@ -192,7 +211,7 @@ export async function metaWebhook(req: Request, res: Response) {
             accountId: connectionIg.Business.accountId,
             lead_id: identifierLead,
             account_access_token: account_access_token!,
-            page_id,
+            page_id: page_or_ig_id,
           });
           if (!event.message?.is_echo) {
             await prisma.contactsWAOnAccount.update({
@@ -207,7 +226,12 @@ export async function metaWebhook(req: Request, res: Response) {
 
           // procurar chatbot;
           const chatbot = await prisma.chatbot.findFirst({
-            where: { ConnectionIg: { page_id }, status: true },
+            where: {
+              ConnectionIg: {
+                OR: [{ page_id: page_or_ig_id }, { ig_id: page_or_ig_id }],
+              },
+              status: true,
+            },
             select: {
               id: true,
               flowId: true,
@@ -269,13 +293,16 @@ export async function metaWebhook(req: Request, res: Response) {
             }
 
             const messageText = event.message.text;
+            const messageAudio = (event.message.attachments || []).filter(
+              (s: any) => s.type === "audio",
+            );
 
-            if (!messageText) {
+            if (!messageText && !messageAudio.length) {
               const isSendMessageSuportText =
                 cacheSendMessageSuportText.get(keyMapLead);
               if (!isSendMessageSuportText) {
                 const { message_id } = await sendMetaTextMessage({
-                  text: "*Mensagem automática*\nEste chat ainda só oferece suporte a mensagens de texto.",
+                  text: "Este chat oferece suporte a mensagens de texto ou áudio.",
                   page_token: account_access_token!,
                   recipient_id: identifierLead,
                 });
@@ -284,7 +311,7 @@ export async function metaWebhook(req: Request, res: Response) {
                     messageKey: message_id,
                     by: "system",
                     message:
-                      "*Mensagem automática*\nEste chat ainda só oferece suporte a mensagens de texto.",
+                      "Este chat oferece suporte a mensagens de texto ou áudio.",
                     type: "text",
                     flowStateId: currentIndexNodeLead.id,
                     status: "DELIVERED",
@@ -295,22 +322,25 @@ export async function metaWebhook(req: Request, res: Response) {
               continue;
             }
 
-            await prisma.messages.create({
-              data: {
-                by: "contact",
-                message: messageText,
-                type: "text",
-                messageKey: event.message.mid,
-                flowStateId: currentIndexNodeLead.id,
-                status: "DELIVERED",
-              },
-            });
+            cacheSendMessageSuportText.delete(keyMapLead);
+
+            if (messageText) {
+              await prisma.messages.create({
+                data: {
+                  by: "contact",
+                  message: messageText,
+                  type: "text",
+                  messageKey: event.message.mid,
+                  flowStateId: currentIndexNodeLead.id,
+                  status: "DELIVERED",
+                },
+              });
+            }
 
             const isToRestartChatbot = chatbotRestartInDate.get(keyMapLead);
 
             if (!!isToRestartChatbot) {
               const isbefore = moment().isBefore(isToRestartChatbot);
-              console.log({ isbefore });
               if (isbefore) {
                 continue;
               } else {
@@ -344,6 +374,7 @@ export async function metaWebhook(req: Request, res: Response) {
             }
 
             if (chatbot.status) {
+              await mongo();
               const validMsgChatbot = async () => {
                 let flow: any = null;
                 if (
@@ -387,24 +418,6 @@ export async function metaWebhook(req: Request, res: Response) {
                       },
                     ]);
                     if (!flowFetch?.length) {
-                      // const hash = ulid();
-                      // isso ta errado. todos vao receber esse log, inclusive usuario.
-                      // cacheRootSocket.forEach((sockId) =>
-                      //   socketIo.to(sockId).emit(`geral-logs`, {
-                      //     hash,
-                      //     entity: "flows",
-                      //     type: "WARN",
-                      //     value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
-                      //   }),
-                      // );
-                      // await prisma.geralLogDate.create({
-                      //   data: {
-                      //     hash,
-                      //     entity: "flows",
-                      //     type: "WARN",
-                      //     value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
-                      //   },
-                      // });
                       return console.log(`Flow not found. 2`);
                     }
                     const { edges, nodes, businessIds } = flowFetch[0];
@@ -452,23 +465,6 @@ export async function metaWebhook(req: Request, res: Response) {
                       },
                     ]);
                     if (!flowFetch?.length) {
-                      // const hash = ulid();
-                      // cacheRootSocket.forEach((sockId) =>
-                      //   socketIo.to(sockId).emit(`geral-logs`, {
-                      //     hash,
-                      //     entity: "flows",
-                      //     type: "WARN",
-                      //     value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
-                      //   }),
-                      // );
-                      // await prisma.geralLogDate.create({
-                      //   data: {
-                      //     hash,
-                      //     entity: "flows",
-                      //     type: "WARN",
-                      //     value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
-                      //   },
-                      // });
                       return console.log(`Flow not found. 3`);
                     }
                     const { edges, nodes, businessIds } = flowFetch[0];
@@ -478,65 +474,36 @@ export async function metaWebhook(req: Request, res: Response) {
                 }
 
                 if (!flow) {
-                  // const hash = ulid();
-                  // cacheRootSocket.forEach((sockId) =>
-                  //   socketIo.to(sockId).emit(`geral-logs`, {
-                  //     hash,
-                  //     entity: "flows",
-                  //     type: "WARN",
-                  //     value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
-                  //   }),
-                  // );
-                  // await prisma.geralLogDate.create({
-                  //   data: {
-                  //     hash,
-                  //     entity: "flows",
-                  //     type: "WARN",
-                  //     value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} - flow: #${chatbot.flowId} | Not found`,
-                  //   },
-                  // });
                   return console.log(`Flow não encontrado.`);
                 }
 
-                // ainda nao trabalhamos com audio.
-                // let fileName = "";
-                // if (messageAudio) {
-                //   const ext = mime.extension(
-                //     messageAudio.mimetype || "audio/mpeg",
-                //   );
-                //   fileName = `audio_inbox_${Date.now()}.${ext}`;
-                //   try {
-                //     const buffer = await downloadMediaMessage(
-                //       body.messages[0],
-                //       "buffer",
-                //       {},
-                //     );
-                //     writeFileSync(
-                //       pathStatic + `/${fileName}`,
-                //       new Uint8Array(buffer),
-                //     );
-                //     leadAwaiting.set(keyMapLeadAwaiting, false);
-                //   } catch (error) {
-                //     const hash = ulid();
-                //     cacheRootSocket.forEach((sockId) =>
-                //       socketIo.to(sockId).emit(`geral-logs`, {
-                //         hash,
-                //         entity: "baileys",
-                //         type: "WARN",
-                //         value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Error ao tentar salvar AUDIO recebido no chatbot`,
-                //       }),
-                //     );
-                //     await prisma.geralLogDate.create({
-                //       data: {
-                //         hash,
-                //         entity: "baileys",
-                //         type: "WARN",
-                //         value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Error ao tentar salvar AUDIO recebido no chatbot`,
-                //       },
-                //     });
-                //     console.log(error);
-                //   }
-                // }
+                let audioFilePath = "";
+                if (messageAudio.length) {
+                  const response = await axios.get(
+                    messageAudio[0].payload.url,
+                    {
+                      responseType: "arraybuffer",
+                      headers: {
+                        Authorization: `Bearer ${account_access_token}`,
+                      },
+                    },
+                  );
+
+                  const buffer = Buffer.from(response.data);
+                  const contentType = response.headers["content-type"];
+                  const tempPath = await handleFileTemp.saveBuffer(
+                    buffer,
+                    contentType,
+                  );
+
+                  const duration = await getAudioDuration(tempPath);
+                  if (!duration) return;
+
+                  const durationMinutes = duration / 60;
+                  const maxDuration = Math.floor(6 * 1.3);
+                  if (durationMinutes > maxDuration) return;
+                  audioFilePath = tempPath;
+                }
 
                 await NodeControler({
                   mode: "prod",
@@ -549,6 +516,7 @@ export async function metaWebhook(req: Request, res: Response) {
                     type: "instagram",
                     page_token: account_access_token!,
                   },
+                  audioPath: audioFilePath,
                   connectionId: connectionIg.id,
                   chatbotId: chatbot.id,
                   oldNodeId: currentIndexNodeLead?.indexNode || "0",
@@ -845,48 +813,55 @@ export async function metaVerifyWebhook(req: Request, res: Response) {
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
-  if (mode === "subscribe" && token === "instagram_webhook_token_123") {
+  if (mode === "subscribe") {
+    const accountHash = await prisma.account.findFirst({
+      where: { hash: token as string },
+      select: { id: true },
+    });
+    if (!accountHash) {
+      return res.sendStatus(403);
+    }
     return res.status(200).send(challenge);
   }
 
   return res.sendStatus(403);
 }
 
-export async function metaIgCallbackWebhook(req: Request, res: Response) {
-  const { code, state: modal_id } = req.query;
+// export async function metaIgCallbackWebhook(req: Request, res: Response) {
+//   const { code, state: modal_id } = req.query;
 
-  if (!code) return res.send("<script>window.close();</script>");
+//   if (!code) return res.send("<script>window.close();</script>");
 
-  try {
-    const access_token = await getMetaAccessToken(code as string);
-    const long_access_token = await getMetaLongAccessToken(access_token);
-    const accounts = await getMetaAccountsIg(long_access_token);
+//   try {
+//     const access_token = await getMetaAccessToken(code as string);
+//     const long_access_token = await getMetaLongAccessToken(access_token);
+//     const accounts = await getMetaAccountsIg(long_access_token);
 
-    const resolveAccounts = await Promise.all(
-      accounts.map(async (s) => {
-        const get = await prisma.connectionIg.findFirst({
-          where: { ig_id: s.ig_id },
-          select: {
-            id: true,
-            Chatbot: { select: { name: true, id: true } },
-          },
-        });
-        return { ...s, used_by: get?.Chatbot.length ? get.Chatbot : [] };
-      }),
-    );
-    metaAccountsCache.set(
-      modal_id as string,
-      resolveAccounts.filter((s) => !s.used_by.length),
-    );
-    socketIo.to(modal_id as string).emit(
-      "receber_accounts",
-      resolveAccounts.map(({ page_token, ...s }) => ({ ...s })),
-    );
-    return res.send("<script>window.close();</script>");
-  } catch (error: any) {
-    console.log(error);
-    if (error instanceof AxiosError) {
-      res.json(error.response?.data);
-    }
-  }
-}
+//     const resolveAccounts = await Promise.all(
+//       accounts.map(async (s) => {
+//         const get = await prisma.connectionIg.findFirst({
+//           where: { ig_id: s.ig_id },
+//           select: {
+//             id: true,
+//             Chatbot: { select: { name: true, id: true } },
+//           },
+//         });
+//         return { ...s, used_by: get?.Chatbot.length ? get.Chatbot : [] };
+//       }),
+//     );
+//     metaAccountsCache.set(
+//       modal_id as string,
+//       resolveAccounts.filter((s) => !s.used_by.length),
+//     );
+//     socketIo.to(modal_id as string).emit(
+//       "receber_accounts",
+//       resolveAccounts.map(({ page_token, ...s }) => ({ ...s })),
+//     );
+//     return res.send("<script>window.close();</script>");
+//   } catch (error: any) {
+//     console.log(error);
+//     if (error instanceof AxiosError) {
+//       res.json(error.response?.data);
+//     }
+//   }
+// }

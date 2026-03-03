@@ -1,6 +1,11 @@
 import { GetAgentsAIDTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
 import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
+import { decrypte } from "../../libs/encryption";
+import {
+  getMetaAccountsIg,
+  getMetaMeInfo,
+} from "../../services/meta/meta.service";
 
 export class GetAgentsAIUseCase {
   constructor() {}
@@ -16,28 +21,62 @@ export class GetAgentsAIUseCase {
         AgentAIOnBusiness: {
           select: { Business: { select: { id: true, name: true } } },
         },
+        ConnectionIg: {
+          select: {
+            credentials: true,
+            ig_username: true,
+            ig_id: true,
+            id: true,
+          },
+        },
         connectionWAId: true,
       },
     });
 
-    const agentsAI = data.map(({ AgentAIOnBusiness, connectionWAId, ...r }) => {
-      if (connectionWAId) {
-        const isConnected = !!cacheConnectionsWAOnline.get(connectionWAId);
-        return {
-          ...r,
-          connectionWAId,
-          status: !!isConnected ? "open" : "close",
-          businesses: AgentAIOnBusiness.map((item) => item.Business),
-        };
-      } else {
-        return {
-          ...r,
-          status: "close",
-          connectionWAId,
-          businesses: AgentAIOnBusiness.map((item) => item.Business),
-        };
-      }
-    });
+    const agentsAI = await Promise.all(
+      data.map(
+        async ({ AgentAIOnBusiness, connectionWAId, ConnectionIg, ...r }) => {
+          const connections: {
+            id: number;
+            type: "ig" | "wa";
+            status: "open" | "close";
+          }[] = [];
+          if (connectionWAId) {
+            const isConnected = !!cacheConnectionsWAOnline.get(connectionWAId);
+            connections.push({
+              id: connectionWAId,
+              status: !!isConnected ? "open" : "close",
+              type: "wa",
+            });
+          }
+          if (ConnectionIg) {
+            try {
+              const { account_access_token } = decrypte(
+                ConnectionIg.credentials,
+              );
+              await getMetaMeInfo(account_access_token);
+              connections.push({
+                id: ConnectionIg.id,
+                status: "open",
+                type: "ig",
+              });
+            } catch (error) {
+              connections.push({
+                id: ConnectionIg.id,
+                status: "close",
+                type: "ig",
+              });
+            }
+          }
+
+          return {
+            ...r,
+            connections,
+            businesses: AgentAIOnBusiness.map((item) => item.Business),
+          };
+        },
+      ),
+    );
 
     return {
       message: "OK!",

@@ -21,8 +21,7 @@ export class DeleteConnectionIGUseCase {
 
     if (!connection) {
       throw new ErrorResponse(400).toast({
-        title:
-          "Conexão não encontrada ou você não tem permissão para apaga-la.",
+        title: "Conexão não encontrada.",
         type: "error",
       });
     }
@@ -36,7 +35,7 @@ export class DeleteConnectionIGUseCase {
       await revokeUserPermissions({
         user_access_token: payload.account_access_token,
       });
-    } catch (error) {
+    } catch (error: any) {
       await prisma.logSystem.create({
         data: {
           name: "error_delete_data_meta_account",
@@ -50,9 +49,9 @@ export class DeleteConnectionIGUseCase {
       });
     }
 
-    await prisma.connectionIg.delete({
-      where: { id: dto.id, Business: { accountId: dto.accountId } },
-    });
+    // await prisma.connectionIg.delete({
+    //   where: { id: dto.id, Business: { accountId: dto.accountId } },
+    // });
 
     return { message: "OK!", status: 200 };
   }

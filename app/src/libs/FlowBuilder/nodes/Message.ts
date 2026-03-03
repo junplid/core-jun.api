@@ -8,6 +8,7 @@ import { sendMetaMarkSeen } from "../../../services/meta/modules/markSeen";
 import { sendMetaTextMessage } from "../../../services/meta/modules/sendTextMessage";
 import { sendMetaTyping } from "../../../services/meta/modules/typing";
 import { isWithin24Hours } from "../../../services/meta/modules/checkWindowDay";
+import axios from "axios";
 
 type PropsNodeMessage =
   | {
@@ -79,19 +80,48 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
           });
         }
         if (props.external_adapter.type === "instagram") {
+          await axios.post(
+            "https://graph.instagram.com/25835836246075233/messages",
+            {
+              recipient: {
+                id: "928692789541890",
+              },
+              message: {
+                text: message.text,
+              },
+            },
+            {
+              headers: {
+                Authorization: `Bearer IGAAnIjPX8ZAZClBZAFpIYi1oN28xY290RG1mcl9HcDVrcFhqbXhULXpXdXZAuTUNnNDZAzY3diN1d4WHFiRVcybW9uY1FlU1RPd25scU5OdUZA6RnZAMamVCcE9PQ0xzWmVEb2JrblFROHIzLXBCSVdXQXR2OXNoMDhndzJkc2cyekR3cwZDZD`,
+              },
+            },
+          );
+          await axios.get(
+            "https://graph.instagram.com/me?access_token=IGAAnIjPX8ZAZClBZAGJHNDQ3UE1zTE85S3BPSjdNcXlqUlZAhSDRBNGZAXLXloV1JsTUFaalowcDQ0VzVTSDhjSlE3YlUySVkyYmUxcEpUcW1Vbl9ITTRiaDBHdGhmOFdrTW1HRmJORTVqNk45UEc2bGFHZA3dfdG5CSUlpUEhOS216WQZDZD",
+
+            {
+              headers: {
+                Authorization: `Bearer IGAAnIjPX8ZAZClBZAGJHNDQ3UE1zTE85S3BPSjdNcXlqUlZAhSDRBNGZAXLXloV1JsTUFaalowcDQ0VzVTSDhjSlE3YlUySVkyYmUxcEpUcW1Vbl9ITTRiaDBHdGhmOFdrTW1HRmJORTVqNk45UEc2bGFHZA3dfdG5CSUlpUEhOS216WQZDZD`,
+              },
+            },
+          );
+          console.log("envou a mensage,");
+
           await sendMetaMarkSeen({
-            page_token: props.external_adapter.page_token!,
+            page_token:
+              "IGAAnIjPX8ZAZClBZAGItZATM5RTdiRE9NYmdWaFROMEZANS1dId2gyYXU3NXZACTzFmaTd3Q0pySFRUeG1tSGg1c29sY2VtNWNRQlpXeWNyWVpJT0RhbXhFWE9JeDNDUm5DMkJtWEo0OTRQQjlLcWV3TXJGRHVPcEctclJXYmZAzQTJnUQZDZD"!,
             recipient_id: props.lead_id,
           });
           await new Promise((resolve) => setTimeout(resolve, 300));
           await sendMetaTyping({
-            page_token: props.external_adapter.page_token,
+            page_token:
+              "IGAAnIjPX8ZAZClBZAGItZATM5RTdiRE9NYmdWaFROMEZANS1dId2gyYXU3NXZACTzFmaTd3Q0pySFRUeG1tSGg1c29sY2VtNWNRQlpXeWNyWVpJT0RhbXhFWE9JeDNDUm5DMkJtWEo0OTRQQjlLcWV3TXJGRHVPcEctclJXYmZAzQTJnUQZDZD",
             recipient_id: props.lead_id,
             delay: Number(message.interval || 0),
           });
         }
-      } catch (error) {
-        console.log(error);
+      } catch (error: any) {
+        console.log(error.response.data);
         props.action.onErrorClient?.();
         rej(error);
       }

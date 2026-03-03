@@ -7,8 +7,6 @@ import { cacheTestAgentTemplate } from "../../libs/FlowBuilder/cache";
 import vm from "node:vm";
 import { transformSync } from "esbuild";
 import { NodeControler } from "../../libs/FlowBuilder/Control";
-import { nanoid } from "nanoid";
-import { SendMessageText } from "../../adapters/Baileys/modules/sendMessage";
 import Joi from "joi";
 
 export interface ICacheTestAgentTemplate {
@@ -280,7 +278,7 @@ export class TestAgentTemplateUseCase {
               (item: { id: number | string; value: string }) => {
                 if (typeof item.id === "string") {
                   const nextId =
-                    variabels.find((_, i) => item.id === `$tags.[${i}].id`)
+                    variabels.find((_, i) => item.id === `$vars.[${i}].id`)
                       ?.id || 0;
                   return (item.id = nextId);
                 }

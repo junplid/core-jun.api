@@ -1125,13 +1125,16 @@ export const NodeAgentAI = async ({
   if (props.mode === "prod" && props.audioPath) {
     if (agent.modelTranscription) {
       const audioPathSpeed = await speedUpAudioFile(props.audioPath, 1.3);
+
       handleFileTemp.cleanFile(props.audioPath);
+
       const openai = new OpenAI({ apiKey: agent.apiKey });
       const transcription = await openai.audio.transcriptions.create({
         file: createReadStream(audioPathSpeed),
         model: agent.modelTranscription,
         language: "pt",
       });
+
       await handleFileTemp.cleanFile(audioPathSpeed);
       cacheMessagesDebouceAgentAI.set(keyMap, [
         ...messages,
@@ -1547,9 +1550,8 @@ export const NodeAgentAI = async ({
                                                 },
                                               ],
                                             },
-                                            external_adapter: {
-                                              type: "baileys",
-                                            },
+                                            external_adapter:
+                                              props.external_adapter,
                                             flowStateId: props.flowStateId,
                                             lead_id: props.lead_id,
                                             sendBy: "bot",
@@ -2038,6 +2040,18 @@ export const NodeAgentAI = async ({
 
                               case "notificar_whatsapp": {
                                 let isError = false;
+                                if (
+                                  props.mode === "prod" &&
+                                  props.external_adapter.type === "instagram"
+                                ) {
+                                  outputs.push({
+                                    type: "function_call_output",
+                                    call_id: c.call_id,
+                                    output:
+                                      "Você não pode enviar notificação em canal do instagram. Apenas ignore!",
+                                  });
+                                  continue;
+                                }
                                 await NodeNotifyWA({
                                   ...(props.mode === "prod"
                                     ? {

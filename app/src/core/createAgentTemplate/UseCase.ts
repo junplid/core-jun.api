@@ -355,9 +355,8 @@ export class CreateAgentTemplateUseCase {
 
       let dataDependence: {
         agent: any;
-        flow: any;
-        tagsId?: number[];
-        variablesId?: number[];
+        tags?: { id: number; name: string }[];
+        variables?: { id: number; name: string }[];
       } | null = null;
       try {
         socketAccount.emit(
@@ -445,38 +444,10 @@ export class CreateAgentTemplateUseCase {
           }),
         );
 
-        const flowJson = JSON.parse(findTemplate.config_flow);
-
-        flowJson.nodes = flowJson.nodes.map((node: any) => {
-          if (node.type === "NodeAddTags") {
-            node.data.list = node.data?.list?.map((item: string | number) => {
-              if (typeof item === "string") {
-                return tags.find((_, i) => item === `$tags.[${i}].id`)?.id || 0;
-              }
-              return item;
-            });
-          }
-          if (node.type === "NodeAddVariables") {
-            node.data.list = node.data?.list?.map(
-              (item: { id: number | string; value: string }) => {
-                if (typeof item.id === "string") {
-                  const nextId =
-                    variabels.find((_, i) => item.id === `$tags.[${i}].id`)
-                      ?.id || 0;
-                  return (item.id = nextId);
-                }
-                return item;
-              },
-            );
-          }
-          return node;
-        });
-
         dataDependence = {
           agent: result,
-          flow: flowJson,
-          tagsId: tags.map((s) => s.id),
-          variablesId: variabels.map((s) => s.id),
+          tags: tags,
+          variables: variabels,
         };
         socketAccount.emit(
           `modal-agent-template-${dto.modalHash}`,
@@ -517,7 +488,7 @@ export class CreateAgentTemplateUseCase {
             accountId: dto.accountId,
             providerCredentialId: providerCredentialId,
             ...dataDependence.agent,
-            name: `${dataDependence.agent.name} - ${nodeUnique}`,
+            name: dataDependence.agent.name,
             AgentAIOnBusiness: { create: { businessId: business.id } },
             temperature: dataDependence.agent.temperature || 1,
             service_tier: modelNotFlex.some(
@@ -562,6 +533,44 @@ export class CreateAgentTemplateUseCase {
         );
         await sleep(2);
 
+        const flowJson = JSON.parse(findTemplate.config_flow);
+
+        flowJson.nodes = flowJson.nodes.map((node: any) => {
+          if (node.type === "NodeAddTags") {
+            node.data.list = node.data?.list?.map((item: string | number) => {
+              if (typeof item === "string") {
+                return (
+                  dataDependence.tags?.find(
+                    (_, i) => item === `$tags.[${i}].id`,
+                  )?.id || item
+                );
+              }
+              return item;
+            });
+          }
+          if (node.type === "NodeAddVariables") {
+            node.data.list = node.data?.list?.map(
+              (item: { id: number | string; value: string }) => {
+                if (typeof item.id === "string") {
+                  const nextId =
+                    dataDependence.variables?.find(
+                      (_, i) => item.id === `$vars.[${i}].id`,
+                    )?.id || item.id;
+                  item.id = nextId;
+                  return item;
+                }
+                return item;
+              },
+            );
+          }
+          if (node.type === "NodeAgentAI") {
+            if (node.data.agentId === "$agentId") {
+              node.data.agentId = agentAIId;
+            }
+          }
+          return node;
+        });
+
         await mongo();
         const flow = await ModelFlows.create({
           name: `Flow for ${dataDependence.agent.name} - ${nodeUnique}`,
@@ -572,7 +581,7 @@ export class CreateAgentTemplateUseCase {
           _id: ulid(),
           data: {
             metrics: {},
-            ...dataDependence.flow,
+            ...flowJson,
           },
         });
         flowId = flow._id as string;
@@ -697,8 +706,8 @@ export class CreateAgentTemplateUseCase {
             accountId: dto.accountId,
             db: { createChatbot },
             AgentTemplate: {
-              tagsId: dataDependence.tagsId,
-              variablesId: dataDependence.variablesId,
+              tagsId: dataDependence.tags?.map((s) => s.id),
+              variablesId: dataDependence.variables?.map((s) => s.id),
             },
           } as {
             accountId: number;
@@ -732,6 +741,7 @@ export class CreateAgentTemplateUseCase {
             id: "6",
             label: "Chatbot.",
             type: "success",
+            connectionId,
           } as DataSocketMapCreate,
           [],
         );

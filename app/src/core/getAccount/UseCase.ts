@@ -15,6 +15,7 @@ export class GetAccountUseCase {
           emailEncrypted: true,
           emailVerified: true,
           onboarded: true,
+          hash: true,
           isPremium: true,
           Business: { select: { id: true } },
         },

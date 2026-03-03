@@ -67,6 +67,8 @@ import { createAgentTemplateValidation } from "../../../../../core/createAgentTe
 import { createAgentTemplateController } from "../../../../../core/createAgentTemplate";
 import { createAppointmentValidation } from "../../../../../core/createAppointment/Validation";
 import { createAppointmentController } from "../../../../../core/createAppointment";
+import { getAccountsIgValidation } from "../../../../../core/getMetaAccountsIg/Validation";
+import { getAccountsIgController } from "../../../../../core/getMetaAccountsIg";
 
 const RouterV1Private_Post = Router();
 
@@ -347,6 +349,13 @@ RouterV1Private_Post.post(
   csrfMiddleware,
   createAppointmentValidation,
   createAppointmentController,
+);
+
+RouterV1Private_Post.post(
+  "/accounts-for-ig",
+  csrfMiddleware,
+  getAccountsIgValidation,
+  getAccountsIgController,
 );
 
 export default RouterV1Private_Post;

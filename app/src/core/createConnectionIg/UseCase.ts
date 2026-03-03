@@ -22,7 +22,7 @@ export class CreateConnectionIgUseCase {
             id: number;
           }[];
         }[]
-      >(modal_id);
+      >(accountId);
       const pickAccount = getAccounts?.find((s) => s.ig_id === dto.ig_id);
       if (!pickAccount) {
         console.log("error 1");

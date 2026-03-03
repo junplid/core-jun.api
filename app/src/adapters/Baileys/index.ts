@@ -1881,10 +1881,10 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                               "buffer",
                               {},
                             )) as Buffer;
-                          const tempPath =
-                            await handleFileTemp.saveBuffer(
-                              originalBufferAudio,
-                            );
+                          const tempPath = await handleFileTemp.saveBuffer(
+                            originalBufferAudio,
+                            "audio/ogg",
+                          );
                           audioFilePath = tempPath;
                         } catch (error) {
                           const hash = ulid();
@@ -1906,6 +1906,19 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                           });
                           console.log(error);
                         }
+                      }
+
+                      if (messageText) {
+                        await prisma.messages.create({
+                          data: {
+                            by: "contact",
+                            message: messageText,
+                            type: "text",
+                            messageKey: m.key.id,
+                            flowStateId: currentIndexNodeLead.id,
+                            status: "DELIVERED",
+                          },
+                        });
                       }
 
                       await NodeControler({

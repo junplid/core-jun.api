@@ -26,18 +26,21 @@ export class CreateFlowUseCase {
     //     text: "Limite de construtores de fluxo atingido.",
     //   });
     // }
+    const nodeUnique = Math.floor(Date.now() / 1000);
 
-    const existName = await ModelFlows.count({
-      name: dto.name,
-      accountId: dto.accountId,
-      businessIds: businessIds || [],
-    });
-
-    if (existName) {
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Já existe com esse nome",
+    if (!agentIdDto) {
+      const existName = await ModelFlows.count({
+        name: dto.name,
+        accountId: dto.accountId,
+        businessIds: businessIds || [],
       });
+
+      if (existName) {
+        throw new ErrorResponse(400).input({
+          path: "name",
+          text: "Já existe com esse nome",
+        });
+      }
     }
 
     const nodes: any = [
@@ -68,7 +71,13 @@ export class CreateFlowUseCase {
     }
 
     const flow = await ModelFlows.create({
-      ...{ ...dto, agentId: agentIdDto, _id: ulid(), businessIds },
+      ...{
+        ...dto,
+        name: agentIdDto ? `${dto.name} ${nodeUnique}` : dto.name,
+        agentId: agentIdDto,
+        _id: ulid(),
+        businessIds,
+      },
       data: {
         metrics: {},
         nodes,

@@ -120,24 +120,29 @@ export class CreateConnectionWAUseCase {
     // }
 
     try {
-      const exist = await prisma.connectionWA.findFirst({
-        where: {
-          name: dto.name,
-          type: dto.type,
-          Business: { id: dto.businessId, accountId },
-        },
-        select: { id: true },
-      });
+      const nodeUnique = Math.floor(Date.now() / 1000);
 
-      if (exist) {
-        throw new ErrorResponse(400).input({
-          path: "name",
-          text: "Já existe uma conexão com este nome.",
+      if (!agentId) {
+        const exist = await prisma.connectionWA.findFirst({
+          where: {
+            name: dto.name,
+            type: dto.type,
+            Business: { id: dto.businessId, accountId },
+          },
+          select: { id: true },
         });
+
+        if (exist) {
+          throw new ErrorResponse(400).input({
+            path: "name",
+            text: "Já existe uma conexão com este nome.",
+          });
+        }
       }
+
       const data = await prisma.connectionWA.create({
         data: {
-          name: dto.name,
+          name: agentId ? `${dto.name} ${nodeUnique}` : dto.name,
           description: dto.description,
           type: dto.type,
           businessId: dto.businessId,
@@ -184,7 +189,9 @@ export class CreateConnectionWAUseCase {
           console.log("Não foi possivel deletar a imagem antiga", error);
         });
       }
-      console.log(error);
+      if (error instanceof ErrorResponse) {
+        throw error;
+      }
       throw new ErrorResponse(400).toast({
         title: "Erro ao criar conexão.",
         type: "error",

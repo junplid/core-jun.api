@@ -39,14 +39,14 @@ export async function getMetaLeadInfo(props: {
   const client = createMetaHttpClient();
   const { data } = await client.get(`/${props.sender_id}`, {
     params: {
-      fields: "name,username,profile_picture_url",
+      fields: "name,username,profile_pic",
       access_token: props.page_token,
     },
   });
   return {
     name: data.name,
     username: data.username,
-    picture: data.profile_picture_url,
+    picture: data.profile_pic,
   };
 }
 
@@ -107,4 +107,14 @@ export async function revokeUserPermissions(props: {
   });
 
   return data;
+}
+
+export async function getMetaMeInfo(page_token: string) {
+  const client = createMetaHttpClient();
+  await client.get("/me", {
+    params: {
+      access_token: page_token,
+      fields: "name,instagram_business_account{id}",
+    },
+  });
 }

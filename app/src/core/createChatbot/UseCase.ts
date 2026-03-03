@@ -27,19 +27,22 @@ export class CreateChatbotUseCase {
     //   });
     // }
 
-    const exist = await prisma.chatbot.findFirst({
-      where: {
-        name: dto.name,
-        accountId: dto.accountId,
-        businessId: dto.businessId,
-      },
-    });
-
-    if (exist) {
-      throw new ErrorResponse(400).input({
-        path: "name",
-        text: "Já existe um `Bot` com esse nome.",
+    const nodeUnique = Math.floor(Date.now() / 1000);
+    if (!agentId) {
+      const exist = await prisma.chatbot.findFirst({
+        where: {
+          name: dto.name,
+          accountId: dto.accountId,
+          businessId: dto.businessId,
+        },
       });
+
+      if (exist) {
+        throw new ErrorResponse(400).input({
+          path: "name",
+          text: "Já existe um `Bot` com esse nome.",
+        });
+      }
     }
 
     if (dto.connectionWAId) {
@@ -139,6 +142,7 @@ export class CreateChatbotUseCase {
       }
       let account_access_token = null;
       try {
+        console.log(getconnectionig);
         const payload = await decrypte(getconnectionig.credentials);
         account_access_token = payload.account_access_token;
       } catch (error) {
@@ -155,7 +159,8 @@ export class CreateChatbotUseCase {
           account_access_token,
           page_id: getconnectionig.page_id,
         });
-      } catch (error) {
+      } catch (error: any) {
+        console.log(error.response.data.error);
         throw new ErrorResponse(400).toast({
           title: "Falha na inscrição de Webhook.",
           description: "Integração com Instagram.",
@@ -167,6 +172,7 @@ export class CreateChatbotUseCase {
     const { id, Business, createAt } = await prisma.chatbot.create({
       data: {
         ...data,
+        name: agentId ? `${dto.name} ${nodeUnique}` : dto.name,
         ...(timeToRestart && { TimeToRestart: { create: timeToRestart } }),
         ...(agentId && { AgentAI: { connect: { id: agentId } } }),
       },

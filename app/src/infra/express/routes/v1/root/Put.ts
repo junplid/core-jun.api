@@ -8,6 +8,8 @@ import { updateShootingSpeedController } from "../../../../../core/updateShootin
 import { updateAccountToPremiumValidation } from "../../../../../core/updateAccountToPremium/Validation";
 import { updateAccountToPremiumController } from "../../../../../core/updateAccountToPremium";
 import { csrfMiddleware } from "../../../../middlewares/csrf";
+import { updateAgentTemplate_root_Validation } from "../../../../../core/updateAgentTemplate_root/Validation";
+import { updateAgentTemplate_root_Controller } from "../../../../../core/updateAgentTemplate_root";
 
 const RouterV1Root_Put = Router();
 
@@ -37,6 +39,13 @@ RouterV1Root_Put.put(
   csrfMiddleware,
   updateAccountToPremiumValidation,
   updateAccountToPremiumController,
+);
+
+RouterV1Root_Put.put(
+  "/agent-templates/:id",
+  csrfMiddleware,
+  updateAgentTemplate_root_Validation,
+  updateAgentTemplate_root_Controller,
 );
 
 export default RouterV1Root_Put;

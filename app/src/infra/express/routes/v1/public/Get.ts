@@ -13,7 +13,7 @@ import { listFbChatbot } from "../../../../../utils/cachesMap";
 import { getMenuOnlinePublicValidation } from "../../../../../core/getMenuOnlinePublic/Validation";
 import { getMenuOnlinePublicController } from "../../../../../core/getMenuOnlinePublic";
 import {
-  metaIgCallbackWebhook,
+  // metaIgCallbackWebhook,
   metaVerifyWebhook,
 } from "../../../../../services/meta/meta.webhook";
 import { getAgentTemplatesValidation } from "../../../../../core/getAgentTemplates/Validation";
@@ -192,7 +192,7 @@ RouterV1Public_Get.get(
 );
 
 RouterV1Public_Get.get("/meta/webhook", metaVerifyWebhook);
-RouterV1Public_Get.get("/meta/auth/instagram/callback", metaIgCallbackWebhook);
+// RouterV1Public_Get.get("/meta/auth/instagram/callback", metaIgCallbackWebhook);
 
 RouterV1Public_Get.get(
   "/template-agents",
