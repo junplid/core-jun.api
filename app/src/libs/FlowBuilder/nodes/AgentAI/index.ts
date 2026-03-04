@@ -42,6 +42,7 @@ import { createReadStream } from "fs-extra";
 import { cacheTestAgentTemplate } from "../../cache";
 import { ICacheTestAgentTemplate } from "../../../../core/testAgentTemplate/UseCase";
 import { NodeMessage } from "../Message";
+import { Joi } from "express-validation";
 
 const MAX_RETRIES = 5;
 const BASE_DELAY = 500; // ms
@@ -2386,6 +2387,63 @@ export const NodeAgentAI = async ({
                                     });
                                     continue;
                                   }
+                                  const schemaValidation = Joi.object({
+                                    title: Joi.string().required(),
+                                    desc: Joi.string().optional().allow(""),
+                                    status: Joi.string()
+                                      .valid(
+                                        "completed",
+                                        "pending_confirmation",
+                                        "confirmed",
+                                        "canceled",
+                                      )
+                                      .required(),
+                                    startAt: Joi.string().isoDate().required(),
+                                    actionChannels: Joi.array()
+                                      .items(Joi.string())
+                                      .optional(),
+                                    reminders: Joi.array()
+                                      .items(Joi.string())
+                                      .optional(),
+                                    endAt: Joi.string()
+                                      .valid(
+                                        "10min",
+                                        "30min",
+                                        "1h",
+                                        "1h e 30min",
+                                        "2h",
+                                        "3h",
+                                        "4h",
+                                        "5h",
+                                        "10h",
+                                        "15h",
+                                        "1d",
+                                        "2d",
+                                      )
+                                      .optional()
+                                      .allow(""),
+                                  });
+
+                                  const validation = schemaValidation.validate(
+                                    args,
+                                    { abortEarly: false },
+                                  );
+
+                                  if (validation.error) {
+                                    const errors = validation.error.details.map(
+                                      (detail) => ({
+                                        message: detail.message,
+                                        path: detail.path,
+                                      }),
+                                    );
+                                    outputs.push({
+                                      type: "function_call_output",
+                                      call_id: c.call_id,
+                                      output: JSON.stringify(errors, null, 2),
+                                    });
+                                    continue;
+                                  }
+
                                   let codeAppointment = "";
                                   await NodeCreateAppointment({
                                     mode: "prod",

@@ -678,25 +678,29 @@ export class CreateAgentTemplateUseCase {
           trigger?: string;
           destLink?: string;
         }) {
-          await prisma.chatbot.create({
-            data: {
-              accountId: dto.accountId,
-              connectionWAId: connectionId,
-              flowId: flowId!,
-              name: `Chatbot for ${dataDependence!.agent.name} - ${nodeUnique}`,
-              ...data,
-              ...(TimeToRestart && {
-                TimeToRestart: { create: TimeToRestart },
-              }),
-              AgentAI: { connect: { id: agentAIId! } },
-              businessId: business!.id,
-              status: true,
-              description: `Criada para o Assistente de IA "${dataDependence!.agent.name} - ${nodeUnique}"`,
-            },
-            select: {
-              createAt: true,
-            },
-          });
+          try {
+            await prisma.chatbot.create({
+              data: {
+                accountId: dto.accountId,
+                connectionWAId: connectionId,
+                flowId: flowId!,
+                name: `Chatbot for ${dataDependence!.agent.name} - ${nodeUnique}`,
+                ...data,
+                ...(TimeToRestart && {
+                  TimeToRestart: { create: TimeToRestart },
+                }),
+                AgentAI: { connect: { id: agentAIId! } },
+                businessId: business!.id,
+                status: true,
+                description: `Criada para o Assistente de IA "${dataDependence!.agent.name} - ${nodeUnique}"`,
+              },
+              select: {
+                createAt: true,
+              },
+            });
+          } catch (error) {
+            console.log("NÃO CRIOU O ASSISTENTE");
+          }
         }
 
         const context = {
@@ -728,7 +732,7 @@ export class CreateAgentTemplateUseCase {
         const script = new vm.Script(`
    (async () => {
      ${jsCode}
-     if (typeof runner_agent_test === 'function') {
+     if (typeof runner === 'function') {
        await runner(props);
      }
    })()

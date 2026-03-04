@@ -12,10 +12,11 @@ export const createMenuOnlineOrderValidation = (
     CreateMenuOnlineOrderBodyDTO_I
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     uuid: Joi.string().required(),
+    type_delivery: Joi.string().valid("retirar", "enviar"),
     delivery_address: Joi.string().allow(""),
     delivery_complement: Joi.string().allow(""),
     delivery_cep: Joi.string().allow(""),
@@ -30,18 +31,18 @@ export const createMenuOnlineOrderValidation = (
             Joi.object({
               qnt: Joi.number().required(),
               id: Joi.string().required(),
-            })
+            }),
           )
           .optional(),
         id: Joi.string().required(),
         type: Joi.string().valid("pizza", "drink").required(),
-      })
+      }),
     ),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },
-    { abortEarly: false }
+    { abortEarly: false },
   );
 
   if (validation.error) {

@@ -8,6 +8,7 @@ export interface CreateMenuOnlineOrderBodyDTO_I {
   delivery_address?: string;
   who_receives?: string;
   payment_method?: string;
+  type_delivery: "enviar" | "retirar";
   items: {
     qnt: number;
     obs?: string;

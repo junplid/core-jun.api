@@ -1,5 +1,5 @@
 export interface CreateAccountDTO_I {
-  email: string;
+  email?: string;
   password: string;
   cpfCnpj?: string;
   name: string;

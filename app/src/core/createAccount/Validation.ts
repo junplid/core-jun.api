@@ -7,10 +7,10 @@ import { ErrorResponse } from "../../utils/ErrorResponse";
 export const createAccountValidation = (
   req: Request<any, any, CreateAccountDTO_I>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
-    email: Joi.string().email().required(),
+    email: Joi.string().email().optional(),
     name: Joi.string().required(),
     cpfCnpj: Joi.string(),
     password: Joi.string().required(),

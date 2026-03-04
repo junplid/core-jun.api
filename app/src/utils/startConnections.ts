@@ -21,7 +21,7 @@ export const startConnections = (): Promise<void> =>
       console.log("--------------------------");
 
       const listSessionsConnections: CacheSessionsBaileysWA[] = JSON.parse(
-        file.toString()
+        file.toString(),
       );
 
       if (!listSessionsConnections.length) {
@@ -35,7 +35,7 @@ export const startConnections = (): Promise<void> =>
         for await (const session of listSessionsConnections) {
           try {
             const socketIds = cacheAccountSocket.get(
-              session.accountId
+              session.accountId,
             )?.listSocket;
 
             await new Promise<void>(async (ress) => {
@@ -63,6 +63,7 @@ export const startConnections = (): Promise<void> =>
                   }
                 },
               });
+              return ress();
             });
           } catch (error) {
             console.log("Conexão falhou!");

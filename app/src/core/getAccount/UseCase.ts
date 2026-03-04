@@ -18,6 +18,7 @@ export class GetAccountUseCase {
           hash: true,
           isPremium: true,
           Business: { select: { id: true } },
+          ContactsWA: { select: { completeNumber: true } },
         },
       });
 
@@ -48,8 +49,17 @@ export class GetAccountUseCase {
       // if (nextNumber.length === 12) {
       //   nextNumber.splice(4, 0, "9");
       // }
+      const { Business, ContactsWA, ...rest } = account;
 
-      const { Business, ...rest } = account;
+      let name = "";
+      if (rest.name) {
+        name = rest.name;
+      } else if (rest.emailEncrypted) {
+        name = decrypte(rest.emailEncrypted);
+      } else if (ContactsWA.completeNumber) {
+        name = ContactsWA.completeNumber;
+      }
+
       return {
         message: "OK",
         status: 200,
@@ -57,7 +67,7 @@ export class GetAccountUseCase {
           ...rest,
           isPremium: !!rest.isPremium,
           id: dto.accountId,
-          name: rest.name ?? decrypte(rest.emailEncrypted),
+          name,
           businessId: Business[0].id,
         },
       };

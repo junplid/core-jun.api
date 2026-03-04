@@ -226,8 +226,8 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
         async function killAndClean(id: number, msg: string) {
           await killConnectionWA(id, props.accountId);
           emitStatus("close");
+          res();
         }
-        const socketIds = cacheAccountSocket.get(props.accountId)?.listSocket;
 
         ensureDirSync(pathDataBaseWA);
 
@@ -253,7 +253,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
               value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | saveCreds no cliente da conexão não encontrado`,
             },
           });
-          return;
+          return res();
         }
         const baileysVersion = await fetchLatestBaileysVersion();
         const nameCon = await prisma.connectionWA.findFirst({
@@ -261,27 +261,27 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
           select: { name: true },
         });
         if (!nameCon?.name) {
-          const hash = ulid();
-          cacheRootSocket.forEach((sockId) =>
-            socketIo.to(sockId).emit(`geral-logs`, {
-              hash,
-              entity: "baileys",
-              type: "ERROR",
-              value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Erro ao recuperar o nome da conexão`,
-            }),
-          );
-          await prisma.geralLogDate.create({
-            data: {
-              hash,
-              entity: "baileys",
-              type: "ERROR",
-              value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Erro ao recuperar o nome da conexão`,
-            },
-          });
+          // const hash = ulid();
+          // cacheRootSocket.forEach((sockId) =>
+          //   socketIo.to(sockId).emit(`geral-logs`, {
+          //     hash,
+          //     entity: "baileys",
+          //     type: "ERROR",
+          //     value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Erro ao recuperar o nome da conexão`,
+          //   }),
+          // );
+          // await prisma.geralLogDate.create({
+          //   data: {
+          //     hash,
+          //     entity: "baileys",
+          //     type: "ERROR",
+          //     value: `Conexão: #${props.connectionWhatsId} - Account: #${props.accountId} | Erro ao recuperar o nome da conexão`,
+          //   },
+          // });
           console.error(
             "Erro ao recuperar o nome da conexão WhatsApp, verifique se a conexão existe.",
           );
-          return;
+          return res();
         }
 
         const bot = makeWASocket({

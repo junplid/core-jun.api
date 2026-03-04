@@ -116,8 +116,8 @@ model Account {
   name             String? @db.VarChar(50)
   cpfCnpjEncrypted String? @unique
   cpfCnpjHash      String? @unique
-  emailEncrypted   String  @unique
-  emailHash        String  @unique
+  emailEncrypted   String? @unique
+  emailHash        String? @unique
 
   isPremium           Boolean?              @default(false)
   emailVerified       Boolean               @default(false)
@@ -2387,6 +2387,7 @@ model AgentTemplates {
   id                            Int                          @id @default(autoincrement())
   title                         String
   card_desc                     String
+  flag                          String?
   markdown_desc                 String                       @db.Text
   config_flow                   String                       @db.Text
   count_usage                   Int                          @default(0)

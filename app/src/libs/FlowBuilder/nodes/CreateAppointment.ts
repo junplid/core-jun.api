@@ -236,22 +236,25 @@ export const NodeCreateAppointment = async (
 
     const now = moment().tz("America/Sao_Paulo");
     const nextStartBR = nextStartAt.clone().tz("America/Sao_Paulo");
+    const diffDays = nextStartBR
+      .clone()
+      .startOf("day")
+      .diff(now.clone().startOf("day"), "days");
+
     const diffMinutes = nextStartBR.diff(now, "minutes");
     let body_txt = "";
 
-    if (diffMinutes >= 1440) {
-      const days = Math.floor(diffMinutes / 1440);
-      if (days < 1) {
+    if (diffDays === 0) {
+      // Mesmo dia
+      if (diffMinutes >= 60) {
         body_txt = `Hoje, às ${nextStartBR.format("HH:mm")}`;
-      } else if (days === 1) {
-        body_txt = `Amanhã, às ${nextStartBR.format("HH:mm")}`;
       } else {
-        body_txt = `Em ${days} dia${days > 1 ? "s" : ""}, às ${nextStartBR.format("HH:mm")}`;
+        body_txt = `Em ${diffMinutes} minuto${diffMinutes !== 1 ? "s" : ""}`;
       }
-    } else if (diffMinutes >= 60) {
-      body_txt = `Hoje, às ${nextStartBR.format("HH:mm")}`;
+    } else if (diffDays === 1) {
+      body_txt = `Amanhã, às ${nextStartBR.format("HH:mm")}`;
     } else {
-      body_txt = `Em ${diffMinutes} minuto${diffMinutes > 1 ? "s" : ""}`;
+      body_txt = `Em ${diffDays} dias, às ${nextStartBR.format("HH:mm")}`;
     }
 
     await NotificationApp({

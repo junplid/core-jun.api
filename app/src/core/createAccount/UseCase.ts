@@ -25,10 +25,7 @@ export class CreateAccountUseCase {
 
       const exist = !!(await prisma.account.findFirst({
         where: {
-          OR: [
-            { emailHash: hashForLookup(email) },
-            { ContactsWA: { completeNumber: number } },
-          ],
+          OR: [{ ContactsWA: { completeNumber: number } }],
         },
       }));
 
@@ -58,8 +55,10 @@ export class CreateAccountUseCase {
             cpfCnpjHash: hashForLookup(cpfCnpj),
             cpfCnpjEncrypted: encrypt(cpfCnpj),
           }),
-          emailHash: hashForLookup(email),
-          emailEncrypted: encrypt(email),
+          ...(email && {
+            emailHash: hashForLookup(email),
+            emailEncrypted: encrypt(email),
+          }),
           password: nextPassword,
           contactWAId,
           assetsUsedId: assetsUsedId.id,
