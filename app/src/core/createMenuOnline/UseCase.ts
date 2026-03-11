@@ -32,6 +32,18 @@ export class CreateMenuOnlineUseCase {
     //   });
     // }
 
+    const countResource = await prisma.menusOnline.findFirst({
+      where: { accountId: dto.accountId },
+      select: { id: true },
+    });
+
+    if (countResource) {
+      throw new ErrorResponse(400).input({
+        path: "name",
+        text: "Limite de cardápio digital atingido.",
+      });
+    }
+
     const exist = await prisma.menusOnline.findFirst({
       where: {
         accountId: dto.accountId,
@@ -47,12 +59,12 @@ export class CreateMenuOnlineUseCase {
       });
     }
 
-    if (!cacheConnectionsWAOnline.get(dto.connectionWAId)) {
-      throw new ErrorResponse(400).input({
-        text: "Selecione uma conexão ativa.",
-        path: "connectionWAId",
-      });
-    }
+    // if (!cacheConnectionsWAOnline.get(dto.connectionWAId)) {
+    //   throw new ErrorResponse(400).input({
+    //     text: "Selecione uma conexão ativa.",
+    //     path: "connectionWAId",
+    //   });
+    // }
 
     try {
       const menu = await prisma.menusOnline.create({

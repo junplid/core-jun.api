@@ -9,16 +9,33 @@ export const updateMenuOnlineValidation = (
 ) => {
   const schemaValidation = Joi.object({
     id: Joi.number().required(),
-    identifier: Joi.string().optional(),
-    desc: Joi.string().allow(""),
-    fileNameImage: Joi.string().allow(""),
-    bg_primary: Joi.string().allow(""),
-    bg_secondary: Joi.string().allow(""),
-    bg_tertiary: Joi.string().allow(""),
-    label1: Joi.string().allow(""),
-    label: Joi.string().allow(""),
-    titlePage: Joi.string().allow(""),
-    status: Joi.boolean(),
+    identifier: Joi.string().required(),
+    desc: Joi.string().optional().allow("", null),
+    fileNameImage: Joi.string().optional().allow("", null),
+    bg_primary: Joi.custom((value) => {
+      if (value === "null") return null;
+      return value;
+    }),
+    bg_secondary: Joi.custom((value) => {
+      if (value === "null") return null;
+      return value;
+    }),
+    bg_tertiary: Joi.string()
+      .optional()
+      .allow("", null)
+      .custom((value) => {
+        if (value === "null") return null;
+        return value;
+      }),
+    bg_capa: Joi.custom((value) => {
+      if (value === "null") return null;
+      return value;
+    }),
+    titlePage: Joi.string().optional().allow("", null),
+    connectionWAId: Joi.custom((value) => {
+      if (value === "null") return null;
+      return Number(value);
+    }),
   });
 
   const validation = schemaValidation.validate(
@@ -43,5 +60,6 @@ export const updateMenuOnlineValidation = (
   req.params.id = Number(req.params.id);
   req.body.fileNameImage = req.file?.filename;
   req.body.accountId = req.user?.id!;
+  req.body = { ...req.body, ...validation.value };
   next();
 };

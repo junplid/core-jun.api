@@ -55,10 +55,11 @@ if (!existsSync(pathFilesTest)) {
 })();
 
 const app = express();
-const allowedOriginsProd = [
-  "https://app.junplid.com.br",
-  "https://root.junplid.com.br",
-];
+// const allowedOriginsProd = [
+//   "https://app.junplid.com.br",
+//   "https://root.junplid.com.br",
+//   "https://menu.junplid.com.br",
+// ];
 
 const corsOptions = {
   origin: (origin: string | undefined, callback: Function) => {
@@ -67,7 +68,7 @@ const corsOptions = {
     const isProd = process.env.NODE_ENV === "production";
 
     if (isProd) {
-      if (allowedOriginsProd.includes(origin)) {
+      if (origin.endsWith(".junplid.com.br")) {
         return callback(null, true);
       }
       return callback(new Error("Not allowed by CORS"));

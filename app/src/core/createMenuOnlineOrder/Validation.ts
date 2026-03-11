@@ -26,16 +26,13 @@ export const createMenuOnlineOrderValidation = (
       Joi.object({
         qnt: Joi.number().required(),
         obs: Joi.string().allow(""),
-        flavors: Joi.array()
-          .items(
-            Joi.object({
-              qnt: Joi.number().required(),
-              id: Joi.string().required(),
-            }),
+        uuid: Joi.string().required(),
+        sections: Joi.object()
+          .pattern(
+            Joi.string(),
+            Joi.object().pattern(Joi.string(), Joi.number().integer().min(0)),
           )
           .optional(),
-        id: Joi.string().required(),
-        type: Joi.string().valid("pizza", "drink").required(),
       }),
     ),
   });

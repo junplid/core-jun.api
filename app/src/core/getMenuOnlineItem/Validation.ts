@@ -1,29 +1,28 @@
 import { NextFunction, Request, Response } from "express";
-import { Joi } from "express-validation";
 import {
-  CreateMenuOnlineSizePizzaBodyDTO_I,
-  CreateMenuOnlineSizePizzaParamsDTO_I,
+  GetMenuOnlineItemBodyDTO_I,
+  GetMenuOnlineItemParamsDTO_I,
+  GetMenuOnlineItemQueryDTO_I,
 } from "./DTO";
+import { Joi } from "express-validation";
 
-export const createMenuOnlineSizePizzaValidation = (
+export const getMenuOnlineItemValidation = (
   req: Request<
-    CreateMenuOnlineSizePizzaParamsDTO_I,
+    GetMenuOnlineItemParamsDTO_I,
     any,
-    CreateMenuOnlineSizePizzaBodyDTO_I
+    GetMenuOnlineItemBodyDTO_I,
+    GetMenuOnlineItemQueryDTO_I
   >,
   res: Response,
   next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     uuid: Joi.string().required(),
-    name: Joi.string().required(),
-    price: Joi.number().required(),
-    flavors: Joi.number().required(),
-    slices: Joi.number(),
+    itemUuid: Joi.string().required(),
   });
 
   const validation = schemaValidation.validate(
-    { ...req.body, ...req.params },
+    { ...req.body, ...req.query, ...req.params },
     { abortEarly: false },
   );
 
@@ -35,8 +34,6 @@ export const createMenuOnlineSizePizzaValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
-  req.body.price = validation.value.price;
   req.body.accountId = req.user?.id!;
 
   next();

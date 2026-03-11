@@ -2170,70 +2170,146 @@ model LogSystem {
 }
 
 model MenusOnline {
-  id             Int          @id @default(autoincrement())
-  uuid           String       @unique @default(uuid())
-  identifier     String       @unique
+  id             Int           @id @default(autoincrement())
+  uuid           String        @unique @default(uuid())
+  identifier     String        @unique
   logoImg        String
   desc           String?
   bg_primary     String?
   bg_secondary   String?
   bg_tertiary    String?
-  logoLabel      String?      @db.Text
+  bg_capa        String?
+  logoLabel      String?       @db.Text
   titlePage      String?
-  status         Boolean?     @default(false)
-  createAt       DateTime     @default(now()) @db.Timestamptz
+  status         Boolean?      @default(false)
+  createAt       DateTime      @default(now()) @db.Timestamptz
   accountId      Int
-  Account        Account      @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  connectionWAId Int
-  ConnectionWA   ConnectionWA @relation(fields: [connectionWAId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  connectionIgId Int?
+  connectionWAId Int?
+  Account        Account       @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ConnectionWA   ConnectionWA? @relation(fields: [connectionWAId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  ConnectionIg   ConnectionIg? @relation(fields: [connectionIgId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
-  Orders           Orders[]
-  SizesPizza       SizesPizza[]
-  MenusOnlineItems MenusOnlineItems[]
-  ConnectionIg     ConnectionIg?      @relation(fields: [connectionIgId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  connectionIgId   Int?
+  Orders        Orders[]
+  Items         MenusOnlineItems[]
+  Categories    MenuOnlineCategory[]
+  MenuInfo      MenuInfo?
+  OperatingDays MenuOnlineOperatingDays[]
 
   @@index([id, uuid, accountId])
 }
 
-model SizesPizza {
-  id       Int         @id @default(autoincrement())
-  uuid     String      @unique @default(uuid())
-  name     String
-  price    Decimal     @db.Decimal(6, 2)
-  flavors  Int
-  slices   Int?
-  createAt DateTime    @default(now()) @db.Timestamptz
-  menuId   Int
-  Menu     MenusOnline @relation(fields: [menuId], references: [id], onDelete: Cascade)
-
-  @@index([id, menuId])
+enum TypePaymentMethods {
+  Dinheiro
+  Pix
+  Cartao_Credito
+  Cartao_Debito
 }
 
-enum TypeCategory {
-  pizzas
-  drinks
+model MenuInfo {
+  id               Int                  @id @default(autoincrement())
+  address          String?
+  state_uf         String?
+  city             String?
+  phone_contact    String?
+  whatsapp_contact String?
+  delivery_fee     Decimal?             @db.Decimal(6, 2)
+  links            String[]
+  menuId           Int                  @unique
+  payment_methods  TypePaymentMethods[]
+  Menu             MenusOnline          @relation(fields: [menuId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([menuId])
+}
+
+model MenuOnlineOperatingDays {
+  id          Int         @id @default(autoincrement())
+  dayOfWeek   Int
+  startHourAt String
+  endHourAt   String
+  menuId      Int
+  Menu        MenusOnline @relation(fields: [menuId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([menuId, dayOfWeek])
+}
+
+model MenuOnlineCategory {
+  id               Int                                    @id @default(autoincrement())
+  uuid             String                                 @unique @default(uuid())
+  name             String
+  image45x45png    String
+  menuId           Int
+  startAt          DateTime?                              @db.Timestamptz
+  endAt            DateTime?                              @db.Timestamptz
+  days_in_the_week Int[] // se não tiver dia da semana então mostra todos os dias
+  Menu             MenusOnline                            @relation(fields: [menuId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Items            MenuOnlineCategoryOnMenusOnlineItems[]
+
+  @@index([menuId, name])
+}
+
+model MenuOnlineCategoryOnMenusOnlineItems {
+  id         Int                @id @default(autoincrement())
+  categoryId Int
+  Category   MenuOnlineCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  itemId     Int
+  Item       MenusOnlineItems   @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([categoryId, itemId])
 }
 
 model MenusOnlineItems {
-  id          Int          @id @default(autoincrement())
-  uuid        String       @unique @default(uuid())
-  name        String
-  desc        String?
-  category    TypeCategory
-  img         String
-  qnt         Int          @default(0)
-  beforePrice Decimal?     @db.Decimal(6, 2)
-  afterPrice  Decimal?     @db.Decimal(6, 2)
-  accountId   Int?
-  createAt    DateTime     @default(now()) @db.Timestamptz
-  updateAt    DateTime     @default(now()) @db.Timestamptz
-  menuId      Int
-
-  Menu    MenusOnline @relation(fields: [menuId], references: [id], onDelete: Cascade)
-  Account Account?    @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id            Int                                    @id @default(autoincrement())
+  uuid          String                                 @unique @default(uuid())
+  name          String
+  desc          String?
+  img           String
+  qnt           Int                                    @default(0)
+  beforePrice   Decimal?                               @db.Decimal(6, 2)
+  afterPrice    Decimal?                               @db.Decimal(6, 2)
+  date_validity DateTime?                              @db.Timestamptz
+  accountId     Int?
+  createAt      DateTime                               @default(now()) @db.Timestamptz
+  updateAt      DateTime                               @default(now()) @db.Timestamptz
+  menuId        Int
+  Menu          MenusOnline                            @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  Account       Account?                               @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Categories    MenuOnlineCategoryOnMenusOnlineItems[]
+  Sections      MenuOnlineItemSections[]
 
   @@index([uuid, menuId, accountId])
+}
+
+model MenuOnlineItemSections {
+  id         Int                             @id @default(autoincrement())
+  uuid       String                          @unique @default(uuid())
+  title      String?
+  sequence   Int?
+  helpText   String?                         @db.Text
+  required   Boolean                         @default(false)
+  minOptions Int                             @default(0)
+  maxOptions Int?
+  itemId     Int
+  Item       MenusOnlineItems                @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  SubItems   MenuOnlineItemSectionSubItems[]
+
+  @@index([itemId])
+}
+
+model MenuOnlineItemSectionSubItems {
+  id                      Int                    @id @default(autoincrement())
+  uuid                    String                 @unique @default(uuid())
+  image55x55png           String?
+  name                    String
+  desc                    String?
+  sequence                Int?
+  maxLength               Int?
+  before_additional_price Decimal?               @db.Decimal(6, 2)
+  after_additional_price  Decimal?               @db.Decimal(6, 2)
+  sectionId               Int
+  Section                 MenuOnlineItemSections @relation(fields: [sectionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([sectionId])
 }
 
 enum TypeChannelsNotification {

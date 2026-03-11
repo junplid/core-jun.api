@@ -133,6 +133,18 @@ import { getAgentTemplatesValidation } from "../../../../../core/getAgentTemplat
 import { getAgentTemplatesController } from "../../../../../core/getAgentTemplates";
 import { getAgentTemplateValidation } from "../../../../../core/getAgentTemplate/Validation";
 import { getAgentTemplateController } from "../../../../../core/getAgentTemplate";
+import { getMenuOnlineCategoriesForSelectValidation } from "../../../../../core/getMenuOnlineCategoriesForSelect/Validation";
+import { getMenuOnlineCategoriesForSelectController } from "../../../../../core/getMenuOnlineCategoriesForSelect";
+import { getMenuOnlineSectionsOfItemValidation } from "../../../../../core/getMenuOnlineSectionsOfItem/Validation";
+import { getMenuOnlineSectionsOfItemController } from "../../../../../core/getMenuOnlineSectionsOfItem";
+import { getMenuOnlineCategoriesValidation } from "../../../../../core/getMenuOnlineCategories/Validation";
+import { getMenuOnlineCategoriesController } from "../../../../../core/getMenuOnlineCategories";
+import { getMenuOnlineCategoryValidation } from "../../../../../core/getMenuOnlineCategory/Validation";
+import { getMenuOnlineCategoryController } from "../../../../../core/getMenuOnlineCategory";
+import { getMenuOnlineItemValidation } from "../../../../../core/getMenuOnlineItem/Validation";
+import { getMenuOnlineItemController } from "../../../../../core/getMenuOnlineItem";
+import { getMenuOnlineItemsForSelectValidation } from "../../../../../core/getMenuOnlineItemsForSelect/Validation";
+import { getMenuOnlineItemsForSelectController } from "../../../../../core/getMenuOnlineItemsForSelect";
 
 const RouterV1Private_Get = Router();
 
@@ -505,6 +517,42 @@ RouterV1Private_Get.get(
   "/template-agents/:id",
   getAgentTemplateValidation,
   getAgentTemplateController,
+);
+
+RouterV1Private_Get.get(
+  "/menus-online/:uuid/categories/options",
+  getMenuOnlineCategoriesForSelectValidation,
+  getMenuOnlineCategoriesForSelectController,
+);
+
+RouterV1Private_Get.get(
+  "/menus-online/:uuid/sections-of/:itemUuid",
+  getMenuOnlineSectionsOfItemValidation,
+  getMenuOnlineSectionsOfItemController,
+);
+
+RouterV1Private_Get.get(
+  "/menus-online/:uuid/categories",
+  getMenuOnlineCategoriesValidation,
+  getMenuOnlineCategoriesController,
+);
+
+RouterV1Private_Get.get(
+  "/menus-online/:uuid/categories/:catUuid",
+  getMenuOnlineCategoryValidation,
+  getMenuOnlineCategoryController,
+);
+
+RouterV1Private_Get.get(
+  "/menus-online/:uuid/items/options",
+  getMenuOnlineItemsForSelectValidation,
+  getMenuOnlineItemsForSelectController,
+);
+
+RouterV1Private_Get.get(
+  "/menus-online/:uuid/items/:itemUuid",
+  getMenuOnlineItemValidation,
+  getMenuOnlineItemController,
 );
 
 export default RouterV1Private_Get;

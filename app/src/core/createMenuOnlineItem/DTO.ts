@@ -1,5 +1,3 @@
-import { TypeCategory } from "@prisma/client";
-
 export interface CreateMenuOnlineItemParamsDTO_I {
   uuid: string;
 }
@@ -8,10 +6,26 @@ export interface CreateMenuOnlineItemBodyDTO_I {
   name: string;
   desc?: string;
   fileNameImage: string;
-  category: TypeCategory;
+  qnt?: number;
   beforePrice?: number;
   afterPrice?: number;
-  qnt?: number;
+  categoriesUuid?: string[];
+  date_validity?: Date;
+  sections?: {
+    title?: string;
+    helpText?: string;
+    required?: boolean;
+    minOptions?: number;
+    maxOptions?: number;
+    subItems: {
+      image55x55png?: string;
+      name: string;
+      desc?: string;
+      before_additional_price?: number;
+      after_additional_price?: number;
+      maxLength?: number;
+    }[];
+  }[];
 }
 export type CreateMenuOnlineItemDTO_I = CreateMenuOnlineItemParamsDTO_I &
   CreateMenuOnlineItemBodyDTO_I;

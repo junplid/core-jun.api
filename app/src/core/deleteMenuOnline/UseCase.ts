@@ -14,7 +14,7 @@ export class DeleteMenuOnlineUseCase {
 
     if (!exist) {
       throw new ErrorResponse(400).toast({
-        title: `Cardápio on-line não encontrado.`,
+        title: `Cardápio digital não encontrado.`,
         type: "error",
       });
     }

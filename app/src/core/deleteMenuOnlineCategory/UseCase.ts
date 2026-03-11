@@ -1,11 +1,11 @@
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
-import { CreateMenuOnlineSizePizzaDTO_I } from "./DTO";
+import { DeleteMenuOnlineCategoryDTO_I } from "./DTO";
 
-export class CreateMenuOnlineSizePizzaUseCase {
+export class DeleteMenuOnlineCategoryUseCase {
   constructor() {}
 
-  async run({ uuid, accountId, ...dto }: CreateMenuOnlineSizePizzaDTO_I) {
+  async run({ uuid, accountId, categoryUuid }: DeleteMenuOnlineCategoryDTO_I) {
     // const getAccount = await prisma.account.findFirst({
     //   where: { id: accountId },
     //   select: { isPremium: true },
@@ -30,19 +30,25 @@ export class CreateMenuOnlineSizePizzaUseCase {
       });
     }
 
-    try {
-      const size = await prisma.sizesPizza.create({
-        data: {
-          ...dto,
-          menuId: menu.id,
-        },
-        select: { id: true, createAt: true },
+    const category = await prisma.menuOnlineCategory.findFirst({
+      where: { menuId: menu.id, uuid: categoryUuid },
+      select: { id: true },
+    });
+
+    if (!category) {
+      throw new ErrorResponse(400).input({
+        text: "Categoria não encontrada.",
+        path: "root",
       });
+    }
+
+    try {
+      prisma.menuOnlineCategory.delete({ where: { id: category.id } });
 
       return {
-        message: "Tamanho criado com sucesso.",
+        message: "Categoria deletada com sucesso.",
         status: 201,
-        size,
+        category,
       };
     } catch (error) {
       console.log(error);

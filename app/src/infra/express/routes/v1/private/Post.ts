@@ -48,8 +48,8 @@ import { createMenuOnlineValidation } from "../../../../../core/createMenuOnline
 import { createMenuOnlineController } from "../../../../../core/createMenuOnline";
 import { createMenuOnlineItemValidation } from "../../../../../core/createMenuOnlineItem/Validation";
 import { createMenuOnlineItemController } from "../../../../../core/createMenuOnlineItem";
-import { createMenuOnlineSizePizzaValidation } from "../../../../../core/createMenuOnlineSizePizza/Validation";
-import { createMenuOnlineSizePizzaController } from "../../../../../core/createMenuOnlineSizePizza";
+import { createMenuOnlineCategoryValidation } from "../../../../../core/createMenuOnlineCategory/Validation";
+import { createMenuOnlineCategoryController } from "../../../../../core/createMenuOnlineCategory";
 import { createCampaignValidation } from "../../../../../core/createCampaign/Validation";
 import { createCampaignController } from "../../../../../core/createCampaign";
 import { createPushTokenValidation } from "../../../../../core/createPushToken/Validation";
@@ -94,6 +94,16 @@ RouterV1Private_Post.post(
   multer({ storage: uploadImage }).single("fileImage"),
   createConnectionWAValidation,
   createConnectionWAController,
+);
+
+RouterV1Private_Post.post(
+  "/image",
+  csrfMiddleware,
+  // @ts-expect-error
+  multer({ storage: uploadImage }).single("fileImage"),
+  (req, res) => {
+    res.json({ filename: req.file?.filename });
+  },
 );
 
 RouterV1Private_Post.post(
@@ -274,17 +284,17 @@ RouterV1Private_Post.post(
 RouterV1Private_Post.post(
   "/menus-online/:uuid/items",
   csrfMiddleware,
-  // @ts-expect-error
-  multer({ storage: uploadImage }).single("fileImage"),
   createMenuOnlineItemValidation,
   createMenuOnlineItemController,
 );
 
 RouterV1Private_Post.post(
-  "/menus-online/:uuid/sizes-pizza",
+  "/menus-online/:uuid/categories",
   csrfMiddleware,
-  createMenuOnlineSizePizzaValidation,
-  createMenuOnlineSizePizzaController,
+  // @ts-expect-error
+  multer({ storage: uploadImage }).single("fileImage"),
+  createMenuOnlineCategoryValidation,
+  createMenuOnlineCategoryController,
 );
 
 RouterV1Private_Post.post(

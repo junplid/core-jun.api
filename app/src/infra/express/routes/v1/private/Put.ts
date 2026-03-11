@@ -1,5 +1,5 @@
 import multer from "multer";
-import { NextFunction, Request, Router } from "express";
+import { Router } from "express";
 import { updateBusinessOnAccountController } from "../../../../../core/updateBusinessOnAccount";
 import { updateBusinessOnAccountValidation } from "../../../../../core/updateBusinessOnAccount/Validation";
 import { updateTagController } from "../../../../../core/updateTag";
@@ -41,6 +41,16 @@ import { updateMenuOnlineController } from "../../../../../core/updateMenuOnline
 import { updateAppointmentValidation } from "../../../../../core/updateAppointment/Validation";
 import { updateAppointmentController } from "../../../../../core/updateAppointment";
 import { csrfMiddleware } from "../../../../middlewares/csrf";
+import { updateMenuOnlineCategoryValidation } from "../../../../../core/updateMenuOnlineCategory/Validation";
+import { updateMenuOnlineCategoryController } from "../../../../../core/updateMenuOnlineCategory";
+import { updateMenuOnlineItemValidation } from "../../../../../core/updateMenuOnlineItem/Validation";
+import { updateMenuOnlineItemController } from "../../../../../core/updateMenuOnlineItem";
+import { updateMenuOnlineStatusValidation } from "../../../../../core/updateMenuOnlineStatus/Validation";
+import { updateMenuOnlineStatusController } from "../../../../../core/updateMenuOnlineStatus";
+import { updateMenuOnlineInfoValidation } from "../../../../../core/updateMenuOnlineInfo/Validation";
+import { updateMenuOnlineInfoController } from "../../../../../core/updateMenuOnlineInfo";
+import { updateMenuOnlineOperatingDaysValidation } from "../../../../../core/updateMenuOnlineOperatingDays/Validation";
+import { updateMenuOnlineOperatingDaysController } from "../../../../../core/updateMenuOnlineOperatingDays";
 
 const RouterV1Private_Put = Router();
 
@@ -185,6 +195,43 @@ RouterV1Private_Put.put(
   csrfMiddleware,
   updateAppointmentValidation,
   updateAppointmentController,
+);
+
+RouterV1Private_Put.put(
+  "/menus-online/:uuid/categories/:categoryUuid",
+  csrfMiddleware,
+  // @ts-expect-error
+  multer({ storage: uploadImage }).single("fileImage"),
+  updateMenuOnlineCategoryValidation,
+  updateMenuOnlineCategoryController,
+);
+
+RouterV1Private_Put.put(
+  "/menus-online/:uuid/items/:itemUuid",
+  csrfMiddleware,
+  updateMenuOnlineItemValidation,
+  updateMenuOnlineItemController,
+);
+
+RouterV1Private_Put.put(
+  "/menus-online/:uuid/status",
+  csrfMiddleware,
+  updateMenuOnlineStatusValidation,
+  updateMenuOnlineStatusController,
+);
+
+RouterV1Private_Put.put(
+  "/menus-online/:uuid/info",
+  csrfMiddleware,
+  updateMenuOnlineInfoValidation,
+  updateMenuOnlineInfoController,
+);
+
+RouterV1Private_Put.put(
+  "/menus-online/:uuid/operating-days",
+  csrfMiddleware,
+  updateMenuOnlineOperatingDaysValidation,
+  updateMenuOnlineOperatingDaysController,
 );
 
 export default RouterV1Private_Put;

@@ -38,6 +38,8 @@ import { deleteAppointmentController } from "../../../../../core/deleteAppointme
 import { csrfMiddleware } from "../../../../middlewares/csrf";
 import { deleteConnectionIGValidation } from "../../../../../core/deleteConnectionIG/Validation";
 import { deleteConnectionIGController } from "../../../../../core/deleteConnectionIG";
+import { deleteMenuOnlineCategoryValidation } from "../../../../../core/deleteMenuOnlineCategory/Validation";
+import { deleteMenuOnlineCategoryController } from "../../../../../core/deleteMenuOnlineCategory";
 
 const RouterV1Private_Delete = Router();
 
@@ -172,6 +174,13 @@ RouterV1Private_Delete.delete(
   csrfMiddleware,
   deleteAppointmentValidation,
   deleteAppointmentController,
+);
+
+RouterV1Private_Delete.delete(
+  "/menus-online/:uuid/categories/:categoryUuid",
+  csrfMiddleware,
+  deleteMenuOnlineCategoryValidation,
+  deleteMenuOnlineCategoryController,
 );
 
 export default RouterV1Private_Delete;

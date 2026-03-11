@@ -3,13 +3,23 @@ import { ErrorResponse } from "../../utils/ErrorResponse";
 import { prisma } from "../../adapters/Prisma/client";
 import { remove } from "fs-extra";
 
+let path = "";
+if (process.env.NODE_ENV === "production") {
+  path = `../static/storage/`;
+} else {
+  path = `../../../static/storage/`;
+}
+
 export class DeleteMenuOnlineItemUseCase {
   constructor() {}
 
   async run(dto: DeleteMenuOnlineItemDTO_I) {
     const exist = await prisma.menusOnlineItems.findFirst({
       where: dto,
-      select: { img: true },
+      select: {
+        img: true,
+        Sections: { select: { SubItems: { select: { image55x55png: true } } } },
+      },
     });
 
     if (!exist) {
@@ -21,16 +31,20 @@ export class DeleteMenuOnlineItemUseCase {
 
     await prisma.menusOnlineItems.delete({ where: { uuid: dto.uuid } });
 
-    let path = "";
-    if (process.env.NODE_ENV === "production") {
-      path = `../static/storage/${exist.img}`;
-    } else {
-      path = `../../../static/storage/${exist.img}`;
-    }
+    const imgs = [
+      exist.img,
+      ...exist.Sections.map((s) =>
+        s.SubItems.map((i) => i.image55x55png),
+      ).flat(),
+    ];
 
-    await remove(path).catch((_err) => {
-      console.log("Error ao remover arquivo: ");
-    });
+    for await (const img of imgs) {
+      if (img) {
+        await remove(path + img).catch((_err) => {
+          console.log("Error ao remover arquivo: ");
+        });
+      }
+    }
 
     return { message: "OK!", status: 200 };
   }

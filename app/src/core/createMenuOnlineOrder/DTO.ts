@@ -12,9 +12,8 @@ export interface CreateMenuOnlineOrderBodyDTO_I {
   items: {
     qnt: number;
     obs?: string;
-    flavors?: { qnt: number; id: string }[];
-    type: "pizza" | "drink";
-    id: string;
+    uuid: string;
+    sections?: Record<string, Record<string, number>>;
   }[];
 }
 

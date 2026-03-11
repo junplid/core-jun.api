@@ -1,15 +1,14 @@
 export interface UpdateMenuOnlineBodyDTO_I {
   accountId: number;
-  identifier?: string;
-  desc?: string;
-  bg_primary?: string;
-  bg_secondary?: string;
-  bg_tertiary?: string;
-  label1?: string;
-  label?: string;
-  titlePage?: string;
-  status?: boolean;
   fileNameImage?: string;
+  identifier: string;
+  titlePage: string | null;
+  desc: string | null;
+  bg_primary: string | null;
+  bg_secondary: string | null;
+  bg_tertiary: string | null;
+  bg_capa: string | null;
+  connectionWAId: number | null;
 }
 
 export interface UpdateMenuOnlineParamsDTO_I {

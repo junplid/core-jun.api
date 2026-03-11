@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "MenusOnlineItems" ADD COLUMN     "date_validity" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;

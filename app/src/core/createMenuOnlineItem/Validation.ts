@@ -4,7 +4,6 @@ import {
   CreateMenuOnlineItemBodyDTO_I,
   CreateMenuOnlineItemParamsDTO_I,
 } from "./DTO";
-import { ErrorResponse } from "../../utils/ErrorResponse";
 
 export const createMenuOnlineItemValidation = (
   req: Request<
@@ -15,20 +14,61 @@ export const createMenuOnlineItemValidation = (
   res: Response,
   next: NextFunction,
 ) => {
+  const resolverNumberNull = Joi.number().empty(["", null]).default(null);
+  const resolverPrice = Joi.custom((value) => {
+    if (typeof value === "string") {
+      const apenasNumero = value.replace(/\D/g, "");
+      if (!apenasNumero) return null;
+      if (apenasNumero.length < 3) {
+        return Number(apenasNumero);
+      } else {
+        return Number(apenasNumero) / 100;
+      }
+    }
+  }).default(null);
+
   const schemaValidation = Joi.object({
-    name: Joi.string().required(),
     uuid: Joi.string().required(),
-    category: Joi.valid("pizzas", "drinks").required(),
+
+    name: Joi.string().required(),
     desc: Joi.string().allow(""),
-    beforePrice: Joi.number(),
-    afterPrice: Joi.number(),
     fileNameImage: Joi.string().required(),
     qnt: Joi.number().min(0),
+    beforePrice: resolverPrice,
+    afterPrice: resolverPrice,
+    categoriesUuid: Joi.array().items(Joi.string()).optional(),
+    date_validity: Joi.date().iso().optional(),
+
+    sections: Joi.array()
+      .items(
+        Joi.object({
+          title: Joi.string().optional().allow(""),
+          helpText: Joi.string().optional().allow(""),
+          required: Joi.boolean().optional(),
+          minOptions: resolverNumberNull,
+          maxOptions: resolverNumberNull,
+
+          subItems: Joi.array()
+            .items(
+              Joi.object({
+                image55x55png: Joi.string().allow("", null).optional(),
+                name: Joi.string().required(),
+                desc: Joi.string().allow("").optional(),
+                before_additional_price: resolverPrice,
+                after_additional_price: resolverPrice,
+                maxLength: resolverNumberNull,
+              }),
+            )
+            .min(1)
+            .required(),
+        }),
+      )
+      .optional(),
   });
 
   const validation = schemaValidation.validate(
-    { ...req.body, fileNameImage: req.file?.filename, ...req.params },
-    { abortEarly: false },
+    { ...req.body, ...req.params },
+    { abortEarly: false, convert: true },
   );
 
   if (validation.error) {
@@ -40,17 +80,9 @@ export const createMenuOnlineItemValidation = (
     return res.status(400).json({ errors });
   }
 
-  if (req.body.category === "drinks" && !req.body.afterPrice) {
-    throw new ErrorResponse(400).input({
-      path: "afterPrice",
-      text: "Campo obrigatório.",
-    });
-  }
-
-  req.body.qnt = validation.value.qnt;
-  req.body.beforePrice = validation.value.beforePrice;
-  req.body.afterPrice = validation.value.afterPrice;
-  req.body.fileNameImage = req.file!.filename;
-  req.body.accountId = req.user?.id!;
+  req.body = {
+    ...validation.value,
+    accountId: req.user?.id!,
+  };
   next();
 };

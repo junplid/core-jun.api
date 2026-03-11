@@ -1,26 +1,27 @@
 import { Request, Response } from "express";
 import {
-  CreateMenuOnlineSizePizzaBodyDTO_I,
-  CreateMenuOnlineSizePizzaParamsDTO_I,
+  UpdateMenuOnlineStatusBodyDTO_I,
+  UpdateMenuOnlineStatusParamsDTO_I,
 } from "./DTO";
-import { CreateMenuOnlineSizePizzaUseCase } from "./UseCase";
+import { UpdateMenuOnlineStatusUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
-export const CreateMenuOnlineSizePizzaController = (
-  useCase: CreateMenuOnlineSizePizzaUseCase
+export const UpdateMenuOnlineStatusController = (
+  useCase: UpdateMenuOnlineStatusUseCase,
 ) => {
   const execute = async (
     req: Request<
-      CreateMenuOnlineSizePizzaParamsDTO_I,
+      UpdateMenuOnlineStatusParamsDTO_I,
       any,
-      CreateMenuOnlineSizePizzaBodyDTO_I
+      UpdateMenuOnlineStatusBodyDTO_I
     >,
-    res: Response
+    res: Response,
   ): Promise<Response> => {
     try {
       const data = await useCase.run({ ...req.body, ...req.params });
       return res.status(200).json(data);
     } catch (error: any) {
+      console.log(error);
       if (error instanceof ErrorResponse) {
         const { statusCode, ...obj } = error.getResponse();
         return res.status(statusCode).json(obj);
