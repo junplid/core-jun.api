@@ -141,7 +141,7 @@ export class GetMenuOnlineUseCase {
     if (statusMenu) {
       statusMenu = isOpenNow;
 
-      if (!isOpenNow) {
+      if (!isOpenNow && OperatingDays.length) {
         const nextOpening = findNextOpening(OperatingDays);
         helperTextOpening = getOpeningText(nextOpening);
       }

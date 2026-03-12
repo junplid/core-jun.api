@@ -8,7 +8,7 @@ export interface UpdateMenuOnlineBodyDTO_I {
   bg_secondary: string | null;
   bg_tertiary: string | null;
   bg_capa: string | null;
-  connectionWAId: number | null;
+  connectionWAId: number;
 }
 
 export interface UpdateMenuOnlineParamsDTO_I {

@@ -68,7 +68,13 @@ export class CreateMenuOnlineCategoryUseCase {
 
     try {
       const category = await prisma.menuOnlineCategory.create({
-        data: { menuId: menu.id, ...dto },
+        data: {
+          menuId: menu.id,
+          ...dto,
+          days_in_the_week: dto.days_in_the_week?.length
+            ? dto.days_in_the_week
+            : [],
+        },
         select: { id: true, uuid: true },
       });
 

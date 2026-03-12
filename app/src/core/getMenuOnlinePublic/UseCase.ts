@@ -157,6 +157,7 @@ export class GetMenuOnlinePublicUseCase {
             OR: [
               { days_in_the_week: { isEmpty: true } },
               { days_in_the_week: { has: dayweek } },
+              // { days_in_the_week: null },
               // {
               //   AND: [
               //     // startAt deve ser nulo (sem limite inferior) OU <= now
@@ -277,6 +278,7 @@ export class GetMenuOnlinePublicUseCase {
             startHourAt: true,
           },
         },
+        ConnectionWA: { select: { Chatbot: { select: { id: true } } } },
       },
     });
 
@@ -306,7 +308,7 @@ export class GetMenuOnlinePublicUseCase {
     if (statusMenu) {
       statusMenu = isOpenNow;
 
-      if (!isOpenNow) {
+      if (!isOpenNow && OperatingDays.length) {
         const nextOpening = findNextOpening(OperatingDays);
         helperTextOpening = getOpeningText(nextOpening);
       }
@@ -317,6 +319,7 @@ export class GetMenuOnlinePublicUseCase {
       status: 200,
       menu: {
         ...r,
+        isChatbot: !!data.ConnectionWA?.Chatbot.length,
         info: { ...MenuInfo, delivery_fee: MenuInfo?.delivery_fee?.toNumber() },
         helperTextOpening,
         operatingDays: OperatingDays.length

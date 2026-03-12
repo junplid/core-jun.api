@@ -9,7 +9,7 @@ export function csrfMiddleware(
   const headerToken = req.headers["x-xsrf-token"];
 
   if (!cookieToken || !headerToken || cookieToken !== headerToken) {
-    return res.status(403).json({ message: "CSRF invalid" });
+    return res.status(403).json({});
   }
 
   next();

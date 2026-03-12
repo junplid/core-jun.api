@@ -29,6 +29,7 @@ import { mongo } from "../../../../../adapters/mongo/connection";
 import { itauPixWebhook } from "../../../../../services/itau/itau.pix.webhook";
 import { metaWebhook } from "../../../../../services/meta/meta.webhook";
 import { decrypte } from "../../../../../libs/encryption";
+import { csrfMiddleware } from "../../../../middlewares/csrf";
 
 const RouterV1Public_Post = Router();
 
@@ -66,6 +67,7 @@ RouterV1Public_Post.post(
 
 RouterV1Public_Post.post(
   "/menu/:uuid/order",
+  csrfMiddleware,
   createMenuOnlineOrderValidation,
   createMenuOnlineOrderController,
 );

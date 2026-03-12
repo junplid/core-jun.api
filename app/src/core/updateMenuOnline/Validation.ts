@@ -32,10 +32,7 @@ export const updateMenuOnlineValidation = (
       return value;
     }),
     titlePage: Joi.string().optional().allow("", null),
-    connectionWAId: Joi.custom((value) => {
-      if (value === "null") return null;
-      return Number(value);
-    }),
+    connectionWAId: Joi.number().required(),
   });
 
   const validation = schemaValidation.validate(

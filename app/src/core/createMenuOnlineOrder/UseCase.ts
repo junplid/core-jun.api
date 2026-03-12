@@ -55,7 +55,7 @@ function formatOrderWhatsapp(itemsDraft: ItemDraft[], total: number) {
     })
     .join("\n\n");
 
-  return `*🧾 Meu Pedido*\n\n${itemsText}\n\n*Total: R$ ${total}*`;
+  return itemsText;
 }
 
 export class CreateMenuOnlineOrderUseCase {
@@ -170,12 +170,12 @@ export class CreateMenuOnlineOrderUseCase {
       return ac;
     }, 0);
 
-    let address_delivery = "";
-    if (type_delivery === "enviar") {
-      address_delivery = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-        rest.delivery_address + " - " + rest.delivery_cep,
-      )}`;
-    }
+    // let address_delivery = "";
+    // if (type_delivery === "enviar") {
+    //   address_delivery = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+    //     rest.delivery_address + " - " + rest.delivery_cep,
+    //   )}`;
+    // }
 
     const numberwhats =
       exist.ConnectionWA?.number ||
@@ -193,146 +193,134 @@ export class CreateMenuOnlineOrderUseCase {
       }
       const n_order = genNumCode(6);
 
-      if (
-        !exist.ConnectionWA ||
-        !cacheConnectionsWAOnline.get(exist.ConnectionWA?.id)
-      ) {
-        const redirectTo = `https://api.whatsapp.com/send?phone=${
-          numberwhats
-        }&text=${encodeURIComponent(dataOrder)}`;
+      const last = await prisma.orders.findFirst({
+        where: {
+          accountId: exist.accountId,
+          status: "pending",
+        },
+        orderBy: { rank: "desc" },
+        select: { rank: true },
+      });
 
-        return {
-          message: "Pedido criado com sucesso.",
-          status: 201,
-          redirectTo,
-        };
-      } else {
-        const last = await prisma.orders.findFirst({
-          where: {
+      const GAP = 640;
+      const newRank = last ? last.rank.plus(GAP) : GAP;
+
+      const { ContactsWAOnAccount, Business, ...order } =
+        await prisma.orders.create({
+          data: {
+            rank: newRank,
+            n_order,
             accountId: exist.accountId,
-            status: "pending",
+            businessId: exist.ConnectionWA.businessId,
+            connectionWAId: exist.ConnectionWA.id,
+            name: rest.who_receives || "Aguardando o nome...",
+            isDragDisabled: false,
+            menuId: exist.id,
+            ...rest,
+            total,
+            status: "draft",
+            data: dataOrder,
           },
-          orderBy: { rank: "desc" },
-          select: { rank: true },
-        });
-
-        const GAP = 640;
-        const newRank = last ? last.rank.plus(GAP) : GAP;
-
-        const { ContactsWAOnAccount, Business, ...order } =
-          await prisma.orders.create({
-            data: {
-              rank: newRank,
-              n_order,
-              accountId: exist.accountId,
-              businessId: exist.ConnectionWA.businessId,
-              connectionWAId: exist.ConnectionWA.id,
-              name: rest.who_receives || "Aguardando o nome...",
-              isDragDisabled: false,
-              menuId: exist.id,
-              ...rest,
-              total,
-              status: "draft",
-              data: dataOrder,
-            },
-            select: {
-              id: true,
-              createAt: true,
-              priority: true,
-              Business: { select: { name: true, id: true } },
-              ContactsWAOnAccount: {
-                select: {
-                  ContactsWA: {
-                    select: { completeNumber: true, username: true },
-                  },
-                  Tickets: {
-                    where: { status: { notIn: ["DELETED", "RESOLVED"] } },
-                    select: {
-                      ConnectionIg: { select: { ig_username: true } },
-                      ConnectionWA: { select: { name: true, id: true } },
-                      id: true,
-                      InboxDepartment: { select: { name: true } },
-                      status: true,
-                      Messages: {
-                        take: 1,
-                        orderBy: { id: "desc" },
-                        select: { by: true },
-                      },
+          select: {
+            id: true,
+            createAt: true,
+            priority: true,
+            Business: { select: { name: true, id: true } },
+            ContactsWAOnAccount: {
+              select: {
+                ContactsWA: {
+                  select: { completeNumber: true, username: true },
+                },
+                Tickets: {
+                  where: { status: { notIn: ["DELETED", "RESOLVED"] } },
+                  select: {
+                    ConnectionIg: { select: { ig_username: true } },
+                    ConnectionWA: { select: { name: true, id: true } },
+                    id: true,
+                    InboxDepartment: { select: { name: true } },
+                    status: true,
+                    Messages: {
+                      take: 1,
+                      orderBy: { id: "desc" },
+                      select: { by: true },
                     },
                   },
                 },
               },
             },
-          });
-
-        await NotificationApp({
-          accountId: exist.accountId,
-          title_txt: `Novo pedido`,
-          tag: `new-order-${n_order}`,
-          title_html: `Novo pedido`,
-          body_txt: `#${n_order}`,
-          body_html: `<span className="font-medium text-sm line-clamp-1">Novo pedido</span><span className="text-xs font-light">#${n_order}</span>`,
-          url_redirect: "/auth/orders",
-          onFilterSocket: () => [],
+          },
         });
 
-        webSocketEmitToRoom()
-          .account(exist.accountId)
-          .orders.new_order(
-            {
-              ...order,
-              name: rest.who_receives || "Aguardando confirmação no WhatsApp",
-              n_order,
-              businessId: Business.id,
-              origin: "Menu online",
-              delivery_address: rest.delivery_address,
-              payment_method: rest.payment_method,
-              status: "draft",
-              data: dataOrder,
-              total,
-              sequence: newRank,
-              isDragDisabled: false,
-              ticket:
-                ContactsWAOnAccount?.Tickets.map((tk) => {
-                  let connection: any = {};
+      const first =
+        itemsDraft.find((i) => i.sections?.length > 0) ?? itemsDraft[0];
 
-                  if (tk.ConnectionWA?.name) {
-                    connection = {
-                      s: !!cacheConnectionsWAOnline.get(tk.ConnectionWA?.id),
-                      name: tk.ConnectionWA.name,
-                      channel: "baileys",
-                    };
-                  }
-                  if (tk.ConnectionIg?.ig_username) {
-                    connection = {
-                      s: true,
-                      name: tk.ConnectionIg.ig_username,
-                      channel: "instagram",
-                    };
-                  }
+      await NotificationApp({
+        accountId: exist.accountId,
+        title_txt: `${first.qnt}x ${first.title}`,
+        tag: `new-order-${n_order}`,
+        title_html: `${first.qnt}x ${first.title}`,
+        body_txt: `#${n_order}`,
+        body_html: `<span className="font-medium text-sm line-clamp-1">Novo pedido</span><span className="text-xs font-light">#${n_order}</span>`,
+        url_redirect: "/auth/orders",
+        onFilterSocket: () => [],
+      });
 
-                  return {
-                    connection,
-                    id: tk.id,
-                    // lastMessage: tk.Messages[0].by,
-                    departmentName: tk.InboxDepartment.name,
-                    status: tk.status,
+      webSocketEmitToRoom()
+        .account(exist.accountId)
+        .orders.new_order(
+          {
+            ...order,
+            name: rest.who_receives || "Aguardando confirmação no WhatsApp",
+            n_order,
+            businessId: Business.id,
+            origin: "Menu online",
+            delivery_address: rest.delivery_address,
+            payment_method: rest.payment_method,
+            status: "draft",
+            data: dataOrder,
+            total,
+            sequence: newRank,
+            isDragDisabled: false,
+            ticket:
+              ContactsWAOnAccount?.Tickets.map((tk) => {
+                let connection: any = {};
+
+                if (tk.ConnectionWA?.name) {
+                  connection = {
+                    s: !!cacheConnectionsWAOnline.get(tk.ConnectionWA?.id),
+                    name: tk.ConnectionWA.name,
+                    channel: "baileys",
                   };
-                }) || [],
-            },
-            [],
-          );
+                }
+                if (tk.ConnectionIg?.ig_username) {
+                  connection = {
+                    s: true,
+                    name: tk.ConnectionIg.ig_username,
+                    channel: "instagram",
+                  };
+                }
 
-        const redirectTo = `https://api.whatsapp.com/send?phone=${
-          numberwhats
-        }&text=${encodeURIComponent(`Confirmando meu pedido #${n_order}`)}`;
+                return {
+                  connection,
+                  id: tk.id,
+                  // lastMessage: tk.Messages[0].by,
+                  departmentName: tk.InboxDepartment.name,
+                  status: tk.status,
+                };
+              }) || [],
+          },
+          [],
+        );
 
-        return {
-          message: "Pedido criado com sucesso.",
-          status: 201,
-          redirectTo,
-        };
-      }
+      const redirectTo = `https://api.whatsapp.com/send?phone=${
+        numberwhats
+      }&text=${encodeURIComponent(`Confirmando meu pedido #${n_order}`)}`;
+
+      return {
+        message: "Pedido criado com sucesso.",
+        status: 201,
+        redirectTo,
+      };
     } catch (error) {
       throw new ErrorResponse(400).container("Error ao tentar criar pedido.");
     }
