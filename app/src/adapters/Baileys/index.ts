@@ -291,17 +291,17 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
           defaultQueryTimeoutMs: undefined,
           qrTimeout: 1000 * 60 * 3,
           browser: Browsers.macOS("Chrome"),
-          markOnlineOnConnect: true,
-          cachedGroupMetadata: async (jid) => groupCache.get(jid),
-          getMessage: async (key) => {
-            const cacheKey = `${key.remoteJid}|${key.id}`;
-            const env = messageCache.get<{ message: any }>(cacheKey);
-            return env?.message;
-          },
-          patchMessageBeforeSending: async (msg, recipientJids) => {
-            await bot.uploadPreKeysToServerIfRequired();
-            return msg;
-          },
+          // markOnlineOnConnect: true,
+          // cachedGroupMetadata: async (jid) => groupCache.get(jid),
+          // getMessage: async (key) => {
+          //   const cacheKey = `${key.remoteJid}|${key.id}`;
+          //   const env = messageCache.get<{ message: any }>(cacheKey);
+          //   return env?.message;
+          // },
+          // patchMessageBeforeSending: async (msg, recipientJids) => {
+          //   await bot.uploadPreKeysToServerIfRequired();
+          //   return msg;
+          // },
         });
 
         sessionsBaileysWA.set(props.connectionWhatsId, bot);
@@ -1024,6 +1024,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     create: {
                       img: profilePicUrl,
                       completeNumber: identifierLead,
+                      realNumber: key.remoteJidAlt,
                       page_id: "whatsapp_default",
                       channel: "whatsapp",
                       ContactsWAOnAccount: {

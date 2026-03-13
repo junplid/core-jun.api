@@ -160,7 +160,7 @@ export class UpdateMenuOnlineItemUseCase {
             ...dto,
             ...(fileNameImage && { img: fileNameImage }),
           },
-          select: { id: true, uuid: true },
+          select: { id: true, uuid: true, afterPrice: true, beforePrice: true },
         });
 
         if (sections?.length) {

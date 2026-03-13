@@ -15,6 +15,7 @@ type PropsUpdateOrder =
       nodeId: string;
       flowStateId: number;
       mode: "prod";
+      flowId: string;
     }
   | {
       mode: "testing";
@@ -71,8 +72,10 @@ export const NodeUpdateOrder = async (
 
     if (!getOrder) return "not_found";
 
+    const nextData: any = {};
+
     if (fields?.includes("name")) {
-      restData.name = await resolveTextVariables({
+      nextData.name = await resolveTextVariables({
         accountId: props.accountId,
         text: restData.name || "",
         contactsWAOnAccountId: props.contactsWAOnAccountId,
@@ -82,15 +85,15 @@ export const NodeUpdateOrder = async (
     }
 
     if (fields?.includes("status")) {
-      restData.status = restData.status || "pending";
+      nextData.status = restData.status || "pending";
     }
 
     if (fields?.includes("priority")) {
-      restData.priority = restData.priority || "low";
+      nextData.priority = restData.priority || "low";
     }
 
     if (fields?.includes("description")) {
-      restData.description = await resolveTextVariables({
+      nextData.description = await resolveTextVariables({
         accountId: props.accountId,
         text: restData.description || "",
         contactsWAOnAccountId: props.contactsWAOnAccountId,
@@ -100,7 +103,7 @@ export const NodeUpdateOrder = async (
     }
 
     if (fields?.includes("origin")) {
-      restData.origin = await resolveTextVariables({
+      nextData.origin = await resolveTextVariables({
         accountId: props.accountId,
         text: restData.origin || "",
         contactsWAOnAccountId: props.contactsWAOnAccountId,
@@ -110,7 +113,7 @@ export const NodeUpdateOrder = async (
     }
 
     if (fields?.includes("payment_method")) {
-      restData.payment_method = await resolveTextVariables({
+      nextData.payment_method = await resolveTextVariables({
         accountId: props.accountId,
         text: restData.payment_method || "",
         contactsWAOnAccountId: props.contactsWAOnAccountId,
@@ -120,7 +123,7 @@ export const NodeUpdateOrder = async (
     }
 
     if (fields?.includes("delivery_address")) {
-      restData.delivery_address = await resolveTextVariables({
+      nextData.delivery_address = await resolveTextVariables({
         accountId: props.accountId,
         text: restData.delivery_address || "",
         contactsWAOnAccountId: props.contactsWAOnAccountId,
@@ -130,7 +133,7 @@ export const NodeUpdateOrder = async (
     }
 
     if (fields?.includes("total")) {
-      restData.total = await resolveTextVariables({
+      nextData.total = await resolveTextVariables({
         accountId: props.accountId,
         text: restData.total || "",
         contactsWAOnAccountId: props.contactsWAOnAccountId,
@@ -140,7 +143,7 @@ export const NodeUpdateOrder = async (
     }
 
     if (fields?.includes("data")) {
-      restData.data = await resolveTextVariables({
+      nextData.data = await resolveTextVariables({
         accountId: props.accountId,
         text: restData.data || "",
         contactsWAOnAccountId: props.contactsWAOnAccountId,
@@ -150,76 +153,87 @@ export const NodeUpdateOrder = async (
     }
 
     if (fields?.includes("actionChannels")) {
-      restData.actionChannels = restData.actionChannels.length
+      nextData.actionChannels = restData.actionChannels.length
         ? restData.actionChannels
         : [];
     }
 
     if (fields?.includes("dragDrop")) {
-      restData.isDragDisabled = !!restData.isDragDisabled;
+      nextData.isDragDisabled = !!restData.isDragDisabled;
     }
 
-    const { updateAt, name } = await prisma.orders.update({
+    const { name, status, ContactsWAOnAccount } = await prisma.orders.update({
       where: { id: getOrder.id },
       data: {
-        ...restData,
-        actionChannels: restData.actionChannels.map((s) => s.text),
+        ...nextData,
+        ...(fields?.includes("connect_contact") && {
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+        }),
+        actionChannels: nextData.actionChannels.map((s: any) => s.text),
         ...(chargeId && { Charges: { connect: { id: chargeId } } }),
-        ...(restData.status &&
-          (restData.status === "confirmed" ||
-            restData.status === "delivered") && {
+        ...(nextData.status &&
+          (nextData.status === "confirmed" ||
+            nextData.status === "delivered") && {
             completedAt: new Date(),
           }),
       },
-      select: { updateAt: true, name: true },
-    });
-
-    await NotificationApp({
-      accountId: props.accountId,
-      title_txt: "Pedido atualizado",
-      title_html: "Pedido atualizado",
-      tag: `update-order-${getOrder.n_order}`,
-      body_txt: `#${getOrder.n_order} - ${name}`,
-      body_html: `<span className="font-medium text-sm line-clamp-1">Pedido atualizado</span><span className="text-xs font-light">#${getOrder.n_order} - ${name}</span>`,
-      url_redirect: "/auth/orders",
-      onFilterSocket(sockets) {
-        return sockets
-          .filter((s) => s.focused !== `page-orders`)
-          .map((s) => s.id);
+      select: {
+        name: true,
+        status: true,
+        ContactsWAOnAccount: {
+          select: { ContactsWA: { select: { realNumber: true } } },
+        },
       },
     });
+
+    if (!!props.data.notify) {
+      await NotificationApp({
+        accountId: props.accountId,
+        title_txt: "Pedido atualizado 1",
+        title_html: "Pedido atualizado 1",
+        tag: `update-order-${getOrder.n_order}`,
+        body_txt: `#${getOrder.n_order} - ${name}`,
+        body_html: `<span className="font-medium text-sm line-clamp-1">Pedido atualizado</span><span className="text-xs font-light">#${getOrder.n_order} - ${name}</span>`,
+        url_redirect: "/auth/orders",
+        onFilterSocket(sockets) {
+          return sockets
+            .filter((s) => s.focused !== `page-orders`)
+            .map((s) => s.id);
+        },
+      });
+    }
 
     webSocketEmitToRoom()
       .account(props.accountId)
       .orders.update_order(
         {
           id: getOrder.id,
-          ...(fields?.includes("name") && {
-            name: restData.name,
-          }),
-          ...(fields?.includes("status") && {
-            status: restData.status,
-          }),
+          status,
+          ...(fields?.includes("name") && { name }),
+          ...(fields?.includes("connect_contact") &&
+            ContactsWAOnAccount?.ContactsWA.realNumber && {
+              contact: ContactsWAOnAccount?.ContactsWA.realNumber,
+            }),
           ...(fields?.includes("data") && {
-            data: restData.data,
+            data: nextData.data,
           }),
           ...(fields?.includes("payment_method") && {
-            payment_method: restData.payment_method,
+            payment_method: nextData.payment_method,
           }),
           ...(fields?.includes("priority") && {
-            priority: restData.priority,
+            priority: nextData.priority,
           }),
           ...(fields?.includes("delivery_address") && {
-            delivery_address: restData.delivery_address,
+            delivery_address: nextData.delivery_address,
           }),
           ...(fields?.includes("total") && {
-            total: restData.total,
+            total: nextData.total,
           }),
           ...(fields?.includes("actionChannels") && {
-            actionChannels: restData.actionChannels.map((s) => s.text),
+            actionChannels: nextData.actionChannels.map((s: any) => s.text),
           }),
           ...(fields?.includes("dragDrop") && {
-            isDragDisabled: !!restData.isDragDisabled,
+            isDragDisabled: !!nextData.isDragDisabled,
           }),
         },
         [],

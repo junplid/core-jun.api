@@ -44,7 +44,11 @@ export class GetOrdersUseCase {
               ContactsWAOnAccount: {
                 select: {
                   ContactsWA: {
-                    select: { completeNumber: true, username: true },
+                    select: {
+                      completeNumber: true,
+                      realNumber: true,
+                      username: true,
+                    },
                   },
                   Tickets: {
                     where: { status: { notIn: ["DELETED", "RESOLVED"] } },
@@ -85,7 +89,9 @@ export class GetOrdersUseCase {
 
                   ...(connectionIgId && {
                     channel: "baileys",
-                    contact: ContactsWAOnAccount?.ContactsWA.completeNumber,
+                    contact:
+                      ContactsWAOnAccount?.ContactsWA.realNumber ||
+                      ContactsWAOnAccount?.ContactsWA.completeNumber,
                   }),
                   ...(connectionIgId && {
                     channel: "instagram",

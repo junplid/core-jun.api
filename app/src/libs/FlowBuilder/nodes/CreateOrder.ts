@@ -1,8 +1,6 @@
 import { NodeCreateOrderData } from "../Payload";
 import { prisma } from "../../../adapters/Prisma/client";
 import { genNumCode } from "../../../utils/genNumCode";
-import { socketIo } from "../../../infra/express";
-import { cacheAccountSocket } from "../../../infra/websocket/cache";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { resolveMoney } from "../utils/ResolveMoney";
 import { cacheConnectionsWAOnline } from "../../../adapters/Baileys/Cache";
@@ -57,6 +55,35 @@ export const NodeCreateOrder = async (
     if (props.action) return props.action;
 
     let chargeId: number | null = null;
+
+    if (props.data.sync_order_existing_code) {
+      const n_order = await resolveTextVariables({
+        accountId: props.accountId,
+        text: props.data.sync_order_existing_code,
+        contactsWAOnAccountId: props.contactAccountId,
+        numberLead: props.lead_id,
+        nodeId: props.nodeId,
+      });
+      const getOrder = await prisma.orders.findFirst({
+        where: { n_order },
+        select: { id: true },
+      });
+      if (getOrder?.id) {
+        await prisma.orders.update({
+          where: { id: getOrder.id },
+          data: {
+            flowStateId: props.flowStateId,
+            flowNodeId: props.nodeId,
+            flowId: props.flowId,
+          },
+          select: { name: true },
+        });
+
+        return;
+      } else {
+        return "not_found";
+      }
+    }
 
     if (props.data.charge_transactionId) {
       const charge_transactionId = await resolveTextVariables({

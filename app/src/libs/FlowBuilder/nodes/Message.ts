@@ -105,7 +105,6 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
               },
             },
           );
-          console.log("envou a mensage,");
 
           await sendMetaMarkSeen({
             page_token:
@@ -121,7 +120,6 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
           });
         }
       } catch (error: any) {
-        console.log(error.response.data);
         props.action.onErrorClient?.();
         rej(error);
       }

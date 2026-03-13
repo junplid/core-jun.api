@@ -232,6 +232,7 @@ export type NodeCreateOrderData = {
   payment_method?: string; // não sei o pq disso já tem o delivery_address
   itens_count?: number;
   isDragDisabled: boolean;
+  sync_order_existing_code?: string;
 };
 
 export type NodeUpdateOrderData = {
@@ -252,6 +253,19 @@ export type NodeUpdateOrderData = {
   notify?: boolean;
   fields?: string[];
   isDragDisabled?: boolean;
+};
+
+export type NodeGetOrderData = {
+  nOrder: string;
+  fields?: string[];
+
+  varId_save_name?: number;
+  varId_save_status?: number;
+  varId_save_payment_method?: number;
+  varId_save_delivery_address?: number;
+  varId_save_total?: number;
+  varId_save_data?: number;
+  varId_save_number_contact?: number;
 };
 
 export type NodeGetOrdersData = {
@@ -458,4 +472,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeDistribute"; data: NodeDistributeData }
   | { type: "NodeCreateAppointment"; data: NodeCreateAppointmentData }
   | { type: "NodeUpdateAppointment"; data: NodeUpdateAppointmentData }
+  | { type: "NodeGetOrder"; data: NodeGetOrderData }
 );

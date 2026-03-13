@@ -10,6 +10,7 @@ import { NodeDeleteMessage } from "./DeleteMessage";
 import { NodeDistribute } from "./Distribute";
 import { NodeExtractVariable } from "./ExtractVariable";
 import { NodeFbPixel } from "./FbPixel";
+import { NodeGetOrder } from "./GetOrder";
 import { NodeIf } from "./If";
 import { NodeListenReaction } from "./ListenReaction";
 import { NodeMenu } from "./Menu";
@@ -76,4 +77,5 @@ export const LibraryNodes = {
   NodeDistribute,
   NodeCreateAppointment,
   NodeUpdateAppointment,
+  NodeGetOrder,
 };

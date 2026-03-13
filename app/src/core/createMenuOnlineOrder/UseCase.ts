@@ -23,7 +23,7 @@ interface ItemDraft {
   } | null)[];
 }
 
-function formatOrderWhatsapp(itemsDraft: ItemDraft[], total: number) {
+function formatOrderWhatsapp(itemsDraft: ItemDraft[]) {
   const itemsText = itemsDraft
     .map((item) => {
       let header = `*${item.qnt}x ${item.title}*`;
@@ -170,27 +170,22 @@ export class CreateMenuOnlineOrderUseCase {
       return ac;
     }, 0);
 
-    // let address_delivery = "";
-    // if (type_delivery === "enviar") {
-    //   address_delivery = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-    //     rest.delivery_address + " - " + rest.delivery_cep,
-    //   )}`;
-    // }
+    //  let address_delivery = "";
+    //  if (type_delivery === "enviar") {
+    //    address_delivery = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+    //      rest.delivery_address + " - " + rest.delivery_cep,
+    //    )}`;
+    //  }
 
     const numberwhats =
       exist.ConnectionWA?.number ||
       exist.MenuInfo?.whatsapp_contact?.replace(/\D/g, "");
 
+    const nextTotal = total + (exist.MenuInfo?.delivery_fee?.toNumber() || 0);
+
     try {
-      let dataOrder = "";
-      if (type_delivery === "enviar") {
-        dataOrder = formatOrderWhatsapp(
-          itemsDraft,
-          total + (exist.MenuInfo?.delivery_fee?.toNumber() || 0),
-        );
-      } else {
-        dataOrder = formatOrderWhatsapp(itemsDraft, total);
-      }
+      let dataOrder = "🔴 A confirmar\n\n";
+      dataOrder += formatOrderWhatsapp(itemsDraft);
       const n_order = genNumCode(6);
 
       const last = await prisma.orders.findFirst({
@@ -213,12 +208,14 @@ export class CreateMenuOnlineOrderUseCase {
             accountId: exist.accountId,
             businessId: exist.ConnectionWA.businessId,
             connectionWAId: exist.ConnectionWA.id,
-            name: rest.who_receives || "Aguardando o nome...",
+            name: rest.who_receives || null,
             isDragDisabled: false,
             menuId: exist.id,
             ...rest,
-            total,
-            status: "draft",
+            delivery_address:
+              rest.delivery_address || type_delivery.toUpperCase(),
+            total: nextTotal,
+            status: "pending",
             data: dataOrder,
           },
           select: {
@@ -256,7 +253,7 @@ export class CreateMenuOnlineOrderUseCase {
 
       await NotificationApp({
         accountId: exist.accountId,
-        title_txt: `${first.qnt}x ${first.title}`,
+        title_txt: `${first.qnt}x ${first.title}...`,
         tag: `new-order-${n_order}`,
         title_html: `${first.qnt}x ${first.title}`,
         body_txt: `#${n_order}`,
@@ -270,15 +267,15 @@ export class CreateMenuOnlineOrderUseCase {
         .orders.new_order(
           {
             ...order,
-            name: rest.who_receives || "Aguardando confirmação no WhatsApp",
+            name: rest.who_receives || null,
             n_order,
             businessId: Business.id,
-            origin: "Menu online",
+            origin: "menu_online",
             delivery_address: rest.delivery_address,
             payment_method: rest.payment_method,
             status: "draft",
             data: dataOrder,
-            total,
+            total: nextTotal,
             sequence: newRank,
             isDragDisabled: false,
             ticket:

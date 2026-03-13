@@ -63,7 +63,15 @@ export async function resolveTextVariables(
         s.value = `https://wa.me/${props.numberLead}/`;
       }
       if (s.name === "JUN_NUMERO_LEAD_WHATSAPP" && props.numberLead) {
-        s.value = props.numberLead.split("@")[0].replace(/^55/, "");
+        const ff = await prisma.contactsWAOnAccount.findFirst({
+          where: { id: props.contactsWAOnAccountId },
+          select: { ContactsWA: { select: { realNumber: true } } },
+        });
+        if (ff?.ContactsWA.realNumber) {
+          s.value = ff?.ContactsWA.realNumber.split("@")[0].replace(/^55/, "");
+        } else {
+          s.value = props.numberLead.split("@")[0].replace(/^55/, "");
+        }
       }
       if (s.name === "JUN_NOME_LEAD_WHATSAPP" && props.contactsWAOnAccountId) {
         const ff = await prisma.contactsWAOnAccount.findFirst({

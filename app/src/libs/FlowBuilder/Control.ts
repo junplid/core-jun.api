@@ -122,7 +122,6 @@ export const NodeControler = ({
 
   return new Promise((res, rej) => {
     if (cacheFlowInExecution.has(keyMap)) {
-      console.log("Já existe uma execução em andamento para este lead");
       // @ts-expect-error
       if (!propsC.contactsWAOnAccountReactionId) {
         return res();
@@ -170,7 +169,6 @@ export const NodeControler = ({
             verify();
           });
         } catch (error) {
-          console.log("Error, chatbot não encontrado!");
           cacheFlowInExecution.delete(keyMap);
           return;
         }
@@ -200,7 +198,6 @@ export const NodeControler = ({
             verify();
           });
         } catch (error) {
-          console.log("Error, campanha não encontrada!");
           return;
         }
       }
@@ -272,14 +269,12 @@ export const NodeControler = ({
       //         const isDepend = targetNode.type === "NodeReply";
       //         if (isDepend) return res();
 
-      //         console.log("Vai executar o node", { targetNode });
-
       //         return execute({
       //           ...props,
       //           type: "initial",
       //           currentNodeId: targetNode.id,
       //           onExecutedNode: ({ id }) => {
-      //             console.log("NODE EXECUTOU");
+
       //             // interruptRequest.delete(key);
       //           },
       //         });
@@ -288,7 +283,7 @@ export const NodeControler = ({
       //       }
       //     })
       //     .catch((error) => {
-      //       console.log("Error node interruption", error);
+
       //       props.onErrorNumber && props.onErrorNumber();
       //       return res();
       //     });
@@ -437,7 +432,6 @@ export const NodeControler = ({
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO MENSAGEM", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -538,7 +532,6 @@ export const NodeControler = ({
               }),
         })
           .then(async (d) => {
-            console.log({ d });
             if (props.actions?.onExecutedNode) {
               await props.actions?.onExecutedNode({
                 id: currentNode.id,
@@ -798,7 +791,6 @@ export const NodeControler = ({
             });
           })
           .catch((error) => {
-            console.log("error ao executar nodeAddTags", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -833,11 +825,9 @@ export const NodeControler = ({
                 flowId: props.flowId,
               });
             }
-            console.log("nextEdgesIds", nextEdgesIds.length);
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
-              console.log(!!props.actions?.onExecutedNode);
               await props.actions?.onExecutedNode?.({
                 id: "0",
                 flowId: props.flowId,
@@ -854,7 +844,6 @@ export const NodeControler = ({
             });
           })
           .catch((error) => {
-            console.log("error ao executar nodeAddTags", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -911,7 +900,6 @@ export const NodeControler = ({
             });
           })
           .catch((error) => {
-            console.log("error ao executar nodeAddTags", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -966,7 +954,6 @@ export const NodeControler = ({
             });
           })
           .catch((error) => {
-            console.log("error ao executar nodeAddTags", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -1003,7 +990,6 @@ export const NodeControler = ({
             });
           })
           .catch((error) => {
-            console.log("error ao executar nodeAddTags", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -1072,7 +1058,6 @@ export const NodeControler = ({
             });
           })
           .catch((error) => {
-            console.log("error ao executar nodeAddTags", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -1126,7 +1111,6 @@ export const NodeControler = ({
             });
           })
           .catch((error) => {
-            console.log("error ao executar nodeAddTags", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -1209,7 +1193,6 @@ export const NodeControler = ({
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO MENSAGEM", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -1269,7 +1252,6 @@ export const NodeControler = ({
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO MENSAGEM", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -1329,7 +1311,6 @@ export const NodeControler = ({
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO MENSAGEM", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -1389,7 +1370,6 @@ export const NodeControler = ({
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO MENSAGEM", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -1449,7 +1429,6 @@ export const NodeControler = ({
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO MENSAGEM", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -1509,7 +1488,6 @@ export const NodeControler = ({
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO MENSAGEM", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -1685,7 +1663,6 @@ export const NodeControler = ({
                         });
                       })
                       .catch((error) => {
-                        console.log("error ao executar nodeAddTags", error);
                         cacheFlowInExecution.delete(keyMap);
                         props.actions?.onErrorNumber &&
                           props.actions?.onErrorNumber();
@@ -1917,7 +1894,6 @@ export const NodeControler = ({
             }
           })
           .catch((error: any) => {
-            console.log(error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -2002,7 +1978,6 @@ export const NodeControler = ({
             }
           })
           .catch((error) => {
-            console.log("error ao executar nodeAddTags", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -2054,7 +2029,6 @@ export const NodeControler = ({
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO MENSAGEM", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -2122,7 +2096,6 @@ export const NodeControler = ({
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO NodeListenReaction", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -2256,7 +2229,6 @@ export const NodeControler = ({
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO NodeListenReaction", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -2376,7 +2348,6 @@ export const NodeControler = ({
             });
           })
           .catch((error) => {
-            console.log("error ao executar NodeRandomCode", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -2437,7 +2408,6 @@ export const NodeControler = ({
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO MENSAGEM", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -2529,7 +2499,6 @@ export const NodeControler = ({
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO MENSAGEM", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -2563,6 +2532,7 @@ export const NodeControler = ({
                 nodeId: currentNode.id,
                 flowStateId: props.flowStateId,
                 mode: "prod",
+                flowId: props.flowId,
               }
             : {
                 mode: "testing",
@@ -2571,59 +2541,103 @@ export const NodeControler = ({
               }),
         })
           .then(async (action) => {
-            if (!action) {
-              if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
-                cacheFlowInExecution.delete(keyMap);
-                if (props.forceFinish) await props.actions?.onFinish?.("110");
-                await props.actions?.onExecutedNode?.({
-                  id: "0",
-                  flowId: props.flowId,
-                });
-                return;
-              }
-              if (props.actions?.onExecutedNode) {
-                await props.actions?.onExecutedNode({
-                  id: currentNode.id,
-                  flowId: props.flowId,
-                });
-              }
-
-              execute({
-                ...props,
-                ...(props.type === "running"
-                  ? { message: props.message, type: "running" }
-                  : { type: "initial" }),
-                currentNodeId: nextEdgesIds[0].id,
-                oldNodeId: currentNode.id,
+            const nextNode = nextEdgesIds.find(
+              (s) => s.sourceHandle === "main",
+            );
+            if (!nextNode) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              await props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
               });
-            } else {
-              const isNextNodeMain = nextEdgesIds.find((nh) =>
-                nh.sourceHandle?.includes("action"),
-              );
-              if (!isNextNodeMain) {
-                cacheFlowInExecution.delete(keyMap);
-                if (props.forceFinish) await props.actions?.onFinish?.("110");
-                await props.actions?.onExecutedNode?.({
-                  id: "0",
-                  flowId: props.flowId,
-                });
-                return res();
-              }
-              return execute({
-                ...props,
-                type: "running",
-                message: action,
-                currentNodeId: isNextNodeMain.id,
-                oldNodeId: currentNode.id,
-                ...(props.mode === "prod" && {
-                  isSavePositionLead: false,
-                }),
+              return res();
+            }
+
+            if (props.actions?.onExecutedNode) {
+              await props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
               });
             }
+
+            return execute({
+              ...props,
+              ...(props.type === "running"
+                ? { message: props.message, type: "running" }
+                : { type: "initial" }),
+              currentNodeId: nextNode.id,
+              oldNodeId: currentNode.id,
+            });
+          })
+          .catch((error) => {
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+      if (currentNode.type === "NodeGetOrder") {
+        if (props.mode === "testing") {
+          await SendMessageText({
+            mode: "testing",
+            accountId: props.accountId,
+            role: "system",
+            text: `Log: Buscando pedido`,
+            token_modal_chat_template: props.token_modal_chat_template,
+          });
+        }
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeGetOrder({
+          ...(props.mode === "prod"
+            ? {
+                numberLead: props.lead_id,
+                contactsWAOnAccountId: props.contactAccountId,
+                data: currentNode.data,
+                accountId: props.accountId,
+                businessName: props.businessName,
+                nodeId: currentNode.id,
+                flowStateId: props.flowStateId,
+                mode: "prod",
+              }
+            : {
+                mode: "testing",
+                accountId: props.accountId,
+                token_modal_chat_template: props.token_modal_chat_template,
+              }),
+        })
+          .then(async (action) => {
+            const isNextNodeMain = nextEdgesIds.find((nh) =>
+              nh.sourceHandle?.includes(action === "ok" ? "main" : action),
+            );
+
+            if (!isNextNodeMain) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              await props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return;
+            }
+
+            return execute({
+              ...props,
+              type: "initial",
+              currentNodeId: isNextNodeMain.id,
+              oldNodeId: currentNode.id,
+              ...(props.mode === "prod" && {
+                isSavePositionLead: false,
+              }),
+            });
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO MENSAGEM", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -2790,7 +2804,6 @@ export const NodeControler = ({
             });
           })
           .catch((error) => {
-            console.log("error ao executar nodeAddTags", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -2845,7 +2858,6 @@ export const NodeControler = ({
             });
           })
           .catch((error) => {
-            console.log("error ao executar nodeAddTags", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -2900,7 +2912,6 @@ export const NodeControler = ({
             });
           })
           .catch((error) => {
-            console.log("error ao executar nodeAddTags", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -2957,7 +2968,6 @@ export const NodeControler = ({
             });
           })
           .catch((error) => {
-            console.log("error ao executar nodeAddTags", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -3022,7 +3032,6 @@ export const NodeControler = ({
               });
             })
             .catch((error) => {
-              console.log("error ao executar nodeAddTags", error);
               cacheFlowInExecution.delete(keyMap);
               props.actions?.onErrorNumber && props.actions?.onErrorNumber();
               return res();
@@ -3071,7 +3080,6 @@ export const NodeControler = ({
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO MENSAGEM", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -3213,7 +3221,6 @@ export const NodeControler = ({
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO Appointment", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
@@ -3244,7 +3251,6 @@ export const NodeControler = ({
           nodeId: currentNode.id,
         })
           .then(async (action) => {
-            console.log({ action });
             if (action.n === "not_found") {
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
@@ -3361,7 +3367,6 @@ export const NodeControler = ({
             return;
           })
           .catch((error) => {
-            console.log("ERROR NO MENSAGEM", error);
             cacheFlowInExecution.delete(keyMap);
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();

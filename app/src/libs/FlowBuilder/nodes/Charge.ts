@@ -110,13 +110,12 @@ export const NodeCharge = async (
       });
 
       if (charge.id) {
-        console.log(charge.id);
         transactionId = String(charge.id);
         await prisma.charges.create({
           data: {
             txid: transactionId,
-            total: props.data.total,
-            net_total: charge.net_amount || props.data.total,
+            total,
+            net_total: charge.net_amount || total,
             currency: props.data.currency || "BRL",
             status: "pending",
             method_type: props.data.method_type || "pix",

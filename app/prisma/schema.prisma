@@ -1177,6 +1177,7 @@ model ContactsWA {
   id             Int     @id @default(autoincrement())
   img            String  @default("") @db.VarChar(250)
   completeNumber String
+  realNumber     String?
   page_id        String? // null caso seja "whatsapp"
 
   name     String? @db.VarChar(255) // precisa remover, a ideia é fazer a request e cachear por 1 dia. (caso seja instagram)

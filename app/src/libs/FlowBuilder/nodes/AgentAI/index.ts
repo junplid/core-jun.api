@@ -2598,6 +2598,7 @@ export const NodeAgentAI = async ({
                                   numberLead: props.lead_id,
                                   businessName: props.businessName,
                                   flowStateId: props.flowStateId,
+                                  flowId: props.flowId,
                                   data: {
                                     ...rest,
                                     fields: keys2,
