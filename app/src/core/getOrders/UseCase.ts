@@ -36,6 +36,7 @@ export class GetOrdersUseCase {
             orderBy: { id: "asc" },
             select: {
               ...select,
+              payment_change_to: true,
               connectionIgId: true,
               connectionWAId: true,
               businessId: true,

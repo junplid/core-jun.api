@@ -273,6 +273,7 @@ export class CreateMenuOnlineOrderUseCase {
             origin: "menu_online",
             delivery_address: rest.delivery_address,
             payment_method: rest.payment_method,
+            payment_change_to: rest.payment_change_to,
             status: "draft",
             data: dataOrder,
             total: nextTotal,

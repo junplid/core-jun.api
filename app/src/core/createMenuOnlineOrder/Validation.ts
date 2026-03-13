@@ -22,6 +22,7 @@ export const createMenuOnlineOrderValidation = (
     delivery_cep: Joi.string().allow(""),
     payment_method: Joi.string().required(),
     who_receives: Joi.string().allow(""),
+    payment_change_to: Joi.string().allow(null),
     items: Joi.array().items(
       Joi.object({
         qnt: Joi.number().required(),

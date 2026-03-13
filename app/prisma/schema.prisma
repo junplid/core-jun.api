@@ -2039,6 +2039,7 @@ model Orders {
   name                  String?              @db.VarChar(150)
   description           String?              @db.Text
   payment_method        String?
+  payment_change_to     String?
   deleted               Boolean              @default(false)
   status                TypeStatusOrder      @default(draft)
   isDragDisabled        Boolean              @default(false)
