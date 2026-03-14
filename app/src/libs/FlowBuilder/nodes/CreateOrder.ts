@@ -224,7 +224,13 @@ export const NodeCreateOrder = async (
         Business: { select: { name: true, id: true } },
         ContactsWAOnAccount: {
           select: {
-            ContactsWA: { select: { completeNumber: true, username: true } },
+            ContactsWA: {
+              select: {
+                completeNumber: true,
+                realNumber: true,
+                username: true,
+              },
+            },
             Tickets: {
               where: { status: { notIn: ["DELETED", "RESOLVED"] } },
               select: {
@@ -317,7 +323,7 @@ export const NodeCreateOrder = async (
           ...(props.external_adapter.type === "baileys"
             ? {
                 channel: "baileys",
-                contact: ContactsWAOnAccount?.ContactsWA.completeNumber,
+                contact: ContactsWAOnAccount?.ContactsWA.realNumber,
               }
             : {
                 channel: "instagram",

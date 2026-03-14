@@ -68,7 +68,7 @@ function getOpeningText(nextOpening: moment.Moment) {
     return `abre amanhã às ${nextOpening.format("HH:mm")}`;
   }
 
-  return `abre ${nextOpening.format("dddd")} às ${nextOpening.format("HH:mm")}`;
+  return `abre ${nextOpening.locale("pt-br").format("dddd").replace("-feira", "")} às ${nextOpening.format("HH:mm")}`;
 }
 
 const WEEK_DAYS = [
@@ -152,6 +152,7 @@ export class GetMenuOnlinePublicUseCase {
         titlePage: true,
         status: true,
         Categories: {
+          orderBy: { sequence: "asc" },
           where: {
             Items: { some: {} },
             OR: [

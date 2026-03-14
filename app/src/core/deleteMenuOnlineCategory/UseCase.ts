@@ -43,7 +43,7 @@ export class DeleteMenuOnlineCategoryUseCase {
     }
 
     try {
-      prisma.menuOnlineCategory.delete({ where: { id: category.id } });
+      await prisma.menuOnlineCategory.delete({ where: { id: category.id } });
 
       return {
         message: "Categoria deletada com sucesso.",

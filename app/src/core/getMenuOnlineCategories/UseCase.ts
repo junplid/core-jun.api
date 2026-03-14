@@ -39,7 +39,7 @@ export class GetMenuOnlineCategoriesUseCase {
       where: {
         Menu: dto,
       },
-      orderBy: { id: "desc" },
+      orderBy: { sequence: "asc" },
       select: {
         name: true,
         id: true,

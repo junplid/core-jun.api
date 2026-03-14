@@ -36,6 +36,8 @@ export class GetOrdersUseCase {
             orderBy: { id: "asc" },
             select: {
               ...select,
+              delivery_complement: true,
+              delivery_cep: true,
               payment_change_to: true,
               connectionIgId: true,
               connectionWAId: true,
@@ -88,7 +90,7 @@ export class GetOrdersUseCase {
                 return {
                   ...order,
 
-                  ...(connectionIgId && {
+                  ...(connectionWAId && {
                     channel: "baileys",
                     contact:
                       ContactsWAOnAccount?.ContactsWA.realNumber ||

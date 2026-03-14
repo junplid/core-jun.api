@@ -1024,7 +1024,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     create: {
                       img: profilePicUrl,
                       completeNumber: identifierLead,
-                      realNumber: key.remoteJidAlt,
+                      realNumber: key.remoteJidAlt?.split("@")[0],
                       page_id: "whatsapp_default",
                       channel: "whatsapp",
                       ContactsWAOnAccount: {

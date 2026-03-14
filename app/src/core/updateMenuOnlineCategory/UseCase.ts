@@ -66,8 +66,9 @@ export class UpdateMenuOnlineCategoryUseCase {
     }
 
     const category = await prisma.menuOnlineCategory.findFirst({
+      orderBy: { sequence: "desc" },
       where: { menuId: menu.id, uuid: categoryUuid },
-      select: { id: true },
+      select: { id: true, sequence: true },
     });
 
     if (!category) {
@@ -80,7 +81,7 @@ export class UpdateMenuOnlineCategoryUseCase {
     try {
       await prisma.menuOnlineCategory.update({
         where: { id: category.id },
-        data: dto,
+        data: { ...dto, sequence: category.sequence || 0 },
       });
 
       return {

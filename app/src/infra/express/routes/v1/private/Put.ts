@@ -51,6 +51,8 @@ import { updateMenuOnlineInfoValidation } from "../../../../../core/updateMenuOn
 import { updateMenuOnlineInfoController } from "../../../../../core/updateMenuOnlineInfo";
 import { updateMenuOnlineOperatingDaysValidation } from "../../../../../core/updateMenuOnlineOperatingDays/Validation";
 import { updateMenuOnlineOperatingDaysController } from "../../../../../core/updateMenuOnlineOperatingDays";
+import { updateMenuOnlineCategorySequenceValidation } from "../../../../../core/updateMenuOnlineCategorySequence/Validation";
+import { updateMenuOnlineCategorySequenceController } from "../../../../../core/updateMenuOnlineCategorySequence";
 
 const RouterV1Private_Put = Router();
 
@@ -195,6 +197,13 @@ RouterV1Private_Put.put(
   csrfMiddleware,
   updateAppointmentValidation,
   updateAppointmentController,
+);
+
+RouterV1Private_Put.put(
+  "/menus-online/:uuid/categories/sequence",
+  csrfMiddleware,
+  updateMenuOnlineCategorySequenceValidation,
+  updateMenuOnlineCategorySequenceController,
 );
 
 RouterV1Private_Put.put(
