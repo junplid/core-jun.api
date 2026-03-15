@@ -22,7 +22,7 @@ export const GetMenuOnlinePublicController = (
         httpOnly: true,
         secure: prod || isNgrok,
         sameSite: prod || isNgrok ? "none" : "lax",
-        domain: prod ? "menu.junplid.com.br" : undefined,
+        domain: prod ? ".junplid.com.br" : undefined,
         path: "/",
         expires: moment().add(1, "year").toDate(),
       });

@@ -20,7 +20,7 @@ export const LoginRootController = (useCase: LoginRootUseCase) => {
         httpOnly: true,
         secure: prod || isNgrok, // ngrok é HTTPS
         sameSite: prod || isNgrok ? "none" : "lax",
-        domain: prod ? "root.junplid.com.br" : undefined,
+        domain: prod ? ".junplid.com.br" : undefined,
         path: "/",
         expires: moment().add(1, "year").toDate(),
       });
@@ -28,7 +28,7 @@ export const LoginRootController = (useCase: LoginRootUseCase) => {
       res.cookie("XSRF-TOKEN", csrfToken, {
         secure: prod || isNgrok,
         sameSite: prod || isNgrok ? "none" : "lax",
-        domain: prod ? "root.junplid.com.br" : undefined,
+        domain: prod ? ".junplid.com.br" : undefined,
         path: "/",
         expires: moment().add(1, "year").toDate(),
       });
