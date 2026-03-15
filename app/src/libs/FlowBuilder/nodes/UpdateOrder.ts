@@ -169,7 +169,7 @@ export const NodeUpdateOrder = async (
         ...(fields?.includes("connect_contact") && {
           contactsWAOnAccountId: props.contactsWAOnAccountId,
         }),
-        actionChannels: nextData.actionChannels.map((s: any) => s.text),
+        actionChannels: nextData.actionChannels?.map((s: any) => s.text),
         ...(chargeId && { Charges: { connect: { id: chargeId } } }),
         ...(nextData.status &&
           (nextData.status === "confirmed" ||

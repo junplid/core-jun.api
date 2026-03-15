@@ -154,19 +154,16 @@ export class CreateMenuOnlineOrderUseCase {
     }
 
     const total = itemsDraft.reduce((ac, cr) => {
-      ac += cr.price_un * cr.qnt;
-      if (cr.sections.length) {
-        const tt = cr.sections.reduce((actt, crtt) => {
-          const tt2 =
-            crtt?.subItems.reduce((actt2, crtt2) => {
-              actt2 += crtt2?.total || 0;
-              return actt2;
-            }, 0) || 0;
-          actt += tt2;
-          return actt;
-        }, 0);
-        ac += tt;
-      }
+      const tts = cr.sections?.reduce((actt, crtt) => {
+        const tt2 =
+          crtt?.subItems.reduce((actt2, crtt2) => {
+            actt2 += crtt2?.total || 0;
+            return actt2;
+          }, 0) || 0;
+        actt += tt2;
+        return actt;
+      }, 0);
+      ac += (cr.price_un + tts) * cr.qnt;
       return ac;
     }, 0);
 
@@ -274,7 +271,7 @@ export class CreateMenuOnlineOrderUseCase {
             delivery_address: rest.delivery_address,
             payment_method: rest.payment_method,
             payment_change_to: rest.payment_change_to,
-            status: "draft",
+            status: "pending",
             data: dataOrder,
             total: nextTotal,
             sequence: newRank,
