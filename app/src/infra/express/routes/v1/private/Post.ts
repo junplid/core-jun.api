@@ -69,6 +69,8 @@ import { createAppointmentValidation } from "../../../../../core/createAppointme
 import { createAppointmentController } from "../../../../../core/createAppointment";
 import { getAccountsIgValidation } from "../../../../../core/getMetaAccountsIg/Validation";
 import { getAccountsIgController } from "../../../../../core/getMetaAccountsIg";
+import { importFlowAccountValidation } from "../../../../../core/importFlowAccount/Validation";
+import { importFlowAccountController } from "../../../../../core/importFlowAccount";
 
 const RouterV1Private_Post = Router();
 
@@ -373,6 +375,13 @@ RouterV1Private_Post.post(
     res.clearCookie("access_token_app", cookieOptions);
     res.status(200).json({ success: true });
   },
+);
+
+RouterV1Private_Post.post(
+  "/import-flow",
+  csrfMiddleware,
+  importFlowAccountValidation,
+  importFlowAccountController,
 );
 
 export default RouterV1Private_Post;
