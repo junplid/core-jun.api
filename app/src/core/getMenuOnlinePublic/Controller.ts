@@ -18,7 +18,7 @@ export const GetMenuOnlinePublicController = (
       const prod = process.env.NODE_ENV === "production";
       const isNgrok = !prod;
 
-      res.cookie("XSRF-TOKEN", csrfToken, {
+      res.cookie("MENU_XSRF_TOKEN", csrfToken, {
         httpOnly: true,
         secure: prod || isNgrok,
         sameSite: prod || isNgrok ? "none" : "lax",

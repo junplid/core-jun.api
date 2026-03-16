@@ -1,4 +1,4 @@
-import { NextFunction, Request, Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import { createBusinessController } from "../../../../../core/createBusiness";
 import { createBusinessValidation } from "../../../../../core/createBusiness/Validation";
 import { createChatbotController } from "../../../../../core/createChatbot";
@@ -304,21 +304,6 @@ RouterV1Private_Post.post(
   createPushTokenController,
 );
 
-RouterV1Private_Post.post("/logout", (_, res) => {
-  const prod = process.env.NODE_ENV === "production";
-  res.clearCookie("access_token", {
-    domain: prod ? "api.junplid.com.br" : undefined,
-    path: "/",
-  });
-
-  res.clearCookie("XSRF-TOKEN", {
-    domain: prod ? "api.junplid.com.br" : undefined,
-    path: "/",
-  });
-
-  return res.sendStatus(204);
-});
-
 RouterV1Private_Post.post(
   "/connections-ig",
   csrfMiddleware,
@@ -366,6 +351,28 @@ RouterV1Private_Post.post(
   csrfMiddleware,
   getAccountsIgValidation,
   getAccountsIgController,
+);
+
+RouterV1Private_Post.post(
+  "/logout",
+  (_: Request, res: Response, next: NextFunction) => {
+    const prod = process.env.NODE_ENV === "production";
+    const isNgrok = !prod;
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: prod || isNgrok,
+      sameSite: prod || isNgrok ? "none" : "lax",
+      domain: prod ? ".junplid.com.br" : undefined,
+      path: "/",
+    };
+
+    // @ts-expect-error
+    res.clearCookie("APP_XSRF_TOKEN", cookieOptions);
+    // @ts-expect-error
+    res.clearCookie("access_token_app", cookieOptions);
+    res.status(200).json({ success: true });
+  },
 );
 
 export default RouterV1Private_Post;

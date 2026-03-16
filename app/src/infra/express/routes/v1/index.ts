@@ -12,6 +12,7 @@ import RouterV1Root_Delete from "./root/Delete";
 import RouterV1Root_Get from "./root/Get";
 import RouterV1Root_Post from "./root/Post";
 import RouterV1Root_Put from "./root/Put";
+import { csrfMiddleware } from "../../../middlewares/csrf";
 
 const routerv1 = Router();
 

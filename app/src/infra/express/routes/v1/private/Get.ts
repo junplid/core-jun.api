@@ -145,357 +145,449 @@ import { getMenuOnlineItemValidation } from "../../../../../core/getMenuOnlineIt
 import { getMenuOnlineItemController } from "../../../../../core/getMenuOnlineItem";
 import { getMenuOnlineItemsForSelectValidation } from "../../../../../core/getMenuOnlineItemsForSelect/Validation";
 import { getMenuOnlineItemsForSelectController } from "../../../../../core/getMenuOnlineItemsForSelect";
+import { csrfMiddleware } from "../../../../middlewares/csrf";
 
 const RouterV1Private_Get = Router();
 
 RouterV1Private_Get.get(
   "/connections-wa",
+  csrfMiddleware,
   getConnectionsWAValidation,
   getConnectionsWAController,
 );
 
 RouterV1Private_Get.get(
   "/connections-wa/options",
+  csrfMiddleware,
   getConnectionsWAForSelectValidation,
   getConnectionsWAForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/connections-wa/:id/details",
+  csrfMiddleware,
   getConnectionWADetailsValidation,
   getConnectionWADetailsController,
 );
 
 RouterV1Private_Get.get(
   "/connection-wa/:id",
+  csrfMiddleware,
   getConnectionWAValidation,
   getConnectionWAController,
 );
 
 RouterV1Private_Get.get("/account", getAccountValidation, getAccountController);
 
-RouterV1Private_Get.get("/tags", getTagsValidation, getTagsController);
+RouterV1Private_Get.get(
+  "/tags",
+  csrfMiddleware,
+  getTagsValidation,
+  getTagsController,
+);
 
 RouterV1Private_Get.get(
   "/tags/options",
+  csrfMiddleware,
   getTagForSelectValidation,
   getTagForSelectController,
 );
 
-RouterV1Private_Get.get("/tags/:id", getTagValidation, getTagController);
+RouterV1Private_Get.get(
+  "/tags/:id",
+  csrfMiddleware,
+  getTagValidation,
+  getTagController,
+);
 
 RouterV1Private_Get.get(
   "/tags/:id/details",
+  csrfMiddleware,
   getTagDetailsValidation,
   getTagDetailsController,
 );
 
 RouterV1Private_Get.get(
   "/variables",
+  csrfMiddleware,
   getVariableBusinessValidation,
   getVariableBusinessController,
 );
 
 RouterV1Private_Get.get(
   "/variables/options",
+  csrfMiddleware,
   getVariableForSelectValidation,
   getVariableForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/variables/:id",
+  csrfMiddleware,
   getVariableValidation,
   getVariableController,
 );
 
 RouterV1Private_Get.get(
   "/variables/:id/details",
+  csrfMiddleware,
   getVariableDetailsValidation,
   getVariableDetailsController,
 );
 
 RouterV1Private_Get.get(
   "/businesses",
+  csrfMiddleware,
   getBusinessValidation,
   getBusinessesController,
 );
 
 RouterV1Private_Get.get(
   "/businesses/options",
+  csrfMiddleware,
   getBusinessOnAccountForSelectValidation,
   getBusinessOnAccountForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/businesses/:id",
+  csrfMiddleware,
   getBusinessIdOnAccountValidation,
   getBusinessIdOnAccountController,
 );
 
 RouterV1Private_Get.get(
   "/businesses/:id/details",
+  csrfMiddleware,
   getBusinessDetailsValidation,
   getBusinessDetailsController,
 );
 
-RouterV1Private_Get.get("/flows", getFlowsValidation, getFlowsController);
+RouterV1Private_Get.get(
+  "/flows",
+  csrfMiddleware,
+  getFlowsValidation,
+  getFlowsController,
+);
 
 RouterV1Private_Get.get(
   "/flows/:id/data",
+  csrfMiddleware,
   getDataFlowIdValidation,
   getDataFlowIdController,
 );
 
 RouterV1Private_Get.get(
   "/flows/:id/details",
+  csrfMiddleware,
   getFlowDetailsValidation,
   getFlowDetailsController,
 );
 
 RouterV1Private_Get.get(
   "/flows/options",
+  csrfMiddleware,
   getFlowOnBusinessForSelectValidation,
   getFlowOnBusinessForSelectController,
 );
 
-RouterV1Private_Get.get("/flows/:id", getFlowValidation, getFlowController);
+RouterV1Private_Get.get(
+  "/flows/:id",
+  csrfMiddleware,
+  getFlowValidation,
+  getFlowController,
+);
 
 RouterV1Private_Get.get(
   "/chatbots",
+  csrfMiddleware,
   getChabotsValidation,
   getChabotsController,
 );
 
 RouterV1Private_Get.get(
   "/chatbots/options",
+  csrfMiddleware,
   getChabotsForSelectValidation,
   getChabotsForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/chatbots/:id",
+  csrfMiddleware,
   getChatbotValidation,
   getChatbotController,
 );
 
 RouterV1Private_Get.get(
   "/chatbots/:id/details",
+  csrfMiddleware,
   getChatbotDetailsValidation,
   getChatbotDetailsController,
 );
 
 RouterV1Private_Get.get(
   "/shooting-speeds",
+  csrfMiddleware,
   getShootingSpeedsValidation,
   getShootingSpeedsController,
 );
 
 RouterV1Private_Get.get(
   "/campaigns/:id",
+  csrfMiddleware,
   getCampaignValidation,
   getCampaignController,
 );
 
 RouterV1Private_Get.get(
   "/campaigns",
+  csrfMiddleware,
   getCampaignsValidation,
   getCampaignsController,
 );
 
 RouterV1Private_Get.get(
   "/campaigns/:id/details",
+  csrfMiddleware,
   getCampaignDetailsValidation,
   getCampaignDetailsController,
 );
 
 RouterV1Private_Get.get(
   "/storage-files",
+  csrfMiddleware,
   getStorageFilesValidation,
   getStorageFilesController,
 );
 
 RouterV1Private_Get.get(
   "/storage-files/options",
+  csrfMiddleware,
   getStorageFilesForSelectValidation,
   getStorageFilesForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/storage-files/:id",
+  csrfMiddleware,
   getStorageFileValidation,
   getStorageFileController,
 );
 
 RouterV1Private_Get.get(
   "/agents-ai",
+  csrfMiddleware,
   getAgentsAIValidation,
   getAgentsAIController,
 );
 
 RouterV1Private_Get.get(
   "/agents-ai/options",
+  csrfMiddleware,
   getAgentsAIForSelectValidation,
   getAgentsAIForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/agents-ai/:id",
+  csrfMiddleware,
   getAgentAIValidation,
   getAgentAIController,
 );
 
 RouterV1Private_Get.get(
   "/providers/options",
+  csrfMiddleware,
   getProvidersForSelectValidation,
   getProvidersForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/inbox-users",
+  csrfMiddleware,
   getInboxUsersValidation,
   getInboxUsersController,
 );
 
 RouterV1Private_Get.get(
   "/inbox-users/options",
+  csrfMiddleware,
   getInboxUserForSelectValidation,
   getInboxUserForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/inbox-users/:id",
+  csrfMiddleware,
   getInboxUserValidation,
   getInboxUserController,
 );
 
 RouterV1Private_Get.get(
   "/inbox-departments",
+  csrfMiddleware,
   getInboxDepartmentsValidation,
   getInboxDepartmentsController,
 );
 
 RouterV1Private_Get.get(
   "/inbox-departments/options",
+  csrfMiddleware,
   getInboxDepartmentsForSelectValidation,
   getInboxDepartmentsForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/inbox-departments/:id",
+  csrfMiddleware,
   getInboxDepartmentValidation,
   getInboxDepartmentController,
 );
 
 RouterV1Private_Get.get(
   "/inbox-departments/:id/tickets/count",
+  csrfMiddleware,
   getTicketCountValidation,
   getTicketCountController,
 );
 
-RouterV1Private_Get.get("/tickets", getTicketsValidation, getTicketsController);
+RouterV1Private_Get.get(
+  "/tickets",
+  csrfMiddleware,
+  getTicketsValidation,
+  getTicketsController,
+);
 
 RouterV1Private_Get.get(
   "/tickets/:id",
+  csrfMiddleware,
   getTicketValidation,
   getTicketController,
 );
 
 RouterV1Private_Get.get(
   "/fb-pixels",
+  csrfMiddleware,
   getFbPixelsValidation,
   getFbPixelsController,
 );
 
 RouterV1Private_Get.get(
   "/fb-pixels/options",
+  csrfMiddleware,
   getFbPixelsForSelectValidation,
   getFbPixelsForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/fb-pixels/:id",
+  csrfMiddleware,
   getFbPixelValidation,
   getFbPixelController,
 );
 
 RouterV1Private_Get.get(
   "/integration/payments",
+  csrfMiddleware,
   getPaymentIntegrationsValidation,
   getPaymentIntegrationsController,
 );
 
 RouterV1Private_Get.get(
   "/integration/trello",
+  csrfMiddleware,
   getTrelloIntegrationsValidation,
   getTrelloIntegrationsController,
 );
 
 RouterV1Private_Get.get(
   "/integration/payments/options",
+  csrfMiddleware,
   getPaymentIntegrationsForSelectValidation,
   getPaymentIntegrationsForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/integration/trello/options",
+  csrfMiddleware,
   getTrelloIntegrationsForSelectValidation,
   getTrelloIntegrationsForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/integration/payments/:id",
+  csrfMiddleware,
   getPaymentIntegrationValidation,
   getPaymentIntegrationController,
 );
 
 RouterV1Private_Get.get(
   "/integration/trello/:id",
+  csrfMiddleware,
   getTrelloIntegrationValidation,
   getTrelloIntegrationController,
 );
 
-RouterV1Private_Get.get("/charges", getChargesValidation, getChargesController);
+RouterV1Private_Get.get(
+  "/charges",
+  csrfMiddleware,
+  getChargesValidation,
+  getChargesController,
+);
 
-RouterV1Private_Get.get("/orders", getOrdersValidation, getOrdersController);
+RouterV1Private_Get.get(
+  "/orders",
+  csrfMiddleware,
+  getOrdersValidation,
+  getOrdersController,
+);
 
 RouterV1Private_Get.get(
   "/integration/trello/:id/boards/options",
+  csrfMiddleware,
   getBoardsTrelloForSelectValidation,
   getBoardsTrelloForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/integration/trello/:id/lists/:boardId/options",
+  csrfMiddleware,
   getListsOnBoardTrelloForSelectValidation,
   getListsOnBoardTrelloForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/menus-online",
+  csrfMiddleware,
   getMenusOnlineValidation,
   getMenusOnlineController,
 );
 
 RouterV1Private_Get.get(
   "/menus-online/:uuid",
+  csrfMiddleware,
   getMenuOnlineValidation,
   getMenuOnlineController,
 );
 
 RouterV1Private_Get.get(
   "/menus-online/:uuid/items",
+  csrfMiddleware,
   getMenuOnlineItemsValidation,
   getMenuOnlineItemsController,
 );
 
 RouterV1Private_Get.get(
   "/appointments",
+  csrfMiddleware,
   getAppointmentsValidation,
   getAppointmentsController,
 );
 
 RouterV1Private_Get.get(
   "/appointments/:id/details",
+  csrfMiddleware,
   getAppointmentDetailsValidation,
   getAppointmentDetailsController,
 );
@@ -503,54 +595,63 @@ RouterV1Private_Get.get(
 RouterV1Private_Get.get(
   "/dash/services-today",
   // csrfMiddleware,
+  csrfMiddleware,
   getServicesTodayValidation,
   getServicesTodayController,
 );
 
 RouterV1Private_Get.get(
   "/template-agents",
+  csrfMiddleware,
   getAgentTemplatesValidation,
   getAgentTemplatesController,
 );
 
 RouterV1Private_Get.get(
   "/template-agents/:id",
+  csrfMiddleware,
   getAgentTemplateValidation,
   getAgentTemplateController,
 );
 
 RouterV1Private_Get.get(
   "/menus-online/:uuid/categories/options",
+  csrfMiddleware,
   getMenuOnlineCategoriesForSelectValidation,
   getMenuOnlineCategoriesForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/menus-online/:uuid/sections-of/:itemUuid",
+  csrfMiddleware,
   getMenuOnlineSectionsOfItemValidation,
   getMenuOnlineSectionsOfItemController,
 );
 
 RouterV1Private_Get.get(
   "/menus-online/:uuid/categories",
+  csrfMiddleware,
   getMenuOnlineCategoriesValidation,
   getMenuOnlineCategoriesController,
 );
 
 RouterV1Private_Get.get(
   "/menus-online/:uuid/categories/:catUuid",
+  csrfMiddleware,
   getMenuOnlineCategoryValidation,
   getMenuOnlineCategoryController,
 );
 
 RouterV1Private_Get.get(
   "/menus-online/:uuid/items/options",
+  csrfMiddleware,
   getMenuOnlineItemsForSelectValidation,
   getMenuOnlineItemsForSelectController,
 );
 
 RouterV1Private_Get.get(
   "/menus-online/:uuid/items/:itemUuid",
+  csrfMiddleware,
   getMenuOnlineItemValidation,
   getMenuOnlineItemController,
 );

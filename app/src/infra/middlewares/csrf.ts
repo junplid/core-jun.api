@@ -5,11 +5,19 @@ export function csrfMiddleware(
   res: Response<any, any>,
   next: NextFunction,
 ) {
-  const cookieToken = req.cookies["XSRF-TOKEN"];
+  const cookieTokens = [
+    req.cookies["APP_XSRF_TOKEN"] || "",
+    req.cookies["MENU_XSRF_TOKEN"] || "",
+    req.cookies["ROOT_XSRF_TOKEN"] || "",
+  ];
   const headerToken = req.headers["x-xsrf-token"];
 
-  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
-    return res.status(403).json({});
+  if (
+    !cookieTokens?.length ||
+    !headerToken ||
+    !cookieTokens.includes(headerToken)
+  ) {
+    return res.status(403).json({ a: false });
   }
 
   next();

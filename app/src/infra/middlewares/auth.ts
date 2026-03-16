@@ -8,7 +8,13 @@ export const MiddlewareAuth =
     if (req.method === "OPTIONS") {
       return next();
     }
-    const token = req.cookies?.access_token;
+    let token = "";
+
+    if (expected.includes("root")) {
+      token = req.cookies?.access_token_root;
+    } else {
+      token = req.cookies?.access_token_app;
+    }
 
     if (!token) {
       return res.status(401).json({ message: "Não autenticado 1" });

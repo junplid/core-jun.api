@@ -16,7 +16,7 @@ export const LoginRootController = (useCase: LoginRootUseCase) => {
       const prod = process.env.NODE_ENV === "production";
       const isNgrok = !prod;
 
-      res.cookie("access_token", token, {
+      res.cookie("access_token_root", token, {
         httpOnly: true,
         secure: prod || isNgrok, // ngrok é HTTPS
         sameSite: prod || isNgrok ? "none" : "lax",
@@ -25,7 +25,8 @@ export const LoginRootController = (useCase: LoginRootUseCase) => {
         expires: moment().add(1, "year").toDate(),
       });
 
-      res.cookie("XSRF-TOKEN", csrfToken, {
+      res.cookie("ROOT_XSRF_TOKEN", csrfToken, {
+        httpOnly: true,
         secure: prod || isNgrok,
         sameSite: prod || isNgrok ? "none" : "lax",
         domain: prod ? ".junplid.com.br" : undefined,
