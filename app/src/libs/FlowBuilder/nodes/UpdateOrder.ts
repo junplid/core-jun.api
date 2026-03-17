@@ -67,7 +67,7 @@ export const NodeUpdateOrder = async (
     });
     const getOrder = await prisma.orders.findFirst({
       where: { n_order },
-      select: { id: true, n_order: true },
+      select: { id: true, n_order: true, status: true },
     });
 
     if (!getOrder) return "not_found";
@@ -202,6 +202,38 @@ export const NodeUpdateOrder = async (
         },
       });
     }
+
+    console.log("MUDAR STATUS", fields?.includes("status"));
+    if (fields?.includes("status")) {
+      console.log("NEXT", nextData.status);
+      const GAP = 640;
+      const last = await prisma.orders.findFirst({
+        where: { accountId: props.accountId, status: nextData.status },
+        orderBy: { rank: "desc" },
+        select: { rank: true },
+      });
+      const newRank = last ? last.rank.plus(GAP) : GAP;
+      console.log({ newRank });
+
+      console.log({
+        rank: newRank,
+        orderId: getOrder.id,
+        sourceStatus: getOrder.status,
+        nextStatus: nextData.status,
+      });
+
+      webSocketEmitToRoom().account(props.accountId).orders.update_status(
+        {
+          rank: newRank,
+          orderId: getOrder.id,
+          sourceStatus: getOrder.status,
+          nextStatus: nextData.status,
+        },
+        [],
+      );
+    }
+
+    await new Promise((s) => setTimeout(s, 300));
 
     webSocketEmitToRoom()
       .account(props.accountId)

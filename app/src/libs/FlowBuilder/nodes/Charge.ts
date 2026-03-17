@@ -29,6 +29,13 @@ type PropsNodeCharge =
       token_modal_chat_template: string;
     };
 
+const prod = process.env.NODE_ENV === "production";
+console.log(
+  prod
+    ? "https://api.junplid.com.br/v1/public/webhook/mercadopago"
+    : "https://7b38-2804-3894-961-5600-9f4a-b9c1-283-c43c.ngrok-free.app/v1/public/webhook/mercadopago",
+);
+
 export const NodeCharge = async (
   props: PropsNodeCharge,
 ): Promise<"error" | "success"> => {
@@ -97,6 +104,12 @@ export const NodeCharge = async (
 
       const date_of_expiration = moment().add(30, "minutes").toISOString();
 
+      console.log(
+        prod
+          ? "https://api.junplid.com.br/v1/public/webhook/mercadopago"
+          : "https://7b38-2804-3894-961-5600-9f4a-b9c1-283-c43c.ngrok-free.app/v1/public/webhook/mercadopago",
+      );
+
       const charge = await payment.create({
         body: {
           transaction_amount: total,
@@ -104,8 +117,9 @@ export const NodeCharge = async (
           payment_method_id: props.data.method_type || "pix",
           payer: { email },
           date_of_expiration,
-          notification_url:
-            "https://15f4051f5cb6.ngrok-free.app/v1/public/webhook/mercadopago",
+          notification_url: prod
+            ? "https://api.junplid.com.br/v1/public/webhook/mercadopago"
+            : "https://7b38-2804-3894-961-5600-9f4a-b9c1-283-c43c.ngrok-free.app/v1/public/webhook/mercadopago",
         },
       });
 
