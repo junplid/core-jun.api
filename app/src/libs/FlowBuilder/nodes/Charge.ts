@@ -30,11 +30,6 @@ type PropsNodeCharge =
     };
 
 const prod = process.env.NODE_ENV === "production";
-console.log(
-  prod
-    ? "https://api.junplid.com.br/v1/public/webhook/mercadopago"
-    : "https://7b38-2804-3894-961-5600-9f4a-b9c1-283-c43c.ngrok-free.app/v1/public/webhook/mercadopago",
-);
 
 export const NodeCharge = async (
   props: PropsNodeCharge,
@@ -122,6 +117,8 @@ export const NodeCharge = async (
             : "https://7b38-2804-3894-961-5600-9f4a-b9c1-283-c43c.ngrok-free.app/v1/public/webhook/mercadopago",
         },
       });
+
+      console.log(JSON.stringify(charge, null, 2));
 
       if (charge.id) {
         transactionId = String(charge.id);
