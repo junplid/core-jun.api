@@ -113,6 +113,7 @@ export class UpdateMenuOnlineItemUseCase {
           if (catsDeleted.length) {
             await tx.menuOnlineCategoryOnMenusOnlineItems.deleteMany({
               where: {
+                itemId: getItem.id,
                 Category: {
                   uuid: { in: catsDeleted.map((s) => s.Category.uuid) },
                 },
@@ -160,7 +161,26 @@ export class UpdateMenuOnlineItemUseCase {
             ...dto,
             ...(fileNameImage && { img: fileNameImage }),
           },
-          select: { id: true, uuid: true, afterPrice: true, beforePrice: true },
+          select: {
+            id: true,
+            uuid: true,
+            afterPrice: true,
+            beforePrice: true,
+            qnt: true,
+            Sections: {
+              select: {
+                title: true,
+                minOptions: true,
+                SubItems: {
+                  select: {
+                    name: true,
+                    status: true,
+                    maxLength: true,
+                  },
+                },
+              },
+            },
+          },
         });
 
         if (sections?.length) {
@@ -293,8 +313,45 @@ export class UpdateMenuOnlineItemUseCase {
             }
           }
         }
+
+        const valid = !item.Sections.some((s) => {
+          if (s.minOptions) {
+            return s.SubItems.every((sb) => sb.maxLength === 0 || !sb.status);
+          }
+          return false;
+        });
+
+        const stateWarn = [];
+
+        if (!item.qnt) {
+          stateWarn.push("Estoque está 0(zero)");
+        }
+        if (!getCategories.length) {
+          stateWarn.push("Sem categoria");
+        }
+        if (!valid) {
+          const sectionIndex = item.Sections.findIndex(
+            (s) =>
+              s.minOptions &&
+              s.SubItems.every((sb) => sb.maxLength === 0 || !sb.status),
+          );
+          const subs = item.Sections[sectionIndex].SubItems.map((s) => s.name);
+          stateWarn.push(
+            `"${item.Sections[sectionIndex].title}" está com ${subs
+              .join(", ")
+              .replace(
+                /,(?=[^,]*$)/,
+                " e",
+              )} desabilitado${subs.length > 1 ? "s" : ""}.`,
+          );
+        }
+
         return {
           ...item,
+          stateWarn,
+          ...(item.Sections.length
+            ? { view: valid && !!item.qnt && !!getCategories.length }
+            : { view: !!item.qnt && !!getCategories.length }),
           categories: getCategories.map(
             ({ Category: { days_in_the_week, ...ct } }) => ({
               ...ct,

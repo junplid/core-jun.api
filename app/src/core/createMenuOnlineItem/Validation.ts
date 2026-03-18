@@ -54,6 +54,7 @@ export const createMenuOnlineItemValidation = (
                 image55x55png: Joi.string().allow("", null).optional(),
                 name: Joi.string().required(),
                 desc: Joi.string().allow("").optional(),
+                status: Joi.boolean().required(),
                 before_additional_price: resolverPrice,
                 after_additional_price: resolverPrice,
                 maxLength: resolverNumberNull,

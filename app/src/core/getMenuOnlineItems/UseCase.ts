@@ -59,18 +59,69 @@ export class GetMenuOnlineItemsUseCase {
             },
           },
         },
+        Sections: {
+          select: {
+            title: true,
+            minOptions: true,
+            SubItems: {
+              select: {
+                name: true,
+                status: true,
+                maxLength: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    const formatted = items.map(({ Categories, ...c }) => ({
-      ...c,
-      categories: Categories.map(
-        ({ Category: { days_in_the_week, ...cat } }) => ({
-          ...cat,
-          days_in_the_week_label: formatDays(days_in_the_week),
-        }),
-      ),
-    }));
+    const formatted = items.map(({ Categories, Sections, ...c }) => {
+      const valid = !Sections.some((s) => {
+        if (s.minOptions) {
+          return s.SubItems.every((sb) => sb.maxLength === 0 || !sb.status);
+        }
+        return false;
+      });
+
+      const stateWarn = [];
+
+      if (!c.qnt) {
+        stateWarn.push("Estoque está 0(zero)");
+      }
+      if (!Categories.length) {
+        stateWarn.push("Sem categoria");
+      }
+      if (!valid) {
+        const sectionIndex = Sections.findIndex(
+          (s) =>
+            s.minOptions &&
+            s.SubItems.every((sb) => sb.maxLength === 0 || !sb.status),
+        );
+        const subs = Sections[sectionIndex].SubItems.map((s) => s.name);
+        stateWarn.push(
+          `"${Sections[sectionIndex].title}" está com ${subs
+            .join(", ")
+            .replace(
+              /,(?=[^,]*$)/,
+              " e",
+            )} desabilitado${subs.length > 1 ? "s" : ""}.`,
+        );
+      }
+
+      return {
+        ...c,
+        stateWarn,
+        ...(Sections.length
+          ? { view: valid && !!c.qnt && !!Categories.length }
+          : { view: !!c.qnt && !!Categories.length }),
+        categories: Categories.map(
+          ({ Category: { days_in_the_week, ...cat } }) => ({
+            ...cat,
+            days_in_the_week_label: formatDays(days_in_the_week),
+          }),
+        ),
+      };
+    });
 
     return {
       message: "OK!",

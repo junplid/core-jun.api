@@ -55,6 +55,7 @@ export const updateMenuOnlineItemValidation = (
               Joi.object({
                 uuid: Joi.string().required(),
                 image55x55png: Joi.string().allow("", null).optional(),
+                status: Joi.boolean().allow(null),
                 name: Joi.string().optional(),
                 desc: Joi.string().allow("").optional(),
                 before_additional_price: resolverPrice,

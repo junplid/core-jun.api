@@ -150,7 +150,40 @@ export class CreateMenuOnlineItemUseCase {
             categoryId: c.id,
           })),
         });
-      } else {
+      }
+
+      const valid = !sections?.some((s) => {
+        if (s.minOptions) {
+          return s.subItems.every((sb) => sb.maxLength === 0 || !sb.status);
+        }
+        return false;
+      });
+
+      const stateWarn = [];
+
+      if (!qnt) {
+        stateWarn.push("Estoque está 0(zero)");
+      }
+      if (!getCategories.length) {
+        stateWarn.push("Sem categoria");
+      }
+      if (!valid) {
+        const sectionIndex = sections?.findIndex(
+          (s) =>
+            s.minOptions &&
+            s.subItems.every((sb) => sb.maxLength === 0 || !sb.status),
+        );
+        if (sectionIndex && sectionIndex > 0 && sections?.length) {
+          const subs = sections[sectionIndex].subItems.map((s) => s.name);
+          stateWarn.push(
+            `"${sections[sectionIndex].title}" está com ${subs
+              .join(", ")
+              .replace(
+                /,(?=[^,]*$)/,
+                " e",
+              )} desabilitado${subs.length > 1 ? "s" : ""}.`,
+          );
+        }
       }
 
       return {
@@ -158,6 +191,10 @@ export class CreateMenuOnlineItemUseCase {
         status: 201,
         item: {
           ...item,
+          stateWarn,
+          ...(sections?.length
+            ? { view: valid && !!qnt && !!getCategories.length }
+            : { view: !!qnt && !!getCategories.length }),
           categories: getCategories.map(({ days_in_the_week, ...ct }) => ({
             ...ct,
             days_in_the_week_label: formatDays(days_in_the_week),
@@ -165,7 +202,6 @@ export class CreateMenuOnlineItemUseCase {
         },
       };
     } catch (error) {
-      console.log(error);
       let path = "";
       if (process.env.NODE_ENV === "production") {
         path = `../static/storage/`;

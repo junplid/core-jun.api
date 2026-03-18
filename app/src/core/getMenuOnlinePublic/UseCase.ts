@@ -248,6 +248,7 @@ export class GetMenuOnlinePublicUseCase {
                   orderBy: { sequence: "asc" },
                   select: {
                     uuid: true,
+                    status: true,
                     desc: true,
                     after_additional_price: true,
                     before_additional_price: true,
@@ -327,22 +328,36 @@ export class GetMenuOnlinePublicUseCase {
           ? normalizeOperatingDays(OperatingDays)
           : [{ day: "Todos os dias", time: "24h" }],
         status: statusMenu,
-        items: Items.map(({ Sections, Categories, ...item }) => ({
-          ...item,
-          categories: Categories.map((c) => c.Category),
-          afterPrice: item.afterPrice?.toNumber(),
-          beforePrice: item.beforePrice?.toNumber(),
-          sections: Sections.map(({ SubItems, ...s }) => ({
-            ...s,
-            subItems: SubItems.map(
-              ({ after_additional_price, before_additional_price, ...b }) => ({
-                ...b,
-                after_additional_price: after_additional_price?.toNumber(),
-                before_additional_price: before_additional_price?.toNumber(),
-              }),
-            ),
-          })),
-        })),
+        items: Items.map(({ Sections, Categories, ...item }) => {
+          const valid = !Sections.some((s) => {
+            if (s.minOptions) {
+              return s.SubItems.every((sb) => sb.maxLength === 0 || !sb.status);
+            }
+            return false;
+          });
+
+          return {
+            ...item,
+            qnt: valid ? item.qnt : 0,
+            categories: Categories.map((c) => c.Category),
+            afterPrice: item.afterPrice?.toNumber(),
+            beforePrice: item.beforePrice?.toNumber(),
+            sections: Sections.map(({ SubItems, ...s }) => ({
+              ...s,
+              subItems: SubItems.map(
+                ({
+                  after_additional_price,
+                  before_additional_price,
+                  ...b
+                }) => ({
+                  ...b,
+                  after_additional_price: after_additional_price?.toNumber(),
+                  before_additional_price: before_additional_price?.toNumber(),
+                }),
+              ),
+            })),
+          };
+        }),
         categories: Categories,
       },
     };

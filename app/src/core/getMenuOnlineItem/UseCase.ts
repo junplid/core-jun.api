@@ -43,6 +43,7 @@ export class GetMenuOnlineItemUseCase {
                 image55x55png: true,
                 maxLength: true,
                 uuid: true,
+                status: true,
               },
             },
           },

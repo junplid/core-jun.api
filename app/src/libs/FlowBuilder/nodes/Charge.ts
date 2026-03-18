@@ -99,12 +99,6 @@ export const NodeCharge = async (
 
       const date_of_expiration = moment().add(30, "minutes").toISOString();
 
-      console.log(
-        prod
-          ? "https://api.junplid.com.br/v1/public/webhook/mercadopago"
-          : "https://7b38-2804-3894-961-5600-9f4a-b9c1-283-c43c.ngrok-free.app/v1/public/webhook/mercadopago",
-      );
-
       const charge = await payment.create({
         body: {
           transaction_amount: total,
@@ -117,8 +111,6 @@ export const NodeCharge = async (
             : "https://7b38-2804-3894-961-5600-9f4a-b9c1-283-c43c.ngrok-free.app/v1/public/webhook/mercadopago",
         },
       });
-
-      console.log(JSON.stringify(charge, null, 2));
 
       if (charge.id) {
         transactionId = String(charge.id);

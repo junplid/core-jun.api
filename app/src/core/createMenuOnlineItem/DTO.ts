@@ -24,6 +24,7 @@ export interface CreateMenuOnlineItemBodyDTO_I {
       before_additional_price?: number;
       after_additional_price?: number;
       maxLength?: number;
+      status: boolean;
     }[];
   }[];
 }

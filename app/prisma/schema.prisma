@@ -2267,6 +2267,7 @@ model MenusOnlineItems {
   name          String
   desc          String?
   img           String
+  status        Boolean?
   qnt           Int                                    @default(0)
   beforePrice   Decimal?                               @db.Decimal(6, 2)
   afterPrice    Decimal?                               @db.Decimal(6, 2)
@@ -2291,6 +2292,7 @@ model MenuOnlineItemSections {
   helpText   String?                         @db.Text
   required   Boolean                         @default(false)
   minOptions Int                             @default(0)
+  status     Boolean?
   maxOptions Int?
   itemId     Int
   Item       MenusOnlineItems                @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -2307,6 +2309,7 @@ model MenuOnlineItemSectionSubItems {
   desc                    String?
   sequence                Int?
   maxLength               Int?
+  status                  Boolean?
   before_additional_price Decimal?               @db.Decimal(6, 2)
   after_additional_price  Decimal?               @db.Decimal(6, 2)
   sectionId               Int

@@ -53,6 +53,8 @@ import { updateMenuOnlineOperatingDaysValidation } from "../../../../../core/upd
 import { updateMenuOnlineOperatingDaysController } from "../../../../../core/updateMenuOnlineOperatingDays";
 import { updateMenuOnlineCategorySequenceValidation } from "../../../../../core/updateMenuOnlineCategorySequence/Validation";
 import { updateMenuOnlineCategorySequenceController } from "../../../../../core/updateMenuOnlineCategorySequence";
+import { updateMenuOnlineSubItemsStatusValidation } from "../../../../../core/updateMenuOnlineSubItems/Validation";
+import { updateMenuOnlineSubItemsStatusController } from "../../../../../core/updateMenuOnlineSubItems";
 
 const RouterV1Private_Put = Router();
 
@@ -227,6 +229,13 @@ RouterV1Private_Put.put(
   csrfMiddleware,
   updateMenuOnlineStatusValidation,
   updateMenuOnlineStatusController,
+);
+
+RouterV1Private_Put.put(
+  "/menus-online/:uuid/subItems/status",
+  csrfMiddleware,
+  updateMenuOnlineSubItemsStatusValidation,
+  updateMenuOnlineSubItemsStatusController,
 );
 
 RouterV1Private_Put.put(
