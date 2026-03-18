@@ -42,7 +42,7 @@ export class CreateMenuOnlineItemUseCase {
     sections,
     accountId,
     categoriesUuid,
-    qnt = 9999,
+    qnt,
     ...dto
   }: CreateMenuOnlineItemDTO_I) {
     // const getAccount = await prisma.account.findFirst({

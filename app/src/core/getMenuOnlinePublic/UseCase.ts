@@ -61,14 +61,14 @@ function getOpeningText(nextOpening: moment.Moment) {
   }
 
   if (diffDays === 0) {
-    return `abre às ${nextOpening.format("HH:mm")}`;
+    return `abre às ${nextOpening.format("HH")}h`;
   }
 
   if (diffDays === 1) {
-    return `abre amanhã às ${nextOpening.format("HH:mm")}`;
+    return `abre amanhã às ${nextOpening.format("HH")}h`;
   }
 
-  return `abre ${nextOpening.locale("pt-br").format("dddd").replace("-feira", "")} às ${nextOpening.format("HH:mm")}`;
+  return `abre ${nextOpening.locale("pt-br").format("dddd").replace("-feira", "")} às ${nextOpening.format("HH")}h`;
 }
 
 const WEEK_DAYS = [

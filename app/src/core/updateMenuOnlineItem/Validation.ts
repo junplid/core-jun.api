@@ -25,8 +25,9 @@ export const updateMenuOnlineItemValidation = (
         return Number(apenasNumero) / 100;
       }
     }
+    if (value === null) return null;
     return undefined;
-  });
+  }).default(null);
 
   const schemaValidation = Joi.object({
     uuid: Joi.string().required(),

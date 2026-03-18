@@ -290,23 +290,11 @@ export class UpdateMenuOnlineItemUseCase {
                 where: { uuid: subuuid },
                 create: {
                   ...rest,
-                  after_additional_price: rest.after_additional_price
-                    ? Number(rest.after_additional_price)
-                    : undefined,
-                  before_additional_price: rest.before_additional_price
-                    ? Number(rest.before_additional_price)
-                    : undefined,
                   Section: { connect: { uuid: sectionUuid } },
                   sequence: indexSub,
                 },
                 update: {
                   ...rest,
-                  after_additional_price: rest.after_additional_price
-                    ? Number(rest.after_additional_price)
-                    : undefined,
-                  before_additional_price: rest.before_additional_price
-                    ? Number(rest.before_additional_price)
-                    : undefined,
                   sequence: indexSub,
                 },
               });

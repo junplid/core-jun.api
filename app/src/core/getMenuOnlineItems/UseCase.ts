@@ -123,6 +123,10 @@ export class GetMenuOnlineItemsUseCase {
       };
     });
 
+    formatted.sort((a, b) => {
+      return (a.stateWarn?.length ?? 0) - (b.stateWarn?.length ?? 0);
+    });
+
     return {
       message: "OK!",
       status: 200,
