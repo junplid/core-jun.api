@@ -27,7 +27,7 @@ export const updateMenuOnlineItemValidation = (
     }
     if (value === null) return null;
     return undefined;
-  }).default(null);
+  });
 
   const schemaValidation = Joi.object({
     uuid: Joi.string().required(),
