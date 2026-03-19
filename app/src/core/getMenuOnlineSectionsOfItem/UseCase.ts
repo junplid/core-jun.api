@@ -1,5 +1,6 @@
 import { GetMenuOnlineSectionsOfItemDTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
+import { v4 } from "uuid";
 
 export class GetMenuOnlineSectionsOfItemUseCase {
   constructor() {}
@@ -25,6 +26,7 @@ export class GetMenuOnlineSectionsOfItemUseCase {
             desc: true,
             image55x55png: true,
             name: true,
+            status: true,
           },
         },
       },
@@ -33,10 +35,12 @@ export class GetMenuOnlineSectionsOfItemUseCase {
     return {
       message: "OK!",
       status: 200,
-      sections: sections.map(({ SubItems, ...section }) => ({
+      sections: sections.map(({ SubItems, uuid, ...section }) => ({
+        uuid: v4(),
         ...section,
-        subItems: SubItems.map(({ image55x55png, ...sub }) => ({
+        subItems: SubItems.map(({ image55x55png, uuid: ss, ...sub }) => ({
           ...sub,
+          uuid: v4(),
           after_additional_price: sub.after_additional_price
             ? Number(sub.after_additional_price).toFixed(2)
             : null,
