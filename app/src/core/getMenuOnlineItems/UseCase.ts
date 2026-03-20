@@ -1,5 +1,6 @@
 import { GetMenuOnlineItemsDTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
+import moment from "moment-timezone";
 
 const optionsOperatingDays = [
   { label: "Domingo", value: 0 },
@@ -47,6 +48,7 @@ export class GetMenuOnlineItemsUseCase {
         img: true,
         uuid: true,
         qnt: true,
+        date_validity: true,
         Categories: {
           select: {
             Category: {
@@ -85,6 +87,15 @@ export class GetMenuOnlineItemsUseCase {
 
       const stateWarn = [];
 
+      if (c.date_validity) {
+        const today = moment().startOf("day");
+        const validityDate = moment(c.date_validity).startOf("day");
+        if (validityDate.isBefore(today)) {
+          stateWarn.push(
+            `Produto vencido. ${validityDate.format("DD/MM/YYYY")}`,
+          );
+        }
+      }
       if (!c.qnt) {
         stateWarn.push("Estoque está 0(zero)");
       }
@@ -114,6 +125,7 @@ export class GetMenuOnlineItemsUseCase {
         ...(Sections.length
           ? { view: valid && !!c.qnt && !!Categories.length }
           : { view: !!c.qnt && !!Categories.length }),
+        ...(stateWarn.length && { view: false }),
         categories: Categories.map(
           ({ Category: { days_in_the_week, ...cat } }) => ({
             ...cat,
