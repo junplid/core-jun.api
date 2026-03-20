@@ -154,12 +154,11 @@ function CalculeTypingDelay(text: string, ms = 150) {
   return delay < 1.9 ? 1.9 : delay;
 }
 
-let pathChatbotQueue = "";
-if (process.env.NODE_ENV === "production") {
-  pathChatbotQueue = resolve(__dirname, `../bin/chatbot-queue`);
-} else {
-  pathChatbotQueue = resolve(__dirname, `../../../bin/chatbot-queue`);
-}
+const pathChatbotQueue = resolve(
+  process.env.STORAGE_PATH!,
+  "bin",
+  "chatbot-queue",
+);
 
 export async function metaWebhook(req: Request, res: Response) {
   console.log("INSTAGRAM WEBHOOK:", JSON.stringify(req.body, null, 2));

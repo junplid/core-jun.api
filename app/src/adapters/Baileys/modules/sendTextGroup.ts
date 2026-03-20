@@ -1,6 +1,6 @@
-import { proto, WAMessage } from "baileys";
+import { WAMessage } from "baileys";
 import { cacheConnectionsWAOnline } from "../Cache";
-import { messageCache, sessionsBaileysWA } from "..";
+import { sessionsBaileysWA } from "..";
 import { safeSendMessage } from "./safeSend";
 
 interface Props {

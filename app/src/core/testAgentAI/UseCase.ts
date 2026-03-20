@@ -704,19 +704,12 @@ function buildInstructions(dto: TestAgentAIDTO_I) {
   return lines.join("");
 }
 
-let path = "";
-if (process.env.NODE_ENV === "production") {
-  path = resolve(__dirname, `../static/storage`);
-} else {
-  path = resolve(__dirname, `../../../static/storage`);
-}
-
-let pathFilesTest = "";
-if (process.env.NODE_ENV === "production") {
-  pathFilesTest = resolve(__dirname, `../bin/files-test.json`);
-} else {
-  pathFilesTest = resolve(__dirname, `../../../bin/files-test.json`);
-}
+const path = resolve(process.env.STORAGE_PATH!, "static", "storage");
+const pathFilesTest = resolve(
+  process.env.STORAGE_PATH!,
+  "bin",
+  "files-test.json",
+);
 
 interface VectorStoreTest {
   apiKey: string;

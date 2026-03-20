@@ -2,12 +2,7 @@ import { prisma } from "../adapters/Prisma/client";
 import { resolve } from "path";
 import { startCampaign } from "./startCampaign";
 
-let path = "";
-if (process.env?.NODE_ENV === "production") {
-  path = resolve(__dirname, "../bin/connections.json");
-} else {
-  path = resolve(__dirname, "../../bin/connections.json");
-}
+const path = resolve(process.env.STORAGE_PATH!, "bin", "connections.json");
 
 export const startCampaigns = async (): Promise<void> => {
   try {

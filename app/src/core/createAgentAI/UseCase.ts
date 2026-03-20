@@ -6,12 +6,11 @@ import { resolve } from "path";
 import { createReadStream } from "fs-extra";
 // import { AssistantTool } from "openai/resources/beta/assistants";
 
-let path = "";
-if (process.env.NODE_ENV === "production") {
-  path = resolve(__dirname, `../static/storage`);
-} else {
-  path = resolve(__dirname, `../../../static/storage`);
-}
+// const path = resolve(
+//   process.env.STORAGE_PATH!,
+//   "static",
+//   "storage",
+// );
 
 export async function ensureFileByName(
   openai: OpenAI,

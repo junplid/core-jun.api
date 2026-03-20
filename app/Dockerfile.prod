@@ -4,11 +4,12 @@ WORKDIR /app
 
 # só precisamos de package.json e lock pra instalar deps
 COPY package*.json ./
-RUN yarn install --frozen-lockfile
+RUN npm ci
 
 # copia tudo, gera o dist
 COPY . .
-RUN yarn build
+RUN npx prisma generate
+RUN npm run build
 
 # ---- STAGE 2: runtime ----
 FROM node:24.0.2
@@ -23,17 +24,16 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/main.js ./main.js 
 
 # instala o Chrome (se ainda for necessário em runtime)
-RUN apt-get update && \
-    apt-get install -y wget gnupg ca-certificates && \
-    wget -qO- https://dl-ssl.google.com/linux/linux_signing_key.pub | \
-    gpg --dearmor -o /usr/share/keyrings/google-linux-signing-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux-signing-keyring.gpg] \
-    http://dl.google.com/linux/chrome/deb/ stable main" \
-    > /etc/apt/sources.list.d/google.list && \
-    apt-get update && \
-    apt-get install -y google-chrome-stable && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+# RUN apt-get update && \
+#     apt-get install -y wget gnupg ca-certificates && \
+#     wget -qO- https://dl-ssl.google.com/linux/linux_signing_key.pub | \
+#     gpg --dearmor -o /usr/share/keyrings/google-linux-signing-keyring.gpg && \
+#     echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux-signing-keyring.gpg] \
+#     http://dl.google.com/linux/chrome/deb/ stable main" \
+#     > /etc/apt/sources.list.d/google.list && \
+#     apt-get update && \
+#     apt-get install -y google-chrome-stable && \
+#     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-ENV NODE_ENV=production
 EXPOSE 4000
-CMD ["yarn", "start"]
+CMD ["npm", "run", "start"]

@@ -34,12 +34,12 @@ export const startChatbotQueue = (chatbotId: number): Promise<void> => {
   return new Promise(async (res, rej) => {
     // const redis = await clientRedis();
     console.log("INICIOU A FILA DE ESPERA DO ROBO");
-    let path = "";
-    if (process.env?.NODE_ENV === "production") {
-      path = resolve(__dirname, `../bin/chatbot-queue/${chatbotId}.json`);
-    } else {
-      path = resolve(__dirname, `../../bin/chatbot-queue/${chatbotId}.json`);
-    }
+    const path = resolve(
+      process.env.STORAGE_PATH!,
+      "bin",
+      "chatbot-queue",
+      `${chatbotId}.json`,
+    );
 
     const content: ChatbotQueue_I = JSON.parse(String(readFileSync(path)));
 

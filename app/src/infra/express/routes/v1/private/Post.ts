@@ -74,12 +74,7 @@ import { importFlowAccountController } from "../../../../../core/importFlowAccou
 
 const RouterV1Private_Post = Router();
 
-let pathOfDestiny = "";
-if (process.env.NODE_ENV === "production") {
-  pathOfDestiny = resolve(__dirname, `../static`);
-} else {
-  pathOfDestiny = resolve(__dirname, `../../../../../../static`);
-}
+const pathOfDestiny = resolve(process.env.STORAGE_PATH!, "static");
 
 const uploadFiles = storageMulter({
   pathOfDestiny: pathOfDestiny + "/storage",
@@ -358,7 +353,7 @@ RouterV1Private_Post.post(
 RouterV1Private_Post.post(
   "/logout",
   (_: Request, res: Response, next: NextFunction) => {
-    const prod = process.env.NODE_ENV === "production";
+    const prod = process.env.NODE_ENV === "prod";
     const isNgrok = !prod;
 
     const cookieOptions = {

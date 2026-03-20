@@ -24,12 +24,7 @@ interface PropsNodeSendImages {
 
 export const NodeSendImages = (props: PropsNodeSendImages): Promise<void> => {
   return new Promise(async (res, rej) => {
-    let path = "";
-    if (process.env.NODE_ENV === "production") {
-      path = resolve(__dirname, "../static/storage");
-    } else {
-      path = resolve(__dirname, "../../../../static/storage");
-    }
+    const path = resolve(process.env.STORAGE_PATH!, "static", "storage");
 
     const files = structuredClone(props.data.files);
     const firstFile = files.shift();

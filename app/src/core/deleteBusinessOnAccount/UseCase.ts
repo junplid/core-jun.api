@@ -20,11 +20,13 @@ async function removeBusinessId(businessId: number) {
     } else {
       await ModelFlows.updateOne(
         { _id: flow._id },
-        { $pull: { businessIds: businessId } }
+        { $pull: { businessIds: businessId } },
       );
     }
   }
 }
+
+const path = resolve(process.env.STORAGE_PATH!, "bin", "connections.json");
 
 export class DeleteBusinessOnAccountUseCase {
   constructor(private repository: DeleteBusinessOnAccountRepository_I) {}
@@ -47,28 +49,21 @@ export class DeleteBusinessOnAccountUseCase {
       client.end(new Error("Desconectado pelo servidor!"));
     }
 
-    let path = "";
-    if (process.env?.NODE_ENV === "production") {
-      path = resolve(__dirname, `../bin/connections.json`);
-    } else {
-      path = resolve(__dirname, `../../../bin/connections.json`);
-    }
-
     try {
       await new Promise<void>((res, rej) =>
         readFile(path, (err, file) => {
           if (err) return rej("Error na leitura no arquivo de conexões");
           const listConnections: CacheSessionsBaileysWA[] = JSON.parse(
-            file.toString()
+            file.toString(),
           );
           const nextList = JSON.stringify(
             listConnections.filter(
-              ({ connectionWhatsId }) => connectionWhatsId !== dto.id
-            )
+              ({ connectionWhatsId }) => connectionWhatsId !== dto.id,
+            ),
           );
           writeFileSync(path, nextList);
           return res();
-        })
+        }),
       );
     } catch (error) {
       console.log("Error");

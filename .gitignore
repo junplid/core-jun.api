@@ -1,19 +1,13 @@
 app/node_modules
-# Keep environment variables out of version control
-app/.env 
-app/assets
-app/database-whatsapp
 app/package-lock.json
 app/yarn.lock
 package-lock.json
-redis
-data-mongo 
-app/bin 
-app/dist 
-v2
+data-mongo
+data-mongo-dev
+postgres-dev
 postgres
-app/src/bin/connections.json
-app/static
-.vscode/extensions.json
-.env.pg
-.env.mongo
+app/dist 
+app/storage*
+.vscode/*
+.env.dev
+.env.prod

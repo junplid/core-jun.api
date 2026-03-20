@@ -47,12 +47,12 @@ interface VectorStoreTest {
   files: { localId: number; openFileId: string }[];
 }
 
-let pathFilesTest = "";
-if (process.env.NODE_ENV === "production") {
-  pathFilesTest = resolve(__dirname, `../bin/files-test.json`);
-} else {
-  pathFilesTest = resolve(__dirname, `../../../bin/files-test.json`);
-}
+const pathFilesTest = resolve(
+  process.env.STORAGE_PATH!,
+  "bin",
+  "files-test.json",
+);
+
 ensureFileSync(pathFilesTest);
 
 export const WebSocketIo = (io: Server) => {
@@ -121,12 +121,12 @@ export const WebSocketIo = (io: Server) => {
             });
           }, 4500);
 
-          let path = "";
-          if (process.env?.NODE_ENV === "production") {
-            path = resolve(__dirname, `../bin/connections.json`);
-          } else {
-            path = resolve(__dirname, `../../../bin/connections.json`);
-          }
+          const path = resolve(
+            process.env.STORAGE_PATH!,
+            "bin",
+            "connections.json",
+          );
+
           await ensureFile(path);
           readFile(path, (err, file) => {
             if (err) {

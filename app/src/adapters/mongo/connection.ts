@@ -10,7 +10,7 @@ const cache: TMongooseCache = {
   promise: null,
 };
 
-const url = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@mongo_junplid:27017/${process.env.MONGO_INITDB_DATABASE}?authSource=admin`;
+const url = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@mongo_${process.env.MONGO_INITDB_DATABASE}:27017/${process.env.MONGO_INITDB_DATABASE}?authSource=admin`;
 
 export async function mongo() {
   if (cache.conn) return cache.conn;

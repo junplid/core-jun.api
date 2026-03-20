@@ -109,23 +109,37 @@ export type CacheSessionsBaileysWA = Omit<
   "socket" | "onConnection"
 >;
 
+const path_file_connections = resolve(
+  process.env.STORAGE_PATH!,
+  "bin",
+  "connections.json",
+);
+const path_file_database_whatsapp = resolve(
+  process.env.STORAGE_PATH!,
+  "database-whatsapp",
+);
+const path_static_storage = resolve(
+  process.env.STORAGE_PATH!,
+  "static",
+  "storage",
+);
+const path_chatbot_queue = resolve(
+  process.env.STORAGE_PATH!,
+  "bin",
+  "chatbot-queue",
+);
+
 export const killConnectionWA = async (
   connectionId: number,
   accountId: number,
 ) => {
-  let path = "";
-  if (process.env.NODE_ENV === "production") {
-    path = resolve(__dirname, `../bin/connections.json`);
-  } else {
-    path = resolve(__dirname, `../../../bin/connections.json`);
-  }
   const connectionsList: CacheSessionsBaileysWA[] = JSON.parse(
-    readFileSync(path).toString(),
+    readFileSync(path_file_connections).toString(),
   );
   const newConnectionsList = connectionsList.filter(
     (c) => c.connectionWhatsId !== connectionId,
   );
-  writeFileSync(path, JSON.stringify(newConnectionsList));
+  writeFileSync(path_file_connections, JSON.stringify(newConnectionsList));
   const alreadyExist = !!(await prisma.connectionWA.findFirst({
     where: {
       id: connectionId,
@@ -162,37 +176,15 @@ export const killConnectionWA = async (
 
   cacheConnectionsWAOnline.delete(connectionId);
 
-  if (process.env.NODE_ENV === "production") {
-    path = resolve(__dirname, `../database-whatsapp/${connectionId}`);
-  } else {
-    path = resolve(__dirname, `../../../database-whatsapp/${connectionId}`);
-  }
-
-  if (existsSync(path)) emptyDirSync(path);
+  const path_connection = resolve(
+    path_file_database_whatsapp,
+    String(connectionId),
+  );
+  if (existsSync(path_connection)) emptyDirSync(path_connection);
 };
 
 type BaileysStatus = "connecting" | "open" | "close";
 
-let pathStatic = "";
-if (process.env.NODE_ENV === "production") {
-  pathStatic = resolve(__dirname, `../static/storage`);
-} else {
-  pathStatic = resolve(__dirname, `../../../static/storage`);
-}
-
-let pathDataBaseWA = "";
-if (process.env.NODE_ENV === "production") {
-  pathDataBaseWA = resolve(__dirname, `../database-whatsapp`);
-} else {
-  pathDataBaseWA = resolve(__dirname, `../../../database-whatsapp`);
-}
-
-let pathChatbotQueue = "";
-if (process.env.NODE_ENV === "production") {
-  pathChatbotQueue = resolve(__dirname, `../bin/chatbot-queue`);
-} else {
-  pathChatbotQueue = resolve(__dirname, `../../../bin/chatbot-queue`);
-}
 const groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false });
 export const messageCache = new NodeCache({ stdTTL: 0, useClones: false });
 
@@ -229,10 +221,10 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
           res();
         }
 
-        ensureDirSync(pathDataBaseWA);
+        ensureDirSync(path_file_database_whatsapp);
 
         const { state, saveCreds } = await useMultiFileAuthState(
-          pathDataBaseWA + `/${props.connectionWhatsId}`,
+          resolve(path_file_database_whatsapp, String(props.connectionWhatsId)),
         );
 
         if (!saveCreds) {
@@ -1114,7 +1106,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                         {},
                       );
                       writeFileSync(
-                        pathStatic + `/${fileName}`,
+                        resolve(path_static_storage, fileName),
                         new Uint8Array(buffer),
                       );
                       leadAwaiting.set(keyMapLeadAwaiting, false);
@@ -1164,7 +1156,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                       );
 
                       await writeFile(
-                        pathStatic + `/${fileName}`,
+                        resolve(path_static_storage, fileName),
                         new Uint8Array(buffer),
                       );
                     } catch (error) {
@@ -1217,7 +1209,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                         continue;
                       }
                       await writeFile(
-                        pathStatic + `/${fileName}`,
+                        resolve(path_static_storage, fileName),
                         new Uint8Array(buffer),
                       );
                     } catch (error) {
@@ -1270,7 +1262,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                         continue;
                       }
                       await writeFile(
-                        pathStatic + `/${fileName}`,
+                        resolve(path_static_storage, fileName),
                         new Uint8Array(buffer),
                       );
                     } catch (error) {
@@ -2238,8 +2230,10 @@ ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
                         messageVideo,
                       };
 
-                      const pathOriginal =
-                        pathChatbotQueue + `/${chatbot.id}.json`;
+                      const pathOriginal = resolve(
+                        path_chatbot_queue,
+                        `${chatbot.id}.json`,
+                      );
 
                       console.log({ pathOriginal });
                       if (!existsSync(pathOriginal)) {

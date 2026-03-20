@@ -2,13 +2,7 @@ import cors from "cors";
 import express from "express";
 import { router } from "./routes";
 import cookieParser from "cookie-parser";
-import {
-  ensureFileSync,
-  existsSync,
-  readFile,
-  writeFile,
-  writeFileSync,
-} from "fs-extra";
+import { readFile, writeFile } from "fs-extra";
 import { resolve } from "path";
 import OpenAI from "openai";
 import "./cronReminders";
@@ -20,18 +14,11 @@ interface VectorStoreTest {
   tokenTest: string;
   files: { localId: number; openFileId: string }[];
 }
-
-let pathFilesTest = "";
-if (process.env.NODE_ENV === "production") {
-  pathFilesTest = resolve(__dirname, `../bin/files-test.json`);
-} else {
-  pathFilesTest = resolve(__dirname, `../../../bin/files-test.json`);
-}
-
-if (!existsSync(pathFilesTest)) {
-  ensureFileSync(pathFilesTest);
-  writeFileSync(resolve(pathFilesTest), JSON.stringify([]));
-}
+const pathFilesTest = resolve(
+  process.env.STORAGE_PATH!,
+  "bin",
+  "files-test.json",
+);
 
 (async () => {
   const vsTestFile = await readFile(resolve(pathFilesTest), "utf-8");
@@ -65,7 +52,7 @@ const corsOptions = {
   origin: (origin: string | undefined, callback: Function) => {
     if (!origin) return callback(null, true); // mobile apps / postman
 
-    const isProd = process.env.NODE_ENV === "production";
+    const isProd = process.env.NODE_ENV === "prod";
 
     if (isProd) {
       if (origin.endsWith(".junplid.com.br")) {

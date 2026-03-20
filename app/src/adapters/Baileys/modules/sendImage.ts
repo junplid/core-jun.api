@@ -1,9 +1,8 @@
 import { cacheConnectionsWAOnline } from "../Cache";
 import { sessionsBaileysWA } from "..";
-import { proto, WAMessage } from "baileys";
+import { WAMessage } from "baileys";
 import { lookup } from "mime-types";
 import path from "path";
-import Jimp from "jimp";
 import sharp from "sharp";
 import { promises as fs } from "fs";
 import { safeSendMessage } from "./safeSend";

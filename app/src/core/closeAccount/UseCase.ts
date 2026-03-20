@@ -16,12 +16,11 @@ import {
 } from "../../services/meta/meta.service";
 import { decrypte } from "../../libs/encryption";
 
-let pathConnections = "";
-if (process.env?.NODE_ENV === "production") {
-  pathConnections = resolve(__dirname, `../bin/connections.json`);
-} else {
-  pathConnections = resolve(__dirname, `../../../bin/connections.json`);
-}
+const path_file_connections = resolve(
+  process.env.STORAGE_PATH!,
+  "bin",
+  "connections.json",
+);
 
 export class CloseAccountUseCase {
   constructor() {}
@@ -97,7 +96,7 @@ export class CloseAccountUseCase {
       });
 
       await new Promise<void>((res, rej) =>
-        readFile(pathConnections, (err, file) => {
+        readFile(path_file_connections, (err, file) => {
           if (err) return rej("Error na leitura no arquivo de conexões");
           const listConnections: CacheSessionsBaileysWA[] = JSON.parse(
             file.toString(),
@@ -108,7 +107,7 @@ export class CloseAccountUseCase {
                 !listConnectionsId.includes(connectionWhatsId),
             ),
           );
-          writeFileSync(pathConnections, nextList);
+          writeFileSync(path_file_connections, nextList);
           return res();
         }),
       );

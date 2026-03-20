@@ -1,6 +1,5 @@
 import { TypeEmojiLevel, TypeServiceTier } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
-import NodeCache from "node-cache";
 import { Job } from "node-schedule";
 
 export const cacheFlowsMap = new Map<

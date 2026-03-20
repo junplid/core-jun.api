@@ -4,12 +4,7 @@ import { socketIo } from "../infra/express";
 import { cacheAccountSocket } from "../infra/websocket/cache";
 import { resolve } from "path";
 
-let path = "";
-if (process.env?.NODE_ENV === "production") {
-  path = resolve(__dirname, "../bin/connections.json");
-} else {
-  path = resolve(__dirname, "../../bin/connections.json");
-}
+const path = resolve(process.env.STORAGE_PATH!, "bin", "connections.json");
 
 export const startConnections = (): Promise<void> =>
   new Promise(async (res, rej) => {

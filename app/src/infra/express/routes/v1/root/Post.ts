@@ -28,12 +28,7 @@ RouterV1Root_Post.post(
   appendFlowAccountController,
 );
 
-let pathOfDestiny = "";
-if (process.env.NODE_ENV === "production") {
-  pathOfDestiny = resolve(__dirname, `../static`);
-} else {
-  pathOfDestiny = resolve(__dirname, `../../../../../../static`);
-}
+const pathOfDestiny = resolve(process.env.STORAGE_PATH!, "static");
 
 const uploadFiles = storageMulter({
   pathOfDestiny: pathOfDestiny + "/storage",

@@ -1,8 +1,8 @@
 services:   
-  mongo_junplid:
+  mongo_junplid_prod:
     image: mongo:6.0 
     restart: unless-stopped
-    env_file: .env.mongo
+    env_file: .env.prod
     volumes:
       - ./data-mongo:/data/db
     healthcheck:
@@ -11,7 +11,7 @@ services:
       start_period: 40s
       timeout: 5s
       retries: 3 
-    networks: [rede_junplid]
+    networks: [rede_junplid_prod]
     logging:
       driver: "json-file"
       options:
@@ -19,10 +19,10 @@ services:
         max-file: "3"
 
 
-  postgres_junplid:
+  postgres_junplid_prod:
     image: postgres:16-alpine
     restart: unless-stopped 
-    env_file: .env.pg
+    env_file: .env.prod
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "$${POSTGRES_USER}"]
       interval: 120s
@@ -30,10 +30,10 @@ services:
       timeout: 5s
       retries: 3
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - ./postgres:/var/lib/postgresql/data
-    networks: [rede_junplid]
+    networks: [rede_junplid_prod]
     logging:
       driver: "json-file"
       options:
@@ -41,31 +41,30 @@ services:
         max-file: "3"
 
   junplid:
-    image: ghcr.io/junplid/core-jun.api:latest
-    container_name: junplid
-    pull_policy: never
+    build:
+      context: ./app
+      dockerfile: Dockerfile.prod
+    container_name: junplid_prod
+    image: junplid-core-prod
+    pull_policy: always
     # restart: unless-stopped
     env_file:
-      - ./app/.env
-      - ./.env.pg
-      - ./.env.mongo
+      - ./.env.prod
     depends_on:
-      postgres_junplid:
+      postgres_junplid_prod:
         condition: service_healthy
-      mongo_junplid:
+      mongo_junplid_prod:
         condition: service_healthy
     ports:
-      - 4000:4000 
+      - 127.0.0.1:4000:4000
     volumes:
-      - ./app/database-whatsapp:/app/database-whatsapp
-      - ./app/bin:/app/bin
-      - ./app/static:/app/static
+      - ./app/storage-prod:/app/storage
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:4000/v1/public/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-    networks: [rede_junplid] 
+    networks: [rede_junplid_prod] 
     logging:
       driver: "json-file"
       options:
@@ -73,5 +72,5 @@ services:
         max-file: "3"
 
 networks:
-  rede_junplid:
+  rede_junplid_prod:
     driver: bridge

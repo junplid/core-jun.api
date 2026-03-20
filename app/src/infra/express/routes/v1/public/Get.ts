@@ -21,12 +21,7 @@ import { getAgentTemplatesController } from "../../../../../core/getAgentTemplat
 
 const RouterV1Public_Get = Router();
 
-let path = "";
-if (process.env.NODE_ENV === "production") {
-  path = resolve(__dirname, `../static`);
-} else {
-  path = resolve(__dirname, `../../../../../../static`);
-}
+const path = resolve(process.env.STORAGE_PATH!, "static");
 
 RouterV1Public_Get.use("/images", static_(path + "/image"));
 RouterV1Public_Get.use("/files", static_(path + "/file"));

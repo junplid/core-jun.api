@@ -81,12 +81,7 @@ RouterV1Private_Put.put(
   updateDisconnectConnectionWhatsappController,
 );
 
-let pathOfDestiny = "";
-if (process.env.NODE_ENV === "production") {
-  pathOfDestiny = resolve(__dirname, `../static`);
-} else {
-  pathOfDestiny = resolve(__dirname, `../../../../../../static`);
-}
+const pathOfDestiny = resolve(process.env.STORAGE_PATH!, "static");
 
 const uploadImage = storageMulter({
   pathOfDestiny: pathOfDestiny + "/image",

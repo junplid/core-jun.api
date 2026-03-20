@@ -24,12 +24,7 @@ interface PropsNodeSendAudios {
 
 export const NodeSendAudios = (props: PropsNodeSendAudios): Promise<void> => {
   return new Promise(async (res) => {
-    let path = "";
-    if (process.env.NODE_ENV === "production") {
-      path = resolve(__dirname, "../static/storage");
-    } else {
-      path = resolve(__dirname, "../../../../static/storage");
-    }
+    const path = resolve(process.env.STORAGE_PATH!, "static", "storage");
 
     const firstFile = props.data.files.shift();
     if (firstFile) {

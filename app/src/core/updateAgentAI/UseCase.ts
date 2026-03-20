@@ -8,12 +8,8 @@ import { createReadStream } from "fs-extra";
 import { cacheInfoAgentAI } from "../../adapters/Baileys/Cache";
 import { Decimal } from "@prisma/client/runtime/library";
 
-let path = "";
-if (process.env.NODE_ENV === "production") {
-  path = resolve(__dirname, `../static/storage`);
-} else {
-  path = resolve(__dirname, `../../../static/storage`);
-}
+const path = resolve(process.env.STORAGE_PATH!, "static", "storage");
+
 const modelNotFlex = ["gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o3-mini"];
 const modelNotPriority = ["gpt-5-nano", "o3-mini"];
 

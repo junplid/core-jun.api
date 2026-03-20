@@ -14,7 +14,7 @@ config();
 
 const server = http.createServer(app);
 const io =
-  process.env.NODE_ENV === "production"
+  process.env.NODE_ENV === "prod"
     ? new Server(server, {
         cors: {
           origin: ["https://app.junplid.com.br", "https://root.junplid.com.br"],
@@ -23,6 +23,8 @@ const io =
         },
       })
     : new Server(server, { cors: { origin: "*" } });
+
+const path = resolve(process.env.STORAGE_PATH!, "bin", "chatbot-queue");
 
 const startServer = async (): Promise<void> => {
   try {
@@ -34,17 +36,11 @@ const startServer = async (): Promise<void> => {
         console.log("DATABASE#2 -", "Conectado com sucesso!");
         try {
           WebSocketIo(io);
-          server.listen(process.env.PORT, () => {
-            console.log("Servidor rodando na porta:", process.env.PORT);
+          server.listen(process.env.ENV_PORT, () => {
+            console.log("Servidor rodando na porta:", process.env.ENV_PORT);
           });
           await startConnections();
 
-          let path = "";
-          if (process.env?.NODE_ENV === "production") {
-            path = resolve(__dirname, `../bin/chatbot-queue`);
-          } else {
-            path = resolve(__dirname, `../../../bin/chatbot-queue`);
-          }
           await ensureDir(path);
           const dirPathQueue = readdirSync(path);
 
@@ -56,7 +52,7 @@ const startServer = async (): Promise<void> => {
           console.log("Error na iniciação", error);
         }
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.log(err);
         console.log("ERROR AO CONECTAR COM O PRISMA");
       });

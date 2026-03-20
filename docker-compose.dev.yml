@@ -1,23 +1,23 @@
 services:
   # ------------- Mongo -----------------
-  mongo_junplid:
+  mongo_junplid_dev:
     image: mongo:6.0
     restart: unless-stopped
-    env_file: .env.mongo
+    env_file: .env.dev
     volumes:
-      - ./data-mongo:/data/db
+      - ./data-mongo-dev:/data/db
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.runCommand({ ping: 1 })"]
       interval: 120s
       start_period: 40s
       timeout: 5s
       retries: 3
-    networks: [rede_junplid]
+    networks: [rede_junplid_dev]
 
-  postgres_junplid:
+  postgres_junplid_dev:
     image: postgres:16-alpine
     restart: unless-stopped
-    env_file: .env.pg
+    env_file: .env.dev
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "$${POSTGRES_USER}"]
       interval: 10s
@@ -26,37 +26,37 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
-      - ./postgres:/var/lib/postgresql/data
-    networks: [rede_junplid]
+      - ./postgres-dev:/var/lib/postgresql/data
+    networks: [rede_junplid_dev]
 
   junplid:
     build:
       context: ./app
       dockerfile: Dockerfile.dev
-    container_name: junplid
-    image: junplid-core:dev
+    container_name: junplid_dev
+    image: junplid-core-dev
     env_file:
-      - .env.pg
-      - .env.mongo
+      - ./.env.dev
     depends_on:
-      postgres_junplid:
+      postgres_junplid_dev:
         condition: service_healthy
-      mongo_junplid:
+      mongo_junplid_dev:
         condition: service_healthy
     ports:
-      - 4000:4000
+      - 127.0.0.1:4001:4001
     stdin_open: true
     tty: true
     volumes:
       - ./app:/app
       - /app/node_modules
+      - ./app/storage-dev:/app/storage
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:4000/v1/public/health"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:4001/v1/public/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-    networks: [rede_junplid]
+    networks: [rede_junplid_dev]
 
 networks:
-  rede_junplid:
+  rede_junplid_dev:
     driver: bridge

@@ -8,22 +8,20 @@ config();
 
 (async () => {
   try {
-    let pathBin = "";
-    if (process.env?.NODE_ENV === "production") {
-      pathBin = resolve(__dirname, "./bin");
-    } else {
-      pathBin = resolve(__dirname, "./bin");
+    let pathBin = resolve(process.env.STORAGE_PATH,"bin");  
+    await ensureDir(pathBin);
+    const file_connections = resolve(pathBin, "connections.json"); 
+    if (!pathExistsSync(file_connections)) {
+      await writeFile(file_connections, `[]`);
     }
-    await ensureDir(resolve(__dirname, pathBin));
-    if (!pathExistsSync(resolve(__dirname, pathBin + "/connections.json"))) {
-      await writeFile(resolve(__dirname, pathBin + "/connections.json"), `[]`);
-    }
-    if (!pathExistsSync(resolve(__dirname, pathBin + "/files-test.json"))) {
-      await writeFile(resolve(__dirname, pathBin + "/files-test.json"), `[]`);
+ 
+    const file_test_agent = resolve(pathBin, "files-test.json"); 
+    if (!pathExistsSync(file_test_agent)) {
+      await writeFile(file_test_agent, `[]`);
     }
 
-    await ensureDir(resolve(__dirname, "./static/storage"));
-    await ensureDir(resolve(__dirname, pathBin + "/chatbot-queue"));
+    await ensureDir(resolve(process.env.STORAGE_PATH, "static", "storage"));
+    await ensureDir(resolve(pathBin, "chatbot-queue"));
   } catch (errors) {
     error(errors, 44);
     exit(2);

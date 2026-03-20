@@ -15,12 +15,7 @@ import { webSocketEmitToRoom } from "../../infra/websocket";
 // toda resposta de error deve ser feita via socket.
 // a mensagem de error deve aparecer no balão da mensagem em cor vermelho e icone de error vermelho.
 
-let path = "";
-if (process.env.NODE_ENV === "production") {
-  path = resolve(__dirname, "../static/storage");
-} else {
-  path = resolve(__dirname, "../../../static/storage");
-}
+const path = resolve(process.env.STORAGE_PATH!, "static", "storage");
 
 export class SendTicketMessageUseCase {
   constructor() {}
