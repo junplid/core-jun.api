@@ -2,6 +2,7 @@ import { remove } from "fs-extra";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { CreateMenuOnlineItemDTO_I } from "./DTO";
+import { resolve } from "path";
 
 const optionsOperatingDays = [
   { label: "Domingo", value: 0 },
@@ -202,12 +203,12 @@ export class CreateMenuOnlineItemUseCase {
         },
       };
     } catch (error) {
-      let path = "";
-      if (process.env.NODE_ENV === "production") {
-        path = `../static/storage/`;
-      } else {
-        path = `../../../static/storage/`;
-      }
+      const path = resolve(
+        process.env.STORAGE_PATH!,
+        "static",
+        "storage",
+        fileNameImage,
+      );
       await remove(path + fileNameImage).catch((_err) => {
         console.log("Error ao remover arquivo: ");
       });

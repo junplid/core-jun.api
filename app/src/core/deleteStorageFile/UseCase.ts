@@ -2,6 +2,7 @@ import { DeleteStorageFileDTO_I } from "./DTO";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { prisma } from "../../adapters/Prisma/client";
 import { remove } from "fs-extra";
+import { resolve } from "path";
 
 export class DeleteStorageFileUseCase {
   constructor() {}
@@ -18,12 +19,12 @@ export class DeleteStorageFileUseCase {
 
     await prisma.storagePaths.delete({ where: { id: dto.id } });
 
-    let path = "";
-    if (process.env.NODE_ENV === "production") {
-      path = `../static/storage/${exist.originalName}`;
-    } else {
-      path = `../../../static/storage/${exist.originalName}`;
-    }
+    const path = resolve(
+      process.env.STORAGE_PATH!,
+      "static",
+      "storage",
+      exist.originalName,
+    );
 
     await remove(path).catch((_err) => {
       console.log("Error ao remover arquivo: ");

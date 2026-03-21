@@ -2,13 +2,9 @@ import { UpdateMenuOnlineDTO_I } from "./DTO";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { prisma } from "../../adapters/Prisma/client";
 import { remove } from "fs-extra";
+import { resolve } from "path";
 
-let path = "";
-if (process.env.NODE_ENV === "production") {
-  path = `../static/storage`;
-} else {
-  path = `../../../static/storage`;
-}
+const path = resolve(process.env.STORAGE_PATH!, "static", "storage");
 
 export class UpdateMenuOnlineUseCase {
   constructor() {}

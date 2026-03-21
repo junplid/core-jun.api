@@ -13,7 +13,7 @@ export const CreateRootController = (useCase: CreateRootUseCase) => {
     try {
       const { token, ...data } = await useCase.run(req.body);
       const csrfToken = randomBytes(32).toString("hex");
-      const prod = process.env.NODE_ENV === "production";
+      const prod = process.env.NODE_ENV === "prod";
       const isNgrok = !prod;
 
       res.cookie("access_token", token, {

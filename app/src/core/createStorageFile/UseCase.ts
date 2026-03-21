@@ -3,6 +3,7 @@ import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { CreateStorageFileDTO_I } from "./DTO";
 import { format } from "bytes";
+import { resolve } from "path";
 
 const isStorageExceeded = (
   usedBytes: number,
@@ -31,12 +32,12 @@ export class CreateStorageFileUseCase {
       const usedBytes = storage.reduce((ac, cr) => ac + cr.size, 0);
 
       if (isStorageExceeded(usedBytes, dto.size, 13)) {
-        let path = "";
-        if (process.env.NODE_ENV === "production") {
-          path = `../static/storage/${dto.originalName}`;
-        } else {
-          path = `../../../static/storage/${dto.originalName}`;
-        }
+        const path = resolve(
+          process.env.STORAGE_PATH!,
+          "static",
+          "storage",
+          dto.originalName,
+        );
 
         removeSync(path);
 
@@ -81,12 +82,12 @@ export class CreateStorageFileUseCase {
       };
     } catch (error) {
       console.error("Error creating storage file:", error);
-      let path = "";
-      if (process.env.NODE_ENV === "production") {
-        path = `../static/storage/${dto.originalName}`;
-      } else {
-        path = `../../../static/storage/${dto.originalName}`;
-      }
+      const path = resolve(
+        process.env.STORAGE_PATH!,
+        "static",
+        "storage",
+        dto.originalName,
+      );
 
       removeSync(path);
       throw new ErrorResponse(400).container(

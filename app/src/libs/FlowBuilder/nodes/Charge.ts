@@ -29,7 +29,7 @@ type PropsNodeCharge =
       token_modal_chat_template: string;
     };
 
-const prod = process.env.NODE_ENV === "production";
+const prod = process.env.NODE_ENV === "prod";
 
 export const NodeCharge = async (
   props: PropsNodeCharge,

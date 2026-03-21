@@ -10,7 +10,7 @@ export const CloseAccountController = (useCase: CloseAccountUseCase) => {
   ): Promise<Response> => {
     try {
       await useCase.run(req.body);
-      const prod = process.env.NODE_ENV === "production";
+      const prod = process.env.NODE_ENV === "prod";
       res.clearCookie("access_token", {
         domain: prod ? ".junplid.com.br" : undefined,
         path: "/",

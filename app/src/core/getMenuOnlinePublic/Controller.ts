@@ -15,7 +15,7 @@ export const GetMenuOnlinePublicController = (
     try {
       const data = await useCase.run({ ...req.body, ...req.params });
       const csrfToken = randomBytes(32).toString("hex");
-      const prod = process.env.NODE_ENV === "production";
+      const prod = process.env.NODE_ENV === "prod";
       const isNgrok = !prod;
 
       res.cookie("MENU_XSRF_TOKEN", csrfToken, {

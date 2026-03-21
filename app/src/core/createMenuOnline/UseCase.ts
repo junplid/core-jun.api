@@ -2,7 +2,7 @@ import { remove } from "fs-extra";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { CreateMenuOnlineDTO_I } from "./DTO";
-import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
+import { resolve } from "path";
 
 export class CreateMenuOnlineUseCase {
   constructor() {}
@@ -78,12 +78,12 @@ export class CreateMenuOnlineUseCase {
         menu,
       };
     } catch (error) {
-      let path = "";
-      if (process.env.NODE_ENV === "production") {
-        path = `../static/storage/${fileNameImage}`;
-      } else {
-        path = `../../../static/storage/${fileNameImage}`;
-      }
+      const path = resolve(
+        process.env.STORAGE_PATH!,
+        "static",
+        "storage",
+        fileNameImage,
+      );
       await remove(path).catch((_err) => {
         console.log("Error ao remover arquivo: ");
       });

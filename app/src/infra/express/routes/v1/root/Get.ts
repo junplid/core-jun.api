@@ -16,7 +16,7 @@ const RouterV1Root_Get = Router();
 
 RouterV1Root_Get.get("/verify-authorization", (_req, res, _next) => {
   const csrfToken = randomBytes(32).toString("hex");
-  const prod = process.env.NODE_ENV === "production";
+  const prod = process.env.NODE_ENV === "prod";
   const isNgrok = !prod;
 
   res.cookie("ROOT_XSRF_TOKEN", csrfToken, {
