@@ -9,7 +9,7 @@ export function csrfMiddleware(
     req.cookies["APP_XSRF_TOKEN"] || "",
     req.cookies["MENU_XSRF_TOKEN"] || "",
     req.cookies["ROOT_XSRF_TOKEN"] || "",
-  ];
+  ].filter((s) => s);
   const headerToken = req.headers["x-xsrf-token"];
 
   if (
