@@ -11,6 +11,7 @@ export interface CreateMenuOnlineItemBodyDTO_I {
   afterPrice?: number;
   categoriesUuid?: string[];
   date_validity?: Date;
+  send_to_category_uuid?: string;
   sections?: {
     title?: string;
     helpText?: string;

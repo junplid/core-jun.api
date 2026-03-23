@@ -43,6 +43,7 @@ export class CreateMenuOnlineItemUseCase {
     sections,
     accountId,
     categoriesUuid,
+    send_to_category_uuid,
     qnt,
     ...dto
   }: CreateMenuOnlineItemDTO_I) {
@@ -77,11 +78,27 @@ export class CreateMenuOnlineItemUseCase {
       });
     }
 
+    let send_to_categoryId: number | null = null;
+    if (send_to_category_uuid) {
+      const targetCategory = await prisma.menuOnlineCategory.findFirst({
+        where: { uuid: send_to_category_uuid, menuId: menu.id },
+        select: { id: true },
+      });
+      if (!targetCategory?.id) {
+        throw new ErrorResponse(400).input({
+          path: "send_to_category_uuid",
+          text: "Categoria não encontrada.",
+        });
+      }
+      send_to_categoryId = targetCategory.id;
+    }
+
     try {
       const item = await prisma.menusOnlineItems.create({
         data: {
           ...dto,
           qnt,
+          send_to_categoryId,
           accountId,
           beforePrice: dto.beforePrice ? Number(dto.beforePrice) : undefined,
           afterPrice: dto.afterPrice ? Number(dto.afterPrice) : undefined,

@@ -46,6 +46,7 @@ export class UpdateMenuOnlineItemUseCase {
     sections,
     accountId,
     categoriesUuid,
+    send_to_category_uuid,
     ...dto
   }: UpdateMenuOnlineItemDTO_I) {
     // const getAccount = await prisma.account.findFirst({
@@ -92,6 +93,22 @@ export class UpdateMenuOnlineItemUseCase {
         path: "afterPrice",
         text: "Campo obrigatório.",
       });
+    }
+
+    let send_to_categoryId: number | null | undefined = undefined;
+    if (send_to_category_uuid === null) send_to_categoryId = null;
+    if (send_to_category_uuid) {
+      const targetCategory = await prisma.menuOnlineCategory.findFirst({
+        where: { uuid: send_to_category_uuid, menuId: menu.id },
+        select: { id: true },
+      });
+      if (!targetCategory?.id) {
+        throw new ErrorResponse(400).input({
+          path: "send_to_category_uuid",
+          text: "Categoria não encontrada.",
+        });
+      }
+      send_to_categoryId = targetCategory.id;
     }
 
     try {
@@ -155,6 +172,7 @@ export class UpdateMenuOnlineItemUseCase {
           where: { uuid: itemUuid },
           data: {
             ...dto,
+            send_to_categoryId,
             ...(fileNameImage && { img: fileNameImage }),
           },
           select: {

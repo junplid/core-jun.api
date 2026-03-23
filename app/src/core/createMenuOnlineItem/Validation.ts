@@ -31,6 +31,7 @@ export const createMenuOnlineItemValidation = (
     uuid: Joi.string().required(),
 
     name: Joi.string().required(),
+    send_to_category_uuid: Joi.string().allow("", null).optional(),
     desc: Joi.string().allow(""),
     fileNameImage: Joi.string().required(),
     qnt: Joi.number().min(0),

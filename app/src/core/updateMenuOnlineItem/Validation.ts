@@ -38,6 +38,7 @@ export const updateMenuOnlineItemValidation = (
     qnt: Joi.number().min(0),
     beforePrice: resolverPrice,
     afterPrice: resolverPrice,
+    send_to_category_uuid: Joi.string().allow("", null).optional(),
     date_validity: Joi.date().iso().allow(null).optional(),
     categoriesUuid: Joi.array().items(Joi.string()).optional(),
 

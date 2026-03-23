@@ -11,6 +11,7 @@ export interface UpdateMenuOnlineItemBodyDTO_I {
   beforePrice?: number;
   afterPrice?: number;
   categoriesUuid?: string[];
+  send_to_category_uuid?: string;
   sections?: {
     uuid: string;
     title?: string;

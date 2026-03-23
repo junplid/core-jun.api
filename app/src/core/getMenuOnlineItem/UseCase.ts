@@ -12,6 +12,7 @@ export class GetMenuOnlineItemUseCase {
         desc: true,
         img: true,
         qnt: true,
+        SendToCategory: { select: { uuid: true } },
         afterPrice: true,
         date_validity: true,
         beforePrice: true,
@@ -59,10 +60,11 @@ export class GetMenuOnlineItemUseCase {
       };
     }
 
-    const { Categories, Sections, img, ...rest } = item;
+    const { Categories, Sections, SendToCategory, img, ...rest } = item;
     const itemResolved = {
       fileNameImage: img,
       ...rest,
+      send_to_category_uuid: SendToCategory?.uuid || null,
       beforePrice: rest.beforePrice
         ? rest.beforePrice.toString().replace(/\D/g, "")
         : null,

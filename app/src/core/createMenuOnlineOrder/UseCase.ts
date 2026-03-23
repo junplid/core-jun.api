@@ -271,6 +271,8 @@ export class CreateMenuOnlineOrderUseCase {
             delivery_address: rest.delivery_address,
             payment_method: rest.payment_method,
             payment_change_to: rest.payment_change_to,
+            delivery_cep: rest.delivery_cep,
+            delivery_complement: rest.delivery_complement,
             status: "pending",
             data: dataOrder,
             total: nextTotal,

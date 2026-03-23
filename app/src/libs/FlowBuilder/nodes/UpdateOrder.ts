@@ -203,9 +203,7 @@ export const NodeUpdateOrder = async (
       });
     }
 
-    console.log("MUDAR STATUS", fields?.includes("status"));
     if (fields?.includes("status")) {
-      console.log("NEXT", nextData.status);
       const GAP = 640;
       const last = await prisma.orders.findFirst({
         where: { accountId: props.accountId, status: nextData.status },
@@ -213,14 +211,6 @@ export const NodeUpdateOrder = async (
         select: { rank: true },
       });
       const newRank = last ? last.rank.plus(GAP) : GAP;
-      console.log({ newRank });
-
-      console.log({
-        rank: newRank,
-        orderId: getOrder.id,
-        sourceStatus: getOrder.status,
-        nextStatus: nextData.status,
-      });
 
       webSocketEmitToRoom().account(props.accountId).orders.update_status(
         {

@@ -2247,6 +2247,7 @@ model MenuOnlineCategory {
   days_in_the_week Int[] // se não tiver dia da semana então mostra todos os dias
   Menu             MenusOnline                            @relation(fields: [menuId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Items            MenuOnlineCategoryOnMenusOnlineItems[]
+  TargetItems      MenusOnlineItems[]
 
   @@index([menuId, name])
 }
@@ -2262,24 +2263,26 @@ model MenuOnlineCategoryOnMenusOnlineItems {
 }
 
 model MenusOnlineItems {
-  id            Int                                    @id @default(autoincrement())
-  uuid          String                                 @unique @default(uuid())
-  name          String
-  desc          String?
-  img           String
-  status        Boolean?
-  qnt           Int                                    @default(0)
-  beforePrice   Decimal?                               @db.Decimal(6, 2)
-  afterPrice    Decimal?                               @db.Decimal(6, 2)
-  date_validity DateTime?                              @db.Timestamptz
-  accountId     Int?
-  createAt      DateTime                               @default(now()) @db.Timestamptz
-  updateAt      DateTime                               @default(now()) @db.Timestamptz
-  menuId        Int
-  Menu          MenusOnline                            @relation(fields: [menuId], references: [id], onDelete: Cascade)
-  Account       Account?                               @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Categories    MenuOnlineCategoryOnMenusOnlineItems[]
-  Sections      MenuOnlineItemSections[]
+  id                 Int                                    @id @default(autoincrement())
+  uuid               String                                 @unique @default(uuid())
+  name               String
+  desc               String?
+  img                String
+  status             Boolean?
+  qnt                Int                                    @default(0)
+  send_to_categoryId Int?
+  beforePrice        Decimal?                               @db.Decimal(6, 2)
+  afterPrice         Decimal?                               @db.Decimal(6, 2)
+  date_validity      DateTime?                              @db.Timestamptz
+  accountId          Int?
+  createAt           DateTime                               @default(now()) @db.Timestamptz
+  updateAt           DateTime                               @default(now()) @db.Timestamptz
+  menuId             Int
+  SendToCategory     MenuOnlineCategory?                    @relation(fields: [send_to_categoryId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  Menu               MenusOnline                            @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  Account            Account?                               @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Categories         MenuOnlineCategoryOnMenusOnlineItems[]
+  Sections           MenuOnlineItemSections[]
 
   @@index([uuid, menuId, accountId])
 }
