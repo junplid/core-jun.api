@@ -178,7 +178,12 @@ export class CreateMenuOnlineOrderUseCase {
       exist.ConnectionWA?.number ||
       exist.MenuInfo?.whatsapp_contact?.replace(/\D/g, "");
 
-    const nextTotal = total + (exist.MenuInfo?.delivery_fee?.toNumber() || 0);
+    let nextTotal = 0;
+    if (type_delivery === "retirar") {
+      nextTotal = total;
+    } else {
+      nextTotal = total + (exist.MenuInfo?.delivery_fee?.toNumber() || 0);
+    }
 
     try {
       let dataOrder = "🔴 A confirmar\n\n";
@@ -268,7 +273,8 @@ export class CreateMenuOnlineOrderUseCase {
             n_order,
             businessId: Business.id,
             origin: "menu_online",
-            delivery_address: rest.delivery_address,
+            delivery_address:
+              rest.delivery_address || type_delivery.toUpperCase(),
             payment_method: rest.payment_method,
             payment_change_to: rest.payment_change_to,
             delivery_cep: rest.delivery_cep,
