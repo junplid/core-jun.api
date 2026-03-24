@@ -35,6 +35,7 @@ export class RunActionChannelOrderUseCase {
             ContactsWA: { select: { completeNumber: true } },
           },
         },
+        n_order: true,
         flowStateId: true,
         Business: { select: { name: true, id: true } },
       },
@@ -209,7 +210,7 @@ export class RunActionChannelOrderUseCase {
       flowId: order.flowId,
       flowBusinessIds: flow!.businessIds,
       type: "running",
-      action: `${action} [order-${dto.id}]`,
+      action: `#${order.n_order}\n${action} [order-${dto.id}]`,
       businessId: order.Business.id,
 
       external_adapter,

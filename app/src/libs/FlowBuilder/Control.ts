@@ -2443,7 +2443,8 @@ export const NodeControler = ({
                 flowStateId: props.flowStateId,
                 flowId: props.flowId,
                 ...(props.type === "running" && {
-                  action: props.action?.replace(" [order]", "") || undefined,
+                  action:
+                    props.action?.replace(/ ?\[order.*$/, "") || undefined,
                 }),
                 external_adapter: props.external_adapter,
                 mode: "prod",
@@ -2455,19 +2456,6 @@ export const NodeControler = ({
               }),
         })
           .then(async (action) => {
-            const nextNode = nextEdgesIds.find(
-              (s) => s.sourceHandle === "main",
-            );
-            if (!nextNode) {
-              cacheFlowInExecution.delete(keyMap);
-              if (props.forceFinish) await props.actions?.onFinish?.("110");
-              await props.actions?.onExecutedNode?.({
-                id: "0",
-                flowId: props.flowId,
-              });
-              return;
-            }
-
             if (props.actions?.onExecutedNode) {
               await props.actions?.onExecutedNode({
                 id: currentNode.id,
@@ -2476,6 +2464,18 @@ export const NodeControler = ({
             }
 
             if (!action) {
+              const nextNode = nextEdgesIds.find(
+                (s) => s.sourceHandle === "main",
+              );
+              if (!nextNode) {
+                cacheFlowInExecution.delete(keyMap);
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                await props.actions?.onExecutedNode?.({
+                  id: "0",
+                  flowId: props.flowId,
+                });
+                return;
+              }
               execute({
                 ...props,
                 ...(props.type === "running"
@@ -2485,6 +2485,18 @@ export const NodeControler = ({
                 oldNodeId: currentNode.id,
               });
             } else {
+              const nextNode = nextEdgesIds.find(
+                (s) => s.sourceHandle === "#b99909 action",
+              );
+              if (!nextNode) {
+                cacheFlowInExecution.delete(keyMap);
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                await props.actions?.onExecutedNode?.({
+                  id: "0",
+                  flowId: props.flowId,
+                });
+                return;
+              }
               execute({
                 ...props,
                 type: "running",

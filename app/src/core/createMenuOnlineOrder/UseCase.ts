@@ -6,6 +6,8 @@ import { genNumCode } from "../../utils/genNumCode";
 import { NotificationApp } from "../../utils/notificationApp";
 import { webSocketEmitToRoom } from "../../infra/websocket";
 import { formatToBRL } from "brazilian-values";
+import { OrderAdjustments } from "@prisma/client";
+import { Decimal } from "@prisma/client/runtime/library";
 
 interface ItemDraft {
   obs?: string;
@@ -178,12 +180,38 @@ export class CreateMenuOnlineOrderUseCase {
       exist.ConnectionWA?.number ||
       exist.MenuInfo?.whatsapp_contact?.replace(/\D/g, "");
 
+    const orderAdjustments: Omit<OrderAdjustments, "id" | "orderId">[] = [];
+    orderAdjustments.push({
+      amount: new Decimal(0.08),
+      label: "Taxa plataforma",
+      type: "out",
+    });
+
+    /**
+     * Total a pagar
+     */
     let nextTotal = 0;
     if (type_delivery === "retirar") {
       nextTotal = total;
     } else {
-      nextTotal = total + (exist.MenuInfo?.delivery_fee?.toNumber() || 0);
+      const deliveryFee = exist.MenuInfo?.delivery_fee?.toNumber() || 0;
+      if (deliveryFee > 0) {
+        orderAdjustments.push({
+          amount: new Decimal(deliveryFee),
+          label: "Taxa de entrega",
+          type: "in",
+        });
+      }
+      nextTotal = total + deliveryFee;
     }
+
+    const totalAdjustment = orderAdjustments.reduce((ac, cr) => {
+      if (cr.type === "in") ac += cr.amount.toNumber();
+      if (cr.type === "out") ac -= cr.amount.toNumber();
+      return ac;
+    }, 0);
+
+    const net_total = totalAdjustment + total;
 
     try {
       let dataOrder = "🔴 A confirmar\n\n";
@@ -202,7 +230,7 @@ export class CreateMenuOnlineOrderUseCase {
       const GAP = 640;
       const newRank = last ? last.rank.plus(GAP) : GAP;
 
-      const { ContactsWAOnAccount, Business, ...order } =
+      const { ContactsWAOnAccount, OrderAdjustments, Business, ...order } =
         await prisma.orders.create({
           data: {
             rank: newRank,
@@ -210,19 +238,26 @@ export class CreateMenuOnlineOrderUseCase {
             accountId: exist.accountId,
             businessId: exist.ConnectionWA.businessId,
             connectionWAId: exist.ConnectionWA.id,
+            itens_count: itemsDraft.length,
             name: rest.who_receives || null,
             isDragDisabled: false,
             menuId: exist.id,
+            OrderAdjustments: { createMany: { data: orderAdjustments } },
             ...rest,
+            net_total,
             delivery_address:
               rest.delivery_address || type_delivery.toUpperCase(),
             total: nextTotal,
+            sub_total: total,
             status: "pending",
             data: dataOrder,
           },
           select: {
             id: true,
             createAt: true,
+            OrderAdjustments: {
+              select: { amount: true, label: true, type: true },
+            },
             priority: true,
             Business: { select: { name: true, id: true } },
             ContactsWAOnAccount: {
@@ -269,12 +304,15 @@ export class CreateMenuOnlineOrderUseCase {
         .orders.new_order(
           {
             ...order,
+            net_total,
+            adjustments: OrderAdjustments,
             name: rest.who_receives || null,
             n_order,
             businessId: Business.id,
             origin: "menu_online",
             delivery_address:
               rest.delivery_address || type_delivery.toUpperCase(),
+            delivery_reference_point: rest.delivery_reference_point,
             payment_method: rest.payment_method,
             payment_change_to: rest.payment_change_to,
             delivery_cep: rest.delivery_cep,
@@ -283,6 +321,7 @@ export class CreateMenuOnlineOrderUseCase {
             data: dataOrder,
             total: nextTotal,
             sequence: newRank,
+            sub_total: total,
             isDragDisabled: false,
             ticket:
               ContactsWAOnAccount?.Tickets.map((tk) => {

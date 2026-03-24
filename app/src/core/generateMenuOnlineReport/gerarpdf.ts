@@ -1,0 +1,293 @@
+const data_dados = {
+  loja: "Delivery Burguer",
+  logo: "./0f17a29b-f78a-404d-b04c-8ee109acd722-image-removebg-preview(12).png",
+
+  resumo: {
+    vendas: 295.3,
+    taxaEntrega: 50.0,
+    bruto: 345.3,
+    liquido: 329.4,
+  },
+
+  caixa: {
+    inicial: 34.1,
+    entradas: 295.3,
+    final: 329.4,
+    informado: 329.4,
+    diferenca: 0,
+  },
+
+  pagamentos: [
+    { tipo: "Pix", vendas: 27, total: 80.5 },
+    { tipo: "Dinheiro", vendas: 3, total: 80.5 },
+    { tipo: "Cartão Crédito", vendas: 12, total: 212.9 },
+    { tipo: "Cartão Débito", vendas: 2, total: 36.0 },
+  ],
+
+  pedidos: [
+    {
+      id: 192838,
+      cliente: "(15/06/2026 14:31) João\nnome",
+      pagamento: "PIX",
+      taxaEntrega: 5,
+      total: 50,
+    },
+    {
+      id: 192138,
+      cliente: "(15/06/2026 14:31) Maria",
+      pagamento: "C Crédito",
+      taxaEntrega: 7,
+      total: 80,
+    },
+  ],
+};
+
+function drawTable(
+  doc: any,
+  startX: number,
+  startY: number,
+  colWidths: any,
+  headers: any[],
+  rows: any[][],
+) {
+  let y = startY;
+  const rowHeight = 20;
+
+  // Header
+  doc.font("Helvetica-Bold").fontSize(10);
+  if (headers.length) {
+    headers.forEach((header, i) => {
+      const x =
+        startX +
+        colWidths.slice(0, i).reduce((a: number, b: number) => a + b, 0);
+      const textHeight = doc.heightOfString(header, {
+        width: colWidths[i],
+      });
+      const textY = y + (rowHeight - textHeight) / 1.6;
+      // Borda
+      doc.lineWidth(0.5);
+      doc.rect(x, y, colWidths[i], rowHeight).stroke();
+      doc.text(header, x + 4, textY, {
+        width: colWidths[i],
+        align: "left",
+      });
+    });
+    y += 20;
+  }
+
+  // Linhas
+  if (!headers.length) {
+    doc.font("Helvetica-Bold").fontSize(10);
+  } else {
+    doc.font("Helvetica").fontSize(10);
+  }
+  rows.forEach((row) => {
+    const padding = 4;
+
+    // ===== CALCULAR ALTURA DINÂMICA DA LINHA =====
+    let rowHeight = 0;
+
+    row.forEach((cell, i) => {
+      const cellText = typeof cell === "object" ? cell.text : cell;
+
+      const textHeight = doc.heightOfString(cellText, {
+        width: colWidths[i] - padding * 2,
+      });
+
+      rowHeight = Math.max(rowHeight, textHeight + padding * 2);
+    });
+
+    // ===== DESENHAR LINHA =====
+    row.forEach((cell, i) => {
+      const x =
+        startX +
+        colWidths.slice(0, i).reduce((a: number, b: number) => a + b, 0);
+
+      const cellText = typeof cell === "object" ? cell.text : cell;
+      const fillColor = typeof cell === "object" ? cell.fillColor : null;
+      const textColor =
+        typeof cell === "object" ? cell.textColor || "black" : "black";
+
+      // ===== BACKGROUND =====
+      if (fillColor) {
+        doc.rect(x, y, colWidths[i], rowHeight).fill(fillColor);
+      }
+
+      // ===== BORDA =====
+      doc
+        .lineWidth(0.5)
+        .strokeColor("#000")
+        .rect(x, y, colWidths[i], rowHeight)
+        .stroke();
+
+      // ===== TEXTO CENTRALIZADO VERTICAL =====
+      const textHeight = doc.heightOfString(cellText, {
+        width: colWidths[i] - padding * 2,
+      });
+
+      const textY = y + (rowHeight - textHeight) / 2;
+
+      doc.fillColor(textColor).text(cellText, x + padding, textY, {
+        width: colWidths[i] - padding * 2,
+        align: "left",
+      });
+
+      doc.fillColor("black");
+    });
+
+    // avança corretamente pela altura real da linha
+    y += rowHeight;
+  });
+
+  return y;
+}
+
+export function gerarRelatorio(
+  doc: PDFKit.PDFDocument,
+  dados: typeof data_dados,
+) {
+  // ===== LOGO =====
+  if (dados.logo) {
+    doc.image(dados.logo, 30, 30, { width: 60 });
+  }
+
+  // ===== TÍTULO =====
+  doc
+    .fontSize(18)
+    .text(dados.loja, 120, 30)
+    .fontSize(14)
+    .text("Relatório de Fechamento - Cardápio digital")
+    .fontSize(12)
+    .font("Helvetica-Bold")
+    .text("10/12/2025 - 17/12/2025")
+    .font("Helvetica");
+
+  doc.moveDown(2);
+
+  // ===== RESUMO FINANCEIRO =====
+  doc.x = doc.page.margins.left;
+  doc.fontSize(10).text("Resumo Financeiro", { align: "left" });
+
+  const totalWIdth = 200 + 80 + 150 + 90;
+
+  drawTable(
+    doc,
+    40,
+    doc.y + 3,
+    [totalWIdth - 100, 100],
+    ["Descrição", "Valor"],
+    [
+      ["Quantidade de vendas realizadas", `23`],
+      [
+        { text: "Valor total de vendas" },
+        { text: `R$ ${dados.resumo.vendas.toFixed(2)}` },
+      ],
+      [
+        { text: "Taxa de entrega (cobrada do cliente)" },
+        {
+          text: `+ R$ ${dados.resumo.taxaEntrega.toFixed(2)}`,
+          textColor: "green",
+        },
+      ],
+      [
+        { text: "Total bruto" },
+        { text: `R$ ${dados.resumo.bruto.toFixed(2)}` },
+      ],
+      [
+        {
+          text: "Taxas por pedido confimado (plataforma)",
+        },
+        { text: "- R$ 50.00", textColor: "red" },
+      ],
+      [
+        { text: "Repasse motoboy" },
+        {
+          text: `- R$ ${dados.resumo.taxaEntrega.toFixed(2)}`,
+          textColor: "red",
+        },
+      ],
+      [{ text: "Total líquido" }, { text: "R$ 245.30", textColor: "green" }],
+    ],
+  );
+
+  doc.moveDown(2);
+
+  // ===== PAGAMENTOS =====
+  doc.x = doc.page.margins.left;
+  doc.fontSize(10).text("Total por Meio de Pagamento", { align: "left" });
+
+  const pagamentoRows = dados.pagamentos.map((p) => [
+    p.tipo,
+    p.vendas,
+    `R$ ${p.total.toFixed(2)}`,
+  ]);
+
+  const countTotalVendas = dados.pagamentos.reduce(
+    (ac, cr) => cr.vendas + ac,
+    0,
+  );
+  const countTotalPrice = dados.pagamentos.reduce((ac, cr) => cr.total + ac, 0);
+
+  drawTable(
+    doc,
+    40,
+    doc.y + 3,
+    [totalWIdth - (55 + 100), 55, 100],
+    ["Meio de pagamento", "QNT", "Total (R$)"],
+    pagamentoRows,
+  );
+
+  drawTable(
+    doc,
+    40,
+    doc.y + 10,
+    [totalWIdth - (55 + 100), 55, 100],
+    [],
+    [["TOTAL", countTotalVendas, `R$ ${countTotalPrice.toFixed(2)}`]],
+  );
+
+  // ===== NOVA PÁGINA (PEDIDOS) =====
+  doc.addPage();
+
+  doc.fontSize(14).text("Pedidos", { underline: true });
+
+  const pedidoRows = dados.pedidos.map((p) => [
+    `${p.id}`,
+    p.cliente,
+    p.pagamento,
+    `R$ ${p.taxaEntrega.toFixed(2)}`,
+    `R$ ${p.taxaEntrega.toFixed(2)}`,
+    `- 0.08`,
+    `R$ ${p.total.toFixed(2)}`,
+  ]);
+
+  drawTable(
+    doc,
+    40,
+    doc.y + 10,
+    [42, totalWIdth - (42 + 64 + 55 + 54 + 62 + 90), 64, 55, 62, 54, 90],
+    ["CODE", "Data, cliente", "FormaPg", "ValorPd", "TxEntr", "TxPd ", "Total"],
+    pedidoRows,
+  );
+
+  drawTable(
+    doc,
+    40,
+    doc.y + 10,
+    [42, totalWIdth - (42 + 64 + 55 + 54 + 62 + 90), 64, 55, 62, 54, 90],
+    [],
+    [
+      [
+        ,
+        ,
+        ,
+        `R$ ${countTotalPrice.toFixed(2)}`,
+        `R$ ${countTotalPrice.toFixed(2)}`,
+        `- ${countTotalPrice.toFixed(2)}`,
+        `R$ ${countTotalPrice.toFixed(2)}`,
+      ],
+    ],
+  );
+
+  doc.end();
+}

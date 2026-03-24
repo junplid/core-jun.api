@@ -249,7 +249,14 @@ export const WebSocketIo = (io: Server) => {
           .emit("update_status", props);
         await prisma.orders.update({
           where: { id: props.orderId, accountId: auth.accountId },
-          data: { rank: props.rank, status: props.nextStatus },
+          data: {
+            rank: props.rank,
+            status: props.nextStatus,
+            ...((props.nextStatus === "confirmed" ||
+              props.nextStatus === "delivered") && {
+              completedAt: new Date(),
+            }),
+          },
         });
 
         const order = await prisma.orders.findFirst({

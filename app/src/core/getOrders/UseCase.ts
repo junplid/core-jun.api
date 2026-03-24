@@ -7,6 +7,7 @@ const select = {
   id: true,
   name: true,
   total: true,
+  net_total: true,
   data: true,
   priority: true,
   status: true,
@@ -32,6 +33,9 @@ export class GetOrdersUseCase {
               accountId: dto.accountId,
               deleted: false,
               ...(dto.menu && { menuOnline: { uuid: dto.menu } }),
+              createAt: {
+                gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+              },
             },
             orderBy: { id: "asc" },
             select: {
@@ -39,11 +43,16 @@ export class GetOrdersUseCase {
               delivery_complement: true,
               delivery_cep: true,
               payment_change_to: true,
+              delivery_reference_point: true,
               connectionIgId: true,
               connectionWAId: true,
               businessId: true,
+              sub_total: true,
               description: true,
               origin: true,
+              OrderAdjustments: {
+                select: { amount: true, label: true, type: true },
+              },
               ContactsWAOnAccount: {
                 select: {
                   ContactsWA: {
@@ -85,11 +94,15 @@ export class GetOrdersUseCase {
                 connectionIgId,
                 connectionWAId,
                 rank,
+                OrderAdjustments,
                 ...order
               }) => {
                 return {
                   ...order,
-
+                  sub_total: order.sub_total?.toNumber(),
+                  total: order.total?.toNumber(),
+                  net_total: order.net_total?.toNumber(),
+                  adjustments: OrderAdjustments,
                   ...(connectionWAId && {
                     channel: "baileys",
                     contact:

@@ -19,6 +19,7 @@ export const createMenuOnlineOrderValidation = (
     type_delivery: Joi.string().valid("retirar", "enviar"),
     delivery_address: Joi.string().allow(""),
     delivery_complement: Joi.string().allow(""),
+    delivery_reference_point: Joi.string().allow(""),
     delivery_cep: Joi.string().allow(""),
     payment_method: Joi.string().required(),
     who_receives: Joi.string().allow(""),

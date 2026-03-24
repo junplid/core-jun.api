@@ -52,7 +52,10 @@ export const NodeCreateOrder = async (
   }
 
   try {
-    if (props.action) return props.action;
+    if (props.action) {
+      console.log(props.action);
+      return props.action;
+    }
 
     let chargeId: number | null = null;
 

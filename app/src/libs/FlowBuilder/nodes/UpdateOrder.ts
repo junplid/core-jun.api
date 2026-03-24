@@ -169,6 +169,9 @@ export const NodeUpdateOrder = async (
         ...(fields?.includes("connect_contact") && {
           contactsWAOnAccountId: props.contactsWAOnAccountId,
         }),
+        ...(fields?.includes("payment_made") && {
+          payment_made: new Date(),
+        }),
         actionChannels: nextData.actionChannels?.map((s: any) => s.text),
         ...(chargeId && { Charges: { connect: { id: chargeId } } }),
         ...(nextData.status &&
@@ -203,7 +206,7 @@ export const NodeUpdateOrder = async (
       });
     }
 
-    if (fields?.includes("status")) {
+    if (fields?.includes("status") && !fields?.includes("not_change_status")) {
       const GAP = 640;
       const last = await prisma.orders.findFirst({
         where: { accountId: props.accountId, status: nextData.status },
@@ -223,14 +226,14 @@ export const NodeUpdateOrder = async (
       );
     }
 
-    await new Promise((s) => setTimeout(s, 300));
-
     webSocketEmitToRoom()
       .account(props.accountId)
       .orders.update_order(
         {
           id: getOrder.id,
-          status,
+          ...(!fields?.includes("not_change_status") && {
+            status,
+          }),
           ...(fields?.includes("name") && { name }),
           ...(fields?.includes("connect_contact") &&
             ContactsWAOnAccount?.ContactsWA.realNumber && {
@@ -252,7 +255,7 @@ export const NodeUpdateOrder = async (
             total: nextData.total,
           }),
           ...(fields?.includes("actionChannels") && {
-            actionChannels: nextData.actionChannels.map((s: any) => s.text),
+            actionChannels: nextData.actionChannels?.map((s: any) => s.text),
           }),
           ...(fields?.includes("dragDrop") && {
             isDragDisabled: !!nextData.isDragDisabled,
