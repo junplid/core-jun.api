@@ -255,6 +255,10 @@ export type NodeUpdateOrderData = {
   isDragDisabled?: boolean;
 };
 
+export type NodeDeleteOrderData = {
+  nOrder: string;
+};
+
 export type NodeGetOrderData = {
   nOrder: string;
   fields?: string[];
@@ -428,6 +432,7 @@ export type TypeNodesPayload =
   | "NodeMoveTrelloCard"
   | "NodeWebhookTrelloCard"
   | "NodeDeleteMessage"
+  | "NodeDeleteOrder"
   | "NodeDistribute";
 
 export type NodePayload = { id: string } & (
@@ -473,4 +478,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeCreateAppointment"; data: NodeCreateAppointmentData }
   | { type: "NodeUpdateAppointment"; data: NodeUpdateAppointmentData }
   | { type: "NodeGetOrder"; data: NodeGetOrderData }
+  | { type: "NodeDeleteOrder"; data: NodeDeleteOrderData }
 );

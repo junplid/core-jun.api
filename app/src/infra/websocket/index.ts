@@ -645,113 +645,161 @@ export const webSocketEmitToRoom = () => {
 
   return {
     account: (accountId: number) => {
-      let to = `account:${accountId}`;
       return {
         emit: (emit: string, args: any, ignore: string[]) => {
-          io.to(to).except(ignore).emit(emit, args);
+          io.to(`account:${accountId}`).except(ignore).emit(emit, args);
         },
         connections: {
           status_connection: (args: any, ignore: string[]) => {
-            to = `${to}:connections`;
-            io.to(to).except(ignore).emit("status_connection", args);
+            io.to(`account:${accountId}:connections`)
+              .except(ignore)
+              .emit("status_connection", args);
           },
         },
         user_updated: (args: any, ignore: string[]) => {
-          io.to(to).except(ignore).emit("user_updated", args);
+          io.to(`account:${accountId}`)
+            .except(ignore)
+            .emit("user_updated", args);
         },
         dashboard: {
           dashboard_services: (args: { delta: number; hour: string }) => {
-            to = `${to}:dashboard`;
-            io.to(to).emit("dashboard_services", args);
+            io.to(`account:${accountId}:dashboard`).emit(
+              "dashboard_services",
+              args,
+            );
           },
         },
         appointments: {
           remove: (args: any, ignore: string[]) => {
-            to = `${to}:appointments`;
-            return io.to(to).except(ignore).emit("remove_appointment", args);
+            return io
+              .to(`account:${accountId}:appointments`)
+              .except(ignore)
+              .emit("remove_appointment", args);
           },
           new: (args: any, ignore: string[]) => {
-            to = `${to}:appointments`;
-            return io.to(to).except(ignore).emit("new_appointment", args);
+            return io
+              .to(`account:${accountId}:appointments`)
+              .except(ignore)
+              .emit("new_appointment", args);
           },
           update: (args: any, ignore: string[]) => {
-            to = `${to}:appointments`;
-            return io.to(to).except(ignore).emit("update_appointment", args);
+            return io
+              .to(`account:${accountId}:appointments`)
+              .except(ignore)
+              .emit("update_appointment", args);
           },
         },
         orders: {
+          delete_order: (args: any, ignore: string[]) => {
+            return io
+              .to(`account:${accountId}:orders`)
+              .except(ignore)
+              .emit("delete_order", args);
+          },
           new_order: (args: any, ignore: string[]) => {
-            to = `${to}:orders`;
-            return io.to(to).except(ignore).emit("new_order", args);
+            return io
+              .to(`account:${accountId}:orders`)
+              .except(ignore)
+              .emit("new_order", args);
           },
           update_order: (args: any, ignore: string[]) => {
-            to = `${to}:orders`;
-            return io.to(to).except(ignore).emit("update_order", args);
+            return io
+              .to(`account:${accountId}:orders`)
+              .except(ignore)
+              .emit("update_order", args);
           },
           new_ticket: (args: any, ignore: string[]) => {
-            to = `${to}:orders`;
-            return io.to(to).except(ignore).emit("new_ticket", args);
+            return io
+              .to(`account:${accountId}:orders`)
+              .except(ignore)
+              .emit("new_ticket", args);
           },
           update_status: (args: any, ignore: string[]) => {
-            to = `${to}:orders`;
-            return io.to(to).except(ignore).emit("update_status", args);
+            return io
+              .to(`account:${accountId}:orders`)
+              .except(ignore)
+              .emit("update_status", args);
           },
           update_rank: (args: any, ignore: string[]) => {
-            to = `${to}:orders`;
-            return io.to(to).except(ignore).emit("update_rank", args);
+            return io
+              .to(`account:${accountId}:orders`)
+              .except(ignore)
+              .emit("update_rank", args);
           },
           open_ticket: (args: any, ignore: string[]) => {
-            to = `${to}:orders`;
-            return io.to(to).except(ignore).emit("open_ticket", args);
+            return io
+              .to(`account:${accountId}:orders`)
+              .except(ignore)
+              .emit("open_ticket", args);
           },
           return_ticket: (args: any, ignore: string[]) => {
-            to = `${to}:orders`;
-            return io.to(to).except(ignore).emit("return_ticket", args);
+            return io
+              .to(`account:${accountId}:orders`)
+              .except(ignore)
+              .emit("return_ticket", args);
           },
           remove_ticket: (args: any, ignore: string[]) => {
-            to = `${to}:orders`;
-            return io.to(to).except(ignore).emit("remove_ticket", args);
+            return io
+              .to(`account:${accountId}:orders`)
+              .except(ignore)
+              .emit("remove_ticket", args);
           },
         },
         ticket_chat: (id: number) => {
           return {
             message_eco: (args: any, ignore: string[]) => {
-              to = `${to}:ticket:${id}`;
-              return io.to(to).except(ignore).emit("message_eco", args);
+              return io
+                .to(`account:${accountId}:ticket:${id}`)
+                .except(ignore)
+                .emit("message_eco", args);
             },
             message: (args: any, ignore: string[]) => {
-              to = `${to}:ticket:${id}`;
-              return io.to(to).except(ignore).emit("message", args);
+              return io
+                .to(`account:${accountId}:ticket:${id}`)
+                .except(ignore)
+                .emit("message", args);
             },
           };
         },
         departments: {
           math_open_ticket_count: (args: any, ignore: string[]) => {
-            to = `${to}:departments`;
             return io
-              .to(to)
+              .to(`account:${accountId}:departments`)
               .except(ignore)
               .emit("math_open_ticket_count", args);
           },
           math_new_ticket_count: (args: any, ignore: string[]) => {
-            to = `${to}:departments`;
-            return io.to(to).except(ignore).emit("math_new_ticket_count", args);
+            return io
+              .to(`account:${accountId}:departments`)
+              .except(ignore)
+              .emit("math_new_ticket_count", args);
           },
         },
         player_department: (id: number) => {
-          to = `${to}:department:player:${id}`;
           return {
             return_ticket_list: (args: any, ignore: string[]) => {
-              return io.to(to).except(ignore).emit("return_ticket_list", args);
+              return io
+                .to(`account:${accountId}:department:player:${id}`)
+                .except(ignore)
+                .emit("return_ticket_list", args);
             },
             resolve_ticket_list: (args: any, ignore: string[]) => {
-              return io.to(to).except(ignore).emit("resolve_ticket_list", args);
+              return io
+                .to(`account:${accountId}:department:player:${id}`)
+                .except(ignore)
+                .emit("resolve_ticket_list", args);
             },
             new_ticket_list: (args: any, ignore: string[]) => {
-              return io.to(to).except(ignore).emit("new_ticket_list", args);
+              return io
+                .to(`account:${accountId}:department:player:${id}`)
+                .except(ignore)
+                .emit("new_ticket_list", args);
             },
             open_ticket_list: (args: any, ignore: string[]) => {
-              return io.to(to).except(ignore).emit("open_ticket_list", args);
+              return io
+                .to(`account:${accountId}:department:player:${id}`)
+                .except(ignore)
+                .emit("open_ticket_list", args);
             },
             message_ticket_list: (
               args: {
@@ -764,7 +812,10 @@ export const webSocketEmitToRoom = () => {
               },
               ignore: string[],
             ) => {
-              return io.to(to).except(ignore).emit("message_ticket_list", args);
+              return io
+                .to(`account:${accountId}:department:player:${id}`)
+                .except(ignore)
+                .emit("message_ticket_list", args);
             },
           };
         },

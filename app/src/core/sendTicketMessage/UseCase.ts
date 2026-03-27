@@ -31,6 +31,7 @@ export class SendTicketMessageUseCase {
         accountId: true,
         connectionWAId: true,
         InboxDepartment: { select: { id: true } },
+        goBackFlowStateId: true,
         ContactsWAOnAccount: {
           select: {
             id: true,
@@ -100,6 +101,7 @@ export class SendTicketMessageUseCase {
             message: nextText,
             ticketsId: dto.id,
             messageKey: msgkey,
+            // flowStateId: exist.goBackFlowStateId,
           },
           select: { id: true, createAt: true },
         });
@@ -219,6 +221,7 @@ export class SendTicketMessageUseCase {
                     fileName: e.fileName,
                     ticketsId: dto.id,
                     messageKey: msgkey,
+                    // flowStateId: exist.goBackFlowStateId,
                   },
                   select: { id: true, createAt: true },
                 });
@@ -312,6 +315,7 @@ export class SendTicketMessageUseCase {
                       fileName: e.fileName,
                       ticketsId: dto.id,
                       messageKey: msgkey,
+                      // flowStateId: exist.goBackFlowStateId,
                     },
                     select: { id: true, createAt: true },
                   });
@@ -390,6 +394,7 @@ export class SendTicketMessageUseCase {
                       fileName: e.fileName,
                       ticketsId: dto.id,
                       messageKey: msgkey,
+                      // flowStateId: exist.goBackFlowStateId,
                     },
                     select: { id: true, createAt: true },
                   });
@@ -476,6 +481,7 @@ export class SendTicketMessageUseCase {
                     fileName: e.fileName,
                     ticketsId: dto.id,
                     messageKey: msgkey,
+                    // flowStateId: exist.goBackFlowStateId,
                   },
                   select: { id: true, createAt: true },
                 });
@@ -580,6 +586,7 @@ export class SendTicketMessageUseCase {
                     fileName: e.fileName,
                     ticketsId: dto.id,
                     messageKey: msgkey,
+                    // flowStateId: exist.goBackFlowStateId,
                   },
                   select: { id: true, createAt: true },
                 });
@@ -669,6 +676,7 @@ export class SendTicketMessageUseCase {
                       fileName: e.fileName,
                       ticketsId: dto.id,
                       messageKey: msgkey,
+                      // flowStateId: exist.goBackFlowStateId,
                     },
                     select: { id: true, createAt: true },
                   });
@@ -745,6 +753,7 @@ export class SendTicketMessageUseCase {
                       fileName: e.fileName,
                       ticketsId: dto.id,
                       messageKey: msgkey,
+                      flowStateId: exist.goBackFlowStateId,
                     },
                     select: { id: true, createAt: true },
                   });
@@ -830,6 +839,7 @@ export class SendTicketMessageUseCase {
                     fileName: e.fileName,
                     ticketsId: dto.id,
                     messageKey: msgkey,
+                    // flowStateId: exist.goBackFlowStateId,
                   },
                   select: { id: true, createAt: true },
                 });

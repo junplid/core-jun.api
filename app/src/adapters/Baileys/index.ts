@@ -1376,30 +1376,30 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                     select: { createAt: true, id: true },
                   });
 
-                  await NotificationApp({
-                    accountId: props.accountId,
-                    title_txt: `${ticket.ContactsWAOnAccount.name}`,
-                    title_html: `${ticket.ContactsWAOnAccount.name}`,
-                    tag: `msg-ticket-${ticket.id}`,
-                    body_txt: !messageText
-                      ? `🎤📷 arquivo de mídia`
-                      : messageText.slice(0, 24),
+                  //                   await NotificationApp({
+                  //                     accountId: props.accountId,
+                  //                     title_txt: `${ticket.ContactsWAOnAccount.name}`,
+                  //                     title_html: `${ticket.ContactsWAOnAccount.name}`,
+                  //                     tag: `msg-ticket-${ticket.id}`,
+                  //                     body_txt: !messageText
+                  //                       ? `🎤📷 arquivo de mídia`
+                  //                       : messageText.slice(0, 24),
 
-                    body_html: `<span className="font-medium text-sm line-clamp-1">
-${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
-</span> 
-<span className="text-xs font-light">${ticket.ContactsWAOnAccount.name}</span>`,
-                    url_redirect: `$self/?open_ticket=${ticket.id}&bId=${ticket.InboxDepartment.businessId}&name=${ticket.ContactsWAOnAccount.name}`,
-                    onFilterSocket(sockets) {
-                      return sockets
-                        .filter(
-                          (s) =>
-                            s.focused !== `modal-player-chat-${ticket.id}` ||
-                            s.focused !== `modal-player-only-chat-${ticket.id}`,
-                        )
-                        .map((s) => s.id);
-                    },
-                  });
+                  //                     body_html: `<span className="font-medium text-sm line-clamp-1">
+                  // ${!messageText ? `🎤📷 arquivo de mídia` : messageText.slice(0, 24)}
+                  // </span>
+                  // <span className="text-xs font-light">${ticket.ContactsWAOnAccount.name}</span>`,
+                  //                     url_redirect: `$self/?open_ticket=${ticket.id}&bId=${ticket.InboxDepartment.businessId}&name=${ticket.ContactsWAOnAccount.name}`,
+                  //                     onFilterSocket(sockets) {
+                  //                       return sockets
+                  //                         .filter(
+                  //                           (s) =>
+                  //                             s.focused !== `modal-player-chat-${ticket.id}` ||
+                  //                             s.focused !== `modal-player-only-chat-${ticket.id}`,
+                  //                         )
+                  //                         .map((s) => s.id);
+                  //                     },
+                  //                   });
 
                   const { ticket_chat, player_department } =
                     webSocketEmitToRoom().account(props.accountId);

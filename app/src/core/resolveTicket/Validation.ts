@@ -11,7 +11,7 @@ export const resolveTicketValidation = (
     userId: Joi.number().optional(),
     orderId: Joi.number().optional(),
     id: Joi.number().required(),
-  }).or("accountId", "userId");
+  });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.params },

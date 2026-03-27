@@ -121,7 +121,8 @@ export const NodeControler = ({
   }
 
   return new Promise((res, rej) => {
-    if (cacheFlowInExecution.has(keyMap)) {
+    const isexecution = cacheFlowInExecution.has(keyMap);
+    if (isexecution) {
       // @ts-expect-error
       if (!propsC.contactsWAOnAccountReactionId) {
         return res();
@@ -224,7 +225,6 @@ export const NodeControler = ({
         });
         return res();
       }
-
       // if (props.type === "running") {
       //   const nodesInterruption = props.nodes.filter(
       //     (noI) => noI.type === "nodeInterruption"
@@ -1944,10 +1944,13 @@ export const NodeControler = ({
                 });
                 return;
               }
-              await props.actions?.onExecutedNode?.({
-                id: nextEdgesIds[0].id,
-                flowId: props.flowId,
-              });
+              if (props.mode === "prod") {
+                cacheFlowInExecution.delete(keyMap);
+                await prisma.flowState.update({
+                  where: { id: props.flowStateId },
+                  data: { indexNode: nextEdgesIds[0].id },
+                });
+              }
               return res();
             }
             if (d === "ERROR") {
@@ -2476,7 +2479,7 @@ export const NodeControler = ({
                 });
                 return;
               }
-              execute({
+              return execute({
                 ...props,
                 ...(props.type === "running"
                   ? { message: props.message, type: "running" }
@@ -2497,7 +2500,7 @@ export const NodeControler = ({
                 });
                 return;
               }
-              execute({
+              return execute({
                 ...props,
                 type: "running",
                 message: action,
@@ -2553,8 +2556,8 @@ export const NodeControler = ({
               }),
         })
           .then(async (action) => {
-            const nextNode = nextEdgesIds.find(
-              (s) => s.sourceHandle === "main",
+            const nextNode = nextEdgesIds.find((s) =>
+              s.sourceHandle?.includes(action === "ok" ? "main" : action),
             );
             if (!nextNode) {
               cacheFlowInExecution.delete(keyMap);
@@ -2580,6 +2583,80 @@ export const NodeControler = ({
                 : { type: "initial" }),
               currentNodeId: nextNode.id,
               oldNodeId: currentNode.id,
+              ...(props.mode === "prod" && {
+                isSavePositionLead: false,
+              }),
+            });
+          })
+          .catch((error) => {
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+      if (currentNode.type === "NodeDeleteOrder") {
+        if (props.mode === "testing") {
+          await SendMessageText({
+            mode: "testing",
+            accountId: props.accountId,
+            role: "system",
+            text: `Log: Deletando pedido`,
+            token_modal_chat_template: props.token_modal_chat_template,
+          });
+        }
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeDeleteOrder({
+          ...(props.mode === "prod"
+            ? {
+                numberLead: props.lead_id,
+                contactsWAOnAccountId: props.contactAccountId,
+                data: currentNode.data,
+                accountId: props.accountId,
+                mode: "prod",
+              }
+            : {
+                mode: "testing",
+                accountId: props.accountId,
+                token_modal_chat_template: props.token_modal_chat_template,
+              }),
+        })
+          .then(async (action) => {
+            const nextNode = nextEdgesIds.find((s) =>
+              s.sourceHandle?.includes(action === "ok" ? "main" : action),
+            );
+            if (!nextNode) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              await props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return res();
+            }
+
+            if (props.actions?.onExecutedNode) {
+              await props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
+            }
+
+            return execute({
+              ...props,
+              ...(props.type === "running"
+                ? { message: props.message, type: "running" }
+                : { type: "initial" }),
+              currentNodeId: nextNode.id,
+              oldNodeId: currentNode.id,
+              ...(props.mode === "prod" && {
+                isSavePositionLead: false,
+              }),
             });
           })
           .catch((error) => {

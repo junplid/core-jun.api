@@ -28,7 +28,9 @@ export const updateMenuOnlineCategoryValidation = (
     {
       ...req.body,
       ...req.params,
-      days_in_the_week: JSON.parse(String(req.body.days_in_the_week)),
+      days_in_the_week: req.body.days_in_the_week
+        ? String(req.body.days_in_the_week).split(",")
+        : undefined,
       image45x45png: req.file?.filename,
     },
     { abortEarly: false },
@@ -43,8 +45,10 @@ export const updateMenuOnlineCategoryValidation = (
     return res.status(400).json({ errors });
   }
 
-  req.body.accountId = req.user?.id!;
-  req.body.days_in_the_week = validation.value.days_in_the_week;
+  req.body = {
+    accountId: req.user?.id!,
+    ...validation.value,
+  };
 
   next();
 };

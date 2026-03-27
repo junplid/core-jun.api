@@ -24,8 +24,15 @@ export const createMenuOnlineCategoryValidation = (
   });
 
   const validation = schemaValidation.validate(
-    { ...req.body, ...req.params, image45x45png: req.file?.filename },
-    { abortEarly: false },
+    {
+      ...req.body,
+      days_in_the_week: req.body.days_in_the_week
+        ? String(req.body.days_in_the_week).split(",")
+        : undefined,
+      ...req.params,
+      image45x45png: req.file?.filename,
+    },
+    { abortEarly: false, convert: true },
   );
 
   if (validation.error) {
@@ -37,7 +44,10 @@ export const createMenuOnlineCategoryValidation = (
     return res.status(400).json({ errors });
   }
 
-  req.body.accountId = req.user?.id!;
+  req.body = {
+    accountId: req.user?.id!,
+    ...validation.value,
+  };
 
   next();
 };
