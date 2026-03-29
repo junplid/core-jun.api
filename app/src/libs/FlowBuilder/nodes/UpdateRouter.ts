@@ -55,15 +55,15 @@ export const NodeUpdateRouter = async (
 
     const nextData: any = {};
 
-    if (fields?.includes("qnt_max") && restData.max) {
-      nextData.name = await resolveTextVariables({
-        accountId: props.accountId,
-        text: restData.max || "",
-        contactsWAOnAccountId: props.contactsWAOnAccountId,
-        numberLead: props.numberLead,
-        nodeId: props.nodeId,
-      });
-    }
+    // if (fields?.includes("qnt_max") && restData.max) {
+    //   nextData.name = await resolveTextVariables({
+    //     accountId: props.accountId,
+    //     text: restData.max || "",
+    //     contactsWAOnAccountId: props.contactsWAOnAccountId,
+    //     numberLead: props.numberLead,
+    //     nodeId: props.nodeId,
+    //   });
+    // }
 
     if (fields?.includes("status") && restData.status) {
       nextData.status = restData.status;
