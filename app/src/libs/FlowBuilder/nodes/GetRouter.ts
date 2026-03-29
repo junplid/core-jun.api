@@ -1,13 +1,17 @@
-import { NodeGetOrderData } from "../Payload";
+import { NodeGetRouterData } from "../Payload";
 import { prisma } from "../../../adapters/Prisma/client";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
+import {
+  buildRoute,
+  generateGoogleMapsLink,
+} from "../../../utils/generate-router-google";
 
-type PropsGetOrder =
+type PropsGetRouter =
   | {
       numberLead: string;
       contactsWAOnAccountId: number;
-      data: NodeGetOrderData;
+      data: NodeGetRouterData;
       accountId: number;
       businessName: string;
       nodeId: string;
@@ -20,8 +24,8 @@ type PropsGetOrder =
       accountId: number;
     };
 
-export const NodeGetOrder = async (
-  props: PropsGetOrder,
+export const NodeGetRouter = async (
+  props: PropsGetRouter,
 ): Promise<"not_found" | "ok"> => {
   if (props.mode === "testing") {
     await SendMessageText({
@@ -36,74 +40,50 @@ export const NodeGetOrder = async (
   }
 
   try {
-    const { nOrder_deliveryCode, fields, ...restData } = props.data;
+    const { nRouter, fields, ...restData } = props.data;
 
     if (!fields?.length) return "ok";
 
     const resolvercode = await resolveTextVariables({
       accountId: props.accountId,
-      text: nOrder_deliveryCode,
+      text: nRouter,
       contactsWAOnAccountId: props.contactsWAOnAccountId,
       numberLead: props.numberLead,
       nodeId: props.nodeId,
     });
 
-    const getorder = await prisma.orders.findFirst({
-      where: {
-        OR: [{ n_order: resolvercode }, { delivery_code: resolvercode }],
-      },
+    const getRouter = await prisma.deliveryRouter.findFirst({
+      where: { n_router: resolvercode },
       select: {
-        name: true,
-        data: true,
-        n_order: true,
-        payment_method: true,
-        total: true,
-        Router: { select: { Router: { select: { n_router: true } } } },
-        delivery_code: true,
-        delivery_address: true,
+        id: true,
         status: true,
         ContactsWAOnAccount: {
           select: { ContactsWA: { select: { realNumber: true } } },
         },
+        _count: {
+          select: {
+            DeliveryRouterOnOrders: true,
+          },
+        },
+        menuOnline: {
+          select: { MenuInfo: { select: { lat: true, lng: true } } },
+        },
+        DeliveryRouterOnOrders: {
+          select: {
+            Order: {
+              select: {
+                status: true,
+                delivery_lat: true,
+                delivery_lng: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    if (!getorder) return "not_found";
+    if (!getRouter) return "not_found";
 
-    if (fields.includes("name") && restData.varId_save_name) {
-      const exist = await prisma.variable.findFirst({
-        where: { id: restData.varId_save_name, type: "dynamics" },
-        select: { id: true },
-      });
-
-      if (exist) {
-        const picked = await prisma.contactsWAOnAccountVariable.findFirst({
-          where: {
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
-            variableId: exist.id,
-          },
-          select: { id: true },
-        });
-        if (!picked) {
-          await prisma.contactsWAOnAccountVariable.create({
-            data: {
-              contactsWAOnAccountId: props.contactsWAOnAccountId,
-              variableId: exist.id,
-              value: getorder.name || "<empty>",
-            },
-          });
-        } else {
-          await prisma.contactsWAOnAccountVariable.update({
-            where: { id: picked.id },
-            data: {
-              contactsWAOnAccountId: props.contactsWAOnAccountId,
-              variableId: exist.id,
-              value: getorder.name || "<empty>",
-            },
-          });
-        }
-      }
-    }
     if (fields.includes("status") && restData.varId_save_status) {
       const exist = await prisma.variable.findFirst({
         where: { id: restData.varId_save_status, type: "dynamics" },
@@ -123,7 +103,7 @@ export const NodeGetOrder = async (
             data: {
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
-              value: getorder.status || "<empty>",
+              value: getRouter.status || "<empty>",
             },
           });
         } else {
@@ -132,18 +112,19 @@ export const NodeGetOrder = async (
             data: {
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
-              value: getorder.status || "<empty>",
+              value: getRouter.status || "<empty>",
             },
           });
         }
       }
     }
+
     if (
-      fields.includes("payment_method") &&
-      restData.varId_save_payment_method
+      fields.includes("count_total_orders") &&
+      restData.varId_save_count_total_orders
     ) {
       const exist = await prisma.variable.findFirst({
-        where: { id: restData.varId_save_payment_method, type: "dynamics" },
+        where: { id: restData.varId_save_count_total_orders, type: "dynamics" },
         select: { id: true },
       });
 
@@ -160,7 +141,7 @@ export const NodeGetOrder = async (
             data: {
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
-              value: getorder.payment_method || "<empty>",
+              value: String(getRouter._count.DeliveryRouterOnOrders),
             },
           });
         } else {
@@ -169,121 +150,13 @@ export const NodeGetOrder = async (
             data: {
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
-              value: getorder.payment_method || "<empty>",
+              value: String(getRouter._count.DeliveryRouterOnOrders),
             },
           });
         }
       }
     }
-    if (
-      fields.includes("delivery_address") &&
-      restData.varId_save_delivery_address
-    ) {
-      const exist = await prisma.variable.findFirst({
-        where: { id: restData.varId_save_delivery_address, type: "dynamics" },
-        select: { id: true },
-      });
 
-      if (exist) {
-        const picked = await prisma.contactsWAOnAccountVariable.findFirst({
-          where: {
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
-            variableId: exist.id,
-          },
-          select: { id: true },
-        });
-        if (!picked) {
-          await prisma.contactsWAOnAccountVariable.create({
-            data: {
-              contactsWAOnAccountId: props.contactsWAOnAccountId,
-              variableId: exist.id,
-              value: getorder.delivery_address || "<empty>",
-            },
-          });
-        } else {
-          await prisma.contactsWAOnAccountVariable.update({
-            where: { id: picked.id },
-            data: {
-              contactsWAOnAccountId: props.contactsWAOnAccountId,
-              variableId: exist.id,
-              value: getorder.delivery_address || "<empty>",
-            },
-          });
-        }
-      }
-    }
-    if (fields.includes("total") && restData.varId_save_total) {
-      const exist = await prisma.variable.findFirst({
-        where: { id: restData.varId_save_total, type: "dynamics" },
-        select: { id: true },
-      });
-
-      if (exist) {
-        const picked = await prisma.contactsWAOnAccountVariable.findFirst({
-          where: {
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
-            variableId: exist.id,
-          },
-          select: { id: true },
-        });
-        if (!picked) {
-          await prisma.contactsWAOnAccountVariable.create({
-            data: {
-              contactsWAOnAccountId: props.contactsWAOnAccountId,
-              variableId: exist.id,
-              value: getorder.total
-                ? String(getorder.total.toNumber())
-                : "<empty>",
-            },
-          });
-        } else {
-          await prisma.contactsWAOnAccountVariable.update({
-            where: { id: picked.id },
-            data: {
-              contactsWAOnAccountId: props.contactsWAOnAccountId,
-              variableId: exist.id,
-              value: getorder.total
-                ? String(getorder.total.toNumber())
-                : "<empty>",
-            },
-          });
-        }
-      }
-    }
-    if (fields.includes("data") && restData.varId_save_data) {
-      const exist = await prisma.variable.findFirst({
-        where: { id: restData.varId_save_data, type: "dynamics" },
-        select: { id: true },
-      });
-
-      if (exist) {
-        const picked = await prisma.contactsWAOnAccountVariable.findFirst({
-          where: {
-            contactsWAOnAccountId: props.contactsWAOnAccountId,
-            variableId: exist.id,
-          },
-          select: { id: true },
-        });
-        if (!picked) {
-          await prisma.contactsWAOnAccountVariable.create({
-            data: {
-              contactsWAOnAccountId: props.contactsWAOnAccountId,
-              variableId: exist.id,
-              value: getorder.data || "<empty>",
-            },
-          });
-        } else {
-          await prisma.contactsWAOnAccountVariable.update({
-            where: { id: picked.id },
-            data: {
-              contactsWAOnAccountId: props.contactsWAOnAccountId,
-              variableId: exist.id,
-              value: getorder.data || "<empty>",
-            },
-          });
-        }
-      }
-    }
     if (
       fields.includes("number_contact") &&
       restData.varId_save_number_contact
@@ -307,7 +180,7 @@ export const NodeGetOrder = async (
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
               value:
-                getorder.ContactsWAOnAccount?.ContactsWA.realNumber ||
+                getRouter.ContactsWAOnAccount?.ContactsWA.realNumber ||
                 "<empty>",
             },
           });
@@ -318,7 +191,7 @@ export const NodeGetOrder = async (
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
               value:
-                getorder.ContactsWAOnAccount?.ContactsWA.realNumber ||
+                getRouter.ContactsWAOnAccount?.ContactsWA.realNumber ||
                 "<empty>",
             },
           });
@@ -326,13 +199,29 @@ export const NodeGetOrder = async (
       }
     }
 
-    if (fields.includes("router_code") && restData.varId_save_router_code) {
+    if (
+      fields.includes("count_order_status_of") &&
+      restData.varId_save_count_order_status_of &&
+      restData.order_status_of
+    ) {
       const exist = await prisma.variable.findFirst({
-        where: { id: restData.varId_save_router_code, type: "dynamics" },
+        where: {
+          id: restData.varId_save_count_order_status_of,
+          type: "dynamics",
+        },
         select: { id: true },
       });
 
       if (exist) {
+        const count = await prisma.orders
+          .count({
+            where: {
+              status: restData.order_status_of as any,
+              Router: { orderId: getRouter.id },
+            },
+          })
+          .then((s) => s)
+          .catch((_s) => 0);
         const picked = await prisma.contactsWAOnAccountVariable.findFirst({
           where: {
             contactsWAOnAccountId: props.contactsWAOnAccountId,
@@ -345,7 +234,7 @@ export const NodeGetOrder = async (
             data: {
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
-              value: getorder.Router?.Router.n_router || "<empty>",
+              value: String(count),
             },
           });
         } else {
@@ -354,18 +243,40 @@ export const NodeGetOrder = async (
             data: {
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
-              value: getorder.Router?.Router.n_router || "<empty>",
+              value: String(count),
             },
           });
         }
       }
     }
 
-    if (fields.includes("nOrder") && restData.varId_save_nOrder) {
+    if (fields.includes("link_router") && restData.varId_save_link_router) {
       const exist = await prisma.variable.findFirst({
-        where: { id: restData.varId_save_nOrder, type: "dynamics" },
+        where: { id: restData.varId_save_link_router, type: "dynamics" },
         select: { id: true },
       });
+
+      let link: undefined | string = undefined;
+      if (
+        getRouter.menuOnline.MenuInfo?.lat &&
+        getRouter.menuOnline.MenuInfo?.lng &&
+        getRouter.DeliveryRouterOnOrders.length
+      ) {
+        const origin = {
+          lat: getRouter.menuOnline.MenuInfo.lat,
+          lng: getRouter.menuOnline.MenuInfo.lng,
+        };
+        const filterLatLng = getRouter.DeliveryRouterOnOrders.map((s) => {
+          if (!s.Order.delivery_lat || !s.Order.delivery_lng) return;
+          return {
+            lat: s.Order.delivery_lat,
+            lng: s.Order.delivery_lng,
+          };
+        }).filter((s) => s) as { lat: number; lng: number }[];
+
+        const ordered = buildRoute(origin, filterLatLng);
+        link = generateGoogleMapsLink(origin, ordered);
+      }
 
       if (exist) {
         const picked = await prisma.contactsWAOnAccountVariable.findFirst({
@@ -380,7 +291,7 @@ export const NodeGetOrder = async (
             data: {
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
-              value: getorder.n_order || "<empty>",
+              value: link || "<empty>",
             },
           });
         } else {
@@ -389,18 +300,51 @@ export const NodeGetOrder = async (
             data: {
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
-              value: getorder.n_order || "<empty>",
+              value: link || "<empty>",
             },
           });
         }
       }
     }
 
-    if (fields.includes("delivery_code") && restData.varId_save_delivery_code) {
+    if (
+      fields.includes("link_router_updated") &&
+      restData.varId_save_link_router_updated
+    ) {
       const exist = await prisma.variable.findFirst({
-        where: { id: restData.varId_save_delivery_code, type: "dynamics" },
+        where: {
+          id: restData.varId_save_link_router_updated,
+          type: "dynamics",
+        },
         select: { id: true },
       });
+
+      let link: undefined | string = undefined;
+      const ordersAcaminho = getRouter.DeliveryRouterOnOrders.filter(
+        (s) => s.Order.status === "on_way",
+      );
+      if (
+        getRouter.menuOnline.MenuInfo?.lat &&
+        getRouter.menuOnline.MenuInfo?.lng &&
+        ordersAcaminho.length
+      ) {
+        const origin = {
+          lat: getRouter.menuOnline.MenuInfo.lat,
+          lng: getRouter.menuOnline.MenuInfo.lng,
+        };
+        const filterLatLng = ordersAcaminho
+          .map((s) => {
+            if (!s.Order.delivery_lat || !s.Order.delivery_lng) return;
+            return {
+              lat: s.Order.delivery_lat,
+              lng: s.Order.delivery_lng,
+            };
+          })
+          .filter((s) => s) as { lat: number; lng: number }[];
+
+        const ordered = buildRoute(origin, filterLatLng);
+        link = generateGoogleMapsLink(origin, ordered);
+      }
 
       if (exist) {
         const picked = await prisma.contactsWAOnAccountVariable.findFirst({
@@ -415,7 +359,7 @@ export const NodeGetOrder = async (
             data: {
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
-              value: getorder.delivery_code || "<empty>",
+              value: link || "<empty>",
             },
           });
         } else {
@@ -424,7 +368,89 @@ export const NodeGetOrder = async (
             data: {
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
-              value: getorder.delivery_code || "<empty>",
+              value: link || "<empty>",
+            },
+          });
+        }
+      }
+    }
+
+    if (fields.includes("data_text") && restData.varId_save_data_text) {
+      const exist = await prisma.variable.findFirst({
+        where: { id: restData.varId_save_data_text, type: "dynamics" },
+        select: { id: true },
+      });
+
+      // ganho total
+      // entregas
+      //    1. Nome (#123456) - endereço
+      //    R$ 8,00
+      //    ...
+      if (exist) {
+        const picked = await prisma.contactsWAOnAccountVariable.findFirst({
+          where: {
+            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            variableId: exist.id,
+          },
+          select: { id: true },
+        });
+        if (!picked) {
+          await prisma.contactsWAOnAccountVariable.create({
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: getRouter.status || "<empty>",
+            },
+          });
+        } else {
+          await prisma.contactsWAOnAccountVariable.update({
+            where: { id: picked.id },
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: getRouter.status || "<empty>",
+            },
+          });
+        }
+      }
+    }
+
+    if (
+      fields.includes("link_join_router") &&
+      restData.varId_save_link_join_router
+    ) {
+      const exist = await prisma.variable.findFirst({
+        where: { id: restData.varId_save_link_join_router, type: "dynamics" },
+        select: { id: true },
+      });
+      if (exist) {
+        const picked = await prisma.contactsWAOnAccountVariable.findFirst({
+          where: {
+            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            variableId: exist.id,
+          },
+          select: { id: true },
+        });
+        const link = `http://localhost:4001/v1/public/join-router/${resolvercode}?fsid=${props.flowStateId}&nl=`;
+        if (!picked) {
+          await prisma.contactsWAOnAccountVariable.create({
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              // value: `https://`,
+              // pelo flowStateId tem o flowId
+              // se o motoboy não tiver com um flowstate pro mesmo flowId então cria um como se fosse campanha.
+              // manda para o node de "Rota foi aceita".
+              value: link,
+            },
+          });
+        } else {
+          await prisma.contactsWAOnAccountVariable.update({
+            where: { id: picked.id },
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: link,
             },
           });
         }

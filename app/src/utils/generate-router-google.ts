@@ -18,7 +18,7 @@ function distance(a: Geo, b: Geo) {
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
 
-function buildRoute(origin: Geo, orders: Geo[]) {
+export function buildRoute(origin: Geo, orders: Geo[]) {
   const route = [];
   let current = origin;
   let remaining = [...orders];
@@ -43,7 +43,7 @@ function buildRoute(origin: Geo, orders: Geo[]) {
   return route;
 }
 
-function generateGoogleMapsLink(
+export function generateGoogleMapsLink(
   origin: Geo,
   route: Geo[],
   mode: "driving" | "motorcycle" | "bicycling" | "walking" = "driving",
@@ -65,16 +65,3 @@ function generateGoogleMapsLink(
     `&travelmode=${mode}`
   );
 }
-
-const loja: Geo = { lat: -12.864888, lng: -38.436123 };
-
-const pedidos: Geo[] = [
-  { lat: -12.861305, lng: -38.438095 },
-  { lat: -12.864155, lng: -38.437657 },
-  { lat: -12.866378, lng: -38.438707 },
-];
-
-const ordered = buildRoute(loja, pedidos);
-const link = generateGoogleMapsLink(loja, ordered, "motorcycle");
-
-console.log(link);

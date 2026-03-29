@@ -2124,13 +2124,16 @@ model DeliveryRouterOnOrders {
 
 model DeliveryRouter {
   id                     Int                      @id @default(autoincrement())
+  flowStateId            Int
+  nodeId                 String
+  timeoutAt              DateTime                 @db.Timestamptz
   n_router               String                   @unique
   status                 StatusDeliveryRouter
   createAt               DateTime                 @default(now()) @db.Timestamptz
   menuId                 Int
-  contactsWAOnAccountId  Int
+  contactsWAOnAccountId  Int?
   menuOnline             MenusOnline              @relation(fields: [menuId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  ContactsWAOnAccount    ContactsWAOnAccount      @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  ContactsWAOnAccount    ContactsWAOnAccount?     @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   DeliveryRouterOnOrders DeliveryRouterOnOrders[]
 
   @@index([id, n_router, status, menuId, contactsWAOnAccountId])

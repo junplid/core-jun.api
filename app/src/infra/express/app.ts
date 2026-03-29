@@ -5,8 +5,6 @@ import cookieParser from "cookie-parser";
 import { readFile, writeFile } from "fs-extra";
 import { resolve } from "path";
 import OpenAI from "openai";
-import "./cronReminders";
-import "./cronFollowUps";
 
 interface VectorStoreTest {
   apiKey: string;
@@ -81,5 +79,9 @@ app.use(cookieParser());
 app.use(express.json());
 // app.options("*", cors(corsOptions));
 app.use(router);
+
+import "./cronReminders";
+import "./cronFollowUps";
+import "./cronTimeoutRouters";
 
 export { app as App };

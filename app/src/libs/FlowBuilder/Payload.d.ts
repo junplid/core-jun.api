@@ -102,6 +102,7 @@ export type NodeNotifyWAData = {
   numbers: { key: string; number: string }[];
   text: string;
   tagIds: number[];
+  numbersWithTagIds: number[];
 };
 
 export type NodeSendFilesData = {
@@ -235,6 +236,13 @@ export type NodeCreateOrderData = {
   sync_order_existing_code?: string;
 };
 
+export type NodeAppendRouterData = {
+  nOrder: string;
+  max?: string;
+  minutes?: number;
+  varId_save_nRouter?: number;
+};
+
 export type NodeUpdateOrderData = {
   nOrder: string;
   data?: string;
@@ -255,13 +263,35 @@ export type NodeUpdateOrderData = {
   isDragDisabled?: boolean;
 };
 
+export type NodeUpdateRouterData = {
+  nRouter: string;
+  max?: string;
+  status?: "open" | "awaiting_assignment" | "in_progress" | "finished";
+  fields?: ("qnt_max" | "status" | "assign_to_contact")[];
+};
+
 export type NodeDeleteOrderData = {
   nOrder: string;
 };
 
-export type NodeGetOrderData = {
+export type NodeDeleteRouterOrderData = {
   nOrder: string;
-  fields?: string[];
+};
+
+export type NodeGetOrderData = {
+  nOrder_deliveryCode: string;
+  fields?: (
+    | "name"
+    | "status"
+    | "payment_method"
+    | "delivery_address"
+    | "total"
+    | "data"
+    | "number_contact"
+    | "router_code"
+    | "delivery_code"
+    | "nOrder"
+  )[];
 
   varId_save_name?: number;
   varId_save_status?: number;
@@ -270,6 +300,34 @@ export type NodeGetOrderData = {
   varId_save_total?: number;
   varId_save_data?: number;
   varId_save_number_contact?: number;
+
+  varId_save_router_code?: number;
+  varId_save_delivery_code?: number;
+  varId_save_nOrder?: number;
+};
+
+export type NodeGetRouterData = {
+  nRouter: string;
+  fields?: (
+    | "status"
+    | "count_total_orders"
+    | "count_order_status_of"
+    | "link_router"
+    | "link_router_updated"
+    | "data_text"
+    | "number_contact"
+    | "link_join_router"
+  )[];
+
+  order_status_of?: string;
+  varId_save_status?: number;
+  varId_save_count_total_orders?: number;
+  varId_save_count_order_status_of?: number;
+  varId_save_link_router?: number;
+  varId_save_link_router_updated?: number;
+  varId_save_data_text?: number;
+  varId_save_number_contact?: number;
+  varId_save_link_join_router?: number;
 };
 
 export type NodeGetOrdersData = {
@@ -433,7 +491,11 @@ export type TypeNodesPayload =
   | "NodeWebhookTrelloCard"
   | "NodeDeleteMessage"
   | "NodeDeleteOrder"
-  | "NodeDistribute";
+  | "NodeDeleteRouterOrder"
+  | "NodeDistribute"
+  | "NodeGetRouter"
+  | "NodeUpdateRouter"
+  | "NodeAppendRouter";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -479,4 +541,8 @@ export type NodePayload = { id: string } & (
   | { type: "NodeUpdateAppointment"; data: NodeUpdateAppointmentData }
   | { type: "NodeGetOrder"; data: NodeGetOrderData }
   | { type: "NodeDeleteOrder"; data: NodeDeleteOrderData }
+  | { type: "NodeDeleteRouterOrder"; data: NodeDeleteRouterOrderData }
+  | { type: "NodeGetRouter"; data: NodeGetRouterData }
+  | { type: "NodeUpdateRouter"; data: NodeUpdateRouterData }
+  | { type: "NodeAppendRouter"; data: NodeAppendRouterData }
 );
