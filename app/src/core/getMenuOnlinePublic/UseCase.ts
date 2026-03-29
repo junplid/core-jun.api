@@ -272,6 +272,8 @@ export class GetMenuOnlinePublicUseCase {
             whatsapp_contact: true,
             payment_methods: true,
             delivery_fee: true,
+            lat: true,
+            lng: true,
           },
         },
         OperatingDays: {

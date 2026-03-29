@@ -1214,6 +1214,7 @@ model ContactsWAOnAccount {
   Orders                      Orders[]
   Charges                     Charges[]
   Appointments                Appointments[]
+  deliveryRouters             DeliveryRouter[]
 
   @@index([id, contactWAId, createAt])
 }
@@ -2034,34 +2035,37 @@ enum TypePriorityOrder {
 }
 
 model Orders {
-  id                       Int                  @id @default(autoincrement())
+  id                       Int                     @id @default(autoincrement())
   n_order                  String
-  name                     String?              @db.VarChar(150)
-  description              String?              @db.Text
+  name                     String?                 @db.VarChar(150)
+  description              String?                 @db.Text
   payment_method           String?
   payment_change_to        String?
-  deleted                  Boolean              @default(false)
-  status                   TypeStatusOrder      @default(draft)
-  isDragDisabled           Boolean              @default(false)
+  deleted                  Boolean                 @default(false)
+  status                   TypeStatusOrder         @default(draft)
+  isDragDisabled           Boolean                 @default(false)
   priority                 TypePriorityOrder?
-  origin                   String?              @db.VarChar(150)
-  delivery_address         String?              @db.Text
+  origin                   String?                 @db.VarChar(150)
+  delivery_address         String?                 @db.Text
   delivery_complement      String?
   delivery_reference_point String?
   delivery_cep             String?
   who_receives             String?
-  rank                     Decimal              @db.Decimal(20, 10)
-  tracking_code            String?              @db.VarChar(150)
-  delivery_code            String?              @db.VarChar(12)
-  itens_count              Int?                 @default(0)
-  completedAt              DateTime?            @db.Timestamptz
-  data                     String?              @db.Text
-  total                    Decimal?             @db.Decimal(10, 2)
-  sub_total                Decimal?             @db.Decimal(10, 2)
-  payment_made             DateTime?            @db.Timestamptz
-  net_total                Decimal?             @db.Decimal(10, 2)
-  createAt                 DateTime             @default(now()) @db.Timestamptz
-  updateAt                 DateTime             @default(now()) @updatedAt @db.Timestamptz
+  delivery_number          String?
+  delivery_lat             Float?
+  delivery_lng             Float?
+  rank                     Decimal                 @db.Decimal(20, 10)
+  tracking_code            String?                 @db.VarChar(150)
+  delivery_code            String?                 @db.VarChar(12)
+  itens_count              Int?                    @default(0)
+  completedAt              DateTime?               @db.Timestamptz
+  data                     String?                 @db.Text
+  total                    Decimal?                @db.Decimal(10, 2)
+  sub_total                Decimal?                @db.Decimal(10, 2)
+  payment_made             DateTime?               @db.Timestamptz
+  net_total                Decimal?                @db.Decimal(10, 2)
+  createAt                 DateTime                @default(now()) @db.Timestamptz
+  updateAt                 DateTime                @default(now()) @updatedAt @db.Timestamptz
   connectionWAId           Int?
   actionChannels           String[] // são listas de botão que aparece no pedido, e quando clica dispara uma ação no node que criou o pedido e a saida é com o valor clicado > e pode ser recuperado pelo proximo node REPLY ou SWFTH, 
   flowNodeId               String?
@@ -2073,18 +2077,63 @@ model Orders {
   contactsWAOnAccountId    Int?
   accountId                Int
   businessId               Int
-  Business                 Business             @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  menuOnline               MenusOnline?         @relation(fields: [menuId], references: [id], onDelete: SetNull)
-  FlowState                FlowState?           @relation(fields: [flowStateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  ContactsWAOnAccount      ContactsWAOnAccount? @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  ConnectionWA             ConnectionWA?        @relation(fields: [connectionWAId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  Account                  Account              @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Business                 Business                @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  menuOnline               MenusOnline?            @relation(fields: [menuId], references: [id], onDelete: SetNull)
+  FlowState                FlowState?              @relation(fields: [flowStateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  ContactsWAOnAccount      ContactsWAOnAccount?    @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  ConnectionWA             ConnectionWA?           @relation(fields: [connectionWAId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  Account                  Account                 @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Charges                  Charges[]
-  ConnectionIg             ConnectionIg?        @relation(fields: [connectionIgId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ConnectionIg             ConnectionIg?           @relation(fields: [connectionIgId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   connectionIgId           Int?
   OrderAdjustments         OrderAdjustments[]
+  Router                   DeliveryRouterOnOrders?
 
   @@index([id, name, accountId])
+}
+
+enum StatusDeliveryRouter {
+  open
+  awaiting_assignment
+  in_progress
+  finished
+}
+
+// enum StatusDeliveryRouterOnOrder {
+//   delivered
+//   returned
+//   pending // aguardando ser coletado
+//   collected // calma
+//   canceled
+// }
+
+// se o pedido esta na rota, mas o pedido tem status de completed então então ainda nao esta a cominho
+// se o ultimo item da rota foi coletado e todos os items da rota se encontra na coluna de completed então a rota deve iniciar imediatamente.
+
+model DeliveryRouterOnOrders {
+  id          Int            @id @default(autoincrement())
+  // status      StatusDeliveryRouterOnOrder
+  completedAt DateTime?      @db.Timestamptz
+  orderId     Int            @unique
+  routerId    Int
+  Order       Orders         @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Router      DeliveryRouter @relation(fields: [routerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([orderId, routerId])
+}
+
+model DeliveryRouter {
+  id                     Int                      @id @default(autoincrement())
+  n_router               String                   @unique
+  status                 StatusDeliveryRouter
+  createAt               DateTime                 @default(now()) @db.Timestamptz
+  menuId                 Int
+  contactsWAOnAccountId  Int
+  menuOnline             MenusOnline              @relation(fields: [menuId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ContactsWAOnAccount    ContactsWAOnAccount      @relation(fields: [contactsWAOnAccountId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  DeliveryRouterOnOrders DeliveryRouterOnOrders[]
+
+  @@index([id, n_router, status, menuId, contactsWAOnAccountId])
 }
 
 enum TypeOrderAdjustments {
@@ -2212,11 +2261,12 @@ model MenusOnline {
   ConnectionWA   ConnectionWA  @relation(fields: [connectionWAId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   ConnectionIg   ConnectionIg? @relation(fields: [connectionIgId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
-  Orders        Orders[]
-  Items         MenusOnlineItems[]
-  Categories    MenuOnlineCategory[]
-  MenuInfo      MenuInfo?
-  OperatingDays MenuOnlineOperatingDays[]
+  Orders          Orders[]
+  Items           MenusOnlineItems[]
+  Categories      MenuOnlineCategory[]
+  MenuInfo        MenuInfo?
+  OperatingDays   MenuOnlineOperatingDays[]
+  deliveryRouters DeliveryRouter[]
 
   @@index([id, uuid, accountId])
 }
@@ -2230,6 +2280,8 @@ enum TypePaymentMethods {
 
 model MenuInfo {
   id               Int                  @id @default(autoincrement())
+  lat              Float?
+  lng              Float?
   address          String?
   state_uf         String?
   city             String?

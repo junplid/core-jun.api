@@ -102,6 +102,8 @@ export class GetMenuOnlineUseCase {
             phone_contact: true,
             state_uf: true,
             whatsapp_contact: true,
+            lat: true,
+            lng: true,
           },
         },
         OperatingDays: {

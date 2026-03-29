@@ -43,6 +43,9 @@ export class GetOrdersUseCase {
               delivery_complement: true,
               delivery_cep: true,
               payment_change_to: true,
+              delivery_lat: true,
+              delivery_lng: true,
+              delivery_number: true,
               delivery_reference_point: true,
               connectionIgId: true,
               connectionWAId: true,
@@ -50,6 +53,11 @@ export class GetOrdersUseCase {
               sub_total: true,
               description: true,
               origin: true,
+              menuOnline: {
+                select: {
+                  MenuInfo: { select: { lat: true, lng: true } },
+                },
+              },
               OrderAdjustments: {
                 select: { amount: true, label: true, type: true },
               },
@@ -95,10 +103,22 @@ export class GetOrdersUseCase {
                 connectionWAId,
                 rank,
                 OrderAdjustments,
+                delivery_lat,
+                delivery_lng,
+                menuOnline,
                 ...order
               }) => {
                 return {
                   ...order,
+                  ...(delivery_lat &&
+                    delivery_lng &&
+                    menuOnline?.MenuInfo?.lat &&
+                    menuOnline.MenuInfo.lng && {
+                      link_map:
+                        `https://www.google.com/maps/dir/?api=1` +
+                        `&origin=${menuOnline?.MenuInfo?.lat},${menuOnline.MenuInfo.lng}` +
+                        `&destination=${delivery_lat},${delivery_lng}`,
+                    }),
                   sub_total: order.sub_total?.toNumber(),
                   total: order.total?.toNumber(),
                   net_total: order.net_total?.toNumber(),

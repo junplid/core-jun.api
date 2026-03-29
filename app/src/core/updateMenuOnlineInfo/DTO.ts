@@ -8,6 +8,8 @@ export interface UpdateMenuOnlineInfoBodyDTO_I {
   city: string | null;
   phone_contact: string | null;
   whatsapp_contact: string | null;
+  lat?: number;
+  lng?: number;
   payment_methods: TypePaymentMethods[];
 }
 

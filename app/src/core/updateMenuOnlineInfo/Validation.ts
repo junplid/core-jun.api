@@ -18,6 +18,8 @@ export const updateMenuOnlineInfoValidation = (
     uuid: Joi.string().required(),
     state_uf: Joi.string().optional().allow("", null),
     address: Joi.string().optional().allow("", null),
+    lat: Joi.number().optional().allow("", null),
+    lng: Joi.number().optional().allow("", null),
     city: Joi.string().optional().allow("", null),
     phone_contact: Joi.string().optional().allow("", null),
     whatsapp_contact: Joi.string().optional().allow("", null),

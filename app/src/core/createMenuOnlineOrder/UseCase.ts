@@ -75,7 +75,14 @@ export class CreateMenuOnlineOrderUseCase {
         id: true,
         ConnectionWA: { select: { number: true, id: true, businessId: true } },
         accountId: true,
-        MenuInfo: { select: { whatsapp_contact: true, delivery_fee: true } },
+        MenuInfo: {
+          select: {
+            whatsapp_contact: true,
+            delivery_fee: true,
+            lat: true,
+            lng: true,
+          },
+        },
       },
     });
 
@@ -317,6 +324,16 @@ export class CreateMenuOnlineOrderUseCase {
             payment_change_to: rest.payment_change_to,
             delivery_cep: rest.delivery_cep,
             delivery_complement: rest.delivery_complement,
+            delivery_number: rest.delivery_number,
+            ...(rest.delivery_lat &&
+              rest.delivery_lng &&
+              exist.MenuInfo?.lat &&
+              exist.MenuInfo?.lng && {
+                link_map:
+                  `https://www.google.com/maps/dir/?api=1` +
+                  `&origin=${exist.MenuInfo?.lat},${exist.MenuInfo?.lng}` +
+                  `&destination=${rest.delivery_lat},${rest.delivery_lng}`,
+              }),
             status: "pending",
             data: dataOrder,
             total: nextTotal,

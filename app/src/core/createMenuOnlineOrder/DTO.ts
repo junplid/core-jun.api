@@ -7,6 +7,9 @@ export interface CreateMenuOnlineOrderBodyDTO_I {
   delivery_cep?: string;
   delivery_address?: string;
   delivery_reference_point?: string;
+  delivery_lat?: number;
+  delivery_lng?: number;
+  delivery_number?: string;
   who_receives?: string;
   payment_method?: string;
   payment_change_to: string | null; // troco para quanto?
