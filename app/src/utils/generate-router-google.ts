@@ -3,7 +3,7 @@ interface Geo {
   lng: number;
 }
 
-function distance(a: Geo, b: Geo) {
+export function distanceGeo(a: Geo, b: Geo) {
   const R = 6371; // km
   const dLat = ((b.lat - a.lat) * Math.PI) / 180;
   const dLng = ((b.lng - a.lng) * Math.PI) / 180;
@@ -28,7 +28,7 @@ export function buildRoute(origin: Geo, orders: Geo[]) {
     let nearestDistance = Infinity;
 
     remaining.forEach((order, index) => {
-      const dist = distance(current, order);
+      const dist = distanceGeo(current, order);
       if (dist < nearestDistance) {
         nearestDistance = dist;
         nearestIndex = index;
@@ -47,8 +47,9 @@ export function generateGoogleMapsLink(
   origin: Geo,
   route: Geo[],
   mode: "driving" | "motorcycle" | "bicycling" | "walking" = "driving",
+  isMe: boolean = false,
 ) {
-  const originStr = `${origin.lat},${origin.lng}`;
+  const originStr = isMe ? "current+location" : `${origin.lat},${origin.lng}`;
   const destination = route[route.length - 1];
   const destinationStr = `${destination.lat},${destination.lng}`;
 

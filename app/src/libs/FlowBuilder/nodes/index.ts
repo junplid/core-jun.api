@@ -38,6 +38,11 @@ import { NodeUpdateAppointment } from "./UpdateAppointment";
 import { NodeUpdateOrder } from "./UpdateOrder";
 import { NodeUpdateTrelloCard } from "./UpdateTrelloCard";
 import { NodeWebhookTrelloCard } from "./WebhookTrelloCard";
+import { NodeAppendRouter } from "./AppendRouter";
+import { NodeGetRouter } from "./GetRouter";
+import { NodeUpdateRouter } from "./UpdateRouter";
+import { NodeDeleteRouterOrder } from "./DeleteRouterOrder";
+import { NodeNearestOrder } from "./NearestOrder";
 
 export const LibraryNodes = {
   NodeReply,
@@ -80,4 +85,9 @@ export const LibraryNodes = {
   NodeUpdateAppointment,
   NodeGetOrder,
   NodeDeleteOrder,
+  NodeAppendRouter,
+  NodeGetRouter,
+  NodeUpdateRouter,
+  NodeDeleteRouterOrder,
+  NodeNearestOrder,
 };

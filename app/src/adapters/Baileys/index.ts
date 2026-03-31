@@ -995,7 +995,7 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                 //   m.message?.contactsArrayMessage?.contacts?.length;
                 const locationMessage = m.message?.locationMessage;
 
-                const messageText =
+                let messageText =
                   m.message?.extendedTextMessage?.text ??
                   m.message?.conversation;
 
@@ -1565,6 +1565,16 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
                         delta: +1,
                         hour: resolveHourAndMinute(),
                       });
+                  }
+
+                  if (
+                    m.message.locationMessage?.degreesLatitude &&
+                    m.message.locationMessage?.degreesLongitude
+                  ) {
+                    messageText = [
+                      m.message.locationMessage.degreesLatitude,
+                      m.message.locationMessage.degreesLongitude,
+                    ].join("|");
                   }
 
                   if (!messageText && !messageAudio) {

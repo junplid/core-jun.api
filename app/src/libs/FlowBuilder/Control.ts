@@ -3462,6 +3462,374 @@ export const NodeControler = ({
           });
         return;
       }
+      if (currentNode.type === "NodeAppendRouter") {
+        if (props.mode === "testing") {
+          await SendMessageText({
+            mode: "testing",
+            accountId: props.accountId,
+            role: "system",
+            text: `Log: Criando rota`,
+            token_modal_chat_template: props.token_modal_chat_template,
+          });
+        }
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeAppendRouter({
+          ...(props.mode === "prod"
+            ? {
+                lead_id: props.lead_id,
+                contactAccountId: props.contactAccountId,
+                data: currentNode.data,
+                accountId: props.accountId,
+                nodeId: currentNode.id,
+                flowStateId: props.flowStateId,
+                external_adapter: props.external_adapter,
+                mode: "prod",
+              }
+            : {
+                mode: "testing",
+                accountId: props.accountId,
+                token_modal_chat_template: props.token_modal_chat_template,
+              }),
+        })
+          .then(async (action) => {
+            if (props.actions?.onExecutedNode) {
+              await props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
+            }
+
+            if (!action) {
+              const nextNode = nextEdgesIds.find(
+                (s) => s.sourceHandle === "main",
+              );
+              if (!nextNode) {
+                cacheFlowInExecution.delete(keyMap);
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                await props.actions?.onExecutedNode?.({
+                  id: "0",
+                  flowId: props.flowId,
+                });
+                return;
+              }
+              return execute({
+                ...props,
+                ...(props.type === "running"
+                  ? { message: props.message, type: "running" }
+                  : { type: "initial" }),
+                currentNodeId: nextNode.id,
+                oldNodeId: currentNode.id,
+              });
+            } else {
+              const nextNode = nextEdgesIds.find((s) =>
+                s.sourceHandle?.includes(action),
+              );
+              if (!nextNode) {
+                cacheFlowInExecution.delete(keyMap);
+                if (props.forceFinish) await props.actions?.onFinish?.("110");
+                await props.actions?.onExecutedNode?.({
+                  id: "0",
+                  flowId: props.flowId,
+                });
+                return;
+              }
+              return execute({
+                ...props,
+                ...(props.type === "running"
+                  ? { message: props.message, type: "running" }
+                  : { type: "initial" }),
+                currentNodeId: nextNode.id,
+                oldNodeId: currentNode.id,
+              });
+            }
+          })
+          .catch((error) => {
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+      if (currentNode.type === "NodeGetRouter") {
+        if (props.mode === "testing") {
+          await SendMessageText({
+            mode: "testing",
+            accountId: props.accountId,
+            role: "system",
+            text: `Log: Buscando rota`,
+            token_modal_chat_template: props.token_modal_chat_template,
+          });
+        }
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeGetRouter({
+          ...(props.mode === "prod"
+            ? {
+                numberLead: props.lead_id,
+                contactsWAOnAccountId: props.contactAccountId,
+                data: currentNode.data,
+                accountId: props.accountId,
+                nodeId: currentNode.id,
+                flowStateId: props.flowStateId,
+                mode: "prod",
+              }
+            : {
+                mode: "testing",
+                accountId: props.accountId,
+                token_modal_chat_template: props.token_modal_chat_template,
+              }),
+        })
+          .then(async (action) => {
+            const isNextNodeMain = nextEdgesIds.find((nh) =>
+              nh.sourceHandle?.includes(action === "ok" ? "main" : action),
+            );
+
+            if (!isNextNodeMain) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              await props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return;
+            }
+
+            return execute({
+              ...props,
+              type: "initial",
+              currentNodeId: isNextNodeMain.id,
+              oldNodeId: currentNode.id,
+              ...(props.mode === "prod" && {
+                isSavePositionLead: false,
+              }),
+            });
+          })
+          .catch((error) => {
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+      if (currentNode.type === "NodeUpdateRouter") {
+        if (props.mode === "testing") {
+          await SendMessageText({
+            mode: "testing",
+            accountId: props.accountId,
+            role: "system",
+            text: `Log: Atualizando rota`,
+            token_modal_chat_template: props.token_modal_chat_template,
+          });
+        }
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeUpdateRouter({
+          ...(props.mode === "prod"
+            ? {
+                numberLead: props.lead_id,
+                contactsWAOnAccountId: props.contactAccountId,
+                data: currentNode.data,
+                accountId: props.accountId,
+                nodeId: currentNode.id,
+                flowStateId: props.flowStateId,
+                mode: "prod",
+              }
+            : {
+                mode: "testing",
+                accountId: props.accountId,
+                token_modal_chat_template: props.token_modal_chat_template,
+              }),
+        })
+          .then(async (action) => {
+            console.log({ action_update_router: action });
+            const nextNode = nextEdgesIds.find((s) =>
+              s.sourceHandle?.includes(action === "ok" ? "main" : action),
+            );
+            if (!nextNode) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              await props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return res();
+            }
+
+            if (props.actions?.onExecutedNode) {
+              await props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
+            }
+
+            return execute({
+              ...props,
+              ...(props.type === "running"
+                ? { message: props.message, type: "running" }
+                : { type: "initial" }),
+              currentNodeId: nextNode.id,
+              oldNodeId: currentNode.id,
+              ...(props.mode === "prod" && {
+                isSavePositionLead: false,
+              }),
+            });
+          })
+          .catch((error) => {
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+      if (currentNode.type === "NodeDeleteRouterOrder") {
+        if (props.mode === "testing") {
+          await SendMessageText({
+            mode: "testing",
+            accountId: props.accountId,
+            role: "system",
+            text: `Log: Deletando pedido`,
+            token_modal_chat_template: props.token_modal_chat_template,
+          });
+        }
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeDeleteRouterOrder({
+          ...(props.mode === "prod"
+            ? {
+                numberLead: props.lead_id,
+                contactsWAOnAccountId: props.contactAccountId,
+                data: currentNode.data,
+                accountId: props.accountId,
+                mode: "prod",
+              }
+            : {
+                mode: "testing",
+                accountId: props.accountId,
+                token_modal_chat_template: props.token_modal_chat_template,
+              }),
+        })
+          .then(async (action) => {
+            const nextNode = nextEdgesIds.find((s) =>
+              s.sourceHandle?.includes(action === "ok" ? "main" : action),
+            );
+            if (!nextNode) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              await props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return res();
+            }
+
+            if (props.actions?.onExecutedNode) {
+              await props.actions?.onExecutedNode({
+                id: currentNode.id,
+                flowId: props.flowId,
+              });
+            }
+
+            return execute({
+              ...props,
+              ...(props.type === "running"
+                ? { message: props.message, type: "running" }
+                : { type: "initial" }),
+              currentNodeId: nextNode.id,
+              oldNodeId: currentNode.id,
+              ...(props.mode === "prod" && {
+                isSavePositionLead: false,
+              }),
+            });
+          })
+          .catch((error) => {
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+      if (currentNode.type === "NodeNearestOrder") {
+        if (props.mode === "testing") {
+          await SendMessageText({
+            mode: "testing",
+            accountId: props.accountId,
+            role: "system",
+            text: `Log: Buscando rota`,
+            token_modal_chat_template: props.token_modal_chat_template,
+          });
+        }
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeNearestOrder({
+          ...(props.mode === "prod"
+            ? {
+                numberLead: props.lead_id,
+                contactsWAOnAccountId: props.contactAccountId,
+                data: currentNode.data,
+                accountId: props.accountId,
+                nodeId: currentNode.id,
+                flowStateId: props.flowStateId,
+                mode: "prod",
+              }
+            : {
+                mode: "testing",
+                accountId: props.accountId,
+                token_modal_chat_template: props.token_modal_chat_template,
+              }),
+        })
+          .then(async (action) => {
+            const isNextNodeMain = nextEdgesIds.find((nh) =>
+              nh.sourceHandle?.includes(action === "ok" ? "main" : action),
+            );
+
+            if (!isNextNodeMain) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              await props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return;
+            }
+
+            return execute({
+              ...props,
+              type: "initial",
+              currentNodeId: isNextNodeMain.id,
+              oldNodeId: currentNode.id,
+              ...(props.mode === "prod" && {
+                isSavePositionLead: false,
+              }),
+            });
+          })
+          .catch((error) => {
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
 
       return res();
     };

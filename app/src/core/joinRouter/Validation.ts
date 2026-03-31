@@ -18,13 +18,13 @@ export const joinRouterValidation = (
 ) => {
   const schemaValidation = Joi.object({
     code: Joi.string().required(),
-    fsid: Joi.string().required(),
+    fsid: Joi.number().required(),
     nl: Joi.string().required(),
   });
 
   const validation = schemaValidation.validate(
     { ...req.body, ...req.query, ...req.params },
-    { abortEarly: false },
+    { abortEarly: false, convert: true },
   );
 
   if (validation.error) {
@@ -35,6 +35,8 @@ export const joinRouterValidation = (
     }));
     return res.status(400).json({ errors });
   }
+
+  req.query.fsid = validation.value.fsid;
 
   next();
 };

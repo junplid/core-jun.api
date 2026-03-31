@@ -29,9 +29,9 @@ type PropsAppendRouter =
       accountId: number;
     };
 
-export const NodeCreateOrder = async (
+export const NodeAppendRouter = async (
   props: PropsAppendRouter,
-): Promise<string | undefined> => {
+): Promise<"max" | "not_found" | undefined> => {
   if (props.mode === "testing") {
     await SendMessageText({
       token_modal_chat_template: props.token_modal_chat_template,
@@ -41,7 +41,7 @@ export const NodeCreateOrder = async (
       mode: "testing",
     });
 
-    return "success";
+    return;
   }
 
   try {

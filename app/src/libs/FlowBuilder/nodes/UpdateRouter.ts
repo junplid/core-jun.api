@@ -9,11 +9,9 @@ type PropsUpdateRouter =
       contactsWAOnAccountId: number;
       data: NodeUpdateRouterData;
       accountId: number;
-      businessName: string;
       nodeId: string;
       flowStateId: number;
       mode: "prod";
-      flowId: string;
     }
   | {
       mode: "testing";
@@ -39,16 +37,17 @@ export const NodeUpdateRouter = async (
   try {
     const { nRouter, fields, ...restData } = props.data;
 
-    const n_order = await resolveTextVariables({
+    const n_router = await resolveTextVariables({
       accountId: props.accountId,
       text: nRouter,
       contactsWAOnAccountId: props.contactsWAOnAccountId,
       nodeId: props.nodeId,
       numberLead: props.numberLead,
     });
-    const getOrder = await prisma.orders.findFirst({
-      where: { n_order },
-      select: { id: true, n_order: true, status: true },
+
+    const getOrder = await prisma.deliveryRouter.findFirst({
+      where: { n_router },
+      select: { id: true, n_router: true, status: true },
     });
 
     if (!getOrder) return "not_found";

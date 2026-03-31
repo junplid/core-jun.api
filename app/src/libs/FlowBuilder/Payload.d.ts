@@ -103,6 +103,7 @@ export type NodeNotifyWAData = {
   text: string;
   tagIds: number[];
   numbersWithTagIds: number[];
+  ignoreTagIds: number[];
 };
 
 export type NodeSendFilesData = {
@@ -291,6 +292,7 @@ export type NodeGetOrderData = {
     | "router_code"
     | "delivery_code"
     | "nOrder"
+    | "type_code"
   )[];
 
   varId_save_name?: number;
@@ -304,6 +306,7 @@ export type NodeGetOrderData = {
   varId_save_router_code?: number;
   varId_save_delivery_code?: number;
   varId_save_nOrder?: number;
+  varId_save_type_code?: number;
 };
 
 export type NodeGetRouterData = {
@@ -317,6 +320,7 @@ export type NodeGetRouterData = {
     | "data_text"
     | "number_contact"
     | "link_join_router"
+    | "gain_total"
   )[];
 
   order_status_of?: string;
@@ -328,6 +332,12 @@ export type NodeGetRouterData = {
   varId_save_data_text?: number;
   varId_save_number_contact?: number;
   varId_save_link_join_router?: number;
+  varId_save_gain_total?: number;
+};
+
+export type NodeNearestOrderData = {
+  geo_string: string; // -99,99999|99,99999
+  varId_save_code_order?: number;
 };
 
 export type NodeGetOrdersData = {
@@ -495,7 +505,8 @@ export type TypeNodesPayload =
   | "NodeDistribute"
   | "NodeGetRouter"
   | "NodeUpdateRouter"
-  | "NodeAppendRouter";
+  | "NodeAppendRouter"
+  | "NodeNearestOrder";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -545,4 +556,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeGetRouter"; data: NodeGetRouterData }
   | { type: "NodeUpdateRouter"; data: NodeUpdateRouterData }
   | { type: "NodeAppendRouter"; data: NodeAppendRouterData }
+  | { type: "NodeNearestOrder"; data: NodeNearestOrderData }
 );

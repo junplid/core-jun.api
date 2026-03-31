@@ -50,9 +50,26 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
   if (props.data.numbersWithTagIds.length) {
     const listnumbers = await prisma.contactsWAOnAccount.findMany({
       where: {
-        TagOnContactsWAOnAccount: {
-          some: { tagId: { in: props.data.numbersWithTagIds } },
-        },
+        ...(props.data.numbersWithTagIds?.length
+          ? {
+              AND: [
+                {
+                  TagOnContactsWAOnAccount: {
+                    some: { tagId: { in: props.data.numbersWithTagIds } },
+                  },
+                },
+                {
+                  TagOnContactsWAOnAccount: {
+                    some: { tagId: { notIn: props.data.ignoreTagIds } },
+                  },
+                },
+              ],
+            }
+          : {
+              TagOnContactsWAOnAccount: {
+                some: { tagId: { in: props.data.numbersWithTagIds } },
+              },
+            }),
         accountId: props.accountId,
       },
       select: { id: true, ContactsWA: { select: { completeNumber: true } } },
@@ -66,7 +83,14 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
   }
 
   for await (const { number } of props.data.numbers) {
-    const newNumber = validatePhoneNumber(number);
+    const numberresolve = await resolveTextVariables({
+      accountId: props.accountId,
+      text: number || "",
+      contactsWAOnAccountId: props.contactAccountId,
+      nodeId: props.nodeId,
+      numberLead: props.mode === "prod" ? props.lead_id : undefined,
+    });
+    const newNumber = validatePhoneNumber(numberresolve);
     let contactsWAOnAccountId: number | null = null;
     let lead_id: string | null = null;
 
@@ -77,8 +101,14 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
         lead_id = valid.completeNumber;
         if (props.data.tagIds?.length) {
           const contactAccount = await prisma.contactsWAOnAccount.findFirst({
-            where: { accountId: props.accountId, contactWAId: valid.contactId },
-            select: { id: true },
+            where: {
+              accountId: props.accountId,
+              contactWAId: valid.contactId,
+            },
+            select: {
+              id: true,
+              TagOnContactsWAOnAccount: { select: { tagId: true } },
+            },
           });
           if (!contactAccount?.id) {
             const { id } = await prisma.contactsWAOnAccount.create({
@@ -91,6 +121,10 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
             });
             contactsWAOnAccountId = id;
           } else {
+            const isTag = contactAccount.TagOnContactsWAOnAccount.some(
+              ({ tagId }) => props.data.ignoreTagIds.includes(tagId),
+            );
+            if (isTag) continue;
             contactsWAOnAccountId = contactAccount.id;
           }
           for await (const tagId of props.data.tagIds) {
@@ -215,7 +249,7 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
         dataText = await resolveTextVariables(
           {
             accountId: props.accountId,
-            text: props.data.text || "",
+            text: dataText,
             contactsWAOnAccountId: idContact.id,
             nodeId: props.nodeId,
             numberLead: idContact.lead_id,
@@ -238,7 +272,7 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
             messages: [
               {
                 key: "1",
-                text: props.data.text || "",
+                text: dataText,
                 interval: undefined,
               },
             ],
@@ -258,7 +292,7 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
             messages: [
               {
                 key: "1",
-                text: props.data.text || "",
+                text: dataText || "",
                 interval: undefined,
               },
             ],

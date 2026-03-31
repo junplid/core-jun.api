@@ -2078,6 +2078,8 @@ export const NodeAgentAI = async ({
                                             { key: "1", number: args.phone },
                                           ],
                                           tagIds: [],
+                                          numbersWithTagIds: [],
+                                          ignoreTagIds: [],
                                         },
                                       }
                                     : {
@@ -2093,6 +2095,8 @@ export const NodeAgentAI = async ({
                                             { key: "1", number: args.phone },
                                           ],
                                           tagIds: [],
+                                          numbersWithTagIds: [],
+                                          ignoreTagIds: [],
                                         },
                                         token_modal_chat_template:
                                           props.token_modal_chat_template,

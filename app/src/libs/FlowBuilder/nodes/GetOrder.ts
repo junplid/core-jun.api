@@ -70,6 +70,43 @@ export const NodeGetOrder = async (
 
     if (!getorder) return "not_found";
 
+    if (fields.includes("type_code") && restData.varId_save_type_code) {
+      const exist = await prisma.variable.findFirst({
+        where: { id: restData.varId_save_type_code, type: "dynamics" },
+        select: { id: true },
+      });
+
+      if (exist) {
+        const picked = await prisma.contactsWAOnAccountVariable.findFirst({
+          where: {
+            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            variableId: exist.id,
+          },
+          select: { id: true },
+        });
+        const typecode =
+          resolvercode === getorder.n_order ? "code_order" : "code_delivery";
+        if (!picked) {
+          await prisma.contactsWAOnAccountVariable.create({
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: typecode,
+            },
+          });
+        } else {
+          await prisma.contactsWAOnAccountVariable.update({
+            where: { id: picked.id },
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: typecode,
+            },
+          });
+        }
+      }
+    }
+
     if (fields.includes("name") && restData.varId_save_name) {
       const exist = await prisma.variable.findFirst({
         where: { id: restData.varId_save_name, type: "dynamics" },
@@ -104,6 +141,7 @@ export const NodeGetOrder = async (
         }
       }
     }
+
     if (fields.includes("status") && restData.varId_save_status) {
       const exist = await prisma.variable.findFirst({
         where: { id: restData.varId_save_status, type: "dynamics" },

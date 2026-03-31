@@ -306,70 +306,70 @@ export class CreateMenuOnlineOrderUseCase {
         onFilterSocket: () => [],
       });
 
-      webSocketEmitToRoom()
-        .account(exist.accountId)
-        .orders.new_order(
-          {
-            ...order,
-            net_total,
-            adjustments: OrderAdjustments,
-            name: rest.who_receives || null,
-            n_order,
-            businessId: Business.id,
-            origin: "menu_online",
-            delivery_address:
-              rest.delivery_address || type_delivery.toUpperCase(),
-            delivery_reference_point: rest.delivery_reference_point,
-            payment_method: rest.payment_method,
-            payment_change_to: rest.payment_change_to,
-            delivery_cep: rest.delivery_cep,
-            delivery_complement: rest.delivery_complement,
-            delivery_number: rest.delivery_number,
-            ...(rest.delivery_lat &&
-              rest.delivery_lng &&
-              exist.MenuInfo?.lat &&
-              exist.MenuInfo?.lng && {
-                link_map:
-                  `https://www.google.com/maps/dir/?api=1` +
-                  `&origin=${exist.MenuInfo?.lat},${exist.MenuInfo?.lng}` +
-                  `&destination=${rest.delivery_lat},${rest.delivery_lng}`,
-              }),
-            status: "pending",
-            data: dataOrder,
-            total: nextTotal,
-            sequence: newRank,
-            sub_total: total,
-            isDragDisabled: false,
-            ticket:
-              ContactsWAOnAccount?.Tickets.map((tk) => {
-                let connection: any = {};
+      // webSocketEmitToRoom()
+      //   .account(exist.accountId)
+      //   .orders.new_order(
+      //     {
+      //       ...order,
+      //       net_total,
+      //       adjustments: OrderAdjustments,
+      //       name: rest.who_receives || null,
+      //       n_order,
+      //       businessId: Business.id,
+      //       origin: "menu_online",
+      //       delivery_address:
+      //         rest.delivery_address || type_delivery.toUpperCase(),
+      //       delivery_reference_point: rest.delivery_reference_point,
+      //       payment_method: rest.payment_method,
+      //       payment_change_to: rest.payment_change_to,
+      //       delivery_cep: rest.delivery_cep,
+      //       delivery_complement: rest.delivery_complement,
+      //       delivery_number: rest.delivery_number,
+      //       ...(rest.delivery_lat &&
+      //         rest.delivery_lng &&
+      //         exist.MenuInfo?.lat &&
+      //         exist.MenuInfo?.lng && {
+      //           link_map:
+      //             `https://www.google.com/maps/dir/?api=1` +
+      //             `&origin=${exist.MenuInfo?.lat},${exist.MenuInfo?.lng}` +
+      //             `&destination=${rest.delivery_lat},${rest.delivery_lng}`,
+      //         }),
+      //       status: "pending",
+      //       data: dataOrder,
+      //       total: nextTotal,
+      //       sequence: newRank,
+      //       sub_total: total,
+      //       isDragDisabled: false,
+      //       ticket:
+      //         ContactsWAOnAccount?.Tickets.map((tk) => {
+      //           let connection: any = {};
 
-                if (tk.ConnectionWA?.name) {
-                  connection = {
-                    s: !!cacheConnectionsWAOnline.get(tk.ConnectionWA?.id),
-                    name: tk.ConnectionWA.name,
-                    channel: "baileys",
-                  };
-                }
-                if (tk.ConnectionIg?.ig_username) {
-                  connection = {
-                    s: true,
-                    name: tk.ConnectionIg.ig_username,
-                    channel: "instagram",
-                  };
-                }
+      //           if (tk.ConnectionWA?.name) {
+      //             connection = {
+      //               s: !!cacheConnectionsWAOnline.get(tk.ConnectionWA?.id),
+      //               name: tk.ConnectionWA.name,
+      //               channel: "baileys",
+      //             };
+      //           }
+      //           if (tk.ConnectionIg?.ig_username) {
+      //             connection = {
+      //               s: true,
+      //               name: tk.ConnectionIg.ig_username,
+      //               channel: "instagram",
+      //             };
+      //           }
 
-                return {
-                  connection,
-                  id: tk.id,
-                  // lastMessage: tk.Messages[0].by,
-                  departmentName: tk.InboxDepartment.name,
-                  status: tk.status,
-                };
-              }) || [],
-          },
-          [],
-        );
+      //           return {
+      //             connection,
+      //             id: tk.id,
+      //             // lastMessage: tk.Messages[0].by,
+      //             departmentName: tk.InboxDepartment.name,
+      //             status: tk.status,
+      //           };
+      //         }) || [],
+      //     },
+      //     [],
+      //   );
 
       const redirectTo = `https://api.whatsapp.com/send?phone=${
         numberwhats

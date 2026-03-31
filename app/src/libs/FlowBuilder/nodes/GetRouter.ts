@@ -13,7 +13,6 @@ type PropsGetRouter =
       contactsWAOnAccountId: number;
       data: NodeGetRouterData;
       accountId: number;
-      businessName: string;
       nodeId: string;
       flowStateId: number;
       mode: "prod";
@@ -72,9 +71,14 @@ export const NodeGetRouter = async (
           select: {
             Order: {
               select: {
+                delivery_address: true,
+                delivery_number: true,
+                delivery_reference_point: true,
+                delivery_complement: true,
                 status: true,
                 delivery_lat: true,
                 delivery_lng: true,
+                name: true,
               },
             },
           },
@@ -180,8 +184,10 @@ export const NodeGetRouter = async (
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
               value:
-                getRouter.ContactsWAOnAccount?.ContactsWA.realNumber ||
-                "<empty>",
+                getRouter.ContactsWAOnAccount?.ContactsWA.realNumber?.replace(
+                  /^55/,
+                  "",
+                ) || "<empty>",
             },
           });
         } else {
@@ -191,8 +197,10 @@ export const NodeGetRouter = async (
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
               value:
-                getRouter.ContactsWAOnAccount?.ContactsWA.realNumber ||
-                "<empty>",
+                getRouter.ContactsWAOnAccount?.ContactsWA.realNumber?.replace(
+                  /^55/,
+                  "",
+                ) || "<empty>",
             },
           });
         }
@@ -244,6 +252,60 @@ export const NodeGetRouter = async (
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
               value: String(count),
+            },
+          });
+        }
+      }
+    }
+
+    if (fields.includes("gain_total") && restData.varId_save_gain_total) {
+      const exist = await prisma.variable.findFirst({
+        where: {
+          id: restData.varId_save_gain_total,
+          type: "dynamics",
+        },
+        select: { id: true },
+      });
+
+      if (exist) {
+        const count = await prisma.deliveryRouter.findFirst({
+          where: { id: getRouter.id },
+          select: {
+            menuOnline: {
+              select: { MenuInfo: { select: { delivery_fee: true } } },
+            },
+            _count: { select: { DeliveryRouterOnOrders: true } },
+          },
+        });
+        const fee = count?.menuOnline.MenuInfo?.delivery_fee?.toNumber();
+        if (!count || !fee) return "not_found";
+
+        const totalgain = (fee * count._count.DeliveryRouterOnOrders).toFixed(
+          2,
+        );
+
+        const picked = await prisma.contactsWAOnAccountVariable.findFirst({
+          where: {
+            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            variableId: exist.id,
+          },
+          select: { id: true },
+        });
+        if (!picked) {
+          await prisma.contactsWAOnAccountVariable.create({
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: totalgain,
+            },
+          });
+        } else {
+          await prisma.contactsWAOnAccountVariable.update({
+            where: { id: picked.id },
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: totalgain,
             },
           });
         }
@@ -343,7 +405,7 @@ export const NodeGetRouter = async (
           .filter((s) => s) as { lat: number; lng: number }[];
 
         const ordered = buildRoute(origin, filterLatLng);
-        link = generateGoogleMapsLink(origin, ordered);
+        link = generateGoogleMapsLink(origin, ordered, undefined, true);
       }
 
       if (exist) {
@@ -381,11 +443,14 @@ export const NodeGetRouter = async (
         select: { id: true },
       });
 
-      // ganho total
-      // entregas
-      //    1. Nome (#123456) - endereço
-      //    R$ 8,00
-      //    ...
+      let data_text = "";
+      if (getRouter.ContactsWAOnAccount) {
+        data_text = getRouter.DeliveryRouterOnOrders.map(
+          (d, i) =>
+            `${i + 1}. ${d.Order.name}\n${d.Order.delivery_address}, ${d.Order.delivery_number}\n*${d.Order.delivery_reference_point}*`,
+        ).join("\n");
+      }
+
       if (exist) {
         const picked = await prisma.contactsWAOnAccountVariable.findFirst({
           where: {
@@ -399,7 +464,7 @@ export const NodeGetRouter = async (
             data: {
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
-              value: getRouter.status || "<empty>",
+              value: data_text,
             },
           });
         } else {
@@ -408,7 +473,7 @@ export const NodeGetRouter = async (
             data: {
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
-              value: getRouter.status || "<empty>",
+              value: data_text,
             },
           });
         }
