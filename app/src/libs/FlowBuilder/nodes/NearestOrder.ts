@@ -69,6 +69,7 @@ export const NodeNearestOrder = async (
       where: {
         n_router: resolvercode,
         contactsWAOnAccountId: props.contactsWAOnAccountId,
+        status: "in_progress",
       },
       select: {
         DeliveryRouterOnOrders: {

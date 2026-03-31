@@ -2128,6 +2128,7 @@ model DeliveryRouter {
   nodeId                 String
   timeoutAt              DateTime                 @db.Timestamptz
   n_router               String                   @unique
+  isNotify               Boolean                  @default(false)
   status                 StatusDeliveryRouter
   createAt               DateTime                 @default(now()) @db.Timestamptz
   menuId                 Int

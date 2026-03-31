@@ -16,12 +16,15 @@ cron.schedule("* * * * *", () => {
         where: {
           timeoutAt: { lt: new Date() },
           status: "open",
+          isNotify: false,
         },
         select: {
+          _count: { select: { DeliveryRouterOnOrders: true } },
           flowStateId: true,
           nodeId: true,
           menuOnline: { select: { accountId: true } },
           n_router: true,
+          id: true,
         },
       });
       if (routers.length) {
@@ -31,7 +34,17 @@ cron.schedule("* * * * *", () => {
             nodeId,
             menuOnline: { accountId },
             n_router,
+            _count,
+            id,
           }) => {
+            if (!_count.DeliveryRouterOnOrders) {
+              await prisma.deliveryRouter.delete({ where: { id } });
+              return;
+            }
+            await prisma.deliveryRouter.update({
+              where: { id },
+              data: { isNotify: true },
+            });
             const getFlowState = await prisma.flowState.findFirst({
               where: { id: flowStateId },
               select: {
