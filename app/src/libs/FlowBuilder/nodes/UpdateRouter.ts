@@ -45,12 +45,12 @@ export const NodeUpdateRouter = async (
       numberLead: props.numberLead,
     });
 
-    const getOrder = await prisma.deliveryRouter.findFirst({
+    const getRouter = await prisma.deliveryRouter.findFirst({
       where: { n_router },
       select: { id: true, n_router: true, status: true },
     });
 
-    if (!getOrder) return "not_found";
+    if (!getRouter) return "not_found";
 
     const nextData: any = {};
 
@@ -65,18 +65,50 @@ export const NodeUpdateRouter = async (
     // }
 
     if (fields?.includes("status") && restData.status) {
-      nextData.status = restData.status;
+      nextData.status = await resolveTextVariables({
+        accountId: props.accountId,
+        text: nextData.status,
+        contactsWAOnAccountId: props.contactsWAOnAccountId,
+        nodeId: props.nodeId,
+        numberLead: props.numberLead,
+      });
     }
 
-    await prisma.deliveryRouter.update({
-      where: { id: getOrder.id },
-      data: {
-        ...(fields?.includes("assign_to_contact") && {
-          contactsWAOnAccountId: props.contactsWAOnAccountId,
-        }),
-        ...nextData,
-      },
+    if (fields?.includes("add_order") && restData.nOrder) {
+      restData.nOrder = await resolveTextVariables({
+        accountId: props.accountId,
+        text: restData.nOrder,
+        contactsWAOnAccountId: props.contactsWAOnAccountId,
+        nodeId: props.nodeId,
+        numberLead: props.numberLead,
+      });
+    }
+
+    const getorder = await prisma.orders.findFirst({
+      where: { n_order: restData.nOrder },
+      select: { id: true },
     });
+
+    prisma.deliveryRouter
+      .update({
+        where: { id: getRouter.id },
+        data: {
+          ...(fields?.includes("assign_to_contact") && {
+            contactsWAOnAccountId: props.contactsWAOnAccountId,
+          }),
+          ...nextData,
+        },
+      })
+      .catch(undefined)
+      .then(undefined);
+
+    if (getorder?.id) {
+      await prisma.deliveryRouterOnOrders.upsert({
+        where: { orderId: getorder.id },
+        create: { routerId: getRouter.id, orderId: getorder.id },
+        update: { routerId: getRouter.id },
+      });
+    }
 
     return "ok";
   } catch (error) {

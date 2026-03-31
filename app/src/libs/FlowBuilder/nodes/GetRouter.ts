@@ -76,6 +76,7 @@ export const NodeGetRouter = async (
                 delivery_reference_point: true,
                 delivery_complement: true,
                 status: true,
+                n_order: true,
                 delivery_lat: true,
                 delivery_lng: true,
                 name: true,
@@ -447,7 +448,7 @@ export const NodeGetRouter = async (
       if (getRouter.ContactsWAOnAccount) {
         data_text = getRouter.DeliveryRouterOnOrders.map(
           (d, i) =>
-            `${i + 1}. ${d.Order.name}\n${d.Order.delivery_address}, ${d.Order.delivery_number}\n*${d.Order.delivery_reference_point}*`,
+            `${i + 1}. ${d.Order.name}\n${d.Order.delivery_address}, ${d.Order.delivery_number}\n*${d.Order.delivery_reference_point}*\n${d.Order.n_order.replace(/.*(\d{2})$/, "************$1")}`,
         ).join("\n");
       }
 

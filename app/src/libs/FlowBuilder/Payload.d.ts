@@ -267,8 +267,9 @@ export type NodeUpdateOrderData = {
 export type NodeUpdateRouterData = {
   nRouter: string;
   max?: string;
+  nOrder?: string;
   status?: "open" | "awaiting_assignment" | "in_progress" | "finished";
-  fields?: ("qnt_max" | "status" | "assign_to_contact")[];
+  fields?: ("qnt_max" | "status" | "assign_to_contact" | "add_order")[];
 };
 
 export type NodeDeleteOrderData = {
