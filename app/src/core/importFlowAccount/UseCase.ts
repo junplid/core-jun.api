@@ -68,6 +68,31 @@ export class ImportFlowAccountUseCase {
               const variables = hasVariable.map((s) => s.replace(/{{|}}/g, ""));
               if (!variables.length) return;
               await syncVariables(variables);
+              if (message.varId) {
+                const getVar = await prisma.variable.findFirst({
+                  where: { id: message.varId, type: "dynamics" },
+                  select: { name: true },
+                });
+                if (getVar) {
+                  const isVarExist = await prisma.variable.findFirst({
+                    where: { accountId, name: getVar.name },
+                    select: { id: true },
+                  });
+                  if (!isVarExist) {
+                    const { id } = await prisma.variable.create({
+                      data: {
+                        accountId,
+                        name: getVar.name,
+                        type: "dynamics",
+                      },
+                      select: { id: true },
+                    });
+                    message.varId = id;
+                  } else {
+                    message.varId = isVarExist.id;
+                  }
+                }
+              }
             }),
           );
         }
@@ -178,6 +203,8 @@ export class ImportFlowAccountUseCase {
         if (node.data.name) appendText += `${node.data.name} \n`;
         if (node.data.origin) appendText += `${node.data.origin} \n`;
         if (node.data.total) appendText += `${node.data.total} \n`;
+        if (node.data.sync_order_existing_code)
+          appendText += `${node.data.sync_order_existing_code} \n`;
 
         if (appendText) {
           const hasVariable = appendText.match(/{{\w+}}/g);
@@ -377,6 +404,87 @@ export class ImportFlowAccountUseCase {
           const variables = hasVariable.map((s) => s.replace(/{{|}}/g, ""));
           if (!variables.length) await syncVariables(variables);
         }
+        if (node.data.tagIds) {
+          const newList = await Promise.all(
+            node.data.tagIds.map(async (tag) => {
+              const getTag = await prisma.tag.findFirst({
+                where: { id: tag },
+                select: { name: true, type: true },
+              });
+              if (getTag) {
+                const existAccount = await prisma.tag.findFirst({
+                  where: { accountId, name: getTag.name },
+                  select: { id: true },
+                });
+                if (!existAccount) {
+                  const { id } = await prisma.tag.create({
+                    data: { accountId, ...getTag },
+                    select: { id: true },
+                  });
+                  tag = id;
+                } else {
+                  tag = existAccount.id;
+                }
+              }
+              return tag;
+            }),
+          );
+          node.data.tagIds = newList;
+        }
+        if (node.data.ignoreTagIds) {
+          const newList = await Promise.all(
+            node.data.ignoreTagIds.map(async (tag) => {
+              const getTag = await prisma.tag.findFirst({
+                where: { id: tag },
+                select: { name: true, type: true },
+              });
+              if (getTag) {
+                const existAccount = await prisma.tag.findFirst({
+                  where: { accountId, name: getTag.name },
+                  select: { id: true },
+                });
+                if (!existAccount) {
+                  const { id } = await prisma.tag.create({
+                    data: { accountId, ...getTag },
+                    select: { id: true },
+                  });
+                  tag = id;
+                } else {
+                  tag = existAccount.id;
+                }
+              }
+              return tag;
+            }),
+          );
+          node.data.ignoreTagIds = newList;
+        }
+        if (node.data.numbersWithTagIds) {
+          const newList = await Promise.all(
+            node.data.numbersWithTagIds.map(async (tag) => {
+              const getTag = await prisma.tag.findFirst({
+                where: { id: tag },
+                select: { name: true, type: true },
+              });
+              if (getTag) {
+                const existAccount = await prisma.tag.findFirst({
+                  where: { accountId, name: getTag.name },
+                  select: { id: true },
+                });
+                if (!existAccount) {
+                  const { id } = await prisma.tag.create({
+                    data: { accountId, ...getTag },
+                    select: { id: true },
+                  });
+                  tag = id;
+                } else {
+                  tag = existAccount.id;
+                }
+              }
+              return tag;
+            }),
+          );
+          node.data.numbersWithTagIds = newList;
+        }
       } else if (node.type === "NodeRandomCode") {
         const getVar = await prisma.variable.findFirst({
           where: { id: node.data.id, type: "dynamics" },
@@ -528,6 +636,8 @@ export class ImportFlowAccountUseCase {
         if (node.data.origin) appendText += `${node.data.origin} \n`;
         if (node.data.total) appendText += `${node.data.total} \n`;
         if (node.data.nOrder) appendText += `${node.data.nOrder} \n`;
+        if (node.data.charge_transactionId)
+          appendText += `${node.data.charge_transactionId} \n`;
         if (node.data.tracking_code)
           appendText += `${node.data.tracking_code} \n`;
 
@@ -567,6 +677,520 @@ export class ImportFlowAccountUseCase {
           }),
         );
         node.data.list = newList;
+      } else if (node.type === "NodeAddTrelloCard") {
+        if (node.data.varId_save_cardId) {
+          const getVar = await prisma.variable.findFirst({
+            where: { id: node.data.varId_save_cardId, type: "dynamics" },
+            select: { name: true },
+          });
+          if (getVar) {
+            const isVarExist = await prisma.variable.findFirst({
+              where: { accountId, name: getVar.name },
+              select: { id: true },
+            });
+            if (!isVarExist) {
+              const { id } = await prisma.variable.create({
+                data: {
+                  accountId,
+                  name: getVar.name,
+                  type: "dynamics",
+                },
+                select: { id: true },
+              });
+              node.data.varId_save_cardId = id;
+            } else {
+              node.data.varId_save_cardId = isVarExist.id;
+            }
+          }
+        }
+      } else if (node.type === "NodeAppendRouter") {
+        let appendText = "";
+        if (node.data.max) appendText += `${node.data.max} \n`;
+        if (node.data.nOrder) appendText += `${node.data.nOrder} \n`;
+        if (appendText) {
+          const hasVariable = appendText.match(/{{\w+}}/g);
+          if (hasVariable) {
+            const variables = hasVariable.map((s) => s.replace(/{{|}}/g, ""));
+            if (variables.length) await syncVariables(variables);
+          }
+        }
+
+        if (node.data.varId_save_nRouter) {
+          const getVar = await prisma.variable.findFirst({
+            where: { id: node.data.varId_save_nRouter, type: "dynamics" },
+            select: { name: true },
+          });
+          if (getVar) {
+            const isVarExist = await prisma.variable.findFirst({
+              where: { accountId, name: getVar.name },
+              select: { id: true },
+            });
+            if (!isVarExist) {
+              const { id } = await prisma.variable.create({
+                data: {
+                  accountId,
+                  name: getVar.name,
+                  type: "dynamics",
+                },
+                select: { id: true },
+              });
+              node.data.varId_save_nRouter = id;
+            } else {
+              node.data.varId_save_nRouter = isVarExist.id;
+            }
+          }
+        }
+      } else if (node.type === "NodeCalculator") {
+        const hasVariable = (node.data.formula || "").match(/{{\w+}}/g);
+        if (hasVariable) {
+          const variables = hasVariable.map((s) => s.replace(/{{|}}/g, ""));
+          if (variables.length) await syncVariables(variables);
+        }
+        if (node.data.variableId) {
+          const getVar = await prisma.variable.findFirst({
+            where: { id: node.data.variableId, type: "dynamics" },
+            select: { name: true },
+          });
+          if (getVar) {
+            const isVarExist = await prisma.variable.findFirst({
+              where: { accountId, name: getVar.name },
+              select: { id: true },
+            });
+            if (!isVarExist) {
+              const { id } = await prisma.variable.create({
+                data: {
+                  accountId,
+                  name: getVar.name,
+                  type: "dynamics",
+                },
+                select: { id: true },
+              });
+              node.data.variableId = id;
+            } else {
+              node.data.variableId = isVarExist.id;
+            }
+          }
+        }
+      } else if (node.type === "NodeCreateAppointment") {
+        let appendText = "";
+        if (node.data.title) appendText += `${node.data.title} \n`;
+        if (node.data.startAt) appendText += `${node.data.startAt} \n`;
+        if (node.data.desc) appendText += `${node.data.desc} \n`;
+        if (appendText) {
+          const hasVariable = appendText.match(/{{\w+}}/g);
+          if (hasVariable) {
+            const variables = hasVariable.map((s) => s.replace(/{{|}}/g, ""));
+            if (variables.length) await syncVariables(variables);
+          }
+        }
+
+        if (node.data.varId_save_nAppointment) {
+          const getVar = await prisma.variable.findFirst({
+            where: { id: node.data.varId_save_nAppointment, type: "dynamics" },
+            select: { name: true },
+          });
+          if (getVar) {
+            const isVarExist = await prisma.variable.findFirst({
+              where: { accountId, name: getVar.name },
+              select: { id: true },
+            });
+            if (!isVarExist) {
+              const { id } = await prisma.variable.create({
+                data: {
+                  accountId,
+                  name: getVar.name,
+                  type: "dynamics",
+                },
+                select: { id: true },
+              });
+              node.data.varId_save_nAppointment = id;
+            } else {
+              node.data.varId_save_nAppointment = isVarExist.id;
+            }
+          }
+        }
+      } else if (node.type === "NodeDeleteMessage") {
+        if (node.data.varId_groupJid) {
+          const getVar = await prisma.variable.findFirst({
+            where: { id: node.data.varId_groupJid, type: "dynamics" },
+            select: { name: true },
+          });
+          if (getVar) {
+            const isVarExist = await prisma.variable.findFirst({
+              where: { accountId, name: getVar.name },
+              select: { id: true },
+            });
+            if (!isVarExist) {
+              const { id } = await prisma.variable.create({
+                data: {
+                  accountId,
+                  name: getVar.name,
+                  type: "dynamics",
+                },
+                select: { id: true },
+              });
+              node.data.varId_groupJid = id;
+            } else {
+              node.data.varId_groupJid = isVarExist.id;
+            }
+          }
+        }
+        if (node.data.varId_messageId) {
+          const getVar = await prisma.variable.findFirst({
+            where: { id: node.data.varId_messageId, type: "dynamics" },
+            select: { name: true },
+          });
+          if (getVar) {
+            const isVarExist = await prisma.variable.findFirst({
+              where: { accountId, name: getVar.name },
+              select: { id: true },
+            });
+            if (!isVarExist) {
+              const { id } = await prisma.variable.create({
+                data: {
+                  accountId,
+                  name: getVar.name,
+                  type: "dynamics",
+                },
+                select: { id: true },
+              });
+              node.data.varId_messageId = id;
+            } else {
+              node.data.varId_messageId = isVarExist.id;
+            }
+          }
+        }
+      } else if (node.type === "NodeDeleteOrder") {
+        if (node.data.nOrder) {
+          const hasVariable = node.data.nOrder.match(/{{\w+}}/g);
+          if (hasVariable) {
+            const variables = hasVariable.map((s) => s.replace(/{{|}}/g, ""));
+            if (variables.length) await syncVariables(variables);
+          }
+        }
+      } else if (node.type === "NodeDeleteRouterOrder") {
+        if (node.data.nOrder) {
+          const hasVariable = node.data.nOrder.match(/{{\w+}}/g);
+          if (hasVariable) {
+            const variables = hasVariable.map((s) => s.replace(/{{|}}/g, ""));
+            if (variables.length) await syncVariables(variables);
+          }
+        }
+      } else if (node.type === "NodeGetOrder") {
+        if (node.data.nOrder_deliveryCode) {
+          const hasVariable = node.data.nOrder_deliveryCode.match(/{{\w+}}/g);
+          if (hasVariable) {
+            const variables = hasVariable.map((s) => s.replace(/{{|}}/g, ""));
+            if (variables.length) await syncVariables(variables);
+          }
+        }
+
+        for await (const [key, value] of Object.entries(node.data)) {
+          if (key.includes("varId_") && value) {
+            const getVar = await prisma.variable.findFirst({
+              where: { id: value as number, type: "dynamics" },
+              select: { name: true },
+            });
+            if (getVar) {
+              const isVarExist = await prisma.variable.findFirst({
+                where: { accountId, name: getVar.name },
+                select: { id: true },
+              });
+              if (!isVarExist) {
+                const { id } = await prisma.variable.create({
+                  data: {
+                    accountId,
+                    name: getVar.name,
+                    type: "dynamics",
+                  },
+                  select: { id: true },
+                });
+                // @ts-expect-error
+                node.data[key] = id;
+              } else {
+                // @ts-expect-error
+                node.data[key] = isVarExist.id;
+              }
+            }
+          }
+        }
+      } else if (node.type === "NodeGetRouter") {
+        let appendText = "";
+        if (node.data.nRouter) appendText += `${node.data.nRouter} \n`;
+        if (node.data.order_status_of)
+          appendText += `${node.data.order_status_of} \n`;
+        if (appendText) {
+          const hasVariable = appendText.match(/{{\w+}}/g);
+          if (hasVariable) {
+            const variables = hasVariable.map((s) => s.replace(/{{|}}/g, ""));
+            if (variables.length) await syncVariables(variables);
+          }
+        }
+
+        for await (const [key, value] of Object.entries(node.data)) {
+          if (key.includes("varId_") && value) {
+            const getVar = await prisma.variable.findFirst({
+              where: { id: value as number, type: "dynamics" },
+              select: { name: true },
+            });
+            if (getVar) {
+              const isVarExist = await prisma.variable.findFirst({
+                where: { accountId, name: getVar.name },
+                select: { id: true },
+              });
+              if (!isVarExist) {
+                const { id } = await prisma.variable.create({
+                  data: {
+                    accountId,
+                    name: getVar.name,
+                    type: "dynamics",
+                  },
+                  select: { id: true },
+                });
+                // @ts-expect-error
+                node.data[key] = id;
+              } else {
+                // @ts-expect-error
+                node.data[key] = isVarExist.id;
+              }
+            }
+          }
+        }
+      } else if (node.type === "NodeIF") {
+        for await (const item of node.data.list || []) {
+          if (item.name === "appointment") {
+            if (item.value1) {
+              const hasVariable = item.value1.match(/{{\w+}}/g);
+              if (hasVariable) {
+                const variables = hasVariable.map((s) =>
+                  s.replace(/{{|}}/g, ""),
+                );
+                if (variables.length) await syncVariables(variables);
+              }
+            }
+            continue;
+          }
+          if (item.name === "has-tags" || item.name === "no-tags") {
+            const newList = await Promise.all(
+              item.tagIds.map(async (tag) => {
+                const getTag = await prisma.tag.findFirst({
+                  where: { id: tag },
+                  select: { name: true, type: true },
+                });
+                if (getTag) {
+                  const existAccount = await prisma.tag.findFirst({
+                    where: { accountId, name: getTag.name },
+                    select: { id: true },
+                  });
+                  if (!existAccount) {
+                    const { id } = await prisma.tag.create({
+                      data: { accountId, ...getTag },
+                      select: { id: true },
+                    });
+                    tag = id;
+                  } else {
+                    tag = existAccount.id;
+                  }
+                }
+                return tag;
+              }),
+            );
+            item.tagIds = newList;
+            continue;
+          }
+          if (item.name === "var") {
+            let appendText = "";
+            if (item.value1) appendText += `${item.value1} \n`;
+            if (item.value2) appendText += `${item.value2} \n`;
+            if (appendText) {
+              const hasVariable = appendText.match(/{{\w+}}/g);
+              if (hasVariable) {
+                const variables = hasVariable.map((s) =>
+                  s.replace(/{{|}}/g, ""),
+                );
+                if (variables.length) await syncVariables(variables);
+              }
+            }
+            continue;
+          }
+        }
+      } else if (node.type === "NodeMoveTrelloCard") {
+        if (node.data.varId_cardId) {
+          const getVar = await prisma.variable.findFirst({
+            where: { id: node.data.varId_cardId, type: "dynamics" },
+            select: { name: true },
+          });
+          if (getVar) {
+            const isVarExist = await prisma.variable.findFirst({
+              where: { accountId, name: getVar.name },
+              select: { id: true },
+            });
+            if (!isVarExist) {
+              const { id } = await prisma.variable.create({
+                data: {
+                  accountId,
+                  name: getVar.name,
+                  type: "dynamics",
+                },
+                select: { id: true },
+              });
+              node.data.varId_cardId = id;
+            } else {
+              node.data.varId_cardId = isVarExist.id;
+            }
+          }
+        }
+      } else if (node.type === "NodeNearestOrder") {
+        if (node.data.varId_save_code_order) {
+          const getVar = await prisma.variable.findFirst({
+            where: { id: node.data.varId_save_code_order, type: "dynamics" },
+            select: { name: true },
+          });
+          if (getVar) {
+            const isVarExist = await prisma.variable.findFirst({
+              where: { accountId, name: getVar.name },
+              select: { id: true },
+            });
+            if (!isVarExist) {
+              const { id } = await prisma.variable.create({
+                data: {
+                  accountId,
+                  name: getVar.name,
+                  type: "dynamics",
+                },
+                select: { id: true },
+              });
+              node.data.varId_save_code_order = id;
+            } else {
+              node.data.varId_save_code_order = isVarExist.id;
+            }
+          }
+        }
+        if (node.data.geo_string) {
+          const hasVariable = node.data.geo_string.match(/{{\w+}}/g);
+          if (hasVariable) {
+            const variables = hasVariable.map((s) => s.replace(/{{|}}/g, ""));
+            if (variables.length) await syncVariables(variables);
+          }
+        }
+      } else if (node.type === "NodeRemoveTrelloCard") {
+        if (node.data.varId_cardId) {
+          const getVar = await prisma.variable.findFirst({
+            where: { id: node.data.varId_cardId, type: "dynamics" },
+            select: { name: true },
+          });
+          if (getVar) {
+            const isVarExist = await prisma.variable.findFirst({
+              where: { accountId, name: getVar.name },
+              select: { id: true },
+            });
+            if (!isVarExist) {
+              const { id } = await prisma.variable.create({
+                data: {
+                  accountId,
+                  name: getVar.name,
+                  type: "dynamics",
+                },
+                select: { id: true },
+              });
+              node.data.varId_cardId = id;
+            } else {
+              node.data.varId_cardId = isVarExist.id;
+            }
+          }
+        }
+      } else if (node.type === "NodeUpdateAppointment") {
+        let appendText = "";
+        if (node.data.desc) appendText += `${node.data.desc} \n`;
+        if (node.data.n_appointment)
+          appendText += `${node.data.n_appointment} \n`;
+        if (node.data.startAt) appendText += `${node.data.startAt} \n`;
+        if (node.data.title) appendText += `${node.data.title} \n`;
+        if (appendText) {
+          const hasVariable = appendText.match(/{{\w+}}/g);
+          if (hasVariable) {
+            const variables = hasVariable.map((s) => s.replace(/{{|}}/g, ""));
+            if (variables.length) await syncVariables(variables);
+          }
+        }
+      } else if (node.type === "NodeUpdateRouter") {
+        let appendText = "";
+        if (node.data.max) appendText += `${node.data.max} \n`;
+        if (node.data.nOrder) appendText += `${node.data.nOrder} \n`;
+        if (node.data.nRouter) appendText += `${node.data.nRouter} \n`;
+        if (appendText) {
+          const hasVariable = appendText.match(/{{\w+}}/g);
+          if (hasVariable) {
+            const variables = hasVariable.map((s) => s.replace(/{{|}}/g, ""));
+            if (variables.length) await syncVariables(variables);
+          }
+        }
+      } else if (node.type === "NodeUpdateTrelloCard") {
+        let appendText = "";
+        if (node.data.desc) appendText += `${node.data.desc} \n`;
+        if (node.data.name) appendText += `${node.data.name} \n`;
+        if (appendText) {
+          const hasVariable = appendText.match(/{{\w+}}/g);
+          if (hasVariable) {
+            const variables = hasVariable.map((s) => s.replace(/{{|}}/g, ""));
+            if (variables.length) await syncVariables(variables);
+          }
+        }
+        if (node.data.varId_cardId) {
+          const getVar = await prisma.variable.findFirst({
+            where: { id: node.data.varId_cardId, type: "dynamics" },
+            select: { name: true },
+          });
+          if (getVar) {
+            const isVarExist = await prisma.variable.findFirst({
+              where: { accountId, name: getVar.name },
+              select: { id: true },
+            });
+            if (!isVarExist) {
+              const { id } = await prisma.variable.create({
+                data: {
+                  accountId,
+                  name: getVar.name,
+                  type: "dynamics",
+                },
+                select: { id: true },
+              });
+              node.data.varId_cardId = id;
+            } else {
+              node.data.varId_cardId = isVarExist.id;
+            }
+          }
+        }
+      } else if (node.type === "NodeWebhookTrelloCard") {
+        for await (const [key, value] of Object.entries(node.data)) {
+          if (key.includes("varId_") && value) {
+            const getVar = await prisma.variable.findFirst({
+              where: { id: value as number, type: "dynamics" },
+              select: { name: true },
+            });
+            if (getVar) {
+              const isVarExist = await prisma.variable.findFirst({
+                where: { accountId, name: getVar.name },
+                select: { id: true },
+              });
+              if (!isVarExist) {
+                const { id } = await prisma.variable.create({
+                  data: {
+                    accountId,
+                    name: getVar.name,
+                    type: "dynamics",
+                  },
+                  select: { id: true },
+                });
+                // @ts-expect-error
+                node.data[key] = id;
+              } else {
+                // @ts-expect-error
+                node.data[key] = isVarExist.id;
+              }
+            }
+          }
+        }
       }
     }
 
