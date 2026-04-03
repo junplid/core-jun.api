@@ -13,7 +13,7 @@ import {
   killConnectionWA,
   sessionsBaileysWA,
 } from "../../adapters/Baileys";
-import { cacheAccountSocket } from "./cache";
+import { cacheAccountSocket, connectedDevices, pairingCodes } from "./cache";
 import {
   cacheConnectionsWAOnline,
   cacheFlowsMap,
@@ -637,6 +637,47 @@ export const WebSocketIo = (io: Server) => {
     });
 
     // atualizar status do evento.
+  });
+
+  const agent = io.of("/agent");
+  agent.on("connection", (socket) => {
+    socket.on("CONNECT", async ({ deviceId }) => {
+      const exist = await prisma.menusOnline.findFirst({
+        where: { deviceId_app_agent: deviceId },
+        select: { id: true },
+      });
+      if (!exist) {
+        socket.emit("UNPAIR");
+        return;
+      }
+      const existingSocket = connectedDevices.get(deviceId);
+
+      if (existingSocket) {
+        existingSocket.disconnect();
+      }
+
+      connectedDevices.set(deviceId, socket);
+    });
+
+    socket.on("disconnect", () => {
+      for (const [deviceId, s] of connectedDevices.entries()) {
+        if (s.id === socket.id) {
+          connectedDevices.delete(deviceId);
+          break;
+        }
+      }
+
+      for (const [code, s] of pairingCodes.entries()) {
+        if (s.id === socket.id) {
+          pairingCodes.delete(code);
+          break;
+        }
+      }
+    });
+
+    socket.on("PAIR_INIT", ({ code }) => {
+      pairingCodes.set(code, socket);
+    });
   });
 };
 

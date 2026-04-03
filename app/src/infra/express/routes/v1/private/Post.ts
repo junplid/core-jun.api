@@ -71,6 +71,10 @@ import { getAccountsIgValidation } from "../../../../../core/getMetaAccountsIg/V
 import { getAccountsIgController } from "../../../../../core/getMetaAccountsIg";
 import { importFlowAccountValidation } from "../../../../../core/importFlowAccount/Validation";
 import { importFlowAccountController } from "../../../../../core/importFlowAccount";
+import { pairCodeDeviceValidation } from "../../../../../core/pairCodeDevice/Validation";
+import { pairCodeDeviceController } from "../../../../../core/pairCodeDevice";
+import { unpairCodeDeviceValidation } from "../../../../../core/unpairCodeDevice/Validation";
+import { unpairCodeDeviceController } from "../../../../../core/unpairCodeDevice";
 
 const RouterV1Private_Post = Router();
 
@@ -377,6 +381,20 @@ RouterV1Private_Post.post(
   csrfMiddleware,
   importFlowAccountValidation,
   importFlowAccountController,
+);
+
+RouterV1Private_Post.post(
+  "/menus-online/:uuid/pair-code-device",
+  csrfMiddleware,
+  pairCodeDeviceValidation,
+  pairCodeDeviceController,
+);
+
+RouterV1Private_Post.post(
+  "/menus-online/:uuid/unpair-code-device",
+  csrfMiddleware,
+  unpairCodeDeviceValidation,
+  unpairCodeDeviceController,
 );
 
 export default RouterV1Private_Post;

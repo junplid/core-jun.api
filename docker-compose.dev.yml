@@ -43,7 +43,8 @@ services:
       mongo_junplid_dev:
         condition: service_healthy
     ports:
-      - 127.0.0.1:4001:4001
+      # - 127.0.0.1:4001:4001
+      - 0.0.0.0:4001:4001
     stdin_open: true
     tty: true
     volumes:

@@ -1,0 +1,53 @@
+import { v4 } from "uuid";
+import { prisma } from "../../adapters/Prisma/client";
+import { connectedDevices, pairingCodes } from "../../infra/websocket/cache";
+import { ErrorResponse } from "../../utils/ErrorResponse";
+import { PairCodeDeviceDTO_I } from "./DTO";
+
+export class PairCodeDeviceUseCase {
+  constructor() {}
+
+  async run({ accountId, ...dto }: PairCodeDeviceDTO_I) {
+    const exist = await prisma.menusOnline.findFirst({
+      where: { accountId, uuid: dto.uuid },
+      select: { id: true },
+    });
+
+    if (!exist) {
+      throw new ErrorResponse(400).toast({
+        title: `Cardapio digital não encontrado.`,
+        type: "error",
+      });
+    }
+
+    try {
+      const deviceId = v4();
+      const socket = pairingCodes.get(dto.code);
+      if (!socket) {
+        throw new ErrorResponse(400).input({
+          path: "code",
+          text: "Codigo de pareamento invalido.",
+        });
+      }
+
+      connectedDevices.set(deviceId, socket);
+      socket.emit("PAIRED", { deviceId });
+      pairingCodes.delete(dto.code);
+
+      await prisma.menusOnline.update({
+        where: { id: exist.id },
+        data: { deviceId_app_agent: deviceId },
+      });
+
+      return {
+        message: "OK!",
+        status: 200,
+      };
+    } catch (error) {
+      throw new ErrorResponse(400).toast({
+        title: `Error ao tentar conectar disponitivo.`,
+        type: "error",
+      });
+    }
+  }
+}

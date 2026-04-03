@@ -1,3 +1,5 @@
+import { Socket } from "socket.io";
+
 interface CacheStateUserSocket {
   // accountId: number;
   listSocket: {
@@ -16,3 +18,6 @@ export const cacheRootSocket: string[] = [];
 
 export const cacheSocketHumanServiceUsers: Map<string, number> = new Map();
 // export const cacheStateUserSocket: Map<number, CacheStateUserSocket> = new Map();
+
+export const connectedDevices = new Map<string, Socket>();
+export const pairingCodes = new Map<string, Socket>();

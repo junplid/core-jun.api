@@ -3,6 +3,7 @@ import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import moment from "moment";
 import { MenuOnlineOperatingDays } from "@prisma/client";
+import { connectedDevices } from "../../infra/websocket/cache";
 
 function findNextOpening(
   OperatingDays: Omit<MenuOnlineOperatingDays, "id" | "menuId">[],
@@ -93,6 +94,7 @@ export class GetMenuOnlineUseCase {
         titlePage: true,
         bg_capa: true,
         connectionWAId: true,
+        deviceId_app_agent: true,
         MenuInfo: {
           select: {
             address: true,
@@ -151,10 +153,17 @@ export class GetMenuOnlineUseCase {
       helperTextOpening = "Desativado.";
     }
 
+    let status_device = false;
+    if (menu.deviceId_app_agent) {
+      const socket = connectedDevices.get(menu.deviceId_app_agent);
+      status_device = !!socket;
+    }
+
     return {
       message: "OK!",
       status: 200,
       menu: {
+        status_device,
         statusNow: !!statusMenu,
         statusMenu: status,
         helperTextOpening,
