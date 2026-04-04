@@ -180,7 +180,7 @@ export class CreateMenuOnlineItemUseCase {
       const stateWarn = [];
 
       if (!qnt) {
-        stateWarn.push("Estoque está 0(zero)");
+        stateWarn.push("Desativado");
       }
       if (!getCategories.length) {
         stateWarn.push("Sem categoria");

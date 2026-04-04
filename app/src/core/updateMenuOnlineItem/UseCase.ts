@@ -326,7 +326,7 @@ export class UpdateMenuOnlineItemUseCase {
         const stateWarn = [];
 
         if (!item.qnt) {
-          stateWarn.push("Estoque está 0(zero)");
+          stateWarn.push("Desativado");
         }
         if (!getCategories.length) {
           stateWarn.push("Sem categoria");

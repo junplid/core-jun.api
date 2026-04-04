@@ -97,7 +97,7 @@ export class GetMenuOnlineItemsUseCase {
         }
       }
       if (!c.qnt) {
-        stateWarn.push("Estoque está 0(zero)");
+        stateWarn.push("Desativado");
       }
       if (!Categories.length) {
         stateWarn.push("Sem categoria");
