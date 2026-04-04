@@ -1191,6 +1191,36 @@ export class ImportFlowAccountUseCase {
             }
           }
         }
+      } else if (node.type === "NodeGetMenuOnline") {
+        for await (const [key, value] of Object.entries(node.data)) {
+          if (key.includes("varId_") && value) {
+            const getVar = await prisma.variable.findFirst({
+              where: { id: value as number, type: "dynamics" },
+              select: { name: true },
+            });
+            if (getVar) {
+              const isVarExist = await prisma.variable.findFirst({
+                where: { accountId, name: getVar.name },
+                select: { id: true },
+              });
+              if (!isVarExist) {
+                const { id } = await prisma.variable.create({
+                  data: {
+                    accountId,
+                    name: getVar.name,
+                    type: "dynamics",
+                  },
+                  select: { id: true },
+                });
+                // @ts-expect-error
+                node.data[key] = id;
+              } else {
+                // @ts-expect-error
+                node.data[key] = isVarExist.id;
+              }
+            }
+          }
+        }
       }
     }
 

@@ -43,6 +43,7 @@ import { NodeGetRouter } from "./GetRouter";
 import { NodeUpdateRouter } from "./UpdateRouter";
 import { NodeDeleteRouterOrder } from "./DeleteRouterOrder";
 import { NodeNearestOrder } from "./NearestOrder";
+import { NodeGetMenuOnline } from "./GetMenuOnline";
 
 export const LibraryNodes = {
   NodeReply,
@@ -90,4 +91,5 @@ export const LibraryNodes = {
   NodeUpdateRouter,
   NodeDeleteRouterOrder,
   NodeNearestOrder,
+  NodeGetMenuOnline,
 };

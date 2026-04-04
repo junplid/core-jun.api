@@ -3830,6 +3830,68 @@ export const NodeControler = ({
           });
         return;
       }
+      if (currentNode.type === "NodeGetMenuOnline") {
+        if (props.mode === "testing") {
+          await SendMessageText({
+            mode: "testing",
+            accountId: props.accountId,
+            role: "system",
+            text: `Log: Buscando cardápio digital`,
+            token_modal_chat_template: props.token_modal_chat_template,
+          });
+        }
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodeGetMenuOnline({
+          ...(props.mode === "prod"
+            ? {
+                contactsWAOnAccountId: props.contactAccountId,
+                data: currentNode.data,
+                accountId: props.accountId,
+                mode: "prod",
+              }
+            : {
+                mode: "testing",
+                accountId: props.accountId,
+                token_modal_chat_template: props.token_modal_chat_template,
+              }),
+        })
+          .then(async (action) => {
+            const isNextNodeMain = nextEdgesIds.find((nh) =>
+              nh.sourceHandle?.includes(action === "ok" ? "main" : action),
+            );
+
+            if (!isNextNodeMain) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              await props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return;
+            }
+
+            return execute({
+              ...props,
+              type: "initial",
+              currentNodeId: isNextNodeMain.id,
+              oldNodeId: currentNode.id,
+              ...(props.mode === "prod" && {
+                isSavePositionLead: false,
+              }),
+            });
+          })
+          .catch((error) => {
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
 
       return res();
     };

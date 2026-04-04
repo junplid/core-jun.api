@@ -460,6 +460,42 @@ export type NodeUpdateAppointmentData = {
   reminders?: Date[];
 };
 
+export type NodeGetMenuOnlineData = {
+  // nMenuOnline: string;
+  fields?: (
+    | "identifier"
+    | "desc"
+    | "deviceId_app_agent"
+    | "device_online"
+    | "titlePage"
+    | "link"
+    | "address"
+    | "lat"
+    | "lng"
+    | "state_uf"
+    | "city"
+    | "phone_contact"
+    | "whatsapp_contact"
+    | "delivery_fee"
+    | "city"
+  )[];
+
+  varId_save_identifier?: number;
+  varId_save_desc?: number;
+  varId_save_deviceId_app_agent?: number;
+  varId_save_titlePage?: number;
+  varId_save_link?: number;
+  varId_save_address?: number;
+  varId_save_lat?: number;
+  varId_save_lng?: number;
+  varId_save_state_uf?: number;
+  varId_save_city?: number;
+  varId_save_phone_contact?: number;
+  varId_save_whatsapp_contact?: number;
+  varId_save_delivery_fee?: number;
+  varId_save_device_online?: number;
+};
+
 export type TypeNodesPayload =
   | "NodeInitial"
   | "NodeFinish"
@@ -507,7 +543,8 @@ export type TypeNodesPayload =
   | "NodeGetRouter"
   | "NodeUpdateRouter"
   | "NodeAppendRouter"
-  | "NodeNearestOrder";
+  | "NodeNearestOrder"
+  | "NodeGetMenuOnline";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -558,4 +595,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeUpdateRouter"; data: NodeUpdateRouterData }
   | { type: "NodeAppendRouter"; data: NodeAppendRouterData }
   | { type: "NodeNearestOrder"; data: NodeNearestOrderData }
+  | { type: "NodeGetMenuOnline"; data: NodeGetMenuOnlineData }
 );
