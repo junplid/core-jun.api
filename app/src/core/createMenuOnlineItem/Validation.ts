@@ -44,7 +44,7 @@ export const createMenuOnlineItemValidation = (
       .items(
         Joi.object({
           title: Joi.string().optional().allow(""),
-          helpText: Joi.string().optional().allow(""),
+          helpText: Joi.string().optional().allow("", null),
           required: Joi.boolean().optional(),
           minOptions: resolverNumberNull,
           maxOptions: resolverNumberNull,
@@ -54,7 +54,7 @@ export const createMenuOnlineItemValidation = (
               Joi.object({
                 image55x55png: Joi.string().allow("", null).optional(),
                 name: Joi.string().required(),
-                desc: Joi.string().allow("").optional(),
+                desc: Joi.string().allow("", null).optional(),
                 status: Joi.boolean().required(),
                 before_additional_price: resolverPrice,
                 after_additional_price: resolverPrice,
