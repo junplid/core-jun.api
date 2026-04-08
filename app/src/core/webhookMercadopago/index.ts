@@ -27,30 +27,24 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
       return res.status(200).send("OK");
     }
     const paymentId = req.body.data.id;
-    console.log({ paymentId });
     if (!paymentId) {
       return res.status(400).send("Missing payload.data.id");
     }
-    console.log(1);
     const getCredentials = await prisma.charges.findFirst({
       where: { txid: paymentId },
       select: { PaymentIntegration: { select: { credentials: true } } },
     });
-    console.log(2);
     if (!getCredentials || !getCredentials.PaymentIntegration) {
       return res.status(200).send("OK");
     }
-    console.log(3);
     const credentials = decrypte(
       getCredentials.PaymentIntegration?.credentials,
     );
-    console.log(4);
     const xSignature = req.header("x-signature");
     const xRequestId = req.header("x-request-id");
     if (!xSignature || !xRequestId) {
       return res.status(400).send("Headers missing");
     }
-    console.log(5);
     const parts = xSignature.split(",");
     let ts: string | undefined;
     let signatureHash: string | undefined;
@@ -62,7 +56,6 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
     if (!ts || !signatureHash) {
       return res.status(400).send("Invalid x-signature format");
     }
-    console.log(6);
 
     const manifest = `id:${paymentId};request-id:${xRequestId};ts:${ts};`;
 
@@ -78,7 +71,6 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
     ) {
       return res.status(401).send("Invalid signature");
     }
-    console.log(7);
 
     // const nowSec = Math.floor(Date.now() / 1000);
     // const tsSec = Math.floor(parseInt(ts, 10) / 1000);
@@ -86,8 +78,6 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
     // if (Math.abs(nowSec - tsSec) > tolerance) {
     //   return res.status(400).send("Timestamp outside of tolerance");
     // }
-
-    console.log("2");
 
     (async () => {
       try {
@@ -101,6 +91,9 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
             flowStateId: true,
             total: true,
             businessId: true,
+            Order: {
+              select: { id: true, status: true },
+            },
           },
         });
 
@@ -113,13 +106,10 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
 
         const getpayment = new Payment(client);
         const payment = await getpayment.get({ id: paymentId });
-        console.log("3");
 
         if (payment.status === getCharge.status) return;
-        console.log("4");
 
         if (payment.status === "pending") return;
-        console.log("5");
 
         await prisma.charges.update({
           where: { id: getCharge.id },
@@ -128,7 +118,6 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
             net_total: payment.net_amount || 0,
           },
         });
-        console.log("6");
 
         if (!getCharge.flowStateId) return;
 
@@ -265,6 +254,19 @@ export const mercadopagoWebhook = async (req: Request, res: Response) => {
 </span>`,
             onFilterSocket: (sockets) => [],
           });
+        }
+
+        if (getCharge.Order?.id) {
+          webSocketEmitToRoom()
+            .account(getCharge.accountId)
+            .orders.update_order(
+              {
+                id: getCharge.Order.id,
+                status: getCharge.Order.status,
+                charge_status: payment.status,
+              },
+              [],
+            );
         }
 
         if (!nextNode) return;

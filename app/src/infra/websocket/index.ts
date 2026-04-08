@@ -786,6 +786,14 @@ export const webSocketEmitToRoom = () => {
               .emit("remove_ticket", args);
           },
         },
+        agent_app: (deviceId: string) => {
+          const socketDevice = connectedDevices.get(deviceId);
+          return {
+            print: (args: any, ignore: string[]) => {
+              return socketDevice?.except(ignore).emit(`PRINT_ORDER`, args);
+            },
+          };
+        },
         ticket_chat: (id: number) => {
           return {
             message_eco: (args: any, ignore: string[]) => {

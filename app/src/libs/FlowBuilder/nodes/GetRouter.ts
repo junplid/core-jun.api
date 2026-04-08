@@ -497,7 +497,11 @@ export const NodeGetRouter = async (
           },
           select: { id: true },
         });
-        const link = `http://localhost:4001/v1/public/join-router/${resolvercode}?fsid=${props.flowStateId}&nl=`;
+        const ll =
+          process.env.NODE_ENV === "prod"
+            ? "https://app.junplid.com.br"
+            : "http://localhost:5173";
+        const link = `${ll}/router-orders/${resolvercode}?fsid=${props.flowStateId}&nlid=`;
         if (!picked) {
           await prisma.contactsWAOnAccountVariable.create({
             data: {

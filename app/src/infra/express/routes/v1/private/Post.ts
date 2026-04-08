@@ -75,6 +75,8 @@ import { pairCodeDeviceValidation } from "../../../../../core/pairCodeDevice/Val
 import { pairCodeDeviceController } from "../../../../../core/pairCodeDevice";
 import { unpairCodeDeviceValidation } from "../../../../../core/unpairCodeDevice/Validation";
 import { unpairCodeDeviceController } from "../../../../../core/unpairCodeDevice";
+import { createTestPrintValidation } from "../../../../../core/createTestPrint/Validation";
+import { createTestPrintController } from "../../../../../core/createTestPrint";
 
 const RouterV1Private_Post = Router();
 
@@ -395,6 +397,13 @@ RouterV1Private_Post.post(
   csrfMiddleware,
   unpairCodeDeviceValidation,
   unpairCodeDeviceController,
+);
+
+RouterV1Private_Post.post(
+  "/menus-online/:uuid/test-print",
+  csrfMiddleware,
+  createTestPrintValidation,
+  createTestPrintController,
 );
 
 export default RouterV1Private_Post;

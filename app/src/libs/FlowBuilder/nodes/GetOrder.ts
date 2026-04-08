@@ -2,6 +2,8 @@ import { NodeGetOrderData } from "../Payload";
 import { prisma } from "../../../adapters/Prisma/client";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
+import { Decimal } from "@prisma/client/runtime/library";
+import { formatToBRL } from "brazilian-values";
 
 type PropsGetOrder =
   | {
@@ -19,6 +21,30 @@ type PropsGetOrder =
       token_modal_chat_template: string;
       accountId: number;
     };
+
+interface ItemDraft {
+  title: string;
+  price: Decimal | null;
+  obs: string | null;
+  side_dishes: string | null;
+}
+
+function formatOrder(itemsDraft: ItemDraft[]) {
+  const itemsText = itemsDraft
+    .map((item) => {
+      let header = `*${item.title}*`;
+      if ((item.price?.toNumber() || 0) > 0) {
+        header += `  ${formatToBRL(item.price?.toNumber() || 0)}`;
+      }
+
+      const obs = item.obs ? `Obs: _${item.obs}_` : "";
+
+      return [header, item.side_dishes, obs].filter(Boolean).join("\n");
+    })
+    .join("\n\n");
+
+  return itemsText;
+}
 
 export const NodeGetOrder = async (
   props: PropsGetOrder,
@@ -64,6 +90,9 @@ export const NodeGetOrder = async (
         status: true,
         ContactsWAOnAccount: {
           select: { ContactsWA: { select: { realNumber: true } } },
+        },
+        Items: {
+          select: { obs: true, price: true, side_dishes: true, title: true },
         },
       },
     });
@@ -317,6 +346,42 @@ export const NodeGetOrder = async (
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
               value: getorder.data || "<empty>",
+            },
+          });
+        }
+      }
+    }
+    if (fields.includes("data_items") && restData.varId_save_data_items) {
+      const exist = await prisma.variable.findFirst({
+        where: { id: restData.varId_save_data_items, type: "dynamics" },
+        select: { id: true },
+      });
+
+      if (exist && getorder.Items.length) {
+        const dataItems = formatOrder(getorder.Items);
+
+        const picked = await prisma.contactsWAOnAccountVariable.findFirst({
+          where: {
+            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            variableId: exist.id,
+          },
+          select: { id: true },
+        });
+        if (!picked) {
+          await prisma.contactsWAOnAccountVariable.create({
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: dataItems || "",
+            },
+          });
+        } else {
+          await prisma.contactsWAOnAccountVariable.update({
+            where: { id: picked.id },
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: dataItems || "",
             },
           });
         }

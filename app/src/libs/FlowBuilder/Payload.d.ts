@@ -237,6 +237,10 @@ export type NodeCreateOrderData = {
   sync_order_existing_code?: string;
 };
 
+export type NodePrintOrderData = {
+  nOrder: string;
+};
+
 export type NodeAppendRouterData = {
   nOrder: string;
   max?: string;
@@ -289,6 +293,7 @@ export type NodeGetOrderData = {
     | "delivery_address"
     | "total"
     | "data"
+    | "data_items"
     | "number_contact"
     | "router_code"
     | "delivery_code"
@@ -302,6 +307,7 @@ export type NodeGetOrderData = {
   varId_save_delivery_address?: number;
   varId_save_total?: number;
   varId_save_data?: number;
+  varId_save_data_items?: number;
   varId_save_number_contact?: number;
 
   varId_save_router_code?: number;
@@ -544,7 +550,8 @@ export type TypeNodesPayload =
   | "NodeUpdateRouter"
   | "NodeAppendRouter"
   | "NodeNearestOrder"
-  | "NodeGetMenuOnline";
+  | "NodeGetMenuOnline"
+  | "NodePrintOrderData";
 
 export type NodePayload = { id: string } & (
   | { type: "NodeInitial" }
@@ -596,4 +603,5 @@ export type NodePayload = { id: string } & (
   | { type: "NodeAppendRouter"; data: NodeAppendRouterData }
   | { type: "NodeNearestOrder"; data: NodeNearestOrderData }
   | { type: "NodeGetMenuOnline"; data: NodeGetMenuOnlineData }
+  | { type: "NodePrintOrder"; data: NodePrintOrderData }
 );

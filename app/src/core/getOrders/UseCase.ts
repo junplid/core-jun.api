@@ -2,6 +2,8 @@ import { GetOrdersDTO_I } from "./DTO";
 import { prisma } from "../../adapters/Prisma/client";
 import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 import { ErrorResponse } from "../../utils/ErrorResponse";
+import { formatToBRL } from "brazilian-values";
+import { Decimal } from "@prisma/client/runtime/library";
 
 const select = {
   id: true,
@@ -19,6 +21,30 @@ const select = {
   rank: true,
   isDragDisabled: true,
 };
+
+interface ItemDraft {
+  title: string;
+  price: Decimal | null;
+  obs: string | null;
+  side_dishes: string | null;
+}
+
+function formatOrder(itemsDraft: ItemDraft[]): Readonly<string> {
+  const itemsText = itemsDraft
+    .map((item) => {
+      let header = `*${item.title}*`;
+      if ((item.price?.toNumber() || 0) > 0) {
+        header += `  ${formatToBRL(item.price?.toNumber() || 0)}`;
+      }
+
+      const obs = item.obs ? `Obs: _${item.obs}_` : "";
+
+      return [header, item.side_dishes, obs].filter(Boolean).join("\n");
+    })
+    .join("\n\n");
+
+  return itemsText;
+}
 
 export class GetOrdersUseCase {
   constructor() {}
@@ -53,6 +79,7 @@ export class GetOrdersUseCase {
               sub_total: true,
               description: true,
               origin: true,
+              Charges: { select: { status: true } },
               menuOnline: {
                 select: {
                   MenuInfo: { select: { lat: true, lng: true } },
@@ -60,6 +87,14 @@ export class GetOrdersUseCase {
               },
               OrderAdjustments: {
                 select: { amount: true, label: true, type: true },
+              },
+              Items: {
+                select: {
+                  obs: true,
+                  price: true,
+                  title: true,
+                  side_dishes: true,
+                },
               },
               ContactsWAOnAccount: {
                 select: {
@@ -106,8 +141,17 @@ export class GetOrdersUseCase {
                 delivery_lat,
                 delivery_lng,
                 menuOnline,
+                Charges, // mostrar status do pagamento.
+                data,
+                Items,
                 ...order
               }) => {
+                const dataItems = formatOrder(Items);
+                let nextData = dataItems;
+                if (data) {
+                  nextData += `\n${data}`;
+                }
+
                 return {
                   ...order,
                   ...(delivery_lat &&
@@ -119,6 +163,8 @@ export class GetOrdersUseCase {
                         `&origin=${menuOnline?.MenuInfo?.lat},${menuOnline.MenuInfo.lng}` +
                         `&destination=${delivery_lat},${delivery_lng}`,
                     }),
+                  data: nextData,
+                  charge_status: Charges.length ? Charges[0].status : undefined,
                   sub_total: order.sub_total?.toNumber(),
                   total: order.total?.toNumber(),
                   net_total: order.net_total?.toNumber(),

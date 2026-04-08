@@ -1,15 +1,14 @@
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { CreateMenuOnlineOrderDTO_I } from "./DTO";
-import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 import { genNumCode } from "../../utils/genNumCode";
 import { NotificationApp } from "../../utils/notificationApp";
-import { webSocketEmitToRoom } from "../../infra/websocket";
 import { formatToBRL } from "brazilian-values";
 import { OrderAdjustments } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 
 interface ItemDraft {
+  id: number;
   obs?: string;
   title: string;
   qnt: number;
@@ -25,32 +24,58 @@ interface ItemDraft {
   } | null)[];
 }
 
+function formatOrderTitle(item: {
+  title: string;
+  qnt: number;
+  price_un: number;
+}) {
+  let header = `*${item.qnt}x ${item.title}*`;
+  if (item.price_un > 0) {
+    header += `  ${formatToBRL(item.price_un)}`;
+  }
+
+  return header;
+}
+
+function formatOrderSections(
+  sections: ({
+    title: string | null;
+    subItems: ({
+      name: string;
+      price_un: number;
+      total: number;
+      qnt: number;
+    } | null)[];
+  } | null)[],
+) {
+  const itemsText = (sections || [])
+    .filter(Boolean)
+    .map((section) => {
+      const subs = (section?.subItems || [])
+        .filter((s) => s)
+        .map(
+          (sub) =>
+            `  • ${(sub?.qnt || 1) > 1 ? `${sub?.qnt}x` : ""} ${sub!.name} ${sub?.total ? `+${formatToBRL(sub.total)}` : ""}`,
+        )
+        .join("\n");
+
+      if (!subs) return "";
+      return `${section?.title || "Adicionais"}:\n${subs}`;
+    })
+    .join("\n");
+
+  return itemsText;
+}
+
 function formatOrderWhatsapp(itemsDraft: ItemDraft[]) {
   const itemsText = itemsDraft
     .map((item) => {
-      let header = `*${item.qnt}x ${item.title}*`;
-      if (item.price_un > 0) {
-        header += `\n${formatToBRL(item.price_un)}`;
-      }
-
-      const sections = (item.sections || [])
-        .filter(Boolean)
-        .map((section) => {
-          const subs = (section?.subItems || [])
-            .filter((s) => s)
-            .map(
-              (sub) =>
-                `   • ${(sub?.qnt || 1) > 1 ? `${sub?.qnt}x` : ""} ${sub!.name} ${sub?.total ? `+${formatToBRL(sub.total)}` : ""}`,
-            )
-            .join("\n");
-
-          if (!subs) return "";
-
-          return `${section?.title || "Adicionais"}:\n${subs}`;
-        })
-        .filter(Boolean)
-        .join("\n");
-
+      const header = formatOrderTitle({
+        price_un: item.price_un,
+        qnt: item.qnt,
+        title: item.title,
+      });
+      const sections = formatOrderSections(item.sections);
       const obs = item.obs ? `Obs: _${item.obs}_` : "";
 
       return [header, sections, obs].filter(Boolean).join("\n");
@@ -154,6 +179,7 @@ export class CreateMenuOnlineOrderUseCase {
       );
 
       itemsDraft.push({
+        id: getItem.id,
         obs: item.obs,
         title: getItem.name,
         qnt: item.qnt,
@@ -221,9 +247,8 @@ export class CreateMenuOnlineOrderUseCase {
     const net_total = totalAdjustment + total;
 
     try {
-      let dataOrder = "🔴 A confirmar\n\n";
-      dataOrder += formatOrderWhatsapp(itemsDraft);
       const n_order = genNumCode(6);
+      const tracking_code = genNumCode(4);
 
       const last = await prisma.orders.findFirst({
         where: {
@@ -242,6 +267,7 @@ export class CreateMenuOnlineOrderUseCase {
           data: {
             rank: newRank,
             n_order,
+            tracking_code,
             accountId: exist.accountId,
             businessId: exist.ConnectionWA.businessId,
             connectionWAId: exist.ConnectionWA.id,
@@ -257,7 +283,25 @@ export class CreateMenuOnlineOrderUseCase {
             total: nextTotal,
             sub_total: total,
             status: "pending",
-            data: dataOrder,
+            // data: dataOrder,
+            data: "",
+            Items: {
+              createMany: {
+                data: itemsDraft.map((ii) => {
+                  return {
+                    title: formatOrderTitle({
+                      price_un: ii.price_un,
+                      title: ii.title,
+                      qnt: ii.qnt,
+                    }),
+                    itemId: ii.id,
+                    obs: ii.obs,
+                    price: ii.price_un,
+                    side_dishes: formatOrderSections(ii.sections),
+                  };
+                }),
+              },
+            },
           },
           select: {
             id: true,
@@ -265,7 +309,6 @@ export class CreateMenuOnlineOrderUseCase {
             OrderAdjustments: {
               select: { amount: true, label: true, type: true },
             },
-            priority: true,
             Business: { select: { name: true, id: true } },
             ContactsWAOnAccount: {
               select: {
