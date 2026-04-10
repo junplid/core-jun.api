@@ -958,6 +958,7 @@ type PropsNodeAgentAI =
         | { type: "baileys" }
         | { type: "instagram"; page_token: string };
 
+      chatbotId?: number;
       data: NodeAgentAIData;
       audioPath?: string;
       message?: { value: string; isDev: boolean };
@@ -2064,6 +2065,8 @@ export const NodeAgentAI = async ({
                                           props.contactAccountId,
                                         flowStateId: props.flowStateId,
                                         lead_id: props.lead_id,
+                                        flowId: props.flowId,
+                                        chatbotId: props.chatbotId,
                                         external_adapter:
                                           props.external_adapter,
                                         action: {

@@ -1145,6 +1145,8 @@ export const NodeControler = ({
                     }
                   },
                 },
+                flowId: props.flowId,
+                chatbotId: props.chatbotId,
                 connectionId: props.connectionId,
                 contactAccountId: props.contactAccountId,
                 external_adapter: props.external_adapter,
@@ -1516,6 +1518,7 @@ export const NodeControler = ({
             ? {
                 mode: "prod",
                 lead_id: props.lead_id,
+                chatbotId: props.chatbotId,
                 connectionId: props.connectionId,
                 contactAccountId: props.contactAccountId,
                 external_adapter: props.external_adapter,
@@ -2488,28 +2491,53 @@ export const NodeControler = ({
                 oldNodeId: currentNode.id,
               });
             } else {
-              const nextNode = nextEdgesIds.find(
-                (s) => s.sourceHandle === "#b99909 action",
-              );
-              if (!nextNode) {
-                cacheFlowInExecution.delete(keyMap);
-                if (props.forceFinish) await props.actions?.onFinish?.("110");
-                await props.actions?.onExecutedNode?.({
-                  id: "0",
-                  flowId: props.flowId,
+              if (action === "not_found") {
+                const nextNode = nextEdgesIds.find((s) =>
+                  s.sourceHandle?.includes(action),
+                );
+                if (!nextNode) {
+                  cacheFlowInExecution.delete(keyMap);
+                  if (props.forceFinish) await props.actions?.onFinish?.("110");
+                  await props.actions?.onExecutedNode?.({
+                    id: "0",
+                    flowId: props.flowId,
+                  });
+                  return;
+                }
+                return execute({
+                  ...props,
+                  type: "running",
+                  message: action,
+                  currentNodeId: nextNode.id,
+                  oldNodeId: currentNode.id,
+                  ...(props.mode === "prod" && {
+                    isSavePositionLead: false,
+                  }),
                 });
-                return;
+              } else {
+                const nextNode = nextEdgesIds.find(
+                  (s) => s.sourceHandle === "#b99909 action",
+                );
+                if (!nextNode) {
+                  cacheFlowInExecution.delete(keyMap);
+                  if (props.forceFinish) await props.actions?.onFinish?.("110");
+                  await props.actions?.onExecutedNode?.({
+                    id: "0",
+                    flowId: props.flowId,
+                  });
+                  return;
+                }
+                return execute({
+                  ...props,
+                  type: "running",
+                  message: action,
+                  currentNodeId: nextNode.id,
+                  oldNodeId: currentNode.id,
+                  ...(props.mode === "prod" && {
+                    isSavePositionLead: false,
+                  }),
+                });
               }
-              return execute({
-                ...props,
-                type: "running",
-                message: action,
-                currentNodeId: nextNode.id,
-                oldNodeId: currentNode.id,
-                ...(props.mode === "prod" && {
-                  isSavePositionLead: false,
-                }),
-              });
             }
             return;
           })
@@ -3863,6 +3891,73 @@ export const NodeControler = ({
           .then(async (action) => {
             const isNextNodeMain = nextEdgesIds.find((nh) =>
               nh.sourceHandle?.includes(action === "ok" ? "main" : action),
+            );
+
+            if (!isNextNodeMain) {
+              cacheFlowInExecution.delete(keyMap);
+              if (props.forceFinish) await props.actions?.onFinish?.("110");
+              await props.actions?.onExecutedNode?.({
+                id: "0",
+                flowId: props.flowId,
+              });
+              return;
+            }
+
+            return execute({
+              ...props,
+              type: "initial",
+              currentNodeId: isNextNodeMain.id,
+              oldNodeId: currentNode.id,
+              ...(props.mode === "prod" && {
+                isSavePositionLead: false,
+              }),
+            });
+          })
+          .catch((error) => {
+            cacheFlowInExecution.delete(keyMap);
+            props.actions?.onErrorNumber && props.actions?.onErrorNumber();
+            return res();
+          });
+        return;
+      }
+      if (currentNode.type === "NodePrintOrder") {
+        if (props.mode === "testing") {
+          await SendMessageText({
+            mode: "testing",
+            accountId: props.accountId,
+            role: "system",
+            text: `Log: Imprimindo pedido`,
+            token_modal_chat_template: props.token_modal_chat_template,
+          });
+        }
+        if (props.actions?.onEnterNode) {
+          await props.actions?.onEnterNode({
+            id: currentNode.id,
+            flowId: props.flowId,
+          });
+        }
+        await LibraryNodes.NodePrintOrder({
+          ...(props.mode === "prod"
+            ? {
+                numberLead: props.lead_id,
+                contactsWAOnAccountId: props.contactAccountId,
+                data: currentNode.data,
+                accountId: props.accountId,
+                nodeId: currentNode.id,
+                mode: "prod",
+              }
+            : {
+                mode: "testing",
+                accountId: props.accountId,
+                token_modal_chat_template: props.token_modal_chat_template,
+              }),
+        })
+          .then(async (action) => {
+            console.log({ actionPrinter: action });
+            const isNextNodeMain = nextEdgesIds.find((nh) =>
+              nh.sourceHandle?.includes(
+                !action ? "main" : action === "ok" ? "main" : action,
+              ),
             );
 
             if (!isNextNodeMain) {

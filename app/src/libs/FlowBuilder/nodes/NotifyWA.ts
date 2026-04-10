@@ -5,6 +5,8 @@ import { resolveJid } from "../../../utils/resolveJid";
 import { NodeMessage } from "./Message";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
+import { webSocketEmitToRoom } from "../../../infra/websocket";
+import { resolveHourAndMinute } from "../../../utils/resolveHour:mm";
 
 type PropsNodeNotifyWA =
   | {
@@ -21,6 +23,8 @@ type PropsNodeNotifyWA =
       ticketProtocol?: string;
       nodeId: string;
       flowStateId: number;
+      flowId: string;
+      chatbotId?: number;
       action: { onErrorClient?(): void };
       mode: "prod";
     }
@@ -246,6 +250,35 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
 
     try {
       if (props.mode === "prod") {
+        let currentIndexNodeLead = await prisma.flowState.findFirst({
+          where: {
+            connectionWAId: props.connectionId,
+            contactsWAOnAccountId: idContact.id,
+            isFinish: false,
+          },
+          select: { id: true },
+        });
+        if (!currentIndexNodeLead) {
+          currentIndexNodeLead = await prisma.flowState.create({
+            data: {
+              connectionWAId: props.connectionId,
+              contactsWAOnAccountId: idContact.id,
+              indexNode: "0",
+              flowId: props.flowId,
+              chatbotId: props.chatbotId,
+            },
+            select: {
+              id: true,
+            },
+          });
+          webSocketEmitToRoom()
+            .account(props.accountId)
+            .dashboard.dashboard_services({
+              delta: +1,
+              hour: resolveHourAndMinute(),
+            });
+        }
+
         dataText = await resolveTextVariables(
           {
             accountId: props.accountId,
@@ -258,6 +291,10 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
             {
               name: "JUN_NUMERO_LEAD_WHATSAPP_NOTIFY",
               value: idContact.lead_id,
+            },
+            {
+              name: "JUN_FSID_NOTIFY",
+              value: String(currentIndexNodeLead.id),
             },
           ],
         );
@@ -278,7 +315,7 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
             ],
           },
           external_adapter: props.external_adapter,
-          flowStateId: props.flowStateId,
+          flowStateId: currentIndexNodeLead.id,
           lead_id: idContact.lead_id,
           nodeId: props.nodeId,
           mode: "prod",
@@ -303,6 +340,7 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
           mode: "testing",
         });
       }
+
       continue;
     } catch (error) {
       continue;

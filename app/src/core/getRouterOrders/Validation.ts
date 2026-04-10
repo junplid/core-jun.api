@@ -1,24 +1,23 @@
 import { NextFunction, Request, Response } from "express";
 import {
-  JoinRouterBodyDTO_I,
-  JoinRouterParamsDTO_I,
-  JoinRouterQueryDTO_I,
+  GetRouterOrdersBodyDTO_I,
+  GetRouterOrdersParamsDTO_I,
+  GetRouterOrdersQueryDTO_I,
 } from "./DTO";
 import { Joi } from "express-validation";
 
-export const joinRouterValidation = (
+export const getRouterOrdersValidation = (
   req: Request<
-    JoinRouterParamsDTO_I,
+    GetRouterOrdersParamsDTO_I,
     any,
-    JoinRouterBodyDTO_I,
-    JoinRouterQueryDTO_I
+    GetRouterOrdersBodyDTO_I,
+    GetRouterOrdersQueryDTO_I
   >,
   res: Response,
   next: NextFunction,
 ) => {
   const schemaValidation = Joi.object({
     code: Joi.string().required(),
-    fsid: Joi.number().required(),
     nlid: Joi.string().required(),
   });
 
@@ -35,8 +34,6 @@ export const joinRouterValidation = (
     }));
     return res.status(400).json({ errors });
   }
-
-  req.query.fsid = validation.value.fsid;
 
   next();
 };

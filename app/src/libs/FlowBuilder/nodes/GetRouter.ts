@@ -501,16 +501,12 @@ export const NodeGetRouter = async (
           process.env.NODE_ENV === "prod"
             ? "https://app.junplid.com.br"
             : "http://localhost:5173";
-        const link = `${ll}/router-orders/${resolvercode}?fsid=${props.flowStateId}&nlid=`;
+        const link = `${ll}/router-orders/${resolvercode}`;
         if (!picked) {
           await prisma.contactsWAOnAccountVariable.create({
             data: {
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
-              // value: `https://`,
-              // pelo flowStateId tem o flowId
-              // se o motoboy não tiver com um flowstate pro mesmo flowId então cria um como se fosse campanha.
-              // manda para o node de "Rota foi aceita".
               value: link,
             },
           });

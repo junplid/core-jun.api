@@ -24,15 +24,8 @@ interface ItemDraft {
   } | null)[];
 }
 
-function formatOrderTitle(item: {
-  title: string;
-  qnt: number;
-  price_un: number;
-}) {
-  let header = `*${item.qnt}x ${item.title}*`;
-  if (item.price_un > 0) {
-    header += `  ${formatToBRL(item.price_un)}`;
-  }
+function formatOrderTitle(item: { title: string; qnt: number }) {
+  let header = `${item.qnt}x ${item.title}`;
 
   return header;
 }
@@ -63,24 +56,6 @@ function formatOrderSections(
       return `${section?.title || "Adicionais"}:\n${subs}`;
     })
     .join("\n");
-
-  return itemsText;
-}
-
-function formatOrderWhatsapp(itemsDraft: ItemDraft[]) {
-  const itemsText = itemsDraft
-    .map((item) => {
-      const header = formatOrderTitle({
-        price_un: item.price_un,
-        qnt: item.qnt,
-        title: item.title,
-      });
-      const sections = formatOrderSections(item.sections);
-      const obs = item.obs ? `Obs: _${item.obs}_` : "";
-
-      return [header, sections, obs].filter(Boolean).join("\n");
-    })
-    .join("\n\n");
 
   return itemsText;
 }
@@ -290,7 +265,6 @@ export class CreateMenuOnlineOrderUseCase {
                 data: itemsDraft.map((ii) => {
                   return {
                     title: formatOrderTitle({
-                      price_un: ii.price_un,
                       title: ii.title,
                       qnt: ii.qnt,
                     }),

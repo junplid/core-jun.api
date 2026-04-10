@@ -4,7 +4,7 @@ export interface JoinRouterParamsDTO_I {
 
 export interface JoinRouterQueryDTO_I {
   fsid: number; // flowStateId;
-  nl: string; // número do contato
+  nlid: string; // número do contato
 }
 
 export interface JoinRouterBodyDTO_I {}

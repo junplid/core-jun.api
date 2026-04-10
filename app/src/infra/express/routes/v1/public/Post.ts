@@ -30,6 +30,14 @@ import { itauPixWebhook } from "../../../../../services/itau/itau.pix.webhook";
 import { metaWebhook } from "../../../../../services/meta/meta.webhook";
 import { decrypte } from "../../../../../libs/encryption";
 import { csrfMiddleware } from "../../../../middlewares/csrf";
+import { joinRouterValidation } from "../../../../../core/joinRouter/Validation";
+import { joinRouterController } from "../../../../../core/joinRouter";
+import { collectRouteOrderValidation } from "../../../../../core/collectRouteOrder/Validation";
+import { collectRouteOrderController } from "../../../../../core/collectRouteOrder";
+import { deliveryCodeRouteOrderValidation } from "../../../../../core/deliveryCodeRouteOrder/Validation";
+import { deliveryCodeRouteOrderController } from "../../../../../core/deliveryCodeRouteOrder";
+import { completeRouterValidation } from "../../../../../core/completeRouter/Validation";
+import { completeRouterController } from "../../../../../core/completeRouter";
 
 const RouterV1Public_Post = Router();
 
@@ -294,5 +302,29 @@ RouterV1Public_Post.post("/webhook/trello", (req: Request, res: Response) => {
 });
 
 RouterV1Public_Post.post("/meta/webhook", metaWebhook);
+
+RouterV1Public_Post.post(
+  "/router-orders/:code/join",
+  joinRouterValidation,
+  joinRouterController,
+);
+
+RouterV1Public_Post.post(
+  "/router-orders/:code/collect/:n_order",
+  collectRouteOrderValidation,
+  collectRouteOrderController,
+);
+
+RouterV1Public_Post.post(
+  "/router-orders/:code/delivery-code/:delivery_code",
+  deliveryCodeRouteOrderValidation,
+  deliveryCodeRouteOrderController,
+);
+
+RouterV1Public_Post.post(
+  "/router-orders/:code/complete",
+  completeRouterValidation,
+  completeRouterController,
+);
 
 export default RouterV1Public_Post;

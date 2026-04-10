@@ -32,7 +32,7 @@ interface ItemDraft {
 function formatOrder(itemsDraft: ItemDraft[]): Readonly<string> {
   const itemsText = itemsDraft
     .map((item) => {
-      let header = `*${item.title}*`;
+      let header = item.title;
       if ((item.price?.toNumber() || 0) > 0) {
         header += `  ${formatToBRL(item.price?.toNumber() || 0)}`;
       }

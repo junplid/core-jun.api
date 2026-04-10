@@ -18,8 +18,8 @@ import {
 } from "../../../../../services/meta/meta.webhook";
 import { getAgentTemplatesValidation } from "../../../../../core/getAgentTemplates/Validation";
 import { getAgentTemplatesController } from "../../../../../core/getAgentTemplates";
-import { joinRouterValidation } from "../../../../../core/joinRouter/Validation";
-import { joinRouterController } from "../../../../../core/joinRouter";
+import { getRouterOrdersValidation } from "../../../../../core/getRouterOrders/Validation";
+import { getRouterOrdersController } from "../../../../../core/getRouterOrders";
 
 const RouterV1Public_Get = Router();
 
@@ -198,9 +198,9 @@ RouterV1Public_Get.get(
 );
 
 RouterV1Public_Get.get(
-  "/join-router/:code",
-  joinRouterValidation,
-  joinRouterController,
+  "/router-orders/:code",
+  getRouterOrdersValidation,
+  getRouterOrdersController,
 );
 
 export default RouterV1Public_Get;

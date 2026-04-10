@@ -464,8 +464,9 @@ export const WebSocketIo = (io: Server) => {
                   message: `O pedido ${order}(codigo do pedido) ${order.id}(ID) mudou para a coluna ${props.nextStatus}`,
                 }
               : {
-                  type: "initial",
+                  type: "running",
                   action: null,
+                  message: `CODE_ORDER=${order.n_order}`,
                 }),
 
             external_adapter,
@@ -790,7 +791,7 @@ export const webSocketEmitToRoom = () => {
           const socketDevice = connectedDevices.get(deviceId);
           return {
             print: (args: any, ignore: string[]) => {
-              return socketDevice?.except(ignore).emit(`PRINT_ORDER`, args);
+              return socketDevice?.emit(`PRINT_ORDER`, args);
             },
           };
         },

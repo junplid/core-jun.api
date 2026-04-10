@@ -65,13 +65,7 @@ export const NodeUpdateRouter = async (
     // }
 
     if (fields?.includes("status") && restData.status) {
-      nextData.status = await resolveTextVariables({
-        accountId: props.accountId,
-        text: nextData.status,
-        contactsWAOnAccountId: props.contactsWAOnAccountId,
-        nodeId: props.nodeId,
-        numberLead: props.numberLead,
-      });
+      nextData.status = restData.status;
     }
 
     if (fields?.includes("add_order") && restData.nOrder) {

@@ -9,13 +9,10 @@ import { prisma } from "../../adapters/Prisma/client";
 import { NodeControler } from "../../libs/FlowBuilder/Control";
 import { JoinRouterDTO_I } from "./DTO";
 
-
-
 export class JoinRouterUseCase {
   constructor() {}
 
-  async run(dto: JoinRouterDTO_I) { 
-
+  async run(dto: JoinRouterDTO_I) {
     const [getRouter, getFlowState] = await Promise.all([
       prisma.deliveryRouter.findFirst({
         where: {
@@ -63,7 +60,7 @@ export class JoinRouterUseCase {
     const getcontact = await prisma.contactsWAOnAccount.findFirst({
       where: {
         accountId: getRouter.menuOnline.accountId,
-        ContactsWA: { completeNumber: dto.nl },
+        ContactsWA: { completeNumber: dto.nlid },
       },
       select: { id: true },
     });
@@ -295,7 +292,7 @@ export class JoinRouterUseCase {
         campaignId: campaignId || undefined,
         oldNodeId: nextNode.id,
         previous_response_id: previous_response_id || undefined,
-        isSavePositionLead: true,
+        isSavePositionLead: false,
         flowStateId: dataStateFlow.id,
         currentNodeId: nextNode.id,
         edges: flow.edges,

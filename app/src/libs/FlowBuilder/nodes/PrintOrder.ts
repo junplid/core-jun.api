@@ -5,6 +5,7 @@ import { webSocketEmitToRoom } from "../../../infra/websocket";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { formatToBRL } from "brazilian-values";
 import { connectedDevices } from "../../../infra/websocket/cache";
+import { remove } from "remove-accents";
 
 type PropsPrintOrder =
   | {
@@ -12,7 +13,6 @@ type PropsPrintOrder =
       contactsWAOnAccountId: number;
       accountId: number;
       nodeId: string;
-      flowStateId: number;
       data: NodePrintOrderData;
       action?: string;
 
@@ -100,25 +100,23 @@ export const NodePrintOrder = async (
       .agent_app(getorder.menuOnline.deviceId_app_agent)
       .print(
         {
-          menu_title: getorder.menuOnline.titlePage,
+          menu_title: remove(getorder.menuOnline.titlePage || ""),
           n_order: getorder.n_order,
-          ...(getorder.menuOnline.MenuInfo.delivery_fee?.toNumber() && {
-            deliveryFee: formatToBRL(
-              getorder.menuOnline.MenuInfo.delivery_fee.toNumber(),
-            ),
-          }),
           total: formatToBRL(getorder.total?.toNumber() || 0),
           subtotal: formatToBRL(getorder.sub_total?.toNumber() || 0),
           adjustments: getorder.OrderAdjustments.map((adj) => ({
-            label: adj.label,
-            amount: adj.amount.toNumber() || 0,
+            label: remove(adj.label),
+            amount: formatToBRL(adj.amount.toNumber() || 0),
           })),
           items: getorder.Items.map((ii) => {
             return {
-              title: ii.title,
-              total: formatToBRL(ii.price?.toNumber() || 0),
-              subs: ii.side_dishes,
-              obs: ii.obs?.replace(/^\_(.*)\_$/, "$1"),
+              title: remove(ii.title),
+              total:
+                (ii.price?.toNumber() || 0) > 0
+                  ? formatToBRL(ii.price?.toNumber() || 0)
+                  : undefined,
+              subs: remove(ii.side_dishes || ""),
+              obs: remove(ii.obs?.replace(/^\_(.*)\_$/, "$1") || ""),
             };
           }),
         },
