@@ -6,6 +6,8 @@ import PDFDocument from "pdfkit";
 import { gerarRelatorio } from "./gerarpdf";
 import moment from "moment-timezone";
 import { resolve } from "path";
+import { Decimal } from "@prisma/client/runtime/library";
+import { remove } from "remove-accents";
 
 const PAYMENT_OPTIONS: { [s: string]: string } = {
   Pix: "PIX",
@@ -20,6 +22,11 @@ export class GenerateMenuOnlineReportUseCase {
   constructor() {}
 
   async run({ uuid, ...rest }: GenerateMenuOnlineReportDTO_I, res: Response) {
+    const start = moment.utc(new Date(rest.start));
+    const end = rest.end
+      ? moment.utc(new Date(rest.end))
+      : moment.utc(new Date(rest.start));
+
     const exist = await prisma.menusOnline.findFirst({
       where: { uuid },
       select: {
@@ -29,13 +36,12 @@ export class GenerateMenuOnlineReportUseCase {
         Orders: {
           where: {
             createAt: {
-              gte: new Date(rest.start),
-              ...(rest.end && { lte: new Date(rest.end) }),
+              gte: start.startOf("day").toDate(),
+              lte: end.endOf("day").toDate(),
             },
             deleted: false,
-            payment_made: { not: null },
             status: {
-              in: ["completed", "confirmed", "delivered", "ready", "on_way"],
+              in: ["completed", "confirmed", "delivered"],
             },
           },
           orderBy: { createAt: "asc" },
@@ -56,6 +62,17 @@ export class GenerateMenuOnlineReportUseCase {
                 label: true,
               },
             },
+            Router: {
+              select: {
+                Router: {
+                  select: {
+                    ContactsWAOnAccount: {
+                      select: { ContactsWA: { select: { realNumber: true } } },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -67,38 +84,69 @@ export class GenerateMenuOnlineReportUseCase {
       );
     }
 
+    const relatorio_motoboy = Object.values(
+      exist.Orders.reduce(
+        (acc, order) => {
+          const number =
+            order.Router?.Router?.ContactsWAOnAccount?.ContactsWA?.realNumber;
+
+          if (!number) return acc;
+
+          const total = order.OrderAdjustments.filter(
+            (adj) => adj.label === "Taxa de entrega" && adj.type === "in",
+          ).reduce((sum, adj) => sum.plus(adj.amount), new Decimal(0));
+
+          if (total.isZero()) return acc;
+
+          if (!acc[number]) {
+            acc[number] = { number, amount: new Decimal(0), qntPdd: 0 };
+          }
+
+          acc[number].amount = acc[number].amount.plus(total);
+          acc[number].qntPdd = acc[number].qntPdd + 1;
+
+          return acc;
+        },
+        {} as Record<
+          string,
+          { number: string; amount: Decimal; qntPdd: number }
+        >,
+      ),
+    ).map((item) => ({
+      number: item.number,
+      amount: item.amount.toNumber(),
+      qntPdd: item.qntPdd,
+    }));
+
     const countOrders = exist.Orders.length;
     const totalDeVendas = exist.Orders.reduce((ac, cr) => {
       ac += cr.sub_total?.toNumber() || 0; // total do pedido (sem taxas)
       return ac;
     }, 0);
+
     const totalTaxasDeEntrega = exist.Orders.reduce((ac, cr) => {
-      const total = cr.OrderAdjustments.reduce((ac2, cr2) => {
-        if (cr2.label === "Taxa de entrega" && cr2.type === "in") {
-          ac += cr2.amount?.toNumber() || 0;
-        }
-        return ac;
-      }, 0);
-      ac += total;
+      const total = cr.OrderAdjustments.filter(
+        (adj) => adj.label === "Taxa de entrega" && adj.type === "in",
+      ).reduce((sum, adj) => sum.plus(adj.amount), new Decimal(0));
+      ac += total.toNumber();
       return ac;
     }, 0);
+
     const totalTaxasPlataforma = exist.Orders.reduce((ac, cr) => {
-      const total = cr.OrderAdjustments.reduce((ac2, cr2) => {
-        if (cr2.label === "Taxa plataforma" && cr2.type === "out") {
-          ac += cr2.amount?.toNumber() || 0;
-        }
-        return ac;
-      }, 0);
-      ac += total;
+      const total = cr.OrderAdjustments.filter(
+        (adj) => adj.label === "Taxa plataforma" && adj.type === "out",
+      ).reduce((sum, adj) => sum.plus(adj.amount), new Decimal(0));
+      ac += total.toNumber();
       return ac;
     }, 0);
+
     const totalBruto = totalDeVendas + totalTaxasDeEntrega;
     const totalLiquido =
-      totalDeVendas - totalTaxasDeEntrega - totalTaxasPlataforma;
+      totalBruto - totalTaxasDeEntrega - totalTaxasPlataforma;
 
     const totalPix = exist.Orders.reduce(
       (ac, cr) => {
-        if (cr.payment_method?.toLowerCase() === "pix") {
+        if (remove(cr.payment_method?.toLowerCase() || "") === "pix") {
           ac.qnt += 1;
           ac.amount += cr.total?.toNumber() || 0;
         }
@@ -108,7 +156,7 @@ export class GenerateMenuOnlineReportUseCase {
     );
     const totalDinheiro = exist.Orders.reduce(
       (ac, cr) => {
-        if (cr.payment_method?.toLowerCase() === "Dinheiro") {
+        if (remove(cr.payment_method?.toLowerCase() || "") === "dinheiro") {
           ac.qnt += 1;
           ac.amount += cr.total?.toNumber() || 0;
         }
@@ -118,7 +166,7 @@ export class GenerateMenuOnlineReportUseCase {
     );
     const totalDebito = exist.Orders.reduce(
       (ac, cr) => {
-        if (cr.payment_method?.toLowerCase() === "Débito") {
+        if (remove(cr.payment_method?.toLowerCase() || "") === "debito") {
           ac.qnt += 1;
           ac.amount += cr.total?.toNumber() || 0;
         }
@@ -128,7 +176,7 @@ export class GenerateMenuOnlineReportUseCase {
     );
     const totalCredito = exist.Orders.reduce(
       (ac, cr) => {
-        if (cr.payment_method?.toLowerCase() === "Crédito") {
+        if (remove(cr.payment_method?.toLowerCase() || "") === "credito") {
           ac.qnt += 1;
           ac.amount += cr.total?.toNumber() || 0;
         }
@@ -170,9 +218,6 @@ export class GenerateMenuOnlineReportUseCase {
       };
     });
 
-    const doc = new PDFDocument({ margin: 40 });
-    doc.pipe(res);
-
     const date_start = moment(new Date(rest.start)).format("DD/MM/YYYY");
     const date_end = rest.end
       ? moment(new Date(rest.end)).format("DD/MM/YYYY")
@@ -185,6 +230,17 @@ export class GenerateMenuOnlineReportUseCase {
         data_formatada += ` - ${date_end}`;
       }
     }
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${data_formatada.replace(/\s/g, "")}_relatorio.pdf"`,
+    );
+    res.setHeader("Cache-Control", "no-store");
+
+    const doc = new PDFDocument({ margin: 40 });
+    doc.pipe(res);
 
     gerarRelatorio(doc, {
       loja: exist.titlePage || "",
@@ -221,14 +277,15 @@ export class GenerateMenuOnlineReportUseCase {
       ],
       logo: path + `/${exist.logoImg}`,
       data: data_formatada,
+      relatorio_motoboy: relatorio_motoboy.sort((a, b) => b.amount - a.amount),
     });
+
     doc.end();
 
     try {
       return {
         message: "OK!",
         status: 201,
-        filename: `${data_formatada.replace(/\s/g, "")}_relatorio`,
       };
     } catch (error) {
       throw new ErrorResponse(400).container(

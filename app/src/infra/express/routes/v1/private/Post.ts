@@ -75,6 +75,8 @@ import { pairCodeDeviceValidation } from "../../../../../core/pairCodeDevice/Val
 import { pairCodeDeviceController } from "../../../../../core/pairCodeDevice";
 import { unpairCodeDeviceValidation } from "../../../../../core/unpairCodeDevice/Validation";
 import { unpairCodeDeviceController } from "../../../../../core/unpairCodeDevice";
+import { generateMenuOnlineReportValidation } from "../../../../../core/generateMenuOnlineReport/Validation";
+import { generateMenuOnlineReportController } from "../../../../../core/generateMenuOnlineReport";
 
 const RouterV1Private_Post = Router();
 
@@ -395,6 +397,13 @@ RouterV1Private_Post.post(
   csrfMiddleware,
   unpairCodeDeviceValidation,
   unpairCodeDeviceController,
+);
+
+RouterV1Private_Post.post(
+  "/menus-online/:uuid/report",
+  csrfMiddleware,
+  generateMenuOnlineReportValidation,
+  generateMenuOnlineReportController,
 );
 
 export default RouterV1Private_Post;

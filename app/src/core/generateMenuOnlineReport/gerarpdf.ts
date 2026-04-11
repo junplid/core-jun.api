@@ -1,37 +1,3 @@
-const data_dados = {
-  loja: "Delivery Burguer",
-  logo: "./0f17a29b-f78a-404d-b04c-8ee109acd722-image-removebg-preview(12).png",
-
-  resumo: {
-    vendas: 295.3,
-    taxaEntrega: 50.0,
-    bruto: 345.3,
-    liquido: 329.4,
-    qntVendas: 1,
-    taxaPlataforma: 1,
-  },
-
-  pagamentos: [
-    { tipo: "Pix", vendas: 27, total: 80.5 },
-    { tipo: "Dinheiro", vendas: 3, total: 80.5 },
-    { tipo: "Cartão Crédito", vendas: 12, total: 212.9 },
-    { tipo: "Cartão Débito", vendas: 2, total: 36.0 },
-  ],
-
-  pedidos: [
-    {
-      code: "192838",
-      name: "(15/06/2026 14:31) João\nnome",
-      forma_de_pagamento: "PIX",
-      valorPd: 5,
-      txEntr: 50,
-      txPd: 1,
-      totalBruto: 1,
-      totalLiquido: 1,
-    },
-  ],
-};
-
 function drawTable(
   doc: any,
   startX: number,
@@ -161,6 +127,7 @@ export function gerarRelatorio(
       totalBruto: number;
       totalLiquido: number;
     }[];
+    relatorio_motoboy: { number: string; amount: number; qntPdd: number }[]; // nova chave
   },
 ) {
   // ===== LOGO =====
@@ -214,7 +181,10 @@ export function gerarRelatorio(
         {
           text: "Taxas por pedido confimado (plataforma)",
         },
-        { text: `- R$ ${dados.resumo.taxaPlataforma}`, textColor: "red" },
+        {
+          text: `- R$ ${dados.resumo.taxaPlataforma.toFixed(2)}`,
+          textColor: "red",
+        },
       ],
       [
         { text: "Repasse motoboy" },
@@ -271,6 +241,11 @@ export function gerarRelatorio(
 
   doc.fontSize(14).text("Pedidos", { underline: true });
 
+  const totalValorPd = dados.pedidos.reduce((acc, p) => acc + p.valorPd, 0);
+  const totalTxEntr = dados.pedidos.reduce((acc, p) => acc + p.txEntr, 0);
+  const totalTxPd = dados.pedidos.reduce((acc) => acc + 0.08, 0); // ou p.txPd se existir
+  const totalBruto = dados.pedidos.reduce((acc, p) => acc + p.totalBruto, 0);
+
   const pedidoRows = dados.pedidos.map((p) => [
     `${p.code}`,
     p.name,
@@ -286,7 +261,15 @@ export function gerarRelatorio(
     40,
     doc.y + 10,
     [42, totalWIdth - (42 + 64 + 55 + 54 + 62 + 90), 64, 55, 62, 54, 90],
-    ["CODE", "Data, cliente", "FormaPg", "ValorPd", "TxEntr", "TxPd ", "Total"],
+    [
+      "CODE",
+      "Data, cliente",
+      "FormaPg",
+      "ValorPdd",
+      "TxEntr",
+      "TxPdd",
+      "Total",
+    ],
     pedidoRows,
   );
 
@@ -298,16 +281,56 @@ export function gerarRelatorio(
     [],
     [
       [
-        ,
-        ,
-        ,
-        `R$ ${countTotalPrice.toFixed(2)}`,
-        `R$ ${countTotalPrice.toFixed(2)}`,
-        `- ${countTotalPrice.toFixed(2)}`,
-        `R$ ${countTotalPrice.toFixed(2)}`,
+        "", // CODE
+        "TOTAL", // coluna principal
+        "", // FormaPg
+        `R$ ${totalValorPd.toFixed(2)}`,
+        `R$ ${totalTxEntr.toFixed(2)}`,
+        `- ${totalTxPd.toFixed(2)}`,
+        `R$ ${totalBruto.toFixed(2)}`,
       ],
     ],
   );
 
-  doc.end();
+  if (dados.relatorio_motoboy?.length) {
+    doc.addPage();
+
+    doc.fontSize(14).text("Repasse por Motoboy", { underline: true });
+
+    const rows = dados.relatorio_motoboy.map((item) => [
+      item.qntPdd,
+      item.number,
+      `R$ ${item.amount.toFixed(2)}`,
+    ]);
+
+    const total = dados.relatorio_motoboy.reduce(
+      (acc, cur) => acc + cur.amount,
+      0,
+    );
+
+    const totalPedidos = dados.relatorio_motoboy.reduce(
+      (acc, cur) => acc + cur.qntPdd,
+      0,
+    );
+
+    // tabela principal
+    drawTable(
+      doc,
+      40,
+      doc.y + 10,
+      [100, 250, 120],
+      ["QNT", "Número", "Total (R$)"],
+      rows,
+    );
+
+    // linha de total
+    drawTable(
+      doc,
+      40,
+      doc.y + 10,
+      [100, 250, 120],
+      [],
+      [[totalPedidos, "TOTAL", `R$ ${total.toFixed(2)}`]],
+    );
+  }
 }

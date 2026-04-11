@@ -16,17 +16,10 @@ export const GenerateMenuOnlineReportController = (
       GenerateMenuOnlineReportBodyDTO_I
     >,
     res: Response,
-  ): Promise<Response> => {
+  ): Promise<Response | undefined> => {
     try {
-      const data = await useCase.run({ ...req.body, ...req.params }, res);
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="${data.filename}.pdf"`,
-      );
-      res.setHeader("Cache-Control", "no-store");
-
-      return res.status(200).json(data);
+      await useCase.run({ ...req.body, ...req.params }, res);
+      return;
     } catch (error: any) {
       if (error instanceof ErrorResponse) {
         const { statusCode, ...obj } = error.getResponse();
