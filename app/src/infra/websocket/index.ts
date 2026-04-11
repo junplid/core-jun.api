@@ -647,6 +647,7 @@ export const WebSocketIo = (io: Server) => {
         where: { deviceId_app_agent: deviceId },
         select: { id: true },
       });
+      console.log("AQUI 1");
       if (!exist) {
         socket.emit("UNPAIR");
         return;
@@ -657,6 +658,7 @@ export const WebSocketIo = (io: Server) => {
         existingSocket.disconnect();
       }
 
+      console.log("CONECTOU", deviceId);
       connectedDevices.set(deviceId, socket);
     });
 

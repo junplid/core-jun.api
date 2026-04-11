@@ -5,7 +5,7 @@ export interface GenerateMenuOnlineReportParamsDTO_I {
 export interface GenerateMenuOnlineReportBodyDTO_I {
   accountId: number;
   start: Date;
-  end: Date;
+  end: Date | null;
 }
 
 export type GenerateMenuOnlineReportDTO_I =

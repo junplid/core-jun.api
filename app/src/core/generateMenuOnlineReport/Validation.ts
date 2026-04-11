@@ -17,7 +17,7 @@ export const generateMenuOnlineReportValidation = (
   const schemaValidation = Joi.object({
     uuid: Joi.string().required(),
     start: Joi.date().required(),
-    end: Joi.date().required(),
+    end: Joi.date().allow(null).required(),
   });
 
   const validation = schemaValidation.validate(

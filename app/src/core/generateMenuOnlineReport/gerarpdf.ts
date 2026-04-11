@@ -7,14 +7,8 @@ const data_dados = {
     taxaEntrega: 50.0,
     bruto: 345.3,
     liquido: 329.4,
-  },
-
-  caixa: {
-    inicial: 34.1,
-    entradas: 295.3,
-    final: 329.4,
-    informado: 329.4,
-    diferenca: 0,
+    qntVendas: 1,
+    taxaPlataforma: 1,
   },
 
   pagamentos: [
@@ -26,18 +20,14 @@ const data_dados = {
 
   pedidos: [
     {
-      id: 192838,
-      cliente: "(15/06/2026 14:31) João\nnome",
-      pagamento: "PIX",
-      taxaEntrega: 5,
-      total: 50,
-    },
-    {
-      id: 192138,
-      cliente: "(15/06/2026 14:31) Maria",
-      pagamento: "C Crédito",
-      taxaEntrega: 7,
-      total: 80,
+      code: "192838",
+      name: "(15/06/2026 14:31) João\nnome",
+      forma_de_pagamento: "PIX",
+      valorPd: 5,
+      txEntr: 50,
+      txPd: 1,
+      totalBruto: 1,
+      totalLiquido: 1,
     },
   ],
 };
@@ -144,7 +134,34 @@ function drawTable(
 
 export function gerarRelatorio(
   doc: PDFKit.PDFDocument,
-  dados: typeof data_dados,
+  dados: {
+    loja: string;
+    logo: string;
+    data: string;
+    resumo: {
+      vendas: number;
+      taxaEntrega: number;
+      bruto: number;
+      liquido: number;
+      qntVendas: number;
+      taxaPlataforma: number;
+    };
+    pagamentos: {
+      tipo: string;
+      vendas: number;
+      total: number;
+    }[];
+    pedidos: {
+      code: string;
+      name: string;
+      forma_de_pagamento: string;
+      valorPd: number;
+      txEntr: number;
+      txPd: number;
+      totalBruto: number;
+      totalLiquido: number;
+    }[];
+  },
 ) {
   // ===== LOGO =====
   if (dados.logo) {
@@ -159,7 +176,7 @@ export function gerarRelatorio(
     .text("Relatório de Fechamento - Cardápio digital")
     .fontSize(12)
     .font("Helvetica-Bold")
-    .text("10/12/2025 - 17/12/2025")
+    .text(dados.data)
     .font("Helvetica");
 
   doc.moveDown(2);
@@ -177,7 +194,7 @@ export function gerarRelatorio(
     [totalWIdth - 100, 100],
     ["Descrição", "Valor"],
     [
-      ["Quantidade de vendas realizadas", `23`],
+      ["Quantidade de vendas realizadas", dados.resumo.qntVendas],
       [
         { text: "Valor total de vendas" },
         { text: `R$ ${dados.resumo.vendas.toFixed(2)}` },
@@ -197,7 +214,7 @@ export function gerarRelatorio(
         {
           text: "Taxas por pedido confimado (plataforma)",
         },
-        { text: "- R$ 50.00", textColor: "red" },
+        { text: `- R$ ${dados.resumo.taxaPlataforma}`, textColor: "red" },
       ],
       [
         { text: "Repasse motoboy" },
@@ -206,7 +223,10 @@ export function gerarRelatorio(
           textColor: "red",
         },
       ],
-      [{ text: "Total líquido" }, { text: "R$ 245.30", textColor: "green" }],
+      [
+        { text: "Total líquido" },
+        { text: `R$ ${dados.resumo.liquido}`, textColor: "green" },
+      ],
     ],
   );
 
@@ -252,13 +272,13 @@ export function gerarRelatorio(
   doc.fontSize(14).text("Pedidos", { underline: true });
 
   const pedidoRows = dados.pedidos.map((p) => [
-    `${p.id}`,
-    p.cliente,
-    p.pagamento,
-    `R$ ${p.taxaEntrega.toFixed(2)}`,
-    `R$ ${p.taxaEntrega.toFixed(2)}`,
+    `${p.code}`,
+    p.name,
+    p.forma_de_pagamento,
+    `R$ ${p.valorPd.toFixed(2)}`,
+    `R$ ${p.txEntr.toFixed(2)}`,
     `- 0.08`,
-    `R$ ${p.total.toFixed(2)}`,
+    `R$ ${p.totalBruto.toFixed(2)}`,
   ]);
 
   drawTable(

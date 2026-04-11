@@ -97,11 +97,13 @@ export const NodePrintOrder = async (
       !getorder.menuOnline.MenuInfo ||
       !getorder.menuOnline.deviceId_app_agent
     ) {
+      console.log("1");
       return "not_found";
     }
 
     const socket = connectedDevices.get(getorder.menuOnline.deviceId_app_agent);
     if (!socket) {
+      console.log("2", getorder.menuOnline.deviceId_app_agent);
       return "not_found";
     }
 
