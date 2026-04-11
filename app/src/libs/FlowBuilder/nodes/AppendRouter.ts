@@ -67,18 +67,19 @@ export const NodeAppendRouter = async (
       return "not_found";
     }
     let nRouter = "";
+    let routerId;
 
     if (existRouterOpen) {
       const { Router } = await prisma.deliveryRouterOnOrders.create({
         data: { orderId: order.id, routerId: existRouterOpen.id },
-        select: { Router: { select: { n_router: true } } },
+        select: { Router: { select: { n_router: true, id: true } } },
       });
       nRouter = Router.n_router;
-      return;
+      routerId = Router.id;
     } else {
       const n_router = genNumCode(7);
       const timeoutAt = moment().add(props.data.minutes, "minutes").toDate();
-      await prisma.deliveryRouter.create({
+      const { id } = await prisma.deliveryRouter.create({
         data: {
           flowStateId: props.flowStateId,
           nodeId: props.nodeId,
@@ -91,6 +92,7 @@ export const NodeAppendRouter = async (
         select: { id: true },
       });
       nRouter = n_router;
+      routerId = id;
     }
 
     const count = await prisma.deliveryRouterOnOrders.count({
@@ -134,6 +136,7 @@ export const NodeAppendRouter = async (
 
     let max = 6;
     if (props.data.max) {
+      console.log("props.data.max", props.data.max);
       const mm = await resolveTextVariables({
         accountId: props.accountId,
         text: props.data.max,
@@ -142,12 +145,24 @@ export const NodeAppendRouter = async (
         nodeId: props.nodeId,
       });
       const qnt_max = Number(mm);
+      console.log("qnt_max", qnt_max);
       if (!isNaN(qnt_max)) {
         max = qnt_max;
       }
     }
+    console.log("count", count);
+    console.log("max", max);
 
-    if (count >= max) return "max";
+    if (count >= max) {
+      prisma.deliveryRouter
+        .update({
+          where: { id: routerId },
+          data: { isNotify: true },
+        })
+        .then(null)
+        .catch(() => console.log("error"));
+      return "max";
+    }
     return;
   } catch (error) {
     return;

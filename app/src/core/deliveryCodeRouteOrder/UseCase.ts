@@ -227,7 +227,7 @@ export class DeliveryCodeRouteOrderUseCase {
 
       if (ConnectionWA.id) {
         let attempt = 0;
-        const botOnline = new Promise<boolean>((resolve, reject) => {
+        const botOnline = await new Promise<boolean>((resolve, reject) => {
           function run() {
             if (attempt >= 5) {
               return resolve(false);
@@ -246,21 +246,20 @@ export class DeliveryCodeRouteOrderUseCase {
           return run();
         });
 
+        if (!botOnline) {
+          throw new ErrorResponse(400).toast({
+            title: "Conexão da loja está OFF.",
+            description: "Comunicar ao responsável imediatamente.",
+            placement: "bottom",
+            type: "error",
+          });
+        }
         const clientWA = sessionsBaileysWA.get(ConnectionWA.id)!;
         external_adapter = {
           type: "baileys",
           clientWA: clientWA,
           businessName: ConnectionWA.Business.name,
         };
-      }
-
-      if (!external_adapter) {
-        throw new ErrorResponse(400).toast({
-          title: "Conexão da loja está OFF.",
-          description: "Comunicar ao responsável imediatamente.",
-          placement: "bottom",
-          type: "info",
-        });
       }
 
       const connectionId = ConnectionWA.id;

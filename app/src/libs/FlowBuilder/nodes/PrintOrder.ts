@@ -3,7 +3,7 @@ import { prisma } from "../../../adapters/Prisma/client";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { webSocketEmitToRoom } from "../../../infra/websocket";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
-import { formatToBRL } from "brazilian-values";
+import { formatToBRL, parseToNumber } from "brazilian-values";
 import { connectedDevices } from "../../../infra/websocket/cache";
 import { remove } from "remove-accents";
 
@@ -78,6 +78,16 @@ export const NodePrintOrder = async (
         },
         payment_method: true,
         delivery_address: true,
+        delivery_cep: true,
+        delivery_complement: true,
+        delivery_number: true,
+        delivery_reference_point: true,
+        payment_change_to: true,
+        Charges: {
+          select: {
+            status: true,
+          },
+        },
       },
     });
 
@@ -95,6 +105,16 @@ export const NodePrintOrder = async (
       return "not_found";
     }
 
+    let charge_status = false;
+    if (getorder.Charges.length) {
+      if (
+        getorder.Charges[0].status === "approved" ||
+        getorder.Charges[0].status === "authorized"
+      ) {
+        charge_status = true;
+      }
+    }
+
     webSocketEmitToRoom()
       .account(props.accountId)
       .agent_app(getorder.menuOnline.deviceId_app_agent)
@@ -108,6 +128,34 @@ export const NodePrintOrder = async (
             label: remove(adj.label),
             amount: formatToBRL(adj.amount.toNumber() || 0),
           })),
+          payment_change_to: getorder.payment_change_to
+            ? isNaN(parseToNumber(getorder.payment_change_to))
+              ? null
+              : parseToNumber(getorder.payment_change_to)
+            : null,
+          charge_status,
+          name: remove(getorder.name || ""),
+          payment_method: getorder.payment_method
+            ? remove(getorder.payment_method)
+            : null,
+          ...(getorder.delivery_address !== "RETIRAR" && {
+            delivery_address: getorder.delivery_address
+              ? remove(getorder.delivery_address)
+              : null,
+            delivery_cep: getorder.delivery_cep
+              ? remove(getorder.delivery_cep)
+              : null,
+            delivery_complement: getorder.delivery_complement
+              ? remove(getorder.delivery_complement)
+              : null,
+            delivery_number: getorder.delivery_number
+              ? remove(getorder.delivery_number)
+              : null,
+            delivery_reference_point: getorder.delivery_reference_point
+              ? remove(getorder.delivery_reference_point)
+              : null,
+          }),
+
           items: getorder.Items.map((ii) => {
             return {
               title: remove(ii.title),
@@ -125,7 +173,6 @@ export const NodePrintOrder = async (
 
     return;
   } catch (error) {
-    console.log("", error);
     return;
   }
 };

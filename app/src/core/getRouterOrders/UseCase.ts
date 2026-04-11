@@ -2,7 +2,7 @@ import { Decimal } from "@prisma/client/runtime/library";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { GetRouterOrdersDTO_I } from "./DTO";
-import { formatToBRL } from "brazilian-values";
+import { formatToBRL, parseToNumber } from "brazilian-values";
 import {
   buildRoute,
   generateGoogleMapsLink,
@@ -18,10 +18,6 @@ function formatOrder(itemsDraft: ItemDraft[]): Readonly<string> {
   const itemsText = itemsDraft
     .map((item) => {
       let header = `*${item.title}*`;
-      if ((item.price?.toNumber() || 0) > 0) {
-        header += `  ${formatToBRL(item.price?.toNumber() || 0)}`;
-      }
-
       const obs = item.obs ? `Obs: _${item.obs}_` : "";
 
       return [header, obs].filter(Boolean).join("\n");
@@ -75,6 +71,19 @@ export class GetRouterOrdersUseCase {
                   ContactsWAOnAccount: {
                     select: {
                       ContactsWA: { select: { realNumber: true, name: true } },
+                    },
+                  },
+                  delivery_address: true,
+                  delivery_cep: true,
+                  delivery_complement: true,
+                  delivery_number: true,
+                  delivery_reference_point: true,
+                  total: true,
+                  payment_method: true,
+                  payment_change_to: true,
+                  Charges: {
+                    select: {
+                      status: true,
                     },
                   },
                 },
@@ -140,7 +149,15 @@ export class GetRouterOrdersUseCase {
 
       const nextItems = getRouter.DeliveryRouterOnOrders.map(
         ({ Order, completedAt }) => {
-          const { ContactsWAOnAccount, data, Items, ...order } = Order;
+          const {
+            ContactsWAOnAccount,
+            data,
+            Items,
+            total,
+            Charges,
+            payment_change_to,
+            ...order
+          } = Order;
           const dataItems = formatOrder(Items);
           let nextData = dataItems;
           if (data) {
@@ -150,6 +167,13 @@ export class GetRouterOrdersUseCase {
           return {
             data: nextData,
             ...order,
+            total: total?.toNumber(),
+            payment_change_to: payment_change_to
+              ? isNaN(parseToNumber(payment_change_to))
+                ? null
+                : parseToNumber(payment_change_to)
+              : null,
+            charge_status: Charges.length ? Charges[0].status : undefined,
             completedAt,
             contact: ContactsWAOnAccount?.ContactsWA
               ? {

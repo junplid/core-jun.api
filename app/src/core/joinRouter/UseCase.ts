@@ -7,6 +7,11 @@ import { mongo } from "../../adapters/mongo/connection";
 import { ModelFlows } from "../../adapters/mongo/models/flows";
 import { prisma } from "../../adapters/Prisma/client";
 import { NodeControler } from "../../libs/FlowBuilder/Control";
+import { ErrorResponse } from "../../utils/ErrorResponse";
+import {
+  buildRoute,
+  generateGoogleMapsLink,
+} from "../../utils/generate-router-google";
 import { JoinRouterDTO_I } from "./DTO";
 
 export class JoinRouterUseCase {
@@ -20,7 +25,27 @@ export class JoinRouterUseCase {
           status: { in: ["awaiting_assignment", "open"] },
           contactsWAOnAccountId: null,
         },
-        select: { menuOnline: { select: { accountId: true } } },
+        select: {
+          id: true,
+          menuOnline: {
+            select: {
+              accountId: true,
+              titlePage: true,
+              logoImg: true,
+              MenuInfo: { select: { lat: true, lng: true } },
+            },
+          },
+          DeliveryRouterOnOrders: {
+            select: {
+              Order: {
+                select: {
+                  delivery_lat: true,
+                  delivery_lng: true,
+                },
+              },
+            },
+          },
+        },
       }),
       prisma.flowState.findFirst({
         where: { id: dto.fsid },
@@ -48,12 +73,22 @@ export class JoinRouterUseCase {
     ]);
 
     if (!getRouter) {
-      return {
-        message: "Rota não encontrada ou já foi atribuída a um entregador.",
-      };
+      throw new ErrorResponse(400).toast({
+        title: "Rota não encontrada.",
+        description: "Esta ação não pôde ser concluída.",
+        placement: "bottom",
+        type: "error",
+      });
     }
 
-    if (!getFlowState) return { message: "Flow da rota não encontrada!" };
+    if (!getFlowState) {
+      throw new ErrorResponse(400).toast({
+        title: "Não encontrado",
+        description: "Esta ação não pôde ser concluída.",
+        placement: "bottom",
+        type: "error",
+      });
+    }
 
     const accountId = getRouter.menuOnline.accountId;
 
@@ -66,9 +101,12 @@ export class JoinRouterUseCase {
     });
 
     if (!getcontact?.id) {
-      return {
-        message: "Não autorizado!",
-      };
+      throw new ErrorResponse(400).toast({
+        title: "Não autorizado",
+        description: "Esta ação não pôde ser concluída.",
+        placement: "bottom",
+        type: "error",
+      });
     }
 
     let dataStateFlow = {} as {
@@ -142,7 +180,12 @@ export class JoinRouterUseCase {
           previous_response_id: null,
         };
       } catch (error) {
-        return { message: "Error ao criar FlowS" };
+        throw new ErrorResponse(400).toast({
+          title: "Error ao criar FlowS",
+          description: "Esta ação não pôde ser concluída.",
+          placement: "bottom",
+          type: "error",
+        });
       }
     }
 
@@ -151,7 +194,12 @@ export class JoinRouterUseCase {
       !dataStateFlow.ConnectionWA?.id ||
       !dataStateFlow.ContactsWAOnAccount?.ContactsWA.completeNumber
     ) {
-      return { message: "Error: dados do FlowS não encontrado." };
+      throw new ErrorResponse(400).toast({
+        title: "Dados do FlowS não encontrado",
+        description: "Esta ação não pôde ser concluída.",
+        placement: "bottom",
+        type: "error",
+      });
     }
 
     const {
@@ -196,8 +244,14 @@ export class JoinRouterUseCase {
           },
         },
       ]);
-      if (!flowFetch?.length)
-        return { message: "Fluxo de automação não encontrado." };
+      if (!flowFetch?.length) {
+        throw new ErrorResponse(400).toast({
+          title: "Gancho de atendimento não encontrado",
+          description: "Esta ação não pôde ser concluída.",
+          placement: "bottom",
+          type: "error",
+        });
+      }
       const { edges, nodes, businessIds } = flowFetch[0];
       flow = { edges, nodes, businessIds };
       cacheFlowsMap.set(flowId, flow);
@@ -207,103 +261,133 @@ export class JoinRouterUseCase {
       (n: any) => n.type === "NodeRouterAcceptance",
     ) as any;
 
-    if (!Node)
-      return {
-        message:
-          "Nó de aceitação da rota no fluxo de automação não encontrado.",
-      };
-
-    const nextEdgesIds = flow.edges
-      .filter((f: any) => Node?.id === f.source)
-      ?.map((nn: any) => {
-        return {
-          id: nn.target,
-          sourceHandle: nn.sourceHandle,
-        };
-      });
-
-    const nextNode: any = nextEdgesIds?.find((nd: any) =>
-      nd.sourceHandle?.includes("main"),
-    );
-
-    if (nextNode) {
-      let external_adapter: (any & { businessName: string }) | null = null;
-
-      if (ConnectionWA.id) {
-        let attempt = 0;
-        const botOnline = new Promise<boolean>((resolve, reject) => {
-          function run() {
-            if (attempt >= 5) {
-              return resolve(false);
-            } else {
-              setInterval(async () => {
-                const botWA = cacheConnectionsWAOnline.get(ConnectionWA.id!);
-                if (!botWA) {
-                  attempt++;
-                  return run();
-                } else {
-                  return resolve(botWA);
-                }
-              }, 1000 * attempt);
-            }
-          }
-          return run();
+    if (Node) {
+      const nextEdgesIds = flow.edges
+        .filter((f: any) => Node?.id === f.source)
+        ?.map((nn: any) => {
+          return {
+            id: nn.target,
+            sourceHandle: nn.sourceHandle,
+          };
         });
 
-        if (!botOnline)
-          return {
-            message:
-              "Conexão WhatsApp da loja desconectada. O sistema tentou conectar 5x, mas sem sucesso! Entre em contato com a direção da loja ou mande uma mensagem para: 71986751101.",
+      const nextNode: any = nextEdgesIds?.find((nd: any) =>
+        nd.sourceHandle?.includes("main"),
+      );
+
+      if (nextNode) {
+        let external_adapter: (any & { businessName: string }) | null = null;
+
+        if (ConnectionWA.id) {
+          let attempt = 0;
+          const botOnline = new Promise<boolean>((resolve, reject) => {
+            function run() {
+              if (attempt >= 5) {
+                return resolve(false);
+              } else {
+                setInterval(async () => {
+                  const botWA = cacheConnectionsWAOnline.get(ConnectionWA.id!);
+                  if (!botWA) {
+                    attempt++;
+                    return run();
+                  } else {
+                    return resolve(botWA);
+                  }
+                }, 1000 * attempt);
+              }
+            }
+            return run();
+          });
+
+          if (!botOnline) {
+            throw new ErrorResponse(400).toast({
+              title: "Conexão da loja está OFF.",
+              description: "Comunicar ao responsável imediatamente.",
+              placement: "bottom",
+              type: "error",
+            });
+          }
+
+          const clientWA = sessionsBaileysWA.get(ConnectionWA.id)!;
+          external_adapter = {
+            type: "baileys",
+            clientWA: clientWA,
+            businessName: ConnectionWA.Business.name,
           };
+        }
 
-        const clientWA = sessionsBaileysWA.get(ConnectionWA.id)!;
-        external_adapter = {
-          type: "baileys",
-          clientWA: clientWA,
-          businessName: ConnectionWA.Business.name,
-        };
+        const connectionId = ConnectionWA.id;
+
+        NodeControler({
+          businessName: external_adapter.businessName,
+          mode: "prod",
+          flowId: flowId,
+          flowBusinessIds: flow.businessIds,
+          businessId: ConnectionWA.Business.id,
+
+          type: "running",
+          action: null,
+          message: `CODE_ROUTER=${dto.code}`,
+
+          external_adapter,
+          connectionId,
+          lead_id: ContactsWAOnAccount.ContactsWA.completeNumber,
+          contactAccountId: ContactsWAOnAccount.id,
+
+          chatbotId: chatbotId || undefined,
+          campaignId: campaignId || undefined,
+          oldNodeId: nextNode.id,
+          previous_response_id: previous_response_id || undefined,
+          isSavePositionLead: false,
+          flowStateId: dataStateFlow.id,
+          currentNodeId: nextNode.id,
+          edges: flow.edges,
+          nodes: flow.nodes,
+          accountId,
+        });
       }
-
-      if (!external_adapter)
-        return {
-          message:
-            "Conexão WhatsApp da loja desconectada. O sistema tentou conectar 5x, mas sem sucesso! Entre em contato com a direção da loja ou mande uma mensagem para: 71986751101.",
-        };
-
-      const connectionId = ConnectionWA.id;
-
-      NodeControler({
-        businessName: external_adapter.businessName,
-        mode: "prod",
-        flowId: flowId,
-        flowBusinessIds: flow.businessIds,
-        businessId: ConnectionWA.Business.id,
-
-        type: "running",
-        action: null,
-        message: `CODE_ROUTER=${dto.code}`,
-
-        external_adapter,
-        connectionId,
-        lead_id: ContactsWAOnAccount.ContactsWA.completeNumber,
-        contactAccountId: ContactsWAOnAccount.id,
-
-        chatbotId: chatbotId || undefined,
-        campaignId: campaignId || undefined,
-        oldNodeId: nextNode.id,
-        previous_response_id: previous_response_id || undefined,
-        isSavePositionLead: false,
-        flowStateId: dataStateFlow.id,
-        currentNodeId: nextNode.id,
-        edges: flow.edges,
-        nodes: flow.nodes,
-        accountId,
-      });
     }
+
+    let router_link: undefined | string = undefined;
+
+    // @ts-expect-error
+    let origin: { lat: number; lng: number } = {};
+
+    if (
+      getRouter.menuOnline.MenuInfo?.lat &&
+      getRouter.menuOnline.MenuInfo?.lng
+    ) {
+      origin = {
+        lat: getRouter.menuOnline.MenuInfo.lat,
+        lng: getRouter.menuOnline.MenuInfo.lng,
+      };
+
+      const filterLatLng = getRouter.DeliveryRouterOnOrders.map((s) => {
+        if (!s.Order.delivery_lat || !s.Order.delivery_lng) return;
+        return {
+          lat: s.Order.delivery_lat,
+          lng: s.Order.delivery_lng,
+        };
+      }).filter((s) => s) as { lat: number; lng: number }[];
+
+      const ordered = buildRoute(origin, filterLatLng);
+      router_link = generateGoogleMapsLink(origin, ordered, undefined);
+    }
+
+    await prisma.deliveryRouter.update({
+      where: { id: getRouter.id },
+      data: { status: "in_progress" },
+    });
+
+    // enviar socket para os outros links dessa rota.
 
     return {
       status: 200,
-      message: "Rota garantida! Estará disponível em poucos minutos.",
+      message: "OK",
+      router: {
+        router_link,
+        status: "in_progress",
+      },
     };
   }
 }

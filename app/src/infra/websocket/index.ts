@@ -679,6 +679,10 @@ export const WebSocketIo = (io: Server) => {
     socket.on("PAIR_INIT", ({ code }) => {
       pairingCodes.set(code, socket);
     });
+
+    socket.on("CALL_SUPPORT", (data) => {
+      console.log("SUPORTE CHAMADO:", data);
+    });
   });
 };
 
