@@ -94,6 +94,11 @@ export const NodeGetOrder = async (
         Items: {
           select: { obs: true, price: true, side_dishes: true, title: true },
         },
+        OrderAdjustments: {
+          take: 1,
+          where: { type: "in", label: "Taxa de entrega" },
+          select: { amount: true },
+        },
       },
     });
 
@@ -382,6 +387,41 @@ export const NodeGetOrder = async (
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
               value: dataItems || "",
+            },
+          });
+        }
+      }
+    }
+    if (fields.includes("delivery_fee") && restData.varId_save_delivery_fee) {
+      const exist = await prisma.variable.findFirst({
+        where: { id: restData.varId_save_delivery_fee, type: "dynamics" },
+        select: { id: true },
+      });
+
+      if (exist && getorder.OrderAdjustments.length) {
+        const picked = await prisma.contactsWAOnAccountVariable.findFirst({
+          where: {
+            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            variableId: exist.id,
+          },
+          select: { id: true },
+        });
+        const value = getorder.OrderAdjustments[0].amount.toNumber().toFixed(2);
+        if (!picked) {
+          await prisma.contactsWAOnAccountVariable.create({
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: value || "",
+            },
+          });
+        } else {
+          await prisma.contactsWAOnAccountVariable.update({
+            where: { id: picked.id },
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: value || "",
             },
           });
         }

@@ -6,6 +6,7 @@ import {
   buildRoute,
   generateGoogleMapsLink,
 } from "../../../utils/generate-router-google";
+import { Decimal } from "@prisma/client/runtime/library";
 
 type PropsGetRouter =
   | {
@@ -80,6 +81,11 @@ export const NodeGetRouter = async (
                 delivery_lat: true,
                 delivery_lng: true,
                 name: true,
+                OrderAdjustments: {
+                  take: 1,
+                  where: { type: "in", label: "Taxa de entrega" },
+                  select: { amount: true },
+                },
               },
             },
           },
@@ -269,21 +275,12 @@ export const NodeGetRouter = async (
       });
 
       if (exist) {
-        const count = await prisma.deliveryRouter.findFirst({
-          where: { id: getRouter.id },
-          select: {
-            menuOnline: {
-              select: { MenuInfo: { select: { delivery_fee: true } } },
-            },
-            _count: { select: { DeliveryRouterOnOrders: true } },
-          },
-        });
-        const fee = count?.menuOnline.MenuInfo?.delivery_fee?.toNumber();
-        if (!count || !fee) return "not_found";
-
-        const totalgain = (fee * count._count.DeliveryRouterOnOrders).toFixed(
-          2,
-        );
+        const total = getRouter.DeliveryRouterOnOrders.reduce((ac, cr) => {
+          if (cr.Order.OrderAdjustments.length) {
+            ac = ac.plus(cr.Order.OrderAdjustments[0].amount);
+          }
+          return ac;
+        }, new Decimal(0));
 
         const picked = await prisma.contactsWAOnAccountVariable.findFirst({
           where: {
@@ -297,7 +294,7 @@ export const NodeGetRouter = async (
             data: {
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
-              value: totalgain,
+              value: total.toNumber() > 0 ? total.toNumber().toFixed(2) : "0",
             },
           });
         } else {
@@ -306,7 +303,7 @@ export const NodeGetRouter = async (
             data: {
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               variableId: exist.id,
-              value: totalgain,
+              value: total.toNumber() > 0 ? total.toNumber().toFixed(2) : "0",
             },
           });
         }

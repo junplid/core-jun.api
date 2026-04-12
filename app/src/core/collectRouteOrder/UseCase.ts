@@ -88,6 +88,15 @@ export class CollectRouteOrderUseCase {
       });
     }
 
+    if (getRouter.DeliveryRouterOnOrders[0].Order.status === "on_way") {
+      throw new ErrorResponse(400).toast({
+        title: `Pedido(#${dto.n_order}) já foi coletado.`,
+        description: "Esta ação não pôde ser concluída.",
+        placement: "bottom",
+        type: "info",
+      });
+    }
+
     const {
       FlowState,
       id: orderId,

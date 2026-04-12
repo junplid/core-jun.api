@@ -7,6 +7,8 @@ import { formatToBRL } from "brazilian-values";
 import { OrderAdjustments } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 import { point, distance } from "@turf/turf";
+import { webSocketEmitToRoom } from "../../infra/websocket";
+import { cacheConnectionsWAOnline } from "../../adapters/Baileys/Cache";
 
 interface ItemDraft {
   id: number;
@@ -74,6 +76,30 @@ export function isWithinDeliveryArea(
     distanceKm: km,
     isInside: store.max_distance_km ? km <= store.max_distance_km : true,
   };
+}
+
+function formatOrder(
+  itemsDraft: {
+    title: string;
+    obs: string | undefined;
+    price: number;
+    side_dishes: string;
+  }[],
+): Readonly<string> {
+  const itemsText = itemsDraft
+    .map((item) => {
+      let header = item.title;
+      if ((item.price || 0) > 0) {
+        header += `  ${formatToBRL(item.price || 0)}`;
+      }
+
+      const obs = item.obs ? `Obs: _${item.obs}_` : "";
+
+      return [header, item.side_dishes, obs].filter(Boolean).join("\n");
+    })
+    .join("\n\n");
+
+  return itemsText;
 }
 
 export class CreateMenuOnlineOrderUseCase {
@@ -293,6 +319,19 @@ export class CreateMenuOnlineOrderUseCase {
       const GAP = 640;
       const newRank = last ? last.rank.plus(GAP) : GAP;
 
+      const nextItems = itemsDraft.map((ii) => {
+        return {
+          title: formatOrderTitle({
+            title: ii.title,
+            qnt: ii.qnt,
+          }),
+          itemId: ii.id,
+          obs: ii.obs,
+          price: ii.price_un,
+          side_dishes: formatOrderSections(ii.sections),
+        };
+      });
+
       const { ContactsWAOnAccount, OrderAdjustments, Business, ...order } =
         await prisma.orders.create({
           data: {
@@ -316,22 +355,7 @@ export class CreateMenuOnlineOrderUseCase {
             status: "pending",
             // data: dataOrder,
             data: "",
-            Items: {
-              createMany: {
-                data: itemsDraft.map((ii) => {
-                  return {
-                    title: formatOrderTitle({
-                      title: ii.title,
-                      qnt: ii.qnt,
-                    }),
-                    itemId: ii.id,
-                    obs: ii.obs,
-                    price: ii.price_un,
-                    side_dishes: formatOrderSections(ii.sections),
-                  };
-                }),
-              },
-            },
+            Items: { createMany: { data: nextItems } },
           },
           select: {
             id: true,
@@ -379,70 +403,73 @@ export class CreateMenuOnlineOrderUseCase {
         onFilterSocket: () => [],
       });
 
-      // webSocketEmitToRoom()
-      //   .account(exist.accountId)
-      //   .orders.new_order(
-      //     {
-      //       ...order,
-      //       net_total,
-      //       adjustments: OrderAdjustments,
-      //       name: rest.who_receives || null,
-      //       n_order,
-      //       businessId: Business.id,
-      //       origin: "menu_online",
-      //       delivery_address:
-      //         rest.delivery_address || type_delivery.toUpperCase(),
-      //       delivery_reference_point: rest.delivery_reference_point,
-      //       payment_method: rest.payment_method,
-      //       payment_change_to: rest.payment_change_to,
-      //       delivery_cep: rest.delivery_cep,
-      //       delivery_complement: rest.delivery_complement,
-      //       delivery_number: rest.delivery_number,
-      //       ...(rest.delivery_lat &&
-      //         rest.delivery_lng &&
-      //         exist.MenuInfo?.lat &&
-      //         exist.MenuInfo?.lng && {
-      //           link_map:
-      //             `https://www.google.com/maps/dir/?api=1` +
-      //             `&origin=${exist.MenuInfo?.lat},${exist.MenuInfo?.lng}` +
-      //             `&destination=${rest.delivery_lat},${rest.delivery_lng}`,
-      //         }),
-      //       status: "pending",
-      //       data: dataOrder,
-      //       total: nextTotal,
-      //       sequence: newRank,
-      //       sub_total: total,
-      //       isDragDisabled: false,
-      //       ticket:
-      //         ContactsWAOnAccount?.Tickets.map((tk) => {
-      //           let connection: any = {};
+      const dataItems = formatOrder(nextItems);
 
-      //           if (tk.ConnectionWA?.name) {
-      //             connection = {
-      //               s: !!cacheConnectionsWAOnline.get(tk.ConnectionWA?.id),
-      //               name: tk.ConnectionWA.name,
-      //               channel: "baileys",
-      //             };
-      //           }
-      //           if (tk.ConnectionIg?.ig_username) {
-      //             connection = {
-      //               s: true,
-      //               name: tk.ConnectionIg.ig_username,
-      //               channel: "instagram",
-      //             };
-      //           }
+      webSocketEmitToRoom()
+        .account(exist.accountId)
+        .orders.new_order(
+          {
+            ...order,
+            name: rest.who_receives || null,
+            n_order,
+            net_total,
+            businessId: Business.id,
+            adjustments: OrderAdjustments,
+            origin: "menu_online",
+            delivery_address:
+              rest.delivery_address || type_delivery.toUpperCase(),
+            payment_method: rest.payment_method,
+            payment_change_to: rest.payment_change_to,
+            delivery_cep: rest.delivery_cep,
+            delivery_complement: rest.delivery_complement,
+            delivery_reference_point: rest.delivery_reference_point,
+            delivery_number: rest.delivery_number,
 
-      //           return {
-      //             connection,
-      //             id: tk.id,
-      //             // lastMessage: tk.Messages[0].by,
-      //             departmentName: tk.InboxDepartment.name,
-      //             status: tk.status,
-      //           };
-      //         }) || [],
-      //     },
-      //     [],
-      //   );
+            ...(rest.delivery_lat &&
+              rest.delivery_lng &&
+              exist.MenuInfo?.lat &&
+              exist.MenuInfo?.lng && {
+                link_map:
+                  `https://www.google.com/maps/dir/?api=1` +
+                  `&origin=${exist.MenuInfo?.lat},${exist.MenuInfo?.lng}` +
+                  `&destination=${rest.delivery_lat},${rest.delivery_lng}`,
+              }),
+            status: "pending",
+            data: dataItems,
+            total: nextTotal,
+            sequence: newRank,
+            sub_total: total,
+            isDragDisabled: false,
+            ticket:
+              ContactsWAOnAccount?.Tickets.map((tk) => {
+                let connection: any = {};
+
+                if (tk.ConnectionWA?.name) {
+                  connection = {
+                    s: !!cacheConnectionsWAOnline.get(tk.ConnectionWA?.id),
+                    name: tk.ConnectionWA.name,
+                    channel: "baileys",
+                  };
+                }
+                if (tk.ConnectionIg?.ig_username) {
+                  connection = {
+                    s: true,
+                    name: tk.ConnectionIg.ig_username,
+                    channel: "instagram",
+                  };
+                }
+
+                return {
+                  connection,
+                  id: tk.id,
+                  //             // lastMessage: tk.Messages[0].by,
+                  departmentName: tk.InboxDepartment.name,
+                  status: tk.status,
+                };
+              }) || [],
+          },
+          [],
+        );
 
       const redirectTo = `https://api.whatsapp.com/send?phone=${
         numberwhats

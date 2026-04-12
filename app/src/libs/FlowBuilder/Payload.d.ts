@@ -291,6 +291,7 @@ export type NodeGetOrderData = {
     | "status"
     | "payment_method"
     | "delivery_address"
+    | "delivery_fee"
     | "total"
     | "data"
     | "data_items"
@@ -314,6 +315,7 @@ export type NodeGetOrderData = {
   varId_save_delivery_code?: number;
   varId_save_nOrder?: number;
   varId_save_type_code?: number;
+  varId_save_delivery_fee?: number;
 };
 
 export type NodeGetRouterData = {
