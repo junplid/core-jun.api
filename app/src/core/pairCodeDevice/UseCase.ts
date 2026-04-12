@@ -44,6 +44,7 @@ export class PairCodeDeviceUseCase {
         status: 200,
       };
     } catch (error) {
+      console.log(error);
       throw new ErrorResponse(400).toast({
         title: `Error ao tentar conectar disponitivo.`,
         type: "error",

@@ -644,6 +644,8 @@ export const WebSocketIo = (io: Server) => {
 
   const agent = io.of("/agent");
   agent.on("connection", (socket) => {
+    console.log("AGENTE CONECTOU");
+
     socket.on("CONNECT", async ({ deviceId }) => {
       const exist = await prisma.menusOnline.findFirst({
         where: { deviceId_app_agent: deviceId },
@@ -778,6 +780,7 @@ export const WebSocketIo = (io: Server) => {
     });
 
     socket.on("PAIR_INIT", ({ code }) => {
+      console.log("PAIR_INIT", code);
       pairingCodes.set(code, socket);
     });
 
