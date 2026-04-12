@@ -271,8 +271,10 @@ export class GetMenuOnlinePublicUseCase {
             state_uf: true,
             whatsapp_contact: true,
             payment_methods: true,
-            delivery_fee: true,
+            delivery_fee: true, // base_fee
             lat: true,
+            max_distance_km: true,
+            price_per_km: true,
             lng: true,
           },
         },
@@ -325,7 +327,11 @@ export class GetMenuOnlinePublicUseCase {
       menu: {
         ...r,
         isChatbot: !!data.ConnectionWA?.Chatbot.length,
-        info: { ...MenuInfo, delivery_fee: MenuInfo?.delivery_fee?.toNumber() },
+        info: {
+          ...MenuInfo,
+          delivery_fee: MenuInfo?.delivery_fee?.toNumber(),
+          price_per_km: MenuInfo?.price_per_km?.toNumber(),
+        },
         helperTextOpening,
         operatingDays: OperatingDays.length
           ? normalizeOperatingDays(OperatingDays)

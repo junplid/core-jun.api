@@ -99,13 +99,15 @@ export class GetMenuOnlineUseCase {
           select: {
             address: true,
             city: true,
-            delivery_fee: true,
+            delivery_fee: true, // base_fee
             payment_methods: true,
             phone_contact: true,
             state_uf: true,
             whatsapp_contact: true,
             lat: true,
             lng: true,
+            max_distance_km: true,
+            price_per_km: true,
           },
         },
         OperatingDays: {
@@ -169,7 +171,11 @@ export class GetMenuOnlineUseCase {
         helperTextOpening,
         operatingDays: OperatingDays,
         info: MenuInfo
-          ? { ...MenuInfo, delivery_fee: MenuInfo.delivery_fee?.toNumber() }
+          ? {
+              ...MenuInfo,
+              delivery_fee: MenuInfo.delivery_fee?.toNumber(),
+              price_per_km: MenuInfo.price_per_km?.toNumber(),
+            }
           : undefined,
         ...r,
       },

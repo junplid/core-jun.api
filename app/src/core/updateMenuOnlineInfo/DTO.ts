@@ -2,7 +2,7 @@ import { TypePaymentMethods } from "@prisma/client";
 
 export interface UpdateMenuOnlineInfoBodyDTO_I {
   accountId: number;
-  delivery_fee: number | undefined;
+  delivery_fee: number | undefined; // base_fee
   address: string | null;
   state_uf: string | null;
   city: string | null;
@@ -11,6 +11,8 @@ export interface UpdateMenuOnlineInfoBodyDTO_I {
   lat?: number;
   lng?: number;
   payment_methods: TypePaymentMethods[];
+  max_distance_km?: number;
+  price_per_km?: number;
 }
 
 export interface UpdateMenuOnlineInfoParamsDTO_I {

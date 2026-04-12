@@ -2089,8 +2089,17 @@ model Orders {
   OrderAdjustments         OrderAdjustments[]
   Router                   DeliveryRouterOnOrders?
   Items                    MenuOnlineItemOfOrder[]
+  PendingPrint             PendingPrints?
 
   @@index([id, name, accountId])
+}
+
+model PendingPrints {
+  id      Int    @id @default(autoincrement())
+  orderId Int    @unique
+  Order   Orders @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([id, orderId])
 }
 
 enum StatusDeliveryRouter {
@@ -2288,12 +2297,14 @@ model MenuInfo {
   id               Int                  @id @default(autoincrement())
   lat              Float?
   lng              Float?
+  max_distance_km  Int?
+  price_per_km     Decimal?             @db.Decimal(6, 2)
   address          String?
   state_uf         String?
   city             String?
   phone_contact    String?
   whatsapp_contact String?
-  delivery_fee     Decimal?             @db.Decimal(6, 2)
+  delivery_fee     Decimal?             @db.Decimal(6, 2) // base_fee
   links            String[]
   menuId           Int                  @unique
   payment_methods  TypePaymentMethods[]

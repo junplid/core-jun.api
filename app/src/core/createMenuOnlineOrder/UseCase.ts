@@ -6,6 +6,7 @@ import { NotificationApp } from "../../utils/notificationApp";
 import { formatToBRL } from "brazilian-values";
 import { OrderAdjustments } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
+import { point, distance } from "@turf/turf";
 
 interface ItemDraft {
   id: number;
@@ -60,6 +61,21 @@ function formatOrderSections(
   return itemsText;
 }
 
+export function isWithinDeliveryArea(
+  store: { lng: number; lat: number; max_distance_km: number | null },
+  customer: { lng: number; lat: number },
+) {
+  const from = point([store.lng, store.lat]);
+  const to = point([customer.lng, customer.lat]);
+
+  const km = distance(from, to, { units: "kilometers" });
+
+  return {
+    distanceKm: km,
+    isInside: store.max_distance_km ? km <= store.max_distance_km : true,
+  };
+}
+
 export class CreateMenuOnlineOrderUseCase {
   constructor() {}
 
@@ -81,6 +97,8 @@ export class CreateMenuOnlineOrderUseCase {
             delivery_fee: true,
             lat: true,
             lng: true,
+            max_distance_km: true,
+            price_per_km: true,
           },
         },
       },
@@ -89,6 +107,21 @@ export class CreateMenuOnlineOrderUseCase {
     if (!exist) {
       throw new ErrorResponse(400).container(
         "Cardápio digital não encontrado.",
+      );
+    }
+
+    if (!exist.MenuInfo?.lat || !exist.MenuInfo.lng) {
+      throw new ErrorResponse(400).container(
+        "Cardápio digital não encontrado.",
+      );
+    }
+
+    if (
+      type_delivery === "enviar" &&
+      (!rest.delivery_lat || !rest.delivery_lng)
+    ) {
+      throw new ErrorResponse(400).container(
+        "Local de entrega PIN não encontrado.",
       );
     }
 
@@ -202,7 +235,30 @@ export class CreateMenuOnlineOrderUseCase {
     if (type_delivery === "retirar") {
       nextTotal = total;
     } else {
-      const deliveryFee = exist.MenuInfo?.delivery_fee?.toNumber() || 0;
+      const deliveryArea = isWithinDeliveryArea(
+        {
+          lat: exist.MenuInfo.lat,
+          lng: exist.MenuInfo.lng,
+          max_distance_km: exist.MenuInfo.max_distance_km,
+        },
+        {
+          lat: rest.delivery_lat!,
+          lng: rest.delivery_lng!,
+        },
+      );
+
+      if (!deliveryArea.isInside) {
+        throw new ErrorResponse(400).container(
+          "Ainda não entregamos nessa região 😕",
+        );
+      }
+
+      const baseFee = exist.MenuInfo?.delivery_fee?.toNumber() || 0;
+      const pricePerKm = exist.MenuInfo?.price_per_km?.toNumber() || 0;
+
+      const adjustedKm = deliveryArea.distanceKm * 1.3;
+      const deliveryFee = baseFee + adjustedKm * pricePerKm;
+
       if (deliveryFee > 0) {
         orderAdjustments.push({
           amount: new Decimal(deliveryFee),

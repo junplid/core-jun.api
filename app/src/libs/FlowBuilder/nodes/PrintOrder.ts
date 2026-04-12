@@ -58,6 +58,7 @@ export const NodePrintOrder = async (
         n_order: resolvercode,
       },
       select: {
+        id: true,
         total: true,
         sub_total: true,
         Items: {
@@ -97,14 +98,22 @@ export const NodePrintOrder = async (
       !getorder.menuOnline.MenuInfo ||
       !getorder.menuOnline.deviceId_app_agent
     ) {
-      console.log("1");
       return "not_found";
     }
 
     const socket = connectedDevices.get(getorder.menuOnline.deviceId_app_agent);
     if (!socket) {
-      console.log("2", getorder.menuOnline.deviceId_app_agent);
-      return "not_found";
+      prisma.pendingPrints
+        .upsert({
+          where: { orderId: getorder.id },
+          create: { orderId: getorder.id },
+          update: {},
+        })
+        .catch(() => {
+          console.log("Não conseguiu salvar a pendencia de impressão.");
+        })
+        .then();
+      return;
     }
 
     let charge_status = false;

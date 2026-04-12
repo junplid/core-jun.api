@@ -5,6 +5,7 @@
   "dependencies": {
     "@hapi/boom": "^10.0.1",
     "@prisma/client": "^5.3.1",
+    "@turf/turf": "^7.3.4",
     "@types/ffprobe-static": "^2.0.3",
     "@types/fluent-ffmpeg": "^2.1.28",
     "@types/pdfkit": "^0.17.5",

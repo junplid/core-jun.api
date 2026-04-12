@@ -27,6 +27,8 @@ export const updateMenuOnlineInfoValidation = (
       Joi.string().valid("Dinheiro", "Pix", "Cartao_Credito", "Cartao_Debito"),
     ),
     delivery_fee: Joi.number().empty(["", null]).default(null),
+    price_per_km: Joi.number().empty(["", null]).default(null),
+    max_distance_km: Joi.number().empty(["", null]).default(null),
   });
 
   const validation = schemaValidation.validate(
