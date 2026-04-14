@@ -13,6 +13,10 @@ export interface UpdateMenuOnlineInfoBodyDTO_I {
   payment_methods: TypePaymentMethods[];
   max_distance_km?: number;
   price_per_km?: number;
+
+  deliveries_begin_at?: string;
+  average_delivery_time?: string;
+  minimum_value_per_order?: number | null;
 }
 
 export interface UpdateMenuOnlineInfoParamsDTO_I {

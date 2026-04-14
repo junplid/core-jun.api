@@ -2,6 +2,7 @@ import { NodeGetMenuOnlineData } from "../Payload";
 import { prisma } from "../../../adapters/Prisma/client";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { connectedDevices } from "../../../infra/websocket/cache";
+import moment from "moment-timezone";
 
 type PropsGetMenuOnline =
   | {
@@ -49,6 +50,7 @@ export const NodeGetMenuOnline = async (
             phone_contact: true,
             state_uf: true,
             whatsapp_contact: true,
+            deliveries_begin_at: true,
           },
         },
         desc: true,
@@ -567,6 +569,110 @@ export const NodeGetMenuOnline = async (
         }
       }
     }
+
+    if (
+      fields.includes("deliveries_begin_at") &&
+      restData.varId_save_deliveries_begin_at
+    ) {
+      const exist = await prisma.variable.findFirst({
+        where: {
+          id: restData.varId_save_deliveries_begin_at,
+          type: "dynamics",
+        },
+        select: { id: true },
+      });
+
+      if (exist) {
+        const picked = await prisma.contactsWAOnAccountVariable.findFirst({
+          where: {
+            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            variableId: exist.id,
+          },
+          select: { id: true },
+        });
+        if (!picked) {
+          await prisma.contactsWAOnAccountVariable.create({
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: getmenu.MenuInfo?.deliveries_begin_at || "",
+            },
+          });
+        } else {
+          await prisma.contactsWAOnAccountVariable.update({
+            where: { id: picked.id },
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: getmenu.MenuInfo?.deliveries_begin_at || "",
+            },
+          });
+        }
+      }
+    }
+
+    if (
+      fields.includes("have_deliveries_started") &&
+      restData.varId_save_have_deliveries_started
+    ) {
+      const exist = await prisma.variable.findFirst({
+        where: {
+          id: restData.varId_save_have_deliveries_started,
+          type: "dynamics",
+        },
+        select: { id: true },
+      });
+
+      let state: "Sim" | "Não" = "Sim";
+      const horario = getmenu.MenuInfo?.deliveries_begin_at;
+      if (horario) {
+        const agora = moment.tz("America/Sao_Paulo");
+
+        const [hora, minuto] = horario.split(":").map(Number);
+
+        const inicio = moment
+          .tz("America/Sao_Paulo")
+          .hour(hora)
+          .minute(minuto)
+          .second(0)
+          .millisecond(0);
+
+        if (agora.isBefore(inicio)) {
+          state = "Não";
+        } else {
+          state = "Sim";
+        }
+      }
+
+      if (exist) {
+        const picked = await prisma.contactsWAOnAccountVariable.findFirst({
+          where: {
+            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            variableId: exist.id,
+          },
+          select: { id: true },
+        });
+        if (!picked) {
+          await prisma.contactsWAOnAccountVariable.create({
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: state,
+            },
+          });
+        } else {
+          await prisma.contactsWAOnAccountVariable.update({
+            where: { id: picked.id },
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: state,
+            },
+          });
+        }
+      }
+    }
+
     return "ok";
   } catch (error) {
     return "not_found";

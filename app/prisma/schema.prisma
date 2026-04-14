@@ -2137,6 +2137,7 @@ model DeliveryRouter {
   flowStateId            Int
   nodeId                 String
   timeoutAt              DateTime                 @db.Timestamptz
+  color                  String?
   n_router               String                   @unique
   isNotify               Boolean                  @default(false)
   status                 StatusDeliveryRouter
@@ -2265,6 +2266,7 @@ model MenusOnline {
   deviceId_app_agent String?
   bg_tertiary        String?
   bg_capa            String?
+  capaImg            String?
   logoLabel          String?       @db.Text
   titlePage          String?
   status             Boolean?      @default(false)
@@ -2294,21 +2296,26 @@ enum TypePaymentMethods {
 }
 
 model MenuInfo {
-  id               Int                  @id @default(autoincrement())
+  id               Int      @id @default(autoincrement())
   lat              Float?
   lng              Float?
   max_distance_km  Int?
-  price_per_km     Decimal?             @db.Decimal(6, 2)
+  price_per_km     Decimal? @db.Decimal(6, 2)
   address          String?
   state_uf         String?
   city             String?
   phone_contact    String?
   whatsapp_contact String?
-  delivery_fee     Decimal?             @db.Decimal(6, 2) // base_fee
-  links            String[]
-  menuId           Int                  @unique
-  payment_methods  TypePaymentMethods[]
-  Menu             MenusOnline          @relation(fields: [menuId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  deliveries_begin_at     String?
+  average_delivery_time   String?
+  minimum_value_per_order Int?
+
+  delivery_fee    Decimal?             @db.Decimal(6, 2) // base_fee
+  links           String[]
+  menuId          Int                  @unique
+  payment_methods TypePaymentMethods[]
+  Menu            MenusOnline          @relation(fields: [menuId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([menuId])
 }

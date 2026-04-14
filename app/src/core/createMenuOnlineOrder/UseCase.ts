@@ -392,7 +392,7 @@ export class CreateMenuOnlineOrderUseCase {
       const first =
         itemsDraft.find((i) => i.sections?.length > 0) ?? itemsDraft[0];
 
-      await NotificationApp({
+      NotificationApp({
         accountId: exist.accountId,
         title_txt: `${first.qnt}x ${first.title}...`,
         tag: `new-order-${n_order}`,
@@ -401,7 +401,13 @@ export class CreateMenuOnlineOrderUseCase {
         body_html: `<span className="font-medium text-sm line-clamp-1">Novo pedido</span><span className="text-xs font-light">#${n_order}</span>`,
         url_redirect: "/auth/orders",
         onFilterSocket: () => [],
-      });
+      })
+        .then()
+        .catch(() =>
+          console.log(
+            "Não foi possivel enviar notificação. createMenuOnlineOrder",
+          ),
+        );
 
       const dataItems = formatOrder(nextItems);
 

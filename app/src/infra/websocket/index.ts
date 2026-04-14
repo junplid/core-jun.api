@@ -59,6 +59,7 @@ ensureFileSync(pathFilesTest);
 
 export const WebSocketIo = (io: Server) => {
   io.on("connection", async (socket) => {
+    console.log("CONNECTOU");
     const { auth } = socket.handshake;
 
     if (auth.accountId) {
@@ -68,7 +69,10 @@ export const WebSocketIo = (io: Server) => {
       socket.join(`root:${auth.rootId}`);
     }
 
-    if (!auth.accountId && !auth.rootId) return socket.disconnect(true);
+    if (!auth.accountId && !auth.rootId) {
+      console.log("desconectou");
+      return socket.disconnect(true);
+    }
 
     socket.on("set-focused", (data: { focus: string | null }) => {
       if (auth.accountId) {
@@ -246,6 +250,7 @@ export const WebSocketIo = (io: Server) => {
         sourceStatus: TypeStatusOrder;
         nextStatus: TypeStatusOrder;
       }) => {
+        console.log(props);
         socket
           .to(`account:${auth.accountId}:orders`)
           .emit("update_status", props);
@@ -644,12 +649,10 @@ export const WebSocketIo = (io: Server) => {
 
   const agent = io.of("/agent");
   agent.on("connection", (socket) => {
-    console.log("AGENTE CONECTOU");
-
     socket.on("CONNECT", async ({ deviceId }) => {
       const exist = await prisma.menusOnline.findFirst({
         where: { deviceId_app_agent: deviceId },
-        select: { id: true, titlePage: true },
+        select: { id: true, titlePage: true, accountId: true },
       });
       if (!exist) {
         socket.emit("UNPAIR");
@@ -780,7 +783,6 @@ export const WebSocketIo = (io: Server) => {
     });
 
     socket.on("PAIR_INIT", ({ code }) => {
-      console.log("PAIR_INIT", code);
       pairingCodes.set(code, socket);
     });
 

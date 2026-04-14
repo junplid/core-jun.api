@@ -89,6 +89,7 @@ export class GetMenuOnlineUseCase {
         bg_primary: true,
         bg_secondary: true,
         bg_tertiary: true,
+        capaImg: true,
         logoImg: true,
         status: true,
         titlePage: true,
@@ -108,6 +109,10 @@ export class GetMenuOnlineUseCase {
             lng: true,
             max_distance_km: true,
             price_per_km: true,
+
+            average_delivery_time: true,
+            deliveries_begin_at: true,
+            minimum_value_per_order: true,
           },
         },
         OperatingDays: {

@@ -29,6 +29,10 @@ export const updateMenuOnlineInfoValidation = (
     delivery_fee: Joi.number().empty(["", null]).default(null),
     price_per_km: Joi.number().empty(["", null]).default(null),
     max_distance_km: Joi.number().empty(["", null]).default(null),
+
+    deliveries_begin_at: Joi.string().optional().allow("", null),
+    average_delivery_time: Joi.string().optional().allow("", null),
+    minimum_value_per_order: Joi.number().optional().allow("", null),
   });
 
   const validation = schemaValidation.validate(

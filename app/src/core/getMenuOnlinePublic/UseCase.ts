@@ -144,6 +144,7 @@ export class GetMenuOnlinePublicUseCase {
       where: { identifier: dto.identifier },
       select: {
         uuid: true,
+        capaImg: true,
         bg_primary: true,
         bg_secondary: true,
         bg_tertiary: true,
@@ -276,6 +277,10 @@ export class GetMenuOnlinePublicUseCase {
             max_distance_km: true,
             price_per_km: true,
             lng: true,
+
+            average_delivery_time: true,
+            deliveries_begin_at: true,
+            minimum_value_per_order: true,
           },
         },
         OperatingDays: {

@@ -184,7 +184,10 @@ RouterV1Private_Put.put(
   "/menus-online/:id",
   csrfMiddleware,
   // @ts-expect-error
-  multer({ storage: uploadImage }).single("fileImage"),
+  multer({ storage: uploadImage }).fields([
+    { name: "fileImage", maxCount: 1 },
+    { name: "fileCapaImage", maxCount: 1 },
+  ]),
   updateMenuOnlineValidation,
   updateMenuOnlineController,
 );

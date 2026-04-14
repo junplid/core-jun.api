@@ -476,6 +476,8 @@ export type NodeGetMenuOnlineData = {
     | "deviceId_app_agent"
     | "device_online"
     | "titlePage"
+    | "have_deliveries_started"
+    | "deliveries_begin_at"
     | "link"
     | "address"
     | "lat"
@@ -502,6 +504,8 @@ export type NodeGetMenuOnlineData = {
   varId_save_whatsapp_contact?: number;
   varId_save_delivery_fee?: number;
   varId_save_device_online?: number;
+  varId_save_have_deliveries_started?: number;
+  varId_save_deliveries_begin_at?: number;
 };
 
 export type TypeNodesPayload =

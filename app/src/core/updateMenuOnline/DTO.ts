@@ -1,6 +1,7 @@
 export interface UpdateMenuOnlineBodyDTO_I {
   accountId: number;
   fileNameImage?: string;
+  fileNameCapaImage?: string;
   identifier: string;
   titlePage: string | null;
   desc: string | null;

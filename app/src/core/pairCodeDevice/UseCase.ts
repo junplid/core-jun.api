@@ -3,6 +3,8 @@ import { prisma } from "../../adapters/Prisma/client";
 import { connectedDevices, pairingCodes } from "../../infra/websocket/cache";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { PairCodeDeviceDTO_I } from "./DTO";
+import { createTokenAuth } from "../../helpers/authToken";
+import { randomBytes } from "crypto";
 
 export class PairCodeDeviceUseCase {
   constructor() {}
@@ -10,7 +12,7 @@ export class PairCodeDeviceUseCase {
   async run({ accountId, ...dto }: PairCodeDeviceDTO_I) {
     const exist = await prisma.menusOnline.findFirst({
       where: { accountId, uuid: dto.uuid },
-      select: { id: true },
+      select: { id: true, Account: { select: { hash: true } } },
     });
 
     if (!exist) {
@@ -31,7 +33,25 @@ export class PairCodeDeviceUseCase {
       }
 
       connectedDevices.set(deviceId, socket);
-      socket.emit("PAIRED", { deviceId });
+      const csrfToken = randomBytes(32).toString("hex");
+
+      const token = await createTokenAuth(
+        {
+          id: accountId,
+          type: "adm",
+          hash: exist.Account.hash,
+        },
+        process.env.SECRET_TOKEN_AUTH!,
+      );
+
+      socket.emit("PAIRED", {
+        deviceId,
+        accountId,
+        cookies: {
+          access_token_app: token,
+          APP_XSRF_TOKEN: csrfToken,
+        },
+      });
       pairingCodes.delete(dto.code);
 
       await prisma.menusOnline.update({

@@ -85,6 +85,9 @@ export class GetOrdersUseCase {
                   MenuInfo: { select: { lat: true, lng: true } },
                 },
               },
+              Router: {
+                select: { Router: { select: { n_router: true } } },
+              },
               OrderAdjustments: {
                 select: { amount: true, label: true, type: true },
               },
@@ -144,6 +147,7 @@ export class GetOrdersUseCase {
                 Charges, // mostrar status do pagamento.
                 data,
                 Items,
+                Router,
                 ...order
               }) => {
                 const dataItems = formatOrder(Items);
@@ -163,6 +167,7 @@ export class GetOrdersUseCase {
                         `&origin=${menuOnline?.MenuInfo?.lat},${menuOnline.MenuInfo.lng}` +
                         `&destination=${delivery_lat},${delivery_lng}`,
                     }),
+                  n_router: Router?.Router.n_router,
                   data: nextData,
                   charge_status: Charges.length ? Charges[0].status : undefined,
                   sub_total: order.sub_total?.toNumber(),

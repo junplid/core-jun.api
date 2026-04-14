@@ -2,6 +2,11 @@ import { NextFunction, Request, Response } from "express";
 import { Joi } from "express-validation";
 import { UpdateMenuOnlineBodyDTO_I, UpdateMenuOnlineParamsDTO_I } from "./DTO";
 
+type MulterFiles = {
+  fileImage?: Express.Multer.File[];
+  fileCapaImage?: Express.Multer.File[];
+};
+
 export const updateMenuOnlineValidation = (
   req: Request<UpdateMenuOnlineParamsDTO_I, any, UpdateMenuOnlineBodyDTO_I>,
   res: Response,
@@ -12,6 +17,7 @@ export const updateMenuOnlineValidation = (
     identifier: Joi.string().required(),
     desc: Joi.string().optional().allow("", null),
     fileNameImage: Joi.string().optional().allow("", null),
+    fileNameCapaImage: Joi.string().optional().allow("", null),
     bg_primary: Joi.custom((value) => {
       if (value === "null") return null;
       return value;
@@ -35,11 +41,16 @@ export const updateMenuOnlineValidation = (
     connectionWAId: Joi.number().required(),
   });
 
+  const files = req.files as MulterFiles;
+  const fileNameImage = files.fileImage?.[0]?.filename;
+  const fileNameCapaImage = files.fileCapaImage?.[0]?.filename;
+
   const validation = schemaValidation.validate(
     {
       ...req.body,
       ...req.params,
-      fileNameImage: req.file?.filename,
+      fileNameImage,
+      fileNameCapaImage,
       ...req.query,
     },
     { abortEarly: false },
@@ -55,7 +66,6 @@ export const updateMenuOnlineValidation = (
   }
 
   req.params.id = Number(req.params.id);
-  req.body.fileNameImage = req.file?.filename;
   req.body.accountId = req.user?.id!;
   req.body = { ...req.body, ...validation.value };
   next();

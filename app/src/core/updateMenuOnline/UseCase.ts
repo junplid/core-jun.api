@@ -9,7 +9,13 @@ const path = resolve(process.env.STORAGE_PATH!, "static", "storage");
 export class UpdateMenuOnlineUseCase {
   constructor() {}
 
-  async run({ accountId, id, fileNameImage, ...dto }: UpdateMenuOnlineDTO_I) {
+  async run({
+    accountId,
+    id,
+    fileNameImage,
+    fileNameCapaImage,
+    ...dto
+  }: UpdateMenuOnlineDTO_I) {
     // const getAccount = await prisma.account.findFirst({
     //   where: { id: accountId },
     //   select: { isPremium: true },
@@ -25,7 +31,7 @@ export class UpdateMenuOnlineUseCase {
 
     const exist = await prisma.menusOnline.findFirst({
       where: { id, accountId },
-      select: { logoImg: true, uuid: true },
+      select: { logoImg: true, uuid: true, capaImg: true },
     });
 
     if (!exist) {
@@ -52,7 +58,11 @@ export class UpdateMenuOnlineUseCase {
     try {
       await prisma.menusOnline.update({
         where: { id },
-        data: { ...(fileNameImage && { logoImg: fileNameImage }), ...dto },
+        data: {
+          ...(fileNameImage && { logoImg: fileNameImage }),
+          ...(fileNameCapaImage && { capaImg: fileNameCapaImage }),
+          ...dto,
+        },
       });
 
       if (fileNameImage && exist.logoImg) {
@@ -61,15 +71,30 @@ export class UpdateMenuOnlineUseCase {
         });
       }
 
+      if (fileNameCapaImage && exist.capaImg) {
+        await remove(path + `/${exist.capaImg}`).catch((_err) => {
+          console.log("Error ao remover arquivo: ");
+        });
+      }
+
       return {
         message: "OK!",
         status: 200,
-        menu: { logoImg: fileNameImage, uuid: exist.uuid },
+        menu: {
+          logoImg: fileNameImage,
+          capaImg: fileNameCapaImage,
+          uuid: exist.uuid,
+        },
       };
     } catch (error) {
       console.log(error);
       if (fileNameImage) {
         await remove(path + `/${fileNameImage}`).catch((_err) => {
+          console.log("Error ao remover arquivo: ");
+        });
+      }
+      if (fileNameCapaImage) {
+        await remove(path + `/${fileNameCapaImage}`).catch((_err) => {
           console.log("Error ao remover arquivo: ");
         });
       }
