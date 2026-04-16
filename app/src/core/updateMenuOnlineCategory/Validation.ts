@@ -18,7 +18,7 @@ export const updateMenuOnlineCategoryValidation = (
     uuid: Joi.string().required(),
     categoryUuid: Joi.string().required(),
     name: Joi.string().optional(),
-    image45x45png: Joi.string().optional(),
+    image45x45png: Joi.string().allow(null).optional().default(null),
     startAt: Joi.date().iso().optional().allow(null),
     endAt: Joi.date().iso().optional().allow(null),
     days_in_the_week: Joi.array().items(Joi.number()).optional(),
@@ -29,7 +29,7 @@ export const updateMenuOnlineCategoryValidation = (
       ...req.body,
       ...req.params,
       days_in_the_week: req.body.days_in_the_week
-        ? String(req.body.days_in_the_week).split(",")
+        ? JSON.parse(String(req.body.days_in_the_week))
         : undefined,
       image45x45png: req.file?.filename,
     },

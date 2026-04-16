@@ -17,7 +17,7 @@ export const createMenuOnlineCategoryValidation = (
   const schemaValidation = Joi.object({
     uuid: Joi.string().required(),
     name: Joi.string().required(),
-    image45x45png: Joi.string().required(),
+    image45x45png: Joi.string().allow(null).optional().default(null),
     startAt: Joi.date().iso().optional(),
     endAt: Joi.date().iso().optional(),
     days_in_the_week: Joi.array().items(Joi.number()),

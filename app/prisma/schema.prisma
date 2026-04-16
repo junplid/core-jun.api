@@ -2335,7 +2335,7 @@ model MenuOnlineCategory {
   id               Int                                    @id @default(autoincrement())
   uuid             String                                 @unique @default(uuid())
   name             String
-  image45x45png    String
+  image45x45png    String?
   sequence         Int?
   menuId           Int
   startAt          DateTime?                              @db.Timestamptz

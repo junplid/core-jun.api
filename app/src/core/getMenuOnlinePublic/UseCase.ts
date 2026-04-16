@@ -159,22 +159,6 @@ export class GetMenuOnlinePublicUseCase {
             OR: [
               { days_in_the_week: { isEmpty: true } },
               { days_in_the_week: { has: dayweek } },
-              // { days_in_the_week: null },
-              // {
-              //   AND: [
-              //     // startAt deve ser nulo (sem limite inferior) OU <= now
-              //     {
-              //       OR: [
-              //         { startAt: { equals: null } },
-              //         { startAt: { lte: now } },
-              //       ],
-              //     },
-              //     // endAt deve ser nulo (sem limite superior) OU >= now
-              //     {
-              //       OR: [{ endAt: { equals: null } }, { endAt: { gte: now } }],
-              //     },
-              //   ],
-              // },
             ],
           },
           select: {
@@ -213,24 +197,6 @@ export class GetMenuOnlinePublicUseCase {
                   OR: [
                     { days_in_the_week: { isEmpty: true } },
                     { days_in_the_week: { has: dayweek } },
-                    // {
-                    //   AND: [
-                    //     // startAt deve ser nulo (sem limite inferior) OU <= now
-                    //     {
-                    //       OR: [
-                    //         { startAt: { equals: null } },
-                    //         { startAt: { lte: now } },
-                    //       ],
-                    //     },
-                    //     // endAt deve ser nulo (sem limite superior) OU >= now
-                    //     {
-                    //       OR: [
-                    //         { endAt: { equals: null } },
-                    //         { endAt: { gte: now } },
-                    //       ],
-                    //     },
-                    //   ],
-                    // },
                   ],
                 },
               },

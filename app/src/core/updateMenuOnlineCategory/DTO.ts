@@ -6,7 +6,7 @@ export interface UpdateMenuOnlineCategoryParamsDTO_I {
 export interface UpdateMenuOnlineCategoryBodyDTO_I {
   accountId: number;
   name?: string;
-  image45x45png?: string;
+  image45x45png?: string | null;
   startAt?: Date;
   endAt?: Date;
   days_in_the_week?: number[];
