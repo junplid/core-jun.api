@@ -931,6 +931,10 @@ export const Baileys = ({ socket, ...props }: PropsBaileys): Promise<void> => {
 
               if (!identifierLead || !numberConnection) continue;
 
+              if (key.remoteJid === "status@broadcast" || m.broadcast) {
+                return;
+              }
+
               // ====== 1. Caso de mensagens enviadas por nós (append) ======
               if (!isGroup && fromMe && body.type === "append") {
                 const msgId = key.id;

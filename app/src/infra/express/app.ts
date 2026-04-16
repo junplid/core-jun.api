@@ -53,7 +53,11 @@ const corsOptions = {
     const isProd = process.env.NODE_ENV === "prod";
 
     if (isProd) {
-      if (origin.endsWith(".junplid.com.br")) {
+      if (
+        origin.endsWith(".junplid.com.br") ||
+        origin.includes(".ngrok") ||
+        origin.includes(".ngrok-free.app")
+      ) {
         return callback(null, true);
       }
       return callback(new Error("Not allowed by CORS"));
