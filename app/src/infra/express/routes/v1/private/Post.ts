@@ -77,6 +77,14 @@ import { unpairCodeDeviceValidation } from "../../../../../core/unpairCodeDevice
 import { unpairCodeDeviceController } from "../../../../../core/unpairCodeDevice";
 import { generateMenuOnlineReportValidation } from "../../../../../core/generateMenuOnlineReport/Validation";
 import { generateMenuOnlineReportController } from "../../../../../core/generateMenuOnlineReport";
+import { createTableValidation } from "../../../../../core/createTable/Validation";
+import { createTableController } from "../../../../../core/createTable";
+import { createTableItemValidation } from "../../../../../core/createTableItem/Validation";
+import { createTableItemController } from "../../../../../core/createTableItem";
+import { printTableOrderValidation } from "../../../../../core/printTableOrder/Validation";
+import { printTableOrderController } from "../../../../../core/printTableOrder";
+import { closeTableValidation } from "../../../../../core/closeTable/Validation";
+import { closeTableController } from "../../../../../core/closeTable";
 
 const RouterV1Private_Post = Router();
 
@@ -93,7 +101,6 @@ const uploadImage = storageMulter({
 RouterV1Private_Post.post(
   "/connections-wa",
   csrfMiddleware,
-  // @ts-expect-error
   multer({ storage: uploadImage }).single("fileImage"),
   createConnectionWAValidation,
   createConnectionWAController,
@@ -102,7 +109,6 @@ RouterV1Private_Post.post(
 RouterV1Private_Post.post(
   "/image",
   csrfMiddleware,
-  // @ts-expect-error
   multer({ storage: uploadImage }).single("fileImage"),
   (req, res) => {
     res.json({ filename: req.file?.filename });
@@ -154,7 +160,6 @@ RouterV1Private_Post.post(
 RouterV1Private_Post.post(
   "/storage-files",
   csrfMiddleware,
-  // @ts-expect-error
   multer({
     storage: uploadFiles,
     limits: {
@@ -278,7 +283,6 @@ RouterV1Private_Post.post(
 RouterV1Private_Post.post(
   "/menus-online",
   csrfMiddleware,
-  // @ts-expect-error
   multer({ storage: uploadImage }).single("fileImage"),
   createMenuOnlineValidation,
   createMenuOnlineController,
@@ -294,8 +298,8 @@ RouterV1Private_Post.post(
 RouterV1Private_Post.post(
   "/menus-online/:uuid/categories",
   csrfMiddleware,
-  // @ts-expect-error
   multer({ storage: uploadImage }).single("fileImage"),
+  // @ts-expect-error
   createMenuOnlineCategoryValidation,
   createMenuOnlineCategoryController,
 );
@@ -404,6 +408,34 @@ RouterV1Private_Post.post(
   csrfMiddleware,
   generateMenuOnlineReportValidation,
   generateMenuOnlineReportController,
+);
+
+RouterV1Private_Post.post(
+  "/tables",
+  csrfMiddleware,
+  createTableValidation,
+  createTableController,
+);
+
+RouterV1Private_Post.post(
+  "/tables/:tableId/item",
+  csrfMiddleware,
+  createTableItemValidation,
+  createTableItemController,
+);
+
+RouterV1Private_Post.post(
+  "/tables/:tableId/print-order",
+  csrfMiddleware,
+  printTableOrderValidation,
+  printTableOrderController,
+);
+
+RouterV1Private_Post.post(
+  "/tables/:tableId/close",
+  csrfMiddleware,
+  closeTableValidation,
+  closeTableController,
 );
 
 export default RouterV1Private_Post;

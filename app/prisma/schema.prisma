@@ -158,6 +158,7 @@ model Account {
   pushTokens          PushTokens[]
   Appointments        Appointments[]
   followUps           FollowUp[]
+  Tables              Table[]
 
   @@index([id, emailHash, hash, cpfCnpjHash, status, available, isUsedFreeTrialTime])
 }
@@ -2034,12 +2035,18 @@ enum TypePriorityOrder {
   critical
 }
 
+enum TypeOrder {
+  TABLE
+  MENU
+}
+
 model Orders {
   id                       Int                     @id @default(autoincrement())
   n_order                  String
   name                     String?                 @db.VarChar(150)
   description              String?                 @db.Text
   payment_method           String?
+  type                     TypeOrder               @default(TABLE)
   payment_change_to        String?
   deleted                  Boolean                 @default(false)
   status                   TypeStatusOrder         @default(draft)
@@ -2077,6 +2084,8 @@ model Orders {
   contactsWAOnAccountId    Int?
   accountId                Int
   businessId               Int
+  tableId                  Int?
+  Table                    Table?                  @relation(fields: [tableId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   Business                 Business                @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   menuOnline               MenusOnline?            @relation(fields: [menuId], references: [id], onDelete: SetNull)
   FlowState                FlowState?              @relation(fields: [flowStateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
@@ -2361,6 +2370,7 @@ model MenuOnlineCategoryOnMenusOnlineItems {
 model MenuOnlineItemOfOrder {
   id          Int              @id @default(autoincrement())
   title       String
+  qnt         Int              @default(1)
   price       Decimal?         @db.Decimal(6, 2)
   obs         String?
   side_dishes String?          @db.Text
@@ -2598,4 +2608,24 @@ model AgentTemplates {
   Sections                      AgentTemplateInputsSection[]
 
   @@index([count_usage, createAt])
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  CLEANING
+}
+
+model Table {
+  id        Int         @id @default(autoincrement())
+  name      String
+  status    TableStatus @default(AVAILABLE)
+  createAt  DateTime    @default(now()) @db.Timestamptz
+  updateAt  DateTime    @updatedAt @db.Timestamptz
+  accountId Int
+
+  Account Account @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  Order Orders[]
 }

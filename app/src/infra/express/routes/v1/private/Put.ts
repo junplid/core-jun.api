@@ -55,6 +55,8 @@ import { updateMenuOnlineCategorySequenceValidation } from "../../../../../core/
 import { updateMenuOnlineCategorySequenceController } from "../../../../../core/updateMenuOnlineCategorySequence";
 import { updateMenuOnlineSubItemsStatusValidation } from "../../../../../core/updateMenuOnlineSubItems/Validation";
 import { updateMenuOnlineSubItemsStatusController } from "../../../../../core/updateMenuOnlineSubItems";
+import { updateTableValidation } from "../../../../../core/updateTable/Validation";
+import { updateTableController } from "../../../../../core/updateTable";
 
 const RouterV1Private_Put = Router();
 
@@ -90,8 +92,8 @@ const uploadImage = storageMulter({
 RouterV1Private_Put.put(
   "/connections-wa/:id",
   csrfMiddleware,
-  // @ts-expect-error
   multer({ storage: uploadImage }).single("fileImage"),
+  // @ts-expect-error
   updateConnectionWAValidation,
   updateConnectionWAController,
 );
@@ -183,11 +185,11 @@ RouterV1Private_Put.put(
 RouterV1Private_Put.put(
   "/menus-online/:id",
   csrfMiddleware,
-  // @ts-expect-error
   multer({ storage: uploadImage }).fields([
     { name: "fileImage", maxCount: 1 },
     { name: "fileCapaImage", maxCount: 1 },
   ]),
+  // @ts-expect-error
   updateMenuOnlineValidation,
   updateMenuOnlineController,
 );
@@ -209,8 +211,8 @@ RouterV1Private_Put.put(
 RouterV1Private_Put.put(
   "/menus-online/:uuid/categories/:categoryUuid",
   csrfMiddleware,
-  // @ts-expect-error
   multer({ storage: uploadImage }).single("fileImage"),
+  // @ts-expect-error
   updateMenuOnlineCategoryValidation,
   updateMenuOnlineCategoryController,
 );
@@ -248,6 +250,13 @@ RouterV1Private_Put.put(
   csrfMiddleware,
   updateMenuOnlineOperatingDaysValidation,
   updateMenuOnlineOperatingDaysController,
+);
+
+RouterV1Private_Put.put(
+  "/tables/:id",
+  csrfMiddleware,
+  updateTableValidation,
+  updateTableController,
 );
 
 export default RouterV1Private_Put;

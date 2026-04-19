@@ -40,6 +40,10 @@ import { deleteConnectionIGValidation } from "../../../../../core/deleteConnecti
 import { deleteConnectionIGController } from "../../../../../core/deleteConnectionIG";
 import { deleteMenuOnlineCategoryValidation } from "../../../../../core/deleteMenuOnlineCategory/Validation";
 import { deleteMenuOnlineCategoryController } from "../../../../../core/deleteMenuOnlineCategory";
+import { deleteTableValidation } from "../../../../../core/deleteTable/Validation";
+import { deleteTableController } from "../../../../../core/deleteTable";
+import { deleteTableItemValidation } from "../../../../../core/deleteTableItem/Validation";
+import { deleteTableItemController } from "../../../../../core/deleteTableItem";
 
 const RouterV1Private_Delete = Router();
 
@@ -181,6 +185,20 @@ RouterV1Private_Delete.delete(
   csrfMiddleware,
   deleteMenuOnlineCategoryValidation,
   deleteMenuOnlineCategoryController,
+);
+
+RouterV1Private_Delete.delete(
+  "/tables/:id",
+  csrfMiddleware,
+  deleteTableValidation,
+  deleteTableController,
+);
+
+RouterV1Private_Delete.delete(
+  "/tables/:tableId/item/:ItemOfOrderId",
+  csrfMiddleware,
+  deleteTableItemValidation,
+  deleteTableItemController,
 );
 
 export default RouterV1Private_Delete;

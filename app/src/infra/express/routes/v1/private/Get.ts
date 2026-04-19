@@ -148,6 +148,8 @@ import { getMenuOnlineItemsForSelectController } from "../../../../../core/getMe
 import { csrfMiddleware } from "../../../../middlewares/csrf";
 import { getMenuOnlineSubItemsForSelectValidation } from "../../../../../core/getMenuOnlineSubItemsForSelect/Validation";
 import { getMenuOnlineSubItemsForSelectController } from "../../../../../core/getMenuOnlineSubItemsForSelect";
+import { getTablesValidation } from "../../../../../core/getTables/Validation";
+import { getTablesController } from "../../../../../core/getTables";
 
 const RouterV1Private_Get = Router();
 
@@ -663,6 +665,13 @@ RouterV1Private_Get.get(
   csrfMiddleware,
   getMenuOnlineItemValidation,
   getMenuOnlineItemController,
+);
+
+RouterV1Private_Get.get(
+  "/tables",
+  csrfMiddleware,
+  getTablesValidation,
+  getTablesController,
 );
 
 export default RouterV1Private_Get;

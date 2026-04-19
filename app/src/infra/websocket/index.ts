@@ -59,7 +59,6 @@ ensureFileSync(pathFilesTest);
 
 export const WebSocketIo = (io: Server) => {
   io.on("connection", async (socket) => {
-    console.log("CONNECTOU");
     const { auth } = socket.handshake;
 
     if (auth.accountId) {
@@ -672,6 +671,7 @@ export const WebSocketIo = (io: Server) => {
           id: true,
           Order: {
             select: {
+              tableId: true,
               n_order: true,
               total: true,
               sub_total: true,
@@ -702,65 +702,92 @@ export const WebSocketIo = (io: Server) => {
       });
 
       for (const { Order: order, id } of pendingPrints) {
-        let charge_status = false;
-        if (order.Charges.length) {
-          if (
-            order.Charges[0].status === "approved" ||
-            order.Charges[0].status === "authorized"
-          ) {
-            charge_status = true;
+        if (!order.tableId) {
+          let charge_status = false;
+          if (order.Charges.length) {
+            if (
+              order.Charges[0].status === "approved" ||
+              order.Charges[0].status === "authorized"
+            ) {
+              charge_status = true;
+            }
           }
+
+          socket.emit("PRINT_ORDER", {
+            menu_title: remove(exist.titlePage || ""),
+            n_order: order.n_order,
+            total: formatToBRL(order.total?.toNumber() || 0),
+            subtotal: formatToBRL(order.sub_total?.toNumber() || 0),
+            adjustments: order.OrderAdjustments.map((adj) => ({
+              label: remove(adj.label),
+              amount: formatToBRL(adj.amount.toNumber() || 0),
+            })),
+            payment_change_to: order.payment_change_to
+              ? isNaN(parseToNumber(order.payment_change_to))
+                ? null
+                : parseToNumber(order.payment_change_to)
+              : null,
+            charge_status,
+            name: remove(order.name || ""),
+            payment_method: order.payment_method
+              ? remove(order.payment_method)
+              : null,
+            ...(order.delivery_address !== "RETIRAR" && {
+              delivery_address: order.delivery_address
+                ? remove(order.delivery_address)
+                : null,
+              delivery_cep: order.delivery_cep
+                ? remove(order.delivery_cep)
+                : null,
+              delivery_complement: order.delivery_complement
+                ? remove(order.delivery_complement)
+                : null,
+              delivery_number: order.delivery_number
+                ? remove(order.delivery_number)
+                : null,
+              delivery_reference_point: order.delivery_reference_point
+                ? remove(order.delivery_reference_point)
+                : null,
+            }),
+
+            items: order.Items.map((ii) => {
+              return {
+                title: remove(ii.title),
+                total:
+                  (ii.price?.toNumber() || 0) > 0
+                    ? formatToBRL(ii.price?.toNumber() || 0)
+                    : undefined,
+                subs: remove(ii.side_dishes || ""),
+                obs: remove(ii.obs?.replace(/^\_(.*)\_$/, "$1") || ""),
+              };
+            }),
+          });
+        } else {
+          const total = order.Items.reduce((ac, item) => {
+            ac += item.price?.toNumber() || 0;
+            return ac;
+          }, 0);
+
+          socket.emit("PRINT_ORDER", {
+            menu_title: remove(exist.titlePage || ""),
+            n_order: order.n_order,
+            total: formatToBRL(total),
+            subtotal: formatToBRL(total),
+            adjustments: [],
+            name: remove(order.name || ""),
+            items: order.Items.map((ii) => {
+              return {
+                title: remove(ii.title),
+                total:
+                  (ii.price?.toNumber() || 0) > 0
+                    ? formatToBRL(ii.price?.toNumber() || 0)
+                    : undefined,
+                subs: remove(ii.side_dishes || ""),
+                obs: remove(ii.obs?.replace(/^\_(.*)\_$/, "$1") || ""),
+              };
+            }),
+          });
         }
-
-        socket.emit("PRINT_ORDER", {
-          menu_title: remove(exist.titlePage || ""),
-          n_order: order.n_order,
-          total: formatToBRL(order.total?.toNumber() || 0),
-          subtotal: formatToBRL(order.sub_total?.toNumber() || 0),
-          adjustments: order.OrderAdjustments.map((adj) => ({
-            label: remove(adj.label),
-            amount: formatToBRL(adj.amount.toNumber() || 0),
-          })),
-          payment_change_to: order.payment_change_to
-            ? isNaN(parseToNumber(order.payment_change_to))
-              ? null
-              : parseToNumber(order.payment_change_to)
-            : null,
-          charge_status,
-          name: remove(order.name || ""),
-          payment_method: order.payment_method
-            ? remove(order.payment_method)
-            : null,
-          ...(order.delivery_address !== "RETIRAR" && {
-            delivery_address: order.delivery_address
-              ? remove(order.delivery_address)
-              : null,
-            delivery_cep: order.delivery_cep
-              ? remove(order.delivery_cep)
-              : null,
-            delivery_complement: order.delivery_complement
-              ? remove(order.delivery_complement)
-              : null,
-            delivery_number: order.delivery_number
-              ? remove(order.delivery_number)
-              : null,
-            delivery_reference_point: order.delivery_reference_point
-              ? remove(order.delivery_reference_point)
-              : null,
-          }),
-
-          items: order.Items.map((ii) => {
-            return {
-              title: remove(ii.title),
-              total:
-                (ii.price?.toNumber() || 0) > 0
-                  ? formatToBRL(ii.price?.toNumber() || 0)
-                  : undefined,
-              subs: remove(ii.side_dishes || ""),
-              obs: remove(ii.obs?.replace(/^\_(.*)\_$/, "$1") || ""),
-            };
-          }),
-        });
         prisma.pendingPrints.delete({ where: { id } }).catch(undefined).then();
         await new Promise((s) => setTimeout(s, 400));
       }

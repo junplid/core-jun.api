@@ -36,7 +36,6 @@ const uploadFiles = storageMulter({
 RouterV1Root_Post.post(
   "/upload-image",
   csrfMiddleware,
-  // @ts-expect-error
   multer({
     storage: uploadFiles,
     limits: { fileSize: 13 * 1024 * 1024 },
