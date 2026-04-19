@@ -71,18 +71,13 @@ export class PrintTableOrderUseCase {
     if (order.menuOnline?.deviceId_app_agent) {
       const socket = connectedDevices.get(order.menuOnline.deviceId_app_agent);
       if (!socket) {
-        prisma.pendingPrints
-          .upsert({
-            where: { orderId: order.id },
-            create: { orderId: order.id },
-            update: {},
-          })
-          .catch(() => {
-            console.log("Não conseguiu salvar a pendencia de impressão.");
-          })
-          .then();
+        await prisma.pendingPrints.upsert({
+          where: { orderId: order.id },
+          create: { orderId: order.id },
+          update: {},
+        });
         throw new ErrorResponse(400).toast({
-          title: "Impressora desconectada.",
+          title: "Impressora desconectada. 1",
           description: "Ao conectar, a impressão será feita automaticamente.",
           type: "error",
           placement: "bottom",
@@ -95,6 +90,8 @@ export class PrintTableOrderUseCase {
         .agent_app(order.menuOnline.deviceId_app_agent)
         .print(
           {
+            notify: false,
+            type: "presencial",
             menu_title: remove(order.menuOnline.titlePage || ""),
             n_order: order.n_order,
             total: formatToBRL(total),
@@ -116,18 +113,13 @@ export class PrintTableOrderUseCase {
           [],
         );
     } else {
-      prisma.pendingPrints
-        .upsert({
-          where: { orderId: order.id },
-          create: { orderId: order.id },
-          update: {},
-        })
-        .catch(() => {
-          console.log("Não conseguiu salvar a pendencia de impressão.");
-        })
-        .then();
+      await prisma.pendingPrints.upsert({
+        where: { orderId: order.id },
+        create: { orderId: order.id },
+        update: {},
+      });
       throw new ErrorResponse(400).toast({
-        title: "Agente/Impressora não encontrado.",
+        title: "Agente/Impressora não encontrado. 2",
         description: "Ao conectar, a impressão será feita automaticamente.",
         type: "error",
         placement: "bottom",

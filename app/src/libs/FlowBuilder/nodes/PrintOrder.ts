@@ -131,6 +131,7 @@ export const NodePrintOrder = async (
       .agent_app(getorder.menuOnline.deviceId_app_agent)
       .print(
         {
+          notify: true,
           menu_title: remove(getorder.menuOnline.titlePage || ""),
           n_order: getorder.n_order,
           total: formatToBRL(getorder.total?.toNumber() || 0),
@@ -149,6 +150,8 @@ export const NodePrintOrder = async (
           payment_method: getorder.payment_method
             ? remove(getorder.payment_method)
             : null,
+          type:
+            getorder.delivery_address !== "RETIRAR" ? "delivery" : "retirada",
           ...(getorder.delivery_address !== "RETIRAR" && {
             delivery_address: getorder.delivery_address
               ? remove(getorder.delivery_address)
