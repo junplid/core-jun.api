@@ -68,7 +68,12 @@ export class CreateTableItemUseCase {
       select: {
         id: true,
         name: true,
-        Account: { select: { Business: { take: 1, select: { id: true } } } },
+        Account: {
+          select: {
+            Business: { take: 1, select: { id: true } },
+            MenuOnline: { take: 1, select: { id: true } },
+          },
+        },
         Order: {
           where: { status: "processing" },
           take: 1,
@@ -82,7 +87,6 @@ export class CreateTableItemUseCase {
     }
 
     const itemsDraft: ItemDraft[] = [];
-
     for await (const item of items) {
       const getItem = await prisma.menusOnlineItems.findFirst({
         where: { uuid: item.uuid, accountId },
@@ -191,7 +195,7 @@ export class CreateTableItemUseCase {
         return {
           status: 201,
           message: "OK",
-          table: { items: newItems, id: rest.tableId },
+          table: { items: newItems, id: rest.tableId, adjustments: [] },
         };
       } else {
         const order = await prisma.orders.create({
@@ -200,12 +204,12 @@ export class CreateTableItemUseCase {
             n_order,
             accountId,
             origin: "Presencial",
+            menuId: exist.Account.MenuOnline[0].id,
             businessId: exist.Account.Business[0].id,
             name: `Mesa: ${exist.name}`,
             OrderAdjustments: { createMany: { data: orderAdjustments } },
             ...rest,
             status: "processing",
-            Items: { createMany: { data: nextItems } },
           },
           select: { id: true },
         });
@@ -232,7 +236,15 @@ export class CreateTableItemUseCase {
         return {
           status: 201,
           message: "OK",
-          table: { items: newItems, id: rest.tableId },
+          table: {
+            items: newItems,
+            id: rest.tableId,
+            adjustments: orderAdjustments.map((s) => ({
+              amount: s.amount.toNumber(),
+              label: s.label,
+              type: s.type,
+            })),
+          },
         };
       }
     } catch (error) {

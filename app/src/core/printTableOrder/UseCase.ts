@@ -81,10 +81,13 @@ export class PrintTableOrderUseCase {
             console.log("Não conseguiu salvar a pendencia de impressão.");
           })
           .then();
-        return {
-          status: 200,
-          message: "OK",
-        };
+        throw new ErrorResponse(400).toast({
+          title: "Impressora desconectada.",
+          description: "Ao conectar, a impressão será feita automaticamente.",
+          type: "error",
+          placement: "bottom",
+          duration: 1500,
+        });
       }
 
       webSocketEmitToRoom()
@@ -112,6 +115,24 @@ export class PrintTableOrderUseCase {
           },
           [],
         );
+    } else {
+      prisma.pendingPrints
+        .upsert({
+          where: { orderId: order.id },
+          create: { orderId: order.id },
+          update: {},
+        })
+        .catch(() => {
+          console.log("Não conseguiu salvar a pendencia de impressão.");
+        })
+        .then();
+      throw new ErrorResponse(400).toast({
+        title: "Agente/Impressora não encontrado.",
+        description: "Ao conectar, a impressão será feita automaticamente.",
+        type: "error",
+        placement: "bottom",
+        duration: 1500,
+      });
     }
 
     return {

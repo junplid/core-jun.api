@@ -7,8 +7,21 @@ export class GetTablesUseCase {
 
   async run({ limit = 1, ...dto }: GetTablesDTO_I) {
     try {
+      const menu = await prisma.menusOnline.findFirst({
+        where: { accountId: dto.accountId },
+        select: { uuid: true },
+      });
+
+      if (!menu) {
+        throw new ErrorResponse(400).toast({
+          title: "Nenhum cardápio digital encontrado.",
+          type: "error",
+        });
+      }
+
       const tabels = await prisma.table.findMany({
         where: { accountId: dto.accountId, name: dto.name },
+        orderBy: { id: "asc" },
         select: {
           name: true,
           id: true,
@@ -23,6 +36,7 @@ export class GetTablesUseCase {
               },
               Items: {
                 select: {
+                  id: true,
                   title: true,
                   obs: true,
                   price: true,
@@ -37,23 +51,27 @@ export class GetTablesUseCase {
       return {
         message: "OK!",
         status: 200,
-        tables: tabels.map(({ Order, ...table }) => {
-          return {
-            ...table,
-            order: Order.length
-              ? {
-                  items: Order[0].Items.map((s) => ({
-                    ...s,
-                    price: s.price?.toNumber(),
-                  })),
-                  adjustments: Order[0].OrderAdjustments.map((s) => ({
-                    ...s,
-                    amount: s.amount?.toNumber(),
-                  })),
-                }
-              : null,
-          };
-        }),
+        data: {
+          menuUuid: menu.uuid,
+          tables: tabels.map(({ Order, ...table }) => {
+            return {
+              ...table,
+              order: Order.length
+                ? {
+                    items: Order[0].Items.map(({ id, ...s }) => ({
+                      ...s,
+                      ItemOfOrderId: id,
+                      price: s.price?.toNumber(),
+                    })),
+                    adjustments: Order[0].OrderAdjustments.map((s) => ({
+                      ...s,
+                      amount: s.amount?.toNumber(),
+                    })),
+                  }
+                : null,
+            };
+          }),
+        },
       };
     } catch (error) {
       console.log(error);

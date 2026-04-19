@@ -37,10 +37,12 @@ export class GetMenuOnlineSectionsOfItemUseCase {
       status: 200,
       sections: sections.map(({ SubItems, uuid, ...section }) => ({
         uuid: v4(),
+        currentUuid: uuid,
         ...section,
         subItems: SubItems.map(({ image55x55png, uuid: ss, ...sub }) => ({
           ...sub,
           uuid: v4(),
+          currentUuid: ss,
           after_additional_price: sub.after_additional_price
             ? Number(sub.after_additional_price).toFixed(2)
             : null,

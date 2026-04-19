@@ -7,7 +7,7 @@ export class CreateTableUseCase {
   async run({ accountId, ...rest }: CreateTableDTO_I) {
     const newTable = await prisma.table.create({
       data: { ...rest, accountId },
-      select: { createAt: true },
+      select: { createAt: true, id: true },
     });
 
     return { status: 201, message: "OK", table: newTable };
