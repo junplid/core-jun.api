@@ -432,7 +432,7 @@ RouterV1Private_Post.post(
 );
 
 RouterV1Private_Post.post(
-  "/tables/:tableId/close",
+  "/tables/:tableId/close/:payment_method",
   csrfMiddleware,
   closeTableValidation,
   closeTableController,

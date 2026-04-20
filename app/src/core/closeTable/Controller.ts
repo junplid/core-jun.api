@@ -1,15 +1,28 @@
 import { Request, Response } from "express";
-import { CloseTableBodyDTO_I, CloseTableParamsDTO_I } from "./DTO";
+import {
+  CloseTableBodyDTO_I,
+  CloseTableParamsDTO_I,
+  CloseTableQueryDTO_I,
+} from "./DTO";
 import { CloseTableUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
 export const CloseTableController = (useCase: CloseTableUseCase) => {
   const execute = async (
-    req: Request<CloseTableParamsDTO_I, any, CloseTableBodyDTO_I>,
+    req: Request<
+      CloseTableParamsDTO_I,
+      any,
+      CloseTableBodyDTO_I,
+      CloseTableQueryDTO_I
+    >,
     res: Response,
   ): Promise<Response> => {
     try {
-      const data = await useCase.run({ ...req.body, ...req.params });
+      const data = await useCase.run({
+        ...req.body,
+        ...req.params,
+        ...req.query,
+      });
       return res.status(200).json(data);
     } catch (error: any) {
       if (error instanceof ErrorResponse) {

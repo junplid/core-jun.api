@@ -1,9 +1,18 @@
 import { NextFunction, Request, Response } from "express";
-import { CloseTableBodyDTO_I, CloseTableParamsDTO_I } from "./DTO";
+import {
+  CloseTableBodyDTO_I,
+  CloseTableParamsDTO_I,
+  CloseTableQueryDTO_I,
+} from "./DTO";
 import { Joi } from "express-validation";
 
 export const closeTableValidation = (
-  req: Request<CloseTableParamsDTO_I, any, CloseTableBodyDTO_I>,
+  req: Request<
+    CloseTableParamsDTO_I,
+    any,
+    CloseTableBodyDTO_I,
+    CloseTableQueryDTO_I
+  >,
   _res: Response,
   next: NextFunction,
 ) => {
@@ -15,10 +24,11 @@ export const closeTableValidation = (
       "Crédito",
       "Débito",
     ).required(),
+    add_price: Joi.number().allow(null).optional(),
   });
 
   const validation = schemaValidation.validate(
-    { ...req.body, ...req.params },
+    { ...req.body, ...req.params, ...req.query },
     { abortEarly: false, convert: true },
   );
 
@@ -33,5 +43,6 @@ export const closeTableValidation = (
 
   req.body.accountId = req.user?.id!;
   req.params.tableId = validation.value.tableId;
+  req.query.add_price = validation.value.add_price;
   next();
 };

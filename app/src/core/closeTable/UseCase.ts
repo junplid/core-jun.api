@@ -57,10 +57,14 @@ export class CloseTableUseCase {
     });
 
     if (!order?.Items.length) {
-      throw new ErrorResponse(400).toast({
-        title: "Essa mesa não tem pedido.",
-        type: "error",
+      if (order?.id) {
+        await prisma.orders.delete({ where: { id: order.id } });
+      }
+      await prisma.table.update({
+        where: { id: tableId },
+        data: { status: "AVAILABLE" },
       });
+      return { status: 200, message: "OK" };
     }
 
     const total = order.Items.reduce((ac, item) => {
@@ -87,6 +91,11 @@ export class CloseTableUseCase {
         completedAt: new Date(),
         payment_made: new Date(),
       },
+    });
+
+    await prisma.table.update({
+      where: { id: tableId },
+      data: { status: "AVAILABLE" },
     });
 
     return { status: 200, message: "OK" };

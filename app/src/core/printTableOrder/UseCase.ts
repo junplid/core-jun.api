@@ -30,8 +30,9 @@ export class PrintTableOrderUseCase {
 
     if (!exist.Order.length) {
       throw new ErrorResponse(400).toast({
-        title: "Essa mesa não tem pedido.",
+        title: "Essa mesa não tem items.",
         type: "error",
+        duration: 1600,
       });
     }
 
@@ -77,7 +78,7 @@ export class PrintTableOrderUseCase {
           update: {},
         });
         throw new ErrorResponse(400).toast({
-          title: "Impressora desconectada. 1",
+          title: "Impressora desconectada.",
           description: "Ao conectar, a impressão será feita automaticamente.",
           type: "error",
           placement: "bottom",
@@ -119,7 +120,7 @@ export class PrintTableOrderUseCase {
         update: {},
       });
       throw new ErrorResponse(400).toast({
-        title: "Agente/Impressora não encontrado. 2",
+        title: "Agente/Impressora não encontrado.",
         description: "Ao conectar, a impressão será feita automaticamente.",
         type: "error",
         placement: "bottom",
