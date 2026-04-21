@@ -140,6 +140,80 @@ export class GetMenuOnlinePublicUseCase {
     const dayweek = momento.weekday();
     // const now = momento.clone().utc().toDate();
 
+    const listCategories = await prisma.menuOnlineCategory.findMany({
+      orderBy: { sequence: "asc" },
+      where: {
+        Menu: { identifier: dto.identifier },
+        OR: [
+          { days_in_the_week: { isEmpty: true } },
+          { days_in_the_week: { has: dayweek } },
+        ],
+      },
+      select: {
+        name: true,
+        uuid: true,
+        image45x45png: true,
+        id: true,
+        Items: {
+          orderBy: {
+            Item: {
+              date_validity: {
+                sort: "asc",
+                nulls: "last",
+              },
+            },
+          },
+          where: {
+            Item: {
+              OR: [
+                { date_validity: null },
+                { date_validity: { gte: new Date() } },
+              ],
+            },
+          },
+          select: {
+            Item: {
+              select: {
+                name: true,
+                desc: true,
+                img: true,
+                qnt: true,
+                uuid: true,
+                afterPrice: true,
+                beforePrice: true,
+                SendToCategory: { select: { uuid: true } },
+                Sections: {
+                  orderBy: { sequence: "asc" },
+                  select: {
+                    helpText: true,
+                    title: true,
+                    required: true,
+                    uuid: true,
+                    id: true,
+                    maxOptions: true,
+                    minOptions: true,
+                    SubItems: {
+                      orderBy: { sequence: "asc" },
+                      select: {
+                        uuid: true,
+                        status: true,
+                        desc: true,
+                        after_additional_price: true,
+                        before_additional_price: true,
+                        image55x55png: true,
+                        name: true,
+                        maxLength: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
     const data = await prisma.menusOnline.findFirst({
       where: { identifier: dto.identifier },
       select: {
@@ -152,83 +226,6 @@ export class GetMenuOnlinePublicUseCase {
         bg_capa: true,
         titlePage: true,
         status: true,
-        Categories: {
-          orderBy: { sequence: "asc" },
-          where: {
-            Items: { some: {} },
-            OR: [
-              { days_in_the_week: { isEmpty: true } },
-              { days_in_the_week: { has: dayweek } },
-            ],
-          },
-          select: {
-            name: true,
-            uuid: true,
-            image45x45png: true,
-            id: true,
-          },
-        },
-        Items: {
-          orderBy: {
-            date_validity: {
-              sort: "asc",
-              nulls: "last",
-            },
-          },
-          where: {
-            Categories: { some: {} },
-            OR: [
-              { date_validity: null },
-              { date_validity: { gte: new Date() } },
-            ],
-          },
-          select: {
-            name: true,
-            desc: true,
-            img: true,
-            qnt: true,
-            uuid: true,
-            afterPrice: true,
-            beforePrice: true,
-            SendToCategory: { select: { uuid: true } },
-            Categories: {
-              where: {
-                Category: {
-                  OR: [
-                    { days_in_the_week: { isEmpty: true } },
-                    { days_in_the_week: { has: dayweek } },
-                  ],
-                },
-              },
-              select: { Category: { select: { uuid: true, id: true } } },
-            },
-            Sections: {
-              orderBy: { sequence: "asc" },
-              select: {
-                helpText: true,
-                title: true,
-                required: true,
-                uuid: true,
-                id: true,
-                maxOptions: true,
-                minOptions: true,
-                SubItems: {
-                  orderBy: { sequence: "asc" },
-                  select: {
-                    uuid: true,
-                    status: true,
-                    desc: true,
-                    after_additional_price: true,
-                    before_additional_price: true,
-                    image55x55png: true,
-                    name: true,
-                    maxLength: true,
-                  },
-                },
-              },
-            },
-          },
-        },
         MenuInfo: {
           select: {
             address: true,
@@ -243,7 +240,6 @@ export class GetMenuOnlinePublicUseCase {
             max_distance_km: true,
             price_per_km: true,
             lng: true,
-
             average_delivery_time: true,
             deliveries_begin_at: true,
             minimum_value_per_order: true,
@@ -266,7 +262,7 @@ export class GetMenuOnlinePublicUseCase {
       );
     }
 
-    const { Categories, Items, status, MenuInfo, OperatingDays, ...r } = data;
+    const { status, MenuInfo, OperatingDays, ...r } = data;
     let statusMenu = status;
     let helperTextOpening = "";
 
@@ -308,43 +304,47 @@ export class GetMenuOnlinePublicUseCase {
           ? normalizeOperatingDays(OperatingDays)
           : [{ day: "Todos os dias", time: "24h" }],
         status: statusMenu,
-        items: Items.map(
-          ({ Sections, SendToCategory, Categories, ...item }) => {
-            const valid = !Sections.some((s) => {
-              if (s.minOptions) {
-                return s.SubItems.every(
-                  (sb) => sb.maxLength === 0 || !sb.status,
-                );
-              }
-              return false;
-            });
+        categories: listCategories.map(({ Items, ...category }) => {
+          return {
+            ...category,
+            items: Items.map(
+              ({ Item: { Sections, SendToCategory, ...item } }) => {
+                const valid = !Sections.some((s) => {
+                  if (s.minOptions) {
+                    return s.SubItems.every(
+                      (sb) => sb.maxLength === 0 || !sb.status,
+                    );
+                  }
+                  return false;
+                });
 
-            return {
-              ...item,
-              qnt: valid ? item.qnt : 0,
-              categories: Categories.map((c) => c.Category),
-              afterPrice: item.afterPrice?.toNumber(),
-              beforePrice: item.beforePrice?.toNumber(),
-              send_to_category_uuid: SendToCategory?.uuid || null,
-              sections: Sections.map(({ SubItems, ...s }) => ({
-                ...s,
-                subItems: SubItems.map(
-                  ({
-                    after_additional_price,
-                    before_additional_price,
-                    ...b
-                  }) => ({
-                    ...b,
-                    after_additional_price: after_additional_price?.toNumber(),
-                    before_additional_price:
-                      before_additional_price?.toNumber(),
-                  }),
-                ),
-              })),
-            };
-          },
-        ),
-        categories: Categories,
+                return {
+                  ...item,
+                  qnt: valid ? item.qnt : 0,
+                  afterPrice: item.afterPrice?.toNumber(),
+                  beforePrice: item.beforePrice?.toNumber(),
+                  send_to_category_uuid: SendToCategory?.uuid || null,
+                  sections: Sections.map(({ SubItems, ...s }) => ({
+                    ...s,
+                    subItems: SubItems.map(
+                      ({
+                        after_additional_price,
+                        before_additional_price,
+                        ...b
+                      }) => ({
+                        ...b,
+                        after_additional_price:
+                          after_additional_price?.toNumber(),
+                        before_additional_price:
+                          before_additional_price?.toNumber(),
+                      }),
+                    ),
+                  })),
+                };
+              },
+            ),
+          };
+        }),
       },
     };
   }
