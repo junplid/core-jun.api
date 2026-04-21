@@ -65,7 +65,9 @@ export class PrintTableOrderUseCase {
     }
 
     const total = order.Items.reduce((ac, item) => {
-      ac += item.price?.toNumber() || 0;
+      ac +=
+        (item.price?.toNumber() || 0) *
+        Number(item.title.replace(/^(\d*)x.*/, "$1"));
       return ac;
     }, 0);
 

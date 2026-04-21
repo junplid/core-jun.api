@@ -10,7 +10,7 @@ import { Decimal } from "@prisma/client/runtime/library";
 import { remove } from "remove-accents";
 
 const PAYMENT_OPTIONS: { [s: string]: string } = {
-  Pix: "PIX",
+  PIX: "PIX",
   Dinheiro: "Dinheiro",
   Crédito: "C Crédito",
   Débito: "C Débito",
@@ -46,6 +46,7 @@ export class GenerateMenuOnlineReportUseCase {
           },
           orderBy: { createAt: "asc" },
           select: {
+            tableId: true,
             name: true,
             n_order: true,
             total: true,
@@ -194,12 +195,15 @@ export class GenerateMenuOnlineReportUseCase {
     //   totalCredito.amount;
 
     const pedidos = exist.Orders.map((ac) => {
+      const valuePaymentMethod = Object.entries(PAYMENT_OPTIONS).find(
+        ([key]) =>
+          remove(key).toLowerCase() ===
+          remove(ac.payment_method || "").toLowerCase(),
+      );
       return {
         code: `${ac.n_order}`,
         name: `(${moment(ac.createAt).tz("America/Sao_Paulo").format("DD/MM/YYYY HH:mm")}) ${ac.name}`,
-        forma_de_pagamento: ac.payment_method
-          ? PAYMENT_OPTIONS[ac.payment_method]
-          : "",
+        forma_de_pagamento: valuePaymentMethod?.[1] || "",
         valorPd: ac.sub_total?.toNumber() || 0,
         txEntr: ac.OrderAdjustments.reduce((ac2, cr2) => {
           if (cr2.label === "Taxa de entrega" && cr2.type === "in") {

@@ -268,7 +268,7 @@ export function gerarRelatorio(
       "ValorPdd",
       "TxEntr",
       "TxPdd",
-      "Total",
+      "Total L",
     ],
     pedidoRows,
   );
@@ -287,7 +287,7 @@ export function gerarRelatorio(
         `R$ ${totalValorPd.toFixed(2)}`,
         `R$ ${totalTxEntr.toFixed(2)}`,
         `- ${totalTxPd.toFixed(2)}`,
-        `R$ ${totalBruto.toFixed(2)}`,
+        `R$ ${dados.resumo.liquido}`,
       ],
     ],
   );
