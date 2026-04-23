@@ -10,8 +10,20 @@ interface PropsNodeAction {
   numberLead: string;
 }
 
-export const NodeAddVariables = (props: PropsNodeAction): Promise<void> =>
-  new Promise(async (res, _rej) => {
+export const NodeAddVariables = (
+  props: PropsNodeAction,
+): Promise<{
+  varTemps: {
+    name: string;
+    value: string;
+  }[];
+}> =>
+  new Promise<{
+    varTemps: {
+      name: string;
+      value: string;
+    }[];
+  }>(async (res, _rej) => {
     const { data, contactAccountId } = props;
 
     for await (const newVar of data.list || []) {
@@ -56,5 +68,5 @@ export const NodeAddVariables = (props: PropsNodeAction): Promise<void> =>
       }
     }
 
-    return res();
+    return res({ varTemps: [] });
   });

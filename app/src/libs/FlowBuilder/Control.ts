@@ -129,7 +129,9 @@ export const NodeControler = ({
       }
     }
     cacheFlowInExecution.set(keyMap, true);
-    const execute = async (props: IPropsControler): Promise<void> => {
+    const execute = async (
+      props: IPropsControler & { varTemps: { name: string; value: string }[] },
+    ): Promise<void> => {
       if (props.mode === "prod" && props.chatbotId) {
         try {
           await new Promise<void>(async (resP, rejP) => {
@@ -3990,6 +3992,6 @@ export const NodeControler = ({
 
       return res();
     };
-    execute({ ...propsC, currentNodeId, oldNodeId });
+    execute({ ...propsC, currentNodeId, oldNodeId, varTemps: [] });
   });
 };

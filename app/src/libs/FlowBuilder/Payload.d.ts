@@ -51,7 +51,7 @@ export interface NodeRemoveTagsData {
 }
 
 export interface NodeAddVariablesData {
-  list: { id: number; value: string }[];
+  list: { id: number; value: string; temp?: boolean }[];
 }
 
 export interface NodeRemoveVariablesData {

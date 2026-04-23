@@ -38,9 +38,21 @@ type PropsNodeMessage =
       lead_id: string;
     };
 
-export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
-  return new Promise(async (res, rej) => {
-    if (!props.data.messages?.length) return res();
+export const NodeMessage = (
+  props: PropsNodeMessage,
+): Promise<{
+  varTemps: {
+    name: string;
+    value: string;
+  }[];
+}> => {
+  return new Promise<{
+    varTemps: {
+      name: string;
+      value: string;
+    }[];
+  }>(async (res, rej) => {
+    if (!props.data.messages?.length) return res({ varTemps: [] });
 
     if (props.mode === "testing") {
       for await (const message of props.data.messages) {
@@ -66,7 +78,7 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
         });
       }
 
-      return res();
+      return res({ varTemps: [] });
     }
 
     for await (const message of props.data.messages) {
@@ -188,6 +200,6 @@ export const NodeMessage = (props: PropsNodeMessage): Promise<void> => {
         rej("Error ao enviar mensagem");
       }
     }
-    return res();
+    return res({ varTemps: [] });
   });
 };
