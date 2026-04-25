@@ -4,6 +4,7 @@ import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { Decimal } from "@prisma/client/runtime/library";
 import { formatToBRL } from "brazilian-values";
+import { localVariables } from "../utils/LocalVariables";
 
 type PropsGetOrder =
   | {
@@ -15,11 +16,13 @@ type PropsGetOrder =
       nodeId: string;
       flowStateId: number;
       mode: "prod";
+      keyControl: string;
     }
   | {
       mode: "testing";
       token_modal_chat_template: string;
       accountId: number;
+      keyControl: string;
     };
 
 interface ItemDraft {
@@ -72,6 +75,7 @@ export const NodeGetOrder = async (
       contactsWAOnAccountId: props.contactsWAOnAccountId,
       numberLead: props.numberLead,
       nodeId: props.nodeId,
+      keyControl: props.keyControl,
     });
 
     const getorder = await prisma.orders.findFirst({
@@ -141,6 +145,18 @@ export const NodeGetOrder = async (
       }
     }
 
+    if (
+      fields.includes("type_code") &&
+      restData.save_locale_var_name_type_code
+    ) {
+      const typecode =
+        resolvercode === getorder.n_order ? "code_order" : "code_delivery";
+      localVariables.upsert(props.keyControl, [
+        restData.save_locale_var_name_type_code,
+        typecode,
+      ]);
+    }
+
     if (fields.includes("name") && restData.varId_save_name) {
       const exist = await prisma.variable.findFirst({
         where: { id: restData.varId_save_name, type: "dynamics" },
@@ -174,6 +190,13 @@ export const NodeGetOrder = async (
           });
         }
       }
+    }
+
+    if (fields.includes("name") && restData.save_locale_var_name_name) {
+      localVariables.upsert(props.keyControl, [
+        restData.save_locale_var_name_name,
+        getorder.name || "<empty>",
+      ]);
     }
 
     if (fields.includes("status") && restData.varId_save_status) {
@@ -210,6 +233,14 @@ export const NodeGetOrder = async (
         }
       }
     }
+
+    if (fields.includes("status") && restData.save_locale_var_name_status) {
+      localVariables.upsert(props.keyControl, [
+        restData.save_locale_var_name_status,
+        getorder.status || "<empty>",
+      ]);
+    }
+
     if (
       fields.includes("payment_method") &&
       restData.varId_save_payment_method
@@ -247,6 +278,17 @@ export const NodeGetOrder = async (
         }
       }
     }
+
+    if (
+      fields.includes("payment_method") &&
+      restData.save_locale_var_name_payment_method
+    ) {
+      localVariables.upsert(props.keyControl, [
+        restData.save_locale_var_name_payment_method,
+        getorder.payment_method || "<empty>",
+      ]);
+    }
+
     if (
       fields.includes("delivery_address") &&
       restData.varId_save_delivery_address
@@ -284,6 +326,17 @@ export const NodeGetOrder = async (
         }
       }
     }
+
+    if (
+      fields.includes("delivery_address") &&
+      restData.save_locale_var_name_delivery_address
+    ) {
+      localVariables.upsert(props.keyControl, [
+        restData.save_locale_var_name_delivery_address,
+        getorder.delivery_address || "<empty>",
+      ]);
+    }
+
     if (fields.includes("total") && restData.varId_save_total) {
       const exist = await prisma.variable.findFirst({
         where: { id: restData.varId_save_total, type: "dynamics" },
@@ -322,6 +375,14 @@ export const NodeGetOrder = async (
         }
       }
     }
+
+    if (fields.includes("total") && restData.save_locale_var_name_total) {
+      localVariables.upsert(props.keyControl, [
+        restData.save_locale_var_name_total,
+        getorder.total ? String(getorder.total.toNumber()) : "<empty>",
+      ]);
+    }
+
     if (fields.includes("data") && restData.varId_save_data) {
       const exist = await prisma.variable.findFirst({
         where: { id: restData.varId_save_data, type: "dynamics" },
@@ -356,6 +417,14 @@ export const NodeGetOrder = async (
         }
       }
     }
+
+    if (fields.includes("data") && restData.save_locale_var_name_data) {
+      localVariables.upsert(props.keyControl, [
+        restData.save_locale_var_name_data,
+        getorder.data || "<empty>",
+      ]);
+    }
+
     if (fields.includes("data_items") && restData.varId_save_data_items) {
       const exist = await prisma.variable.findFirst({
         where: { id: restData.varId_save_data_items, type: "dynamics" },
@@ -392,6 +461,25 @@ export const NodeGetOrder = async (
         }
       }
     }
+
+    if (
+      fields.includes("data_items") &&
+      restData.save_locale_var_name_data_items
+    ) {
+      if (getorder.Items.length) {
+        const dataItems = formatOrder(getorder.Items);
+        localVariables.upsert(props.keyControl, [
+          restData.save_locale_var_name_data_items,
+          dataItems || "",
+        ]);
+      } else {
+        localVariables.upsert(props.keyControl, [
+          restData.save_locale_var_name_data_items,
+          "",
+        ]);
+      }
+    }
+
     if (fields.includes("delivery_fee") && restData.varId_save_delivery_fee) {
       const exist = await prisma.variable.findFirst({
         where: { id: restData.varId_save_delivery_fee, type: "dynamics" },
@@ -427,6 +515,18 @@ export const NodeGetOrder = async (
         }
       }
     }
+
+    if (
+      fields.includes("delivery_fee") &&
+      restData.save_locale_var_name_delivery_fee
+    ) {
+      const value = getorder.OrderAdjustments[0].amount.toNumber().toFixed(2);
+      localVariables.upsert(props.keyControl, [
+        restData.save_locale_var_name_delivery_fee,
+        value || "",
+      ]);
+    }
+
     if (
       fields.includes("number_contact") &&
       restData.varId_save_number_contact
@@ -469,6 +569,16 @@ export const NodeGetOrder = async (
       }
     }
 
+    if (
+      fields.includes("number_contact") &&
+      restData.save_locale_var_name_number_contact
+    ) {
+      localVariables.upsert(props.keyControl, [
+        restData.save_locale_var_name_number_contact,
+        getorder.ContactsWAOnAccount?.ContactsWA.realNumber || "<empty>",
+      ]);
+    }
+
     if (fields.includes("router_code") && restData.varId_save_router_code) {
       const exist = await prisma.variable.findFirst({
         where: { id: restData.varId_save_router_code, type: "dynamics" },
@@ -502,6 +612,16 @@ export const NodeGetOrder = async (
           });
         }
       }
+    }
+
+    if (
+      fields.includes("router_code") &&
+      restData.save_locale_var_name_router_code
+    ) {
+      localVariables.upsert(props.keyControl, [
+        restData.save_locale_var_name_router_code,
+        getorder.Router?.Router.n_router || "<empty>",
+      ]);
     }
 
     if (fields.includes("nOrder") && restData.varId_save_nOrder) {
@@ -539,6 +659,13 @@ export const NodeGetOrder = async (
       }
     }
 
+    if (fields.includes("nOrder") && restData.save_locale_var_name_nOrder) {
+      localVariables.upsert(props.keyControl, [
+        restData.save_locale_var_name_nOrder,
+        getorder.n_order || "<empty>",
+      ]);
+    }
+
     if (fields.includes("delivery_code") && restData.varId_save_delivery_code) {
       const exist = await prisma.variable.findFirst({
         where: { id: restData.varId_save_delivery_code, type: "dynamics" },
@@ -572,6 +699,16 @@ export const NodeGetOrder = async (
           });
         }
       }
+    }
+
+    if (
+      fields.includes("delivery_code") &&
+      restData.save_locale_var_name_delivery_code
+    ) {
+      localVariables.upsert(props.keyControl, [
+        restData.save_locale_var_name_delivery_code,
+        getorder.delivery_code || "<empty>",
+      ]);
     }
 
     return "ok";

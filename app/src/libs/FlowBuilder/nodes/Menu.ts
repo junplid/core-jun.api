@@ -41,6 +41,7 @@ type PropsNodeReply =
       accountId: number;
       nodeId: string;
       mode: "prod";
+      keyControl: string;
     }
   | {
       mode: "testing";
@@ -52,6 +53,7 @@ type PropsNodeReply =
       lead_id: string;
       contactAccountId: number;
       token_modal_chat_template: string;
+      keyControl: string;
     };
 
 type ResultPromise =
@@ -107,6 +109,7 @@ export const NodeMenu = async (
         lead_id: props.lead_id,
         nodeId: props.nodeId,
         mode: "prod",
+        keyControl: props.keyControl,
       });
     } else {
       await NodeMessage({
@@ -128,6 +131,7 @@ export const NodeMenu = async (
         lead_id: props.lead_id,
         nodeId: props.nodeId,
         mode: "testing",
+        keyControl: props.keyControl,
       });
     }
 
@@ -190,6 +194,7 @@ export const NodeMenu = async (
               lead_id: props.lead_id,
               nodeId: props.nodeId,
               mode: "prod",
+              keyControl: props.keyControl,
             });
           } else {
             await NodeMessage({
@@ -211,6 +216,7 @@ export const NodeMenu = async (
               lead_id: props.lead_id,
               nodeId: props.nodeId,
               mode: "testing",
+              keyControl: props.keyControl,
             });
           }
         } catch (error) {
@@ -268,6 +274,7 @@ export const NodeMenu = async (
                 ],
               },
               external_adapter: props.external_adapter,
+              keyControl: props.keyControl,
               flowStateId: props.flowStateId,
               lead_id: props.lead_id,
               nodeId: props.nodeId,
@@ -290,6 +297,7 @@ export const NodeMenu = async (
                 ],
               },
               token_modal_chat_template: props.token_modal_chat_template,
+              keyControl: props.keyControl,
               lead_id: props.lead_id,
               nodeId: props.nodeId,
               mode: "testing",

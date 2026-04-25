@@ -7,6 +7,7 @@ interface PropsNodeSwitchVariable {
   contactsWAOnAccountId: number;
   accountId: number;
   numberLead: string;
+  keyControl: string;
 }
 
 type ResultPromise = { handleId?: string };
@@ -30,6 +31,7 @@ export const NodeSwitchVariable = async (
     text: `{{${get.name}}}`,
     contactsWAOnAccountId: props.contactsWAOnAccountId,
     numberLead: props.numberLead,
+    keyControl: props.keyControl,
   });
 
   for await (const { v, key } of data.values) {
@@ -38,6 +40,7 @@ export const NodeSwitchVariable = async (
       text: v,
       contactsWAOnAccountId: props.contactsWAOnAccountId,
       numberLead: props.numberLead,
+      keyControl: props.keyControl,
     });
 
     if (valueVar === nextV) return { handleId: key };

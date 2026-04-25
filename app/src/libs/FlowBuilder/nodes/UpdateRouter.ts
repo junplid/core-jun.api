@@ -12,11 +12,13 @@ type PropsUpdateRouter =
       nodeId: string;
       flowStateId: number;
       mode: "prod";
+      keyControl: string;
     }
   | {
       mode: "testing";
       token_modal_chat_template: string;
       accountId: number;
+      keyControl: string;
     };
 
 export const NodeUpdateRouter = async (
@@ -43,6 +45,7 @@ export const NodeUpdateRouter = async (
       contactsWAOnAccountId: props.contactsWAOnAccountId,
       nodeId: props.nodeId,
       numberLead: props.numberLead,
+      keyControl: props.keyControl,
     });
 
     const getRouter = await prisma.deliveryRouter.findFirst({
@@ -75,6 +78,7 @@ export const NodeUpdateRouter = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         nodeId: props.nodeId,
         numberLead: props.numberLead,
+        keyControl: props.keyControl,
       });
     }
 

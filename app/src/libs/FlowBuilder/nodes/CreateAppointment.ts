@@ -6,6 +6,7 @@ import moment from "moment-timezone";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { NotificationApp } from "../../../utils/notificationApp";
 import { webSocketEmitToRoom } from "../../../infra/websocket";
+import { localVariables } from "../utils/LocalVariables";
 
 type PropsCreateOrder =
   | {
@@ -27,6 +28,7 @@ type PropsCreateOrder =
         | { type: "baileys" }
         | { type: "instagram"; page_token: string };
       mode: "prod";
+      keyControl: string;
     }
   | {
       mode: "testing";
@@ -35,6 +37,7 @@ type PropsCreateOrder =
       actions?: {
         onCodeAppointment(code: string): void;
       };
+      keyControl: string;
     };
 
 export const NodeCreateAppointment = async (
@@ -62,6 +65,7 @@ export const NodeCreateAppointment = async (
     const {
       actionChannels,
       varId_save_nAppointment,
+      save_locale_var_name_nAppointment,
       reminders,
       startAt,
       endAt,
@@ -75,6 +79,7 @@ export const NodeCreateAppointment = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -86,6 +91,7 @@ export const NodeCreateAppointment = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -96,6 +102,7 @@ export const NodeCreateAppointment = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -232,6 +239,12 @@ export const NodeCreateAppointment = async (
           });
         }
       }
+    }
+    if (save_locale_var_name_nAppointment) {
+      localVariables.upsert(props.keyControl, [
+        save_locale_var_name_nAppointment,
+        n_appointment,
+      ]);
     }
 
     const now = moment().tz("America/Sao_Paulo");

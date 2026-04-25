@@ -7,10 +7,11 @@ interface PropsNodeDeleteMessage {
   contactsWAOnAccountId: number;
   connectionWhatsId: number;
   data: NodeDeleteMessageData;
+  keyControl: string;
 }
 
 export const NodeDeleteMessage = (
-  props: PropsNodeDeleteMessage
+  props: PropsNodeDeleteMessage,
 ): Promise<void> => {
   return new Promise(async (res, _rej) => {
     let jid: string = props.numberLead;

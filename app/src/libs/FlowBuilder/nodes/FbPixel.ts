@@ -21,6 +21,7 @@ interface PropsFbPixel {
   ticketProtocol?: string;
   nodeId: string;
   flowStateId: number;
+  keyControl: string;
 }
 
 const h = (v: string) =>
@@ -49,6 +50,7 @@ export const NodeFbPixel = (props: PropsFbPixel): Promise<void> => {
             ticketProtocol: props.ticketProtocol,
             numberLead: props.lead_id,
             nodeId: props.nodeId,
+            keyControl: props.keyControl,
           });
           if (key === "userEmail") userData.setEmail(h(nextValue));
           if (key === "userPhone") userData.setPhone(nextValue);

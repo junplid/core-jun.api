@@ -6,6 +6,7 @@ import moment from "moment-timezone";
 import { parseDirtyStringToNumber } from "../../../utils/parseDirtyStringToNumber";
 import { decrypte } from "../../encryption";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
+import { localVariables } from "../utils/LocalVariables";
 
 type PropsNodeCharge =
   | {
@@ -22,11 +23,13 @@ type PropsNodeCharge =
         }): void;
       };
       mode: "prod";
+      keyControl: string;
     }
   | {
       mode: "testing";
       accountId: number;
       token_modal_chat_template: string;
+      keyControl: string;
     };
 
 const prod = process.env.NODE_ENV === "prod";
@@ -63,6 +66,7 @@ export const NodeCharge = async (
       accountId: props.accountId,
       text: String(props.data.total),
       contactsWAOnAccountId: props.contactsWAOnAccountId,
+      keyControl: props.keyControl,
     }),
   );
 
@@ -95,6 +99,7 @@ export const NodeCharge = async (
         text: props.data.content || "",
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
 
       const date_of_expiration = moment().add(30, "minutes").toISOString();
@@ -220,6 +225,12 @@ export const NodeCharge = async (
       });
     }
   }
+  if (props.data.save_locale_var_name_transactionId) {
+    localVariables.upsert(props.keyControl, [
+      props.data.save_locale_var_name_transactionId,
+      transactionId,
+    ]);
+  }
   if (props.data.varId_save_qrCode && qrCodeString) {
     const exist = await prisma.contactsWAOnAccountVariable.findFirst({
       where: {
@@ -243,6 +254,12 @@ export const NodeCharge = async (
       });
     }
   }
+  if (props.data.save_locale_var_name_qrCode && qrCodeString) {
+    localVariables.upsert(props.keyControl, [
+      props.data.save_locale_var_name_qrCode,
+      qrCodeString,
+    ]);
+  }
   if (props.data.varId_save_linkPayment && qrLink) {
     const exist = await prisma.contactsWAOnAccountVariable.findFirst({
       where: {
@@ -265,6 +282,12 @@ export const NodeCharge = async (
         data: { value: qrLink },
       });
     }
+  }
+  if (props.data.save_locale_var_name_linkPayment && qrLink) {
+    localVariables.upsert(props.keyControl, [
+      props.data.save_locale_var_name_linkPayment,
+      qrLink,
+    ]);
   }
 
   return "success";

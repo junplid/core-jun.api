@@ -16,6 +16,7 @@ interface PropsNodeMessage {
   nodeId: string;
   action: { onErrorClient?(): void };
   flowStateId: number;
+  keyControl: string;
 }
 
 export const NodeSendTextGroup = (props: PropsNodeMessage): Promise<void> => {
@@ -45,6 +46,7 @@ export const NodeSendTextGroup = (props: PropsNodeMessage): Promise<void> => {
           ticketProtocol: props.ticketProtocol,
           numberLead: props.numberLead,
           nodeId: props.nodeId,
+          keyControl: props.keyControl,
         });
         const msg = await SendTextGroup({
           connectionId: props.connectionId,
@@ -63,22 +65,28 @@ export const NodeSendTextGroup = (props: PropsNodeMessage): Promise<void> => {
         });
         if (message.varId && msg.key.id) {
           await NodeAddVariables({
-            data: { list: [{ id: message.varId, value: msg.key.id }] },
+            data: {
+              list: [{ id: message.varId, value: msg.key.id }],
+              list_temp: [],
+            },
             contactAccountId: props.contactAccountId,
             nodeId: props.nodeId,
             accountId: props.accountId,
             numberLead: props.numberLead,
+            keyControl: props.keyControl,
           });
         }
         if (message.varId_groupJid && msg.key.remoteJid) {
           await NodeAddVariables({
             data: {
               list: [{ id: message.varId_groupJid, value: msg.key.remoteJid }],
+              list_temp: [],
             },
             contactAccountId: props.contactAccountId,
             nodeId: props.nodeId,
             accountId: props.accountId,
             numberLead: props.numberLead,
+            keyControl: props.keyControl,
           });
         }
       } catch (error) {

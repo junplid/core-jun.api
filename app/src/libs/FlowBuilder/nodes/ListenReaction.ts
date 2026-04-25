@@ -1,5 +1,6 @@
 import { prisma } from "../../../adapters/Prisma/client";
 import { NodeListenReactionData } from "../Payload";
+import { localVariables } from "../utils/LocalVariables";
 
 interface PropsNodeListenReaction {
   data: NodeListenReactionData;
@@ -7,6 +8,7 @@ interface PropsNodeListenReaction {
   reactionText: string;
   contactAccountId: number;
   contactsWAOnAccountReactionId?: number;
+  keyControl: string;
 }
 
 export const NodeListenReaction = async (
@@ -131,6 +133,19 @@ export const NodeListenReaction = async (
         }
       }
     }
+  }
+  if (props.data.save_locale_var_name_ToReaction) {
+    localVariables.upsert(props.keyControl, [
+      props.data.save_locale_var_name_ToReaction,
+      props.reactionText,
+    ]);
+  }
+
+  if (props.data.save_locale_var_name_ToMessage) {
+    localVariables.upsert(props.keyControl, [
+      props.data.save_locale_var_name_ToMessage,
+      props.message,
+    ]);
   }
   return;
 };

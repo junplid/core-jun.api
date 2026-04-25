@@ -7,6 +7,7 @@ import { cacheConnectionsWAOnline } from "../../../adapters/Baileys/Cache";
 import { NotificationApp } from "../../../utils/notificationApp";
 import { webSocketEmitToRoom } from "../../../infra/websocket";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
+import { localVariables } from "../utils/LocalVariables";
 
 type PropsCreateOrder =
   | {
@@ -29,11 +30,13 @@ type PropsCreateOrder =
         onCodeAppointment(code: string): void;
       };
       mode: "prod";
+      keyControl: string;
     }
   | {
       mode: "testing";
       token_modal_chat_template: string;
       accountId: number;
+      keyControl: string;
     };
 
 export const NodeCreateOrder = async (
@@ -66,6 +69,7 @@ export const NodeCreateOrder = async (
         contactsWAOnAccountId: props.contactAccountId,
         numberLead: props.lead_id,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
       const getOrder = await prisma.orders.findFirst({
         where: { n_order },
@@ -95,6 +99,7 @@ export const NodeCreateOrder = async (
         contactsWAOnAccountId: props.contactAccountId,
         numberLead: props.lead_id,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
       const getcharge = await prisma.charges.findFirst({
         where: { txid: charge_transactionId },
@@ -107,6 +112,7 @@ export const NodeCreateOrder = async (
     const {
       charge_transactionId,
       varId_save_nOrder,
+      save_locale_var_name_nOrder,
       actionChannels,
       notify,
       ...restData
@@ -119,6 +125,7 @@ export const NodeCreateOrder = async (
         contactsWAOnAccountId: props.contactAccountId,
         numberLead: props.lead_id,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -129,6 +136,7 @@ export const NodeCreateOrder = async (
         contactsWAOnAccountId: props.contactAccountId,
         numberLead: props.lead_id,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -139,6 +147,7 @@ export const NodeCreateOrder = async (
         contactsWAOnAccountId: props.contactAccountId,
         numberLead: props.lead_id,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -149,6 +158,7 @@ export const NodeCreateOrder = async (
         contactsWAOnAccountId: props.contactAccountId,
         numberLead: props.lead_id,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -161,6 +171,7 @@ export const NodeCreateOrder = async (
             contactsWAOnAccountId: props.contactAccountId,
             numberLead: props.lead_id,
             nodeId: props.nodeId,
+            keyControl: props.keyControl,
           }),
         ),
       );
@@ -175,6 +186,7 @@ export const NodeCreateOrder = async (
         contactsWAOnAccountId: props.contactAccountId,
         numberLead: props.lead_id,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     } else if (restData.payment_method) {
       restData.payment_method = await resolveTextVariables({
@@ -183,6 +195,7 @@ export const NodeCreateOrder = async (
         contactsWAOnAccountId: props.contactAccountId,
         numberLead: props.lead_id,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -289,6 +302,13 @@ export const NodeCreateOrder = async (
           });
         }
       }
+    }
+
+    if (save_locale_var_name_nOrder) {
+      localVariables.upsert(props.keyControl, [
+        save_locale_var_name_nOrder,
+        n_order,
+      ]);
     }
 
     if (notify) {

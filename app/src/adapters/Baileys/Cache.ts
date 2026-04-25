@@ -77,3 +77,9 @@ export const cacheNextInputsCurrentAgents = new Map<number, string[]>();
  * Retorna uma lista de nodes agent que foram executados;
  */
 export const cacheSendMessageSuportText = new Map<string, boolean>();
+
+/**
+ * key = `{conexão id}+{numero do contato}`
+ * Retorna uma lista de nodes agent que foram executados;
+ */
+export const cacheLocalVariablesControl = new Map<string, [string, string][]>();

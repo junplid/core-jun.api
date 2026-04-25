@@ -27,6 +27,7 @@ type PropsNodeNotifyWA =
       chatbotId?: number;
       action: { onErrorClient?(): void };
       mode: "prod";
+      keyControl: string;
     }
   | {
       mode: "testing";
@@ -35,6 +36,7 @@ type PropsNodeNotifyWA =
       nodeId: string;
       contactAccountId: number;
       accountId: number;
+      keyControl: string;
     };
 
 export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
@@ -47,6 +49,7 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
       contactsWAOnAccountId: props.contactAccountId,
       nodeId: props.nodeId,
       numberLead: props.lead_id,
+      keyControl: props.keyControl,
     });
   }
 
@@ -93,6 +96,7 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
       contactsWAOnAccountId: props.contactAccountId,
       nodeId: props.nodeId,
       numberLead: props.mode === "prod" ? props.lead_id : undefined,
+      keyControl: props.keyControl,
     });
     const newNumber = validatePhoneNumber(numberresolve);
     let contactsWAOnAccountId: number | null = null;
@@ -184,6 +188,7 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
               lead_id,
               nodeId: props.nodeId,
               mode: "prod",
+              keyControl: props.keyControl,
             });
           }
         } else {
@@ -205,6 +210,7 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
               lead_id,
               nodeId: props.nodeId,
               mode: "testing",
+              keyControl: props.keyControl,
             });
           }
         }
@@ -286,6 +292,7 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
             contactsWAOnAccountId: idContact.id,
             nodeId: props.nodeId,
             numberLead: idContact.lead_id,
+            keyControl: props.keyControl,
           },
           [
             {
@@ -319,6 +326,7 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
           lead_id: idContact.lead_id,
           nodeId: props.nodeId,
           mode: "prod",
+          keyControl: props.keyControl,
         });
       } else {
         await NodeMessage({
@@ -338,6 +346,7 @@ export const NodeNotifyWA = async (props: PropsNodeNotifyWA): Promise<void> => {
           lead_id: idContact.lead_id,
           nodeId: props.nodeId,
           mode: "testing",
+          keyControl: props.keyControl,
         });
       }
 

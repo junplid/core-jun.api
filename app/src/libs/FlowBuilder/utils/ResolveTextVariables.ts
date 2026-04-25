@@ -1,5 +1,6 @@
 import moment from "moment-timezone";
 import { prisma } from "../../../adapters/Prisma/client";
+import { cacheLocalVariablesControl } from "../../../adapters/Baileys/Cache";
 
 interface IProps {
   text: string;
@@ -8,6 +9,7 @@ interface IProps {
   ticketProtocol?: string;
   numberLead?: string;
   nodeId?: string;
+  keyControl?: string;
 }
 
 export async function resolveTextVariables(
@@ -121,15 +123,25 @@ export async function resolveTextVariables(
     }
   }
 
-  const hasVariableTemp = newMessage.match(/\$\.\w+/g);
+  if (props.keyControl) {
+    const hasVariableTemp = newMessage.match(/\$\.\w+/g);
+    const listVarLocale = cacheLocalVariablesControl.get(props.keyControl);
 
-  if (hasVariableTemp && optionsTemp?.length) {
-    const list: { name: string; value: string }[] = optionsTemp;
+    if (hasVariableTemp && listVarLocale?.length) {
+      const resolveVarLocale = listVarLocale.map(([name, value]) => ({
+        name,
+        value,
+      }));
+      const list: { name: string; value: string }[] = [
+        ...(optionsTemp || []),
+        ...resolveVarLocale,
+      ];
 
-    for await (const varTemp of list) {
-      const regex = new RegExp(`(\$\.${varTemp.name})`, "g");
-      if (varTemp.value) {
-        newMessage = newMessage.replace(regex, varTemp.value);
+      for await (const varTemp of list) {
+        const regex = new RegExp(`(\$\.${varTemp.name})`, "g");
+        if (varTemp.value) {
+          newMessage = newMessage.replace(regex, varTemp.value);
+        }
       }
     }
   }

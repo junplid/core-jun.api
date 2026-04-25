@@ -11,11 +11,13 @@ type PropsDeleteOrder =
       contactsWAOnAccountId: number;
       numberLead: string;
       mode: "prod";
+      keyControl: string;
     }
   | {
       mode: "testing";
       token_modal_chat_template: string;
       accountId: number;
+      keyControl: string;
     };
 
 export const NodeDeleteOrder = async (
@@ -39,6 +41,7 @@ export const NodeDeleteOrder = async (
       text: props.data.nOrder,
       contactsWAOnAccountId: props.contactsWAOnAccountId,
       numberLead: props.numberLead,
+      keyControl: props.keyControl,
     });
 
     const getOrder = await prisma.orders.findFirst({

@@ -8,10 +8,11 @@ interface PropsNodeAction {
   afterName: string;
   cardId: string;
   contactsWAOnAccountId: number;
+  keyControl: string;
 }
 
 export const NodeWebhookTrelloCard = async (
-  props: PropsNodeAction
+  props: PropsNodeAction,
 ): Promise<"return" | "next"> => {
   const { data, contactsWAOnAccountId, accountId, ...rest } = props;
 

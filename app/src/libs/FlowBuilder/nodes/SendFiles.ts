@@ -22,6 +22,7 @@ interface PropsNodeSendFiles {
   nodeId: string;
   action: { onErrorClient?(): void };
   flowStateId: number;
+  keyControl: string;
 }
 
 export const NodeSendFiles = (props: PropsNodeSendFiles): Promise<void> => {
@@ -48,6 +49,7 @@ export const NodeSendFiles = (props: PropsNodeSendFiles): Promise<void> => {
             ticketProtocol: props.ticketProtocol,
             numberLead: props.lead_id,
             nodeId: props.nodeId,
+            keyControl: props.keyControl,
           });
         }
         try {

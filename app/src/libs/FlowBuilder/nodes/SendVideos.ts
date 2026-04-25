@@ -22,6 +22,7 @@ interface PropsNodeSendVideos {
   nodeId: string;
   action: { onErrorClient?(): void };
   flowStateId: number;
+  keyControl: string;
 }
 
 export const NodeSendVideos = (props: PropsNodeSendVideos): Promise<void> => {
@@ -47,6 +48,7 @@ export const NodeSendVideos = (props: PropsNodeSendVideos): Promise<void> => {
             ticketProtocol: props.ticketProtocol,
             numberLead: props.lead_id,
             nodeId: props.nodeId,
+            keyControl: props.keyControl,
           });
         }
 

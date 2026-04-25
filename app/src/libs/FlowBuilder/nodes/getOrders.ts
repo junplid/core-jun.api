@@ -1,6 +1,7 @@
 import { NodeGetOrdersData } from "../Payload";
 import { prisma } from "../../../adapters/Prisma/client";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
+import { localVariables } from "../utils/LocalVariables";
 
 interface PropsUpdateOrder {
   numberLead: string;
@@ -8,10 +9,11 @@ interface PropsUpdateOrder {
   data: NodeGetOrdersData;
   accountId: number;
   nodeId: string;
+  keyControl: string;
 }
 
 export const NodeUpdateOrder = async (
-  props: PropsUpdateOrder
+  props: PropsUpdateOrder,
 ): Promise<void> => {
   try {
     const {
@@ -20,6 +22,7 @@ export const NodeUpdateOrder = async (
       count,
       daysAgo,
       model_save,
+      save_locale_var_name,
       ofContact,
       ...restData
     } = props.data;
@@ -100,8 +103,9 @@ export const NodeUpdateOrder = async (
               contactsWAOnAccountId: props.contactsWAOnAccountId,
               nodeId: props.nodeId,
               numberLead: props.numberLead,
+              keyControl: props.keyControl,
             },
-            options
+            options,
           );
         } else {
           textVar += model_save;
@@ -145,6 +149,10 @@ export const NodeUpdateOrder = async (
           });
         }
       }
+    }
+
+    if (save_locale_var_name) {
+      localVariables.upsert(props.keyControl, [save_locale_var_name, textVar]);
     }
 
     return;

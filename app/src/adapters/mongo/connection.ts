@@ -10,13 +10,12 @@ const cache: TMongooseCache = {
   promise: null,
 };
 
-const url = `mongodb://${encodeURIComponent(process.env.MONGO_INITDB_ROOT_USERNAME)}:${encodeURIComponent(process.env.MONGO_INITDB_ROOT_PASSWORD)}@mongo_${process.env.MONGO_INITDB_DATABASE}:27017/${process.env.MONGO_INITDB_DATABASE}?authSource=admin`;
+const url = `mongodb://${encodeURIComponent(process.env.MONGO_INITDB_ROOT_USERNAME!)}:${encodeURIComponent(process.env.MONGO_INITDB_ROOT_PASSWORD!)}@mongo_${process.env.MONGO_INITDB_DATABASE}:27017/${process.env.MONGO_INITDB_DATABASE}?authSource=admin`;
 
 export async function mongo() {
   if (cache.conn) return cache.conn;
 
   if (!cache.promise) {
-    console.log(url);
     cache.promise = mongoose
       .connect(url, { serverSelectionTimeoutMS: 20000 })
       .then((m) => {

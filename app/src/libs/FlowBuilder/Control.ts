@@ -2,13 +2,17 @@ import { WASocket } from "baileys";
 import { prisma } from "../../adapters/Prisma/client";
 import { LibraryNodes } from "./nodes";
 import { NodePayload, TypeNodesPayload } from "./Payload";
-import { cacheFlowInExecution } from "../../adapters/Baileys/Cache";
+import {
+  cacheFlowInExecution,
+  cacheLocalVariablesControl,
+} from "../../adapters/Baileys/Cache";
 import { cacheExecuteTimeoutAgentAI, cacheTestAgentTemplate } from "./cache";
 import { webSocketEmitToRoom } from "../../infra/websocket";
 import { resolveHourAndMinute } from "../../utils/resolveHour:mm";
 import { handleFileTemp } from "../../utils/handleFileTemp";
 import { SendMessageText } from "../../adapters/Baileys/modules/sendMessage";
 import { ICacheTestAgentTemplate } from "../../core/testAgentTemplate/UseCase";
+import { v4 } from "uuid";
 
 interface Edges {
   source: string;
@@ -129,8 +133,13 @@ export const NodeControler = ({
       }
     }
     cacheFlowInExecution.set(keyMap, true);
+
+    // inicia variaveis locais
+    const keyControl = v4();
+    cacheLocalVariablesControl.set(keyControl, []);
+
     const execute = async (
-      props: IPropsControler & { varTemps: { name: string; value: string }[] },
+      props: IPropsControler & { keyControl: string },
     ): Promise<void> => {
       if (props.mode === "prod" && props.chatbotId) {
         try {
@@ -387,6 +396,7 @@ export const NodeControler = ({
                 ticketProtocol: props.ticketProtocol,
                 nodeId: currentNode.id,
                 flowStateId: props.flowStateId,
+                keyControl: props.keyControl,
                 action: {
                   onErrorClient: () => {
                     if (props.oldNodeId === "0") {
@@ -404,6 +414,7 @@ export const NodeControler = ({
                 data: currentNode.data,
                 token_modal_chat_template: props.token_modal_chat_template,
                 contactAccountId: props.contactAccountId,
+                keyControl: props.keyControl,
                 lead_id: props.lead_id,
               }),
         })
@@ -464,6 +475,7 @@ export const NodeControler = ({
                 connectionId: props.connectionId,
                 contactAccountId: props.contactAccountId,
                 data: currentNode.data,
+                keyControl: props.keyControl,
                 message: props.type === "initial" ? undefined : props.message,
                 flowBusinessIds: props.flowBusinessIds,
                 flowStateId: props.flowStateId,
@@ -502,6 +514,7 @@ export const NodeControler = ({
                 contactAccountId: props.contactAccountId,
                 lead_id: props.lead_id,
                 token_modal_chat_template: props.token_modal_chat_template,
+                keyControl: props.keyControl,
                 data: currentNode.data,
                 message: props.type === "initial" ? undefined : props.message,
                 async onExecuteSchedule() {
@@ -604,6 +617,7 @@ export const NodeControler = ({
                 contactAccountId: props.contactAccountId,
                 accountId: props.accountId,
                 external_adapter: props.external_adapter,
+                keyControl: props.keyControl,
                 data: currentNode.data,
                 nodeId: currentNode.id,
                 message: props.type === "initial" ? undefined : props.message,
@@ -651,6 +665,7 @@ export const NodeControler = ({
                 nodeId: currentNode.id,
                 message: props.type === "initial" ? undefined : props.message,
                 contactAccountId: props.contactAccountId,
+                keyControl: props.keyControl,
                 accountId: props.accountId,
                 lead_id: props.lead_id,
                 token_modal_chat_template: props.token_modal_chat_template,
@@ -874,6 +889,7 @@ export const NodeControler = ({
           nodeId: currentNodeId,
           accountId: props.accountId,
           numberLead: props.lead_id,
+          keyControl: props.keyControl,
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
@@ -1017,6 +1033,7 @@ export const NodeControler = ({
         await LibraryNodes.NodeIf({
           data: currentNode.data,
           accountId: props.accountId,
+          keyControl: props.keyControl,
           contactAccountId: props.contactAccountId,
           nodeId: currentNodeId,
           numberLead: props.lead_id,
@@ -1152,6 +1169,7 @@ export const NodeControler = ({
                 connectionId: props.connectionId,
                 contactAccountId: props.contactAccountId,
                 external_adapter: props.external_adapter,
+                keyControl: props.keyControl,
                 lead_id: props.lead_id,
                 data: currentNode.data,
                 accountId: props.accountId,
@@ -1165,6 +1183,7 @@ export const NodeControler = ({
                 accountId: props.accountId,
                 contactAccountId: props.contactAccountId,
                 data: currentNode.data,
+                keyControl: props.keyControl,
                 lead_id: props.lead_id,
                 nodeId: currentNode.id,
                 token_modal_chat_template: props.token_modal_chat_template,
@@ -1217,6 +1236,7 @@ export const NodeControler = ({
           external_adapter: props.external_adapter,
           data: currentNode.data,
           accountId: props.accountId,
+          keyControl: props.keyControl,
           ticketProtocol: props.ticketProtocol,
           action: {
             onErrorClient: () => {
@@ -1271,6 +1291,7 @@ export const NodeControler = ({
         }
         await LibraryNodes.NodeSendVideos({
           lead_id: props.lead_id,
+          keyControl: props.keyControl,
           connectionId: props.connectionId,
           contactAccountId: props.contactAccountId,
           external_adapter: props.external_adapter,
@@ -1332,6 +1353,7 @@ export const NodeControler = ({
           lead_id: props.lead_id,
           connectionId: props.connectionId,
           contactAccountId: props.contactAccountId,
+          keyControl: props.keyControl,
           external_adapter: props.external_adapter,
           action: {
             onErrorClient: () => {
@@ -1521,6 +1543,7 @@ export const NodeControler = ({
                 mode: "prod",
                 lead_id: props.lead_id,
                 chatbotId: props.chatbotId,
+                keyControl: props.keyControl,
                 connectionId: props.connectionId,
                 contactAccountId: props.contactAccountId,
                 external_adapter: props.external_adapter,
@@ -1700,6 +1723,7 @@ export const NodeControler = ({
                 mode: "testing",
                 lead_id: props.lead_id,
                 data: currentNode.data,
+                keyControl: props.keyControl,
                 nodeId: currentNode.id,
                 flowId: props.flowId,
                 businessId: props.businessId,
@@ -2003,6 +2027,7 @@ export const NodeControler = ({
           lead_id: props.lead_id,
           contactAccountId: props.contactAccountId,
           data: currentNode.data,
+          keyControl: props.keyControl,
           accountId: props.accountId,
           businessName: props.businessName,
           ticketProtocol: props.ticketProtocol,
@@ -2054,6 +2079,7 @@ export const NodeControler = ({
         await LibraryNodes.NodeListenReaction({
           contactAccountId: props.contactAccountId,
           data: currentNode.data,
+          keyControl: props.keyControl,
           message: props.message,
           reactionText: props.reactionText || "",
           contactsWAOnAccountReactionId: props.contactsWAOnAccountReactionId,
@@ -2129,6 +2155,7 @@ export const NodeControler = ({
         await LibraryNodes.NodeSwitchVariable({
           data: currentNode.data,
           contactsWAOnAccountId: props.contactAccountId,
+          keyControl: props.keyControl,
           accountId: props.accountId,
           numberLead: props.lead_id,
         })
@@ -2204,6 +2231,7 @@ export const NodeControler = ({
         }
         await LibraryNodes.NodeExtractVariable({
           contactsWAOnAccountId: props.contactAccountId,
+          keyControl: props.keyControl,
           data: currentNode.data,
           accountId: props.accountId,
           nodeId: currentNodeId,
@@ -2265,12 +2293,14 @@ export const NodeControler = ({
                 data: { ...currentNode.data, businessId: props.businessId },
                 contactsWAOnAccountId: props.contactAccountId,
                 accountId: props.accountId,
+                keyControl: props.keyControl,
                 nodeId: currentNode.id,
                 flowStateId: props.flowStateId,
                 mode: "prod",
               }
             : {
                 mode: "testing",
+                keyControl: props.keyControl,
                 accountId: props.accountId,
                 token_modal_chat_template: props.token_modal_chat_template,
               }),
@@ -2328,6 +2358,7 @@ export const NodeControler = ({
         await LibraryNodes.NodeRandomCode({
           data: currentNode.data,
           contactsWAOnAccountId: props.contactAccountId,
+          keyControl: props.keyControl,
         })
           .then(async () => {
             if (props.actions?.onExecutedNode) {
@@ -2375,6 +2406,7 @@ export const NodeControler = ({
           data: currentNode.data,
           accountId: props.accountId,
           businessName: props.businessName,
+          keyControl: props.keyControl,
           ticketProtocol: props.ticketProtocol,
           connectionId: props.connectionId,
           nodeId: currentNode.id,
@@ -2443,6 +2475,7 @@ export const NodeControler = ({
             ? {
                 lead_id: props.lead_id,
                 contactAccountId: props.contactAccountId,
+                keyControl: props.keyControl,
                 connectionId: props.connectionId,
                 data: { ...currentNode.data, businessId: props.businessId },
                 accountId: props.accountId,
@@ -2460,6 +2493,7 @@ export const NodeControler = ({
             : {
                 mode: "testing",
                 accountId: props.accountId,
+                keyControl: props.keyControl,
                 token_modal_chat_template: props.token_modal_chat_template,
               }),
         })
@@ -2572,6 +2606,7 @@ export const NodeControler = ({
                 numberLead: props.lead_id,
                 contactsWAOnAccountId: props.contactAccountId,
                 data: currentNode.data,
+                keyControl: props.keyControl,
                 accountId: props.accountId,
                 businessName: props.businessName,
                 nodeId: currentNode.id,
@@ -2581,6 +2616,7 @@ export const NodeControler = ({
               }
             : {
                 mode: "testing",
+                keyControl: props.keyControl,
                 accountId: props.accountId,
                 token_modal_chat_template: props.token_modal_chat_template,
               }),
@@ -2646,6 +2682,7 @@ export const NodeControler = ({
             ? {
                 numberLead: props.lead_id,
                 contactsWAOnAccountId: props.contactAccountId,
+                keyControl: props.keyControl,
                 data: currentNode.data,
                 accountId: props.accountId,
                 mode: "prod",
@@ -2653,6 +2690,7 @@ export const NodeControler = ({
             : {
                 mode: "testing",
                 accountId: props.accountId,
+                keyControl: props.keyControl,
                 token_modal_chat_template: props.token_modal_chat_template,
               }),
         })
@@ -2716,6 +2754,7 @@ export const NodeControler = ({
           ...(props.mode === "prod"
             ? {
                 numberLead: props.lead_id,
+                keyControl: props.keyControl,
                 contactsWAOnAccountId: props.contactAccountId,
                 data: currentNode.data,
                 accountId: props.accountId,
@@ -2726,6 +2765,7 @@ export const NodeControler = ({
               }
             : {
                 mode: "testing",
+                keyControl: props.keyControl,
                 accountId: props.accountId,
                 token_modal_chat_template: props.token_modal_chat_template,
               }),
@@ -2852,6 +2892,7 @@ export const NodeControler = ({
           data: currentNode.data,
           nodeId: currentNode.id,
           accountId: props.accountId,
+          keyControl: props.keyControl,
           contactsWAOnAccountId: props.contactAccountId,
         });
         const nextNodeId = nextEdgesIds?.find(
@@ -2893,6 +2934,7 @@ export const NodeControler = ({
           accountId: props.accountId,
           contactsWAOnAccountId: props.contactAccountId,
           nodeId: currentNode.id,
+          keyControl: props.keyControl,
           numberLead: props.lead_id,
           flowStateId: props.flowStateId,
         })
@@ -3057,6 +3099,7 @@ export const NodeControler = ({
           data: currentNode.data,
           accountId: props.accountId,
           contactsWAOnAccountId: props.contactAccountId,
+          keyControl: props.keyControl,
           nodeId: currentNode.id,
           numberLead: props.lead_id,
         })
@@ -3120,6 +3163,7 @@ export const NodeControler = ({
             accountId: props.accountId,
             contactsWAOnAccountId: props.contactAccountId,
             beforeName: props.beforeName,
+            keyControl: props.keyControl,
             afterName: props.afterName,
             cardId: props.cardId,
           })
@@ -3168,6 +3212,7 @@ export const NodeControler = ({
         await LibraryNodes.NodeDeleteMessage({
           numberLead: props.lead_id,
           contactsWAOnAccountId: props.contactAccountId,
+          keyControl: props.keyControl,
           data: currentNode.data,
           connectionWhatsId: props.connectionId,
         })
@@ -3281,6 +3326,7 @@ export const NodeControler = ({
                 connectionWhatsId: props.connectionId,
                 nodeId: currentNode.id,
                 flowStateId: props.flowStateId,
+                keyControl: props.keyControl,
                 flowId: props.flowId,
                 ...(props.type === "running" && {
                   action:
@@ -3291,6 +3337,7 @@ export const NodeControler = ({
               }
             : {
                 mode: "testing",
+                keyControl: props.keyControl,
                 accountId: props.accountId,
                 token_modal_chat_template: props.token_modal_chat_template,
               }),
@@ -3364,6 +3411,7 @@ export const NodeControler = ({
         }
         await LibraryNodes.NodeUpdateAppointment({
           numberLead: props.lead_id,
+          keyControl: props.keyControl,
           contactsWAOnAccountId: props.contactAccountId,
           data: currentNode.data,
           accountId: props.accountId,
@@ -3515,6 +3563,7 @@ export const NodeControler = ({
                 contactAccountId: props.contactAccountId,
                 data: currentNode.data,
                 accountId: props.accountId,
+                keyControl: props.keyControl,
                 nodeId: currentNode.id,
                 flowStateId: props.flowStateId,
                 external_adapter: props.external_adapter,
@@ -3522,6 +3571,7 @@ export const NodeControler = ({
               }
             : {
                 mode: "testing",
+                keyControl: props.keyControl,
                 accountId: props.accountId,
                 token_modal_chat_template: props.token_modal_chat_template,
               }),
@@ -3609,12 +3659,14 @@ export const NodeControler = ({
                 data: currentNode.data,
                 accountId: props.accountId,
                 nodeId: currentNode.id,
+                keyControl: props.keyControl,
                 flowStateId: props.flowStateId,
                 mode: "prod",
               }
             : {
                 mode: "testing",
                 accountId: props.accountId,
+                keyControl: props.keyControl,
                 token_modal_chat_template: props.token_modal_chat_template,
               }),
         })
@@ -3671,6 +3723,7 @@ export const NodeControler = ({
             ? {
                 numberLead: props.lead_id,
                 contactsWAOnAccountId: props.contactAccountId,
+                keyControl: props.keyControl,
                 data: currentNode.data,
                 accountId: props.accountId,
                 nodeId: currentNode.id,
@@ -3679,6 +3732,7 @@ export const NodeControler = ({
               }
             : {
                 mode: "testing",
+                keyControl: props.keyControl,
                 accountId: props.accountId,
                 token_modal_chat_template: props.token_modal_chat_template,
               }),
@@ -3747,11 +3801,13 @@ export const NodeControler = ({
                 contactsWAOnAccountId: props.contactAccountId,
                 data: currentNode.data,
                 accountId: props.accountId,
+                keyControl: props.keyControl,
                 mode: "prod",
               }
             : {
                 mode: "testing",
                 accountId: props.accountId,
+                keyControl: props.keyControl,
                 token_modal_chat_template: props.token_modal_chat_template,
               }),
         })
@@ -3819,12 +3875,14 @@ export const NodeControler = ({
                 data: currentNode.data,
                 accountId: props.accountId,
                 nodeId: currentNode.id,
+                keyControl: props.keyControl,
                 flowStateId: props.flowStateId,
                 mode: "prod",
               }
             : {
                 mode: "testing",
                 accountId: props.accountId,
+                keyControl: props.keyControl,
                 token_modal_chat_template: props.token_modal_chat_template,
               }),
         })
@@ -3882,11 +3940,13 @@ export const NodeControler = ({
                 contactsWAOnAccountId: props.contactAccountId,
                 data: currentNode.data,
                 accountId: props.accountId,
+                keyControl: props.keyControl,
                 mode: "prod",
               }
             : {
                 mode: "testing",
                 accountId: props.accountId,
+                keyControl: props.keyControl,
                 token_modal_chat_template: props.token_modal_chat_template,
               }),
         })
@@ -3945,12 +4005,14 @@ export const NodeControler = ({
                 contactsWAOnAccountId: props.contactAccountId,
                 data: currentNode.data,
                 accountId: props.accountId,
+                keyControl: props.keyControl,
                 nodeId: currentNode.id,
                 mode: "prod",
               }
             : {
                 mode: "testing",
                 accountId: props.accountId,
+                keyControl: props.keyControl,
                 token_modal_chat_template: props.token_modal_chat_template,
               }),
         })
@@ -3992,6 +4054,6 @@ export const NodeControler = ({
 
       return res();
     };
-    execute({ ...propsC, currentNodeId, oldNodeId, varTemps: [] });
+    execute({ ...propsC, currentNodeId, oldNodeId, keyControl });
   });
 };

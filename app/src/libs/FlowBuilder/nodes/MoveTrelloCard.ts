@@ -9,7 +9,7 @@ interface PropsNodeAction {
 }
 
 export const NodeMoveTrelloCard = async (
-  props: PropsNodeAction
+  props: PropsNodeAction,
 ): Promise<void> => {
   const { data, contactsWAOnAccountId } = props;
   if (!data.varId_cardId) return;

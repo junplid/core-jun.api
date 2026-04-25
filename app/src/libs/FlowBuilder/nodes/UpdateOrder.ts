@@ -16,11 +16,13 @@ type PropsUpdateOrder =
       flowStateId: number;
       mode: "prod";
       flowId: string;
+      keyControl: string;
     }
   | {
       mode: "testing";
       token_modal_chat_template: string;
       accountId: number;
+      keyControl: string;
     };
 
 export const NodeUpdateOrder = async (
@@ -50,6 +52,7 @@ export const NodeUpdateOrder = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
       const getcharge = await prisma.charges.findFirst({
         where: { txid: transactionId },
@@ -64,6 +67,7 @@ export const NodeUpdateOrder = async (
       contactsWAOnAccountId: props.contactsWAOnAccountId,
       nodeId: props.nodeId,
       numberLead: props.numberLead,
+      keyControl: props.keyControl,
     });
     const getOrder = await prisma.orders.findFirst({
       where: { n_order },
@@ -81,6 +85,7 @@ export const NodeUpdateOrder = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -99,6 +104,7 @@ export const NodeUpdateOrder = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -109,6 +115,7 @@ export const NodeUpdateOrder = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -119,6 +126,7 @@ export const NodeUpdateOrder = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -129,6 +137,7 @@ export const NodeUpdateOrder = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -139,6 +148,7 @@ export const NodeUpdateOrder = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -149,6 +159,7 @@ export const NodeUpdateOrder = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 

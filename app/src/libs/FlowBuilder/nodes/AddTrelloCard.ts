@@ -1,6 +1,7 @@
 import { prisma } from "../../../adapters/Prisma/client";
 import { Trello } from "../../../adapters/Trello";
 import { NodeAddTrelloCardData } from "../Payload";
+import { localVariables } from "../utils/LocalVariables";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 
 interface PropsNodeAction {
@@ -10,10 +11,11 @@ interface PropsNodeAction {
   accountId: number;
   numberLead: string;
   flowStateId: number;
+  keyControl: string;
 }
 
 export const NodeAddTrelloCard = async (
-  props: PropsNodeAction
+  props: PropsNodeAction,
 ): Promise<void> => {
   const { data, contactsWAOnAccountId } = props;
 
@@ -32,6 +34,7 @@ export const NodeAddTrelloCard = async (
         nodeId: props.nodeId,
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
+        keyControl: props.keyControl,
       });
 
       if (data.desc) {
@@ -41,6 +44,7 @@ export const NodeAddTrelloCard = async (
           nodeId: props.nodeId,
           contactsWAOnAccountId: props.contactsWAOnAccountId,
           numberLead: props.numberLead,
+          keyControl: props.keyControl,
         });
       }
 
@@ -84,14 +88,19 @@ export const NodeAddTrelloCard = async (
           }
         }
       }
+      if (data.save_locale_var_name) {
+        localVariables.upsert(props.keyControl, [
+          data.save_locale_var_name,
+          id,
+        ]);
+      }
 
       // adicionar webhook
-      // const callback = `https://api.junplid.com.br/v1/public/webhook/trello?flowStateId=${props.flowStateId}&nodeId=${props.nodeId}&ac=${props.accountId}`;
-      const callback = `https://629fb2ec234b.ngrok-free.app/v1/public/webhook/trello?flowStateId=${props.flowStateId}&nodeId=${props.nodeId}&ac=${props.accountId}`;
+      const callback = `https://api.junplid.com.br/v1/public/webhook/trello?flowStateId=${props.flowStateId}&nodeId=${props.nodeId}&ac=${props.accountId}`;
       await trello.criarWebhook(
         `Webhook-card Junplid p/ node:${props.nodeId}`,
         callback,
-        id
+        id,
       );
     } catch (error) {
       console.log("error", error);

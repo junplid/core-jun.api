@@ -25,6 +25,7 @@ type PropsNodeMessage =
       nodeId?: string;
       action: { onErrorClient?(): void };
       flowStateId: number;
+      keyControl: string;
       mode: "prod";
     }
   | {
@@ -36,6 +37,7 @@ type PropsNodeMessage =
       token_modal_chat_template: string;
       contactAccountId: number;
       lead_id: string;
+      keyControl: string;
     };
 
 export const NodeMessage = (
@@ -68,6 +70,7 @@ export const NodeMessage = (
           text: message.text,
           numberLead: props.lead_id,
           nodeId: props.nodeId,
+          keyControl: props.keyControl,
         });
         await SendMessageText({
           token_modal_chat_template: props.token_modal_chat_template,
@@ -144,6 +147,7 @@ export const NodeMessage = (
           ticketProtocol: props.ticketProtocol,
           numberLead: props.lead_id,
           nodeId: props.nodeId,
+          keyControl: props.keyControl,
         });
         let msgkey: string | null = null;
         if (props.external_adapter.type === "baileys") {
@@ -186,9 +190,21 @@ export const NodeMessage = (
           },
         });
 
-        if (message.varId && msgkey && props.nodeId) {
+        if (msgkey && props.nodeId) {
           await NodeAddVariables({
-            data: { list: [{ id: message.varId, value: msgkey }] },
+            data: {
+              list: message.varId ? [{ id: message.varId, value: msgkey }] : [],
+              list_temp: message.save_locale_var_name
+                ? [
+                    {
+                      name: message.save_locale_var_name,
+                      key: "1",
+                      value: msgkey,
+                    },
+                  ]
+                : [],
+            },
+            keyControl: props.keyControl,
             contactAccountId: props.contactAccountId,
             nodeId: props.nodeId,
             accountId: props.accountId,

@@ -3,6 +3,7 @@ import { scheduleExecutionsReply } from "../../../adapters/Baileys/Cache";
 import { prisma } from "../../../adapters/Prisma/client";
 import { NodeReplyData } from "../Payload";
 import moment from "moment-timezone";
+import { localVariables } from "../utils/LocalVariables";
 
 const getNextTimeOut = (
   type: "MINUTES" | "HOURS" | "DAYS" | "SECONDS",
@@ -37,6 +38,7 @@ type PropsNodeReply =
       flowBusinessIds?: number[];
       onExecuteSchedule?: () => Promise<void>;
       mode: "prod";
+      keyControl: string;
     }
   | {
       accountId: number;
@@ -47,6 +49,7 @@ type PropsNodeReply =
       token_modal_chat_template: string;
       data?: NodeReplyData;
       onExecuteSchedule?: () => Promise<void>;
+      keyControl: string;
     };
 
 type ResultPromise = { action: "NEXT" | "RETURN"; line?: string };
@@ -55,7 +58,6 @@ export const NodeReply = async (
   props: PropsNodeReply,
 ): Promise<ResultPromise> => {
   const { message, data } = props;
-  console.log({ message, time: data?.timeout });
   let keyMap = "";
   if (props.mode === "prod") {
     keyMap = `${props.connectionId}+${props.lead_id}`;
@@ -110,6 +112,10 @@ export const NodeReply = async (
           },
         });
       }
+    }
+
+    for await (const name of data.list_temp || []) {
+      localVariables.upsert(props.keyControl, [name, message]);
     }
 
     await new Promise((s) => setTimeout(s, 3000));

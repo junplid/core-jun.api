@@ -957,7 +957,7 @@ type PropsNodeAgentAI =
       external_adapter:
         | { type: "baileys" }
         | { type: "instagram"; page_token: string };
-
+      keyControl: string;
       chatbotId?: number;
       data: NodeAgentAIData;
       audioPath?: string;
@@ -990,6 +990,7 @@ type PropsNodeAgentAI =
       nodeId: string;
       previous_response_id?: string;
       businessId: number;
+      keyControl: string;
       token_modal_chat_template: string;
       actions: {
         onErrorClient?(): void;
@@ -1231,11 +1232,13 @@ export const NodeAgentAI = async ({
               contactsWAOnAccountId: props.contactAccountId,
               numberLead: props.lead_id,
               text: agent.knowledgeBase || "",
+              keyControl: props.keyControl,
             });
             const instructions1 = await resolveTextVariables({
               accountId: props.accountId,
               contactsWAOnAccountId: props.contactAccountId,
               numberLead: props.lead_id,
+              keyControl: props.keyControl,
               text: agent.instructions || "",
             });
             instructions = buildInstructions({
@@ -1251,12 +1254,14 @@ export const NodeAgentAI = async ({
             accountId: props.accountId,
             contactsWAOnAccountId: props.contactAccountId,
             numberLead: props.lead_id,
+            keyControl: props.keyControl,
             text: props.data.prompt || "",
           });
           const property = await resolveTextVariables({
             accountId: props.accountId,
             contactsWAOnAccountId: props.contactAccountId,
             numberLead: props.lead_id,
+            keyControl: props.keyControl,
             text: property0 || "",
           });
 
@@ -1513,6 +1518,7 @@ export const NodeAgentAI = async ({
                                       ...(props.mode === "prod"
                                         ? {
                                             mode: "prod",
+                                            keyControl: props.keyControl,
                                             accountId: props.accountId,
                                             action: {
                                               onErrorClient() {
@@ -1560,6 +1566,7 @@ export const NodeAgentAI = async ({
                                           }
                                         : {
                                             mode: "testing",
+                                            keyControl: props.keyControl,
                                             accountId: props.accountId,
                                             contactAccountId:
                                               props.contactAccountId,
@@ -2084,10 +2091,12 @@ export const NodeAgentAI = async ({
                                           numbersWithTagIds: [],
                                           ignoreTagIds: [],
                                         },
+                                        keyControl: props.keyControl,
                                       }
                                     : {
                                         mode: "testing",
                                         accountId: props.accountId,
+                                        keyControl: props.keyControl,
                                         contactAccountId:
                                           props.contactAccountId,
                                         lead_id: props.lead_id,
@@ -2142,6 +2151,7 @@ export const NodeAgentAI = async ({
                                   connectionId: props.connectionId,
                                   contactAccountId: props.contactAccountId,
                                   flowStateId: props.flowStateId,
+                                  keyControl: props.keyControl,
                                   lead_id: props.lead_id,
                                   nodeId: props.nodeId,
                                   external_adapter: props.external_adapter,
@@ -2194,6 +2204,7 @@ export const NodeAgentAI = async ({
                                   connectionId: props.connectionId,
                                   contactAccountId: props.contactAccountId,
                                   lead_id: props.lead_id,
+                                  keyControl: props.keyControl,
                                   external_adapter: props.external_adapter,
                                   nodeId: props.nodeId,
                                   flowStateId: props.flowStateId,
@@ -2240,6 +2251,7 @@ export const NodeAgentAI = async ({
                                   contactAccountId: props.contactAccountId,
                                   lead_id: props.lead_id,
                                   external_adapter: props.external_adapter,
+                                  keyControl: props.keyControl,
                                   nodeId: props.nodeId,
                                   flowStateId: props.flowStateId,
                                   data: {
@@ -2479,6 +2491,7 @@ export const NodeAgentAI = async ({
                                     contactsWAOnAccountId:
                                       props.contactAccountId,
                                     flowStateId: props.flowStateId,
+                                    keyControl: props.keyControl,
                                     nodeId: props.nodeId,
                                     businessName: props.businessName,
                                   });
@@ -2527,6 +2540,7 @@ export const NodeAgentAI = async ({
                                     }),
                                   },
                                   contactsWAOnAccountId: props.contactAccountId,
+                                  keyControl: props.keyControl,
                                   nodeId: props.nodeId,
                                 });
 
@@ -2576,6 +2590,7 @@ export const NodeAgentAI = async ({
                                   contactAccountId: props.contactAccountId,
                                   flowStateId: props.flowStateId,
                                   nodeId: props.nodeId,
+                                  keyControl: props.keyControl,
                                   businessName: props.businessName,
                                 });
 
@@ -2620,6 +2635,7 @@ export const NodeAgentAI = async ({
                                     }),
                                   },
                                   contactsWAOnAccountId: props.contactAccountId,
+                                  keyControl: props.keyControl,
                                   nodeId: props.nodeId,
                                 });
 
@@ -2905,6 +2921,7 @@ export const NodeAgentAI = async ({
                                     contactsWAOnAccountId:
                                       props.contactAccountId,
                                     flowStateId: props.flowStateId,
+                                    keyControl: props.keyControl,
                                     nodeId: props.nodeId,
                                   });
 

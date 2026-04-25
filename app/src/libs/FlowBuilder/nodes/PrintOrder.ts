@@ -15,6 +15,7 @@ type PropsPrintOrder =
       nodeId: string;
       data: NodePrintOrderData;
       action?: string;
+      keyControl: string;
 
       mode: "prod";
     }
@@ -22,6 +23,7 @@ type PropsPrintOrder =
       mode: "testing";
       token_modal_chat_template: string;
       accountId: number;
+      keyControl: string;
     };
 
 export const NodePrintOrder = async (
@@ -41,7 +43,6 @@ export const NodePrintOrder = async (
 
   try {
     if (props.action) {
-      console.log(props.action);
       return props.action;
     }
 
@@ -51,6 +52,7 @@ export const NodePrintOrder = async (
       contactsWAOnAccountId: props.contactsWAOnAccountId,
       numberLead: props.numberLead,
       nodeId: props.nodeId,
+      keyControl: props.keyControl,
     });
 
     const getorder = await prisma.orders.findFirst({

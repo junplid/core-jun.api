@@ -9,10 +9,11 @@ interface PropsNodeAction {
   nodeId: string;
   accountId: number;
   numberLead: string;
+  keyControl: string;
 }
 
 export const NodeUpdateTrelloCard = async (
-  props: PropsNodeAction
+  props: PropsNodeAction,
 ): Promise<void> => {
   const { data, contactsWAOnAccountId } = props;
   const cardId = await prisma.contactsWAOnAccountVariable.findFirst({
@@ -41,6 +42,7 @@ export const NodeUpdateTrelloCard = async (
             nodeId: props.nodeId,
             contactsWAOnAccountId: props.contactsWAOnAccountId,
             numberLead: props.numberLead,
+            keyControl: props.keyControl,
           }),
         });
       }
@@ -53,6 +55,7 @@ export const NodeUpdateTrelloCard = async (
             nodeId: props.nodeId,
             contactsWAOnAccountId: props.contactsWAOnAccountId,
             numberLead: props.numberLead,
+            keyControl: props.keyControl,
           }),
         });
       }

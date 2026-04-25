@@ -8,6 +8,7 @@ interface PropsNodeIf {
   contactAccountId: number;
   accountId: number;
   numberLead: string;
+  keyControl: string;
 }
 
 // const daysOfTheWeek: {
@@ -54,6 +55,7 @@ export const NodeIf = (props: PropsNodeIf): Promise<boolean> =>
             text: item.value1,
             numberLead: props.numberLead,
             nodeId: props.nodeId,
+            keyControl: props.keyControl,
           });
           const nextValue2 = await resolveTextVariables({
             accountId: props.accountId,
@@ -61,6 +63,7 @@ export const NodeIf = (props: PropsNodeIf): Promise<boolean> =>
             text: item.value2,
             numberLead: props.numberLead,
             nodeId: props.nodeId,
+            keyControl: props.keyControl,
           });
 
           if (item.operatorComparison === "===") {
@@ -110,6 +113,7 @@ export const NodeIf = (props: PropsNodeIf): Promise<boolean> =>
             text: item.value1,
             numberLead: props.numberLead,
             nodeId: props.nodeId,
+            keyControl: props.keyControl,
           });
           const appointments = await prisma.appointments.count({
             where: {

@@ -1,5 +1,6 @@
 import { prisma } from "../../../adapters/Prisma/client";
 import { NodeAddVariablesData } from "../Payload";
+import { localVariables } from "../utils/LocalVariables";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 
 interface PropsNodeAction {
@@ -8,22 +9,11 @@ interface PropsNodeAction {
   nodeId: string;
   accountId: number;
   numberLead: string;
+  keyControl: string;
 }
 
-export const NodeAddVariables = (
-  props: PropsNodeAction,
-): Promise<{
-  varTemps: {
-    name: string;
-    value: string;
-  }[];
-}> =>
-  new Promise<{
-    varTemps: {
-      name: string;
-      value: string;
-    }[];
-  }>(async (res, _rej) => {
+export const NodeAddVariables = (props: PropsNodeAction): Promise<void> =>
+  new Promise<void>(async (res, _rej) => {
     const { data, contactAccountId } = props;
 
     for await (const newVar of data.list || []) {
@@ -39,6 +29,7 @@ export const NodeAddVariables = (
           nodeId: props.nodeId,
           contactsWAOnAccountId: contactAccountId,
           numberLead: props.numberLead,
+          keyControl: props.keyControl,
         });
         const picked = await prisma.contactsWAOnAccountVariable.findFirst({
           where: {
@@ -68,5 +59,9 @@ export const NodeAddVariables = (
       }
     }
 
-    return res({ varTemps: [] });
+    for await (const newVar of data.list_temp || []) {
+      localVariables.upsert(props.keyControl, [newVar.name, newVar.value]);
+    }
+
+    return res();
   });

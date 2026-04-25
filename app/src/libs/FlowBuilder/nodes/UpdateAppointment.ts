@@ -13,6 +13,7 @@ interface PropsUpdateOrder {
   accountId: number;
   nodeId: string;
   isIA?: boolean;
+  keyControl: string;
 }
 
 export const NodeUpdateAppointment = async (
@@ -45,6 +46,7 @@ export const NodeUpdateAppointment = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -54,6 +56,7 @@ export const NodeUpdateAppointment = async (
       contactsWAOnAccountId: props.contactsWAOnAccountId,
       nodeId: props.nodeId,
       numberLead: props.numberLead,
+      keyControl: props.keyControl,
     });
     const getAppointment = await prisma.appointments.findFirst({
       where: { n_appointment: n_appointment2 },
@@ -69,6 +72,7 @@ export const NodeUpdateAppointment = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 
@@ -83,6 +87,7 @@ export const NodeUpdateAppointment = async (
         contactsWAOnAccountId: props.contactsWAOnAccountId,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     }
 

@@ -1,5 +1,6 @@
 import { prisma } from "../../../adapters/Prisma/client";
 import { NodeExtractVariableData } from "../Payload";
+import { localVariables } from "../utils/LocalVariables";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import RE2 from "re2";
 
@@ -9,6 +10,7 @@ interface PropsNodeExtractVariable {
   contactsWAOnAccountId: number;
   accountId: number;
   numberLead: string;
+  keyControl: string;
 }
 
 export const NodeExtractVariable = async ({
@@ -45,6 +47,7 @@ export const NodeExtractVariable = async ({
         text: `{{${target.name}}}`,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     } else if (target.ContactsWAOnAccountVariable?.[0]?.value) {
       targetValue = await resolveTextVariables({
@@ -53,6 +56,7 @@ export const NodeExtractVariable = async ({
         text: target.ContactsWAOnAccountVariable?.[0]?.value,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
     } else {
       return;
@@ -67,6 +71,7 @@ export const NodeExtractVariable = async ({
         text: data.regex,
         numberLead: props.numberLead,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
       regex = new RE2(data.regex, flags);
     } catch (err) {
@@ -78,6 +83,7 @@ export const NodeExtractVariable = async ({
       text: data.value || "",
       numberLead: props.numberLead,
       nodeId: props.nodeId,
+      keyControl: props.keyControl,
     });
 
     let nextValue = "";
@@ -100,9 +106,16 @@ export const NodeExtractVariable = async ({
       accountId: props.accountId,
       contactsWAOnAccountId: props.contactsWAOnAccountId,
       text: nextValue,
+      keyControl: props.keyControl,
       numberLead: props.numberLead,
       nodeId: props.nodeId,
     });
+    if (data.save_locale_var_name_var2Id) {
+      localVariables.upsert(props.keyControl, [
+        data.save_locale_var_name_var2Id,
+        nextValueResolved,
+      ]);
+    }
     if (!source.ContactsWAOnAccountVariable.length) {
       await prisma.contactsWAOnAccountVariable.create({
         data: {

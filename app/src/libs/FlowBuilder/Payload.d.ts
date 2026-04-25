@@ -24,6 +24,7 @@ export type NodeReplyData = (
   | {
       isSave?: boolean;
       list?: number[];
+      list_temp?: string[];
     }
   | { isSave?: false }
 ) & {
@@ -39,6 +40,7 @@ export type NodeMessageData = {
     interval?: number;
     key: string;
     varId?: number;
+    save_locale_var_name?: string;
   }[];
 };
 
@@ -51,7 +53,8 @@ export interface NodeRemoveTagsData {
 }
 
 export interface NodeAddVariablesData {
-  list: { id: number; value: string; temp?: boolean }[];
+  list: { id: number; value: string }[];
+  list_temp: { name: string; value: string; key: string }[];
 }
 
 export interface NodeRemoveVariablesData {
@@ -172,6 +175,9 @@ export interface NodeFbPixelData {
 export interface NodeListenReactionData {
   varIdToReaction?: number;
   varIdToMessage?: number;
+
+  save_locale_var_name_ToMessage?: string;
+  save_locale_var_name_ToReaction?: string;
 }
 
 export type NodeSwitchVariableData = {
@@ -185,6 +191,7 @@ export type NodeExtractVariableData = {
   flags: string[];
   value: string;
   var2Id: number;
+  save_locale_var_name_var2Id?: string;
   tools?: "match" | "replace";
 };
 
@@ -199,11 +206,16 @@ export type NodeChargeData = {
   varId_save_transactionId?: number;
   varId_save_qrCode?: number;
   varId_save_linkPayment?: number;
+
+  save_locale_var_name_transactionId?: string;
+  save_locale_var_name_qrCode?: string;
+  save_locale_var_name_linkPayment?: string;
 };
 
 export type NodeRandomCodeData = {
   count: number;
-  id: number;
+  id?: number;
+  save_locale_var_name?: string;
 };
 
 export type NodeSendTextGroupData = {
@@ -229,6 +241,7 @@ export type NodeCreateOrderData = {
   delivery_address?: string; //
   charge_transactionId?: string; //
   varId_save_nOrder?: number; //
+  save_locale_var_name_nOrder?: string;
   notify?: boolean; //
   actionChannels: { key: string; text: string }[];
   payment_method?: string; // não sei o pq disso já tem o delivery_address
@@ -246,6 +259,7 @@ export type NodeAppendRouterData = {
   max?: string;
   minutes?: number;
   varId_save_nRouter?: number;
+  save_locale_var_name_nRouter?: string;
 };
 
 export type NodeUpdateOrderData = {
@@ -310,12 +324,25 @@ export type NodeGetOrderData = {
   varId_save_data?: number;
   varId_save_data_items?: number;
   varId_save_number_contact?: number;
-
   varId_save_router_code?: number;
   varId_save_delivery_code?: number;
   varId_save_nOrder?: number;
   varId_save_type_code?: number;
   varId_save_delivery_fee?: number;
+
+  save_locale_var_name_name?: string;
+  save_locale_var_name_status?: string;
+  save_locale_var_name_payment_method?: string;
+  save_locale_var_name_delivery_address?: string;
+  save_locale_var_name_total?: string;
+  save_locale_var_name_data?: string;
+  save_locale_var_name_data_items?: string;
+  save_locale_var_name_number_contact?: string;
+  save_locale_var_name_router_code?: string;
+  save_locale_var_name_delivery_code?: string;
+  save_locale_var_name_nOrder?: string;
+  save_locale_var_name_type_code?: string;
+  save_locale_var_name_delivery_fee?: string;
 };
 
 export type NodeGetRouterData = {
@@ -342,11 +369,22 @@ export type NodeGetRouterData = {
   varId_save_number_contact?: number;
   varId_save_link_join_router?: number;
   varId_save_gain_total?: number;
+
+  save_locale_var_name_status?: string;
+  save_locale_var_name_count_total_orders?: string;
+  save_locale_var_name_count_order_status_of?: string;
+  save_locale_var_name_link_router?: string;
+  save_locale_var_name_link_router_updated?: string;
+  save_locale_var_name_data_text?: string;
+  save_locale_var_name_number_contact?: string;
+  save_locale_var_name_link_join_router?: string;
+  save_locale_var_name_gain_total?: string;
 };
 
 export type NodeNearestOrderData = {
   geo_string: string; // -99,99999|99,99999
   varId_save_code_order?: number;
+  save_locale_var_name_code_order?: string;
 };
 
 export type NodeGetOrdersData = {
@@ -358,6 +396,8 @@ export type NodeGetOrdersData = {
   origin?: string;
   daysAgo?: number; // dias atras contando do dia atual
   varId_save?: number;
+  save_locale_var_name?: string;
+
   model_save?: string;
   ofContact?: boolean;
 };
@@ -368,7 +408,8 @@ export type NodeTimedQueueData = {
 
 export type NodeCalculatorData = {
   formula: string;
-  variableId: number;
+  variableId?: number;
+  save_locale_var_name?: string;
 };
 
 export type NodeAddTrelloCardData = {
@@ -379,6 +420,7 @@ export type NodeAddTrelloCardData = {
   desc?: string;
   // labels: { name: string; color: string }[];
   varId_save_cardId?: number;
+  save_locale_var_name?: string;
 };
 
 export type NodeRemoveTrelloCardData = {
@@ -438,6 +480,8 @@ export type NodeCreateAppointmentData = {
     | "1d"
     | "2d";
   varId_save_nAppointment?: number;
+  save_locale_var_name_nAppointment?: string;
+
   actionChannels: { key: string; text: string }[];
   reminders?: Date[];
 };
@@ -506,6 +550,23 @@ export type NodeGetMenuOnlineData = {
   varId_save_device_online?: number;
   varId_save_have_deliveries_started?: number;
   varId_save_deliveries_begin_at?: number;
+
+  save_locale_var_name_identifier?: string;
+  save_locale_var_name_desc?: string;
+  save_locale_var_name_deviceId_app_agent?: string;
+  save_locale_var_name_titlePage?: string;
+  save_locale_var_name_link?: string;
+  save_locale_var_name_address?: string;
+  save_locale_var_name_lat?: string;
+  save_locale_var_name_lng?: string;
+  save_locale_var_name_state_uf?: string;
+  save_locale_var_name_city?: string;
+  save_locale_var_name_phone_contact?: string;
+  save_locale_var_name_whatsapp_contact?: string;
+  save_locale_var_name_delivery_fee?: string;
+  save_locale_var_name_device_online?: string;
+  save_locale_var_name_have_deliveries_started?: string;
+  save_locale_var_name_deliveries_begin_at?: string;
 };
 
 export type TypeNodesPayload =

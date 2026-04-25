@@ -4,6 +4,7 @@ import { genNumCode } from "../../../utils/genNumCode";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import moment from "moment-timezone";
+import { localVariables } from "../utils/LocalVariables";
 
 type PropsAppendRouter =
   | {
@@ -22,11 +23,13 @@ type PropsAppendRouter =
         onCodeRouter(code: string): void;
       };
       mode: "prod";
+      keyControl: string;
     }
   | {
       mode: "testing";
       token_modal_chat_template: string;
       accountId: number;
+      keyControl: string;
     };
 
 export const NodeAppendRouter = async (
@@ -56,6 +59,7 @@ export const NodeAppendRouter = async (
       contactsWAOnAccountId: props.contactAccountId,
       numberLead: props.lead_id,
       nodeId: props.nodeId,
+      keyControl: props.keyControl,
     });
 
     const order = await prisma.orders.findFirst({
@@ -133,25 +137,28 @@ export const NodeAppendRouter = async (
         }
       }
     }
+    if (props.data.save_locale_var_name_nRouter) {
+      localVariables.upsert(props.keyControl, [
+        props.data.save_locale_var_name_nRouter,
+        nRouter,
+      ]);
+    }
 
     let max = 6;
     if (props.data.max) {
-      console.log("props.data.max", props.data.max);
       const mm = await resolveTextVariables({
         accountId: props.accountId,
         text: props.data.max,
         contactsWAOnAccountId: props.contactAccountId,
         numberLead: props.lead_id,
         nodeId: props.nodeId,
+        keyControl: props.keyControl,
       });
       const qnt_max = Number(mm);
-      console.log("qnt_max", qnt_max);
       if (!isNaN(qnt_max)) {
         max = qnt_max;
       }
     }
-    console.log("count", count);
-    console.log("max", max);
 
     if (count >= max) {
       prisma.deliveryRouter

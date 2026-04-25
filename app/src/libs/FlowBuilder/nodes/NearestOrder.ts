@@ -2,11 +2,8 @@ import { NodeNearestOrderData } from "../Payload";
 import { prisma } from "../../../adapters/Prisma/client";
 import { SendMessageText } from "../../../adapters/Baileys/modules/sendMessage";
 import { resolveTextVariables } from "../utils/ResolveTextVariables";
-import {
-  buildRoute,
-  distanceGeo,
-  generateGoogleMapsLink,
-} from "../../../utils/generate-router-google";
+import { distanceGeo } from "../../../utils/generate-router-google";
+import { localVariables } from "../utils/LocalVariables";
 
 type PropsNearestOrder =
   | {
@@ -17,11 +14,13 @@ type PropsNearestOrder =
       nodeId: string;
       flowStateId: number;
       mode: "prod";
+      keyControl: string;
     }
   | {
       mode: "testing";
       token_modal_chat_template: string;
       accountId: number;
+      keyControl: string;
     };
 
 export const NodeNearestOrder = async (
@@ -40,9 +39,14 @@ export const NodeNearestOrder = async (
   }
 
   try {
-    const { geo_string, varId_save_code_order } = props.data;
+    const {
+      geo_string,
+      varId_save_code_order,
+      save_locale_var_name_code_order,
+    } = props.data;
 
-    if (!varId_save_code_order) return "not_found";
+    if (!varId_save_code_order && !save_locale_var_name_code_order)
+      return "not_found";
 
     const resolvergeo = await resolveTextVariables({
       accountId: props.accountId,
@@ -50,6 +54,7 @@ export const NodeNearestOrder = async (
       contactsWAOnAccountId: props.contactsWAOnAccountId,
       numberLead: props.numberLead,
       nodeId: props.nodeId,
+      keyControl: props.keyControl,
     });
 
     const geosplit = resolvergeo.split("|");
@@ -63,6 +68,7 @@ export const NodeNearestOrder = async (
       contactsWAOnAccountId: props.contactsWAOnAccountId,
       numberLead: props.numberLead,
       nodeId: props.nodeId,
+      keyControl: props.keyControl,
     });
 
     const getRouter = await prisma.deliveryRouter.findFirst({
@@ -144,6 +150,13 @@ export const NodeNearestOrder = async (
           });
         }
       }
+    }
+
+    if (save_locale_var_name_code_order) {
+      localVariables.upsert(props.keyControl, [
+        save_locale_var_name_code_order,
+        resultado.n_order,
+      ]);
     }
 
     return "ok";

@@ -20,6 +20,7 @@ interface PropsNodeSendImages {
   nodeId: string;
   action: { onErrorClient?(): void };
   flowStateId: number;
+  keyControl: string;
 }
 
 export const NodeSendImages = (props: PropsNodeSendImages): Promise<void> => {
@@ -46,6 +47,7 @@ export const NodeSendImages = (props: PropsNodeSendImages): Promise<void> => {
             ticketProtocol: props.ticketProtocol,
             numberLead: props.lead_id,
             nodeId: props.nodeId,
+            keyControl: props.keyControl,
           });
         }
 
