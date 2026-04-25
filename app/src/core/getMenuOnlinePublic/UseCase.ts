@@ -143,6 +143,7 @@ export class GetMenuOnlinePublicUseCase {
     const listCategories = await prisma.menuOnlineCategory.findMany({
       orderBy: { sequence: "asc" },
       where: {
+        Items: { some: {} },
         Menu: { identifier: dto.identifier },
         OR: [
           { days_in_the_week: { isEmpty: true } },

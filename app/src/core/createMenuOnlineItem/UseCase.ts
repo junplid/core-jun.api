@@ -1,4 +1,4 @@
-import { remove } from "fs-extra";
+import { pathExists, pathExistsSync, remove } from "fs-extra";
 import { prisma } from "../../adapters/Prisma/client";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 import { CreateMenuOnlineItemDTO_I } from "./DTO";
@@ -33,6 +33,10 @@ function formatDays(days: number[]) {
 
   return sorted.map((d) => daysMap[d]).join(", ");
 }
+
+const path = resolve(process.env.STORAGE_PATH!, "static", "storage");
+
+console.log(pathExistsSync(path));
 
 export class CreateMenuOnlineItemUseCase {
   constructor() {}

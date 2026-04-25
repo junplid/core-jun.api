@@ -50,7 +50,7 @@ services:
     volumes:
       - ./app:/app
       - /app/node_modules
-      - ./app/storage-dev:/app/storage
+      - ./app/storage-dev:/app/storage-dev
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:4001/v1/public/health"]
       interval: 30s

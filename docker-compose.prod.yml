@@ -58,7 +58,7 @@ services:
     ports:
       - 127.0.0.1:4000:4000
     volumes:
-      - ./app/storage-prod:/app/storage
+      - ./app/storage-prod:/app/storage-prod
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:4000/v1/public/health"]
       interval: 30s
