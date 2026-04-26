@@ -14,6 +14,7 @@ export class GetPaymentIntegrationsUseCase {
         accountId,
         ...(dto.name && { name: { contains: dto.name, mode: "insensitive" } }),
         ...(dto.provider && { provider: dto.provider }),
+        deleted: false,
       },
       select: {
         id: true,

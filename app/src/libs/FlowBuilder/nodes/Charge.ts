@@ -56,10 +56,7 @@ export const NodeCharge = async (
       pixKeys: { select: { key: true, id: true } },
     },
   });
-  if (!getIntegration) {
-    console.error("Payment integration not found.");
-    return "error";
-  }
+  if (!getIntegration) return "error";
 
   const total = parseDirtyStringToNumber(
     await resolveTextVariables({

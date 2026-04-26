@@ -229,6 +229,7 @@ export const NodeControler = ({
 
       if (!currentNode) {
         cacheFlowInExecution.delete(keyMap);
+        cacheLocalVariablesControl.delete(props.keyControl);
         if (props.forceFinish) await props.actions?.onFinish?.("110");
         await props.actions?.onExecutedNode?.({
           id: "0",
@@ -252,6 +253,7 @@ export const NodeControler = ({
       //         if (!handleId) return;
 
       //         if (!nextEdgesIds.length) {
+      // cacheLocalVariablesControl.delete(props.keyControl);
       //           props.onFinish && (await props.onFinish("125"));
       //           return res();
       //         }
@@ -261,6 +263,8 @@ export const NodeControler = ({
       //         );
 
       //         if (!nextEdge) {
+      //  cacheLocalVariablesControl.delete(props.keyControl);
+
       //           props.onFinish && (await props.onFinish("134"));
       //           return res();
       //         }
@@ -270,6 +274,8 @@ export const NodeControler = ({
       //         );
 
       //         if (!targetNode) {
+      //      cacheLocalVariablesControl.delete(props.keyControl);
+
       //           props.onFinish && (await props.onFinish("280"));
       //           return res();
       //         }
@@ -318,6 +324,7 @@ export const NodeControler = ({
         }
         if (!nextEdgesIds.length) {
           cacheFlowInExecution.delete(keyMap);
+          cacheLocalVariablesControl.delete(props.keyControl);
           if (props.forceFinish) await props.actions?.onFinish?.("110");
           await props.actions?.onExecutedNode?.({
             id: "0",
@@ -363,6 +370,7 @@ export const NodeControler = ({
               hour: resolveHourAndMinute(),
             });
         }
+        cacheLocalVariablesControl.delete(props.keyControl);
         props.actions?.onFinish?.();
         return;
       }
@@ -421,6 +429,7 @@ export const NodeControler = ({
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
               cacheFlowInExecution.delete(keyMap);
+              cacheLocalVariablesControl.delete(props.keyControl);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
                 id: "0",
@@ -486,6 +495,7 @@ export const NodeControler = ({
                   );
                   if (!nextNodeId) {
                     cacheFlowInExecution.delete(keyMap);
+                    cacheLocalVariablesControl.delete(props.keyControl);
                     if (props.forceFinish)
                       await props.actions?.onFinish?.("110");
                     await props.actions?.onExecutedNode?.({
@@ -523,6 +533,7 @@ export const NodeControler = ({
                   );
                   if (!nextNodeId) {
                     cacheFlowInExecution.delete(keyMap);
+                    cacheLocalVariablesControl.delete(props.keyControl);
                     if (props.forceFinish)
                       await props.actions?.onFinish?.("110");
                     await props.actions?.onExecutedNode?.({
@@ -559,6 +570,7 @@ export const NodeControler = ({
               );
               if (!isNextNodeMain) {
                 cacheFlowInExecution.delete(keyMap);
+                cacheLocalVariablesControl.delete(props.keyControl);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 await props.actions?.onExecutedNode?.({
                   id: "0",
@@ -592,6 +604,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
+        return;
       }
       if (currentNode.type === "NodeMenu") {
         if (props.mode === "testing") {
@@ -635,6 +648,7 @@ export const NodeControler = ({
                     nd.sourceHandle?.includes("timeout"),
                   );
                   if (!nextNodeId) {
+                    cacheLocalVariablesControl.delete(props.keyControl);
                     if (props.forceFinish)
                       await props.actions?.onFinish?.("110");
                     await props.actions?.onExecutedNode?.({
@@ -674,6 +688,7 @@ export const NodeControler = ({
                     nd.sourceHandle?.includes("timeout"),
                   );
                   if (!nextNodeId) {
+                    cacheLocalVariablesControl.delete(props.keyControl);
                     if (props.forceFinish)
                       await props.actions?.onFinish?.("110");
                     await props.actions?.onExecutedNode?.({
@@ -710,6 +725,7 @@ export const NodeControler = ({
                 (nh) => nh.sourceHandle === d.sourceHandle,
               );
               if (!isNextNodeMain) {
+                cacheLocalVariablesControl.delete(props.keyControl);
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 await props.actions?.onExecutedNode?.({
@@ -738,6 +754,7 @@ export const NodeControler = ({
                 nh.sourceHandle?.includes("failed"),
               );
               if (!isNextNodeMain) {
+                cacheLocalVariablesControl.delete(props.keyControl);
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 await props.actions?.onExecutedNode?.({
@@ -759,6 +776,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
+        return;
       }
       if (currentNode.type === "NodeAddTags") {
         if (props.mode === "testing") {
@@ -789,6 +807,7 @@ export const NodeControler = ({
               });
             }
             if (!nextEdgesIds.length) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -812,7 +831,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
-        return res();
+        return;
       }
       if (currentNode.type === "NodeRemoveTags") {
         if (props.mode === "testing") {
@@ -843,6 +862,7 @@ export const NodeControler = ({
               });
             }
             if (!nextEdgesIds.length) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -865,7 +885,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
-        return res();
+        return;
       }
       if (currentNode.type === "NodeAddVariables") {
         if (props.mode === "testing") {
@@ -899,6 +919,7 @@ export const NodeControler = ({
               });
             }
             if (!nextEdgesIds.length) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -922,7 +943,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
-        return res();
+        return;
       }
       if (currentNode.type === "NodeRemoveVariables") {
         if (props.mode === "testing") {
@@ -953,6 +974,7 @@ export const NodeControler = ({
               });
             }
             if (!nextEdgesIds.length) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -976,7 +998,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
-        return res();
+        return;
       }
       if (props.mode === "prod" && currentNode.type === "NodeSendFlow") {
         if (props.actions?.onEnterNode) {
@@ -1012,7 +1034,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
-        return res();
+        return;
       }
       if (currentNode.type === "NodeIF") {
         if (props.mode === "testing") {
@@ -1046,6 +1068,7 @@ export const NodeControler = ({
               });
             }
             if (!nextEdgesIds.length) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -1059,6 +1082,7 @@ export const NodeControler = ({
               nd.sourceHandle?.includes(JSON.stringify(d)),
             );
             if (!nextNodeId) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -1081,7 +1105,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
-        return res();
+        return;
       }
       if (currentNode.type === "NodeTimer") {
         if (props.mode === "testing") {
@@ -1111,6 +1135,7 @@ export const NodeControler = ({
               });
             }
             if (!nextEdgesIds.length) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -1134,7 +1159,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
-        return res();
+        return;
       }
       if (currentNode.type === "NodeNotifyWA") {
         if (props.mode === "testing") {
@@ -1191,6 +1216,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -1251,6 +1277,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -1311,6 +1338,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -1371,6 +1399,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -1430,6 +1459,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -1489,6 +1519,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -1604,6 +1635,7 @@ export const NodeControler = ({
                         });
                       } else {
                         cacheExecuteTimeoutAgentAI.delete(keyMap);
+                        cacheLocalVariablesControl.delete(props.keyControl);
                         if (props.forceFinish)
                           await props.actions?.onFinish?.("110");
                         await props.actions?.onExecutedNode?.({
@@ -1642,6 +1674,7 @@ export const NodeControler = ({
                     );
                     if (!nextNodeId) {
                       cacheFlowInExecution.delete(keyMap);
+                      cacheLocalVariablesControl.delete(props.keyControl);
                       if (props.forceFinish)
                         await props.actions?.onFinish?.("110");
                       await props.actions?.onExecutedNode?.({
@@ -1781,6 +1814,7 @@ export const NodeControler = ({
                         });
                       } else {
                         cacheExecuteTimeoutAgentAI.delete(keyMap);
+                        cacheLocalVariablesControl.delete(props.keyControl);
                         if (props.forceFinish)
                           await props.actions?.onFinish?.("110");
                         await props.actions?.onExecutedNode?.({
@@ -1814,6 +1848,7 @@ export const NodeControler = ({
                     );
                     if (!nextNodeId) {
                       cacheFlowInExecution.delete(keyMap);
+                      cacheLocalVariablesControl.delete(props.keyControl);
                       if (props.forceFinish)
                         await props.actions?.onFinish?.("110");
                       await props.actions?.onExecutedNode?.({
@@ -1878,6 +1913,7 @@ export const NodeControler = ({
                 (nh) => nh.sourceHandle === d.sourceHandle,
               );
               if (!isNextNodeMain) {
+                cacheLocalVariablesControl.delete(props.keyControl);
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 await props.actions?.onExecutedNode?.({
@@ -1906,6 +1942,7 @@ export const NodeControler = ({
                 nh.sourceHandle?.includes("failed"),
               );
               if (!isNextNodeMain) {
+                cacheLocalVariablesControl.delete(props.keyControl);
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 await props.actions?.onExecutedNode?.({
@@ -1927,6 +1964,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
+        return;
       }
       if (currentNode.type === "NodeTransferDepartment") {
         if (props.mode === "testing") {
@@ -1965,6 +2003,7 @@ export const NodeControler = ({
           .then(async (d) => {
             if (d === "OK") {
               if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+                cacheLocalVariablesControl.delete(props.keyControl);
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 await props.actions?.onExecutedNode?.({
@@ -1993,6 +2032,7 @@ export const NodeControler = ({
                 nh.sourceHandle?.includes("failed"),
               );
               if (!isNextNodeMain) {
+                cacheLocalVariablesControl.delete(props.keyControl);
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 await props.actions?.onExecutedNode?.({
@@ -2014,7 +2054,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
-        return res();
+        return;
       }
       if (props.mode === "prod" && currentNode.type === "NodeFbPixel") {
         if (props.actions?.onEnterNode) {
@@ -2036,6 +2076,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -2089,6 +2130,7 @@ export const NodeControler = ({
             // uma saida para o contato que reagiu - parallel
 
             if (!nextEdgesIds.length) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -2171,6 +2213,7 @@ export const NodeControler = ({
                 nh.sourceHandle?.includes("failed"),
               );
               if (!isNextNodeMain) {
+                cacheLocalVariablesControl.delete(props.keyControl);
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 await props.actions?.onExecutedNode?.({
@@ -2192,6 +2235,7 @@ export const NodeControler = ({
               (nh) => nh.sourceHandle === d.handleId,
             );
             if (!isNextNodeMain) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -2212,6 +2256,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
+        return;
       }
       if (currentNode.type === "NodeExtractVariable") {
         if (props.mode === "testing") {
@@ -2239,6 +2284,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -2316,6 +2362,7 @@ export const NodeControler = ({
               nh.sourceHandle?.includes(d),
             );
             if (!isNextNodeMain) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -2338,6 +2385,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
+        return;
       }
       if (currentNode.type === "NodeRandomCode") {
         if (props.mode === "testing") {
@@ -2368,6 +2416,7 @@ export const NodeControler = ({
               });
             }
             if (!nextEdgesIds.length) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -2391,7 +2440,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
-        return res();
+        return;
       }
       if (props.mode === "prod" && currentNode.type === "NodeSendTextGroup") {
         if (props.actions?.onEnterNode) {
@@ -2422,6 +2471,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -2510,6 +2560,7 @@ export const NodeControler = ({
                 (s) => s.sourceHandle === "main",
               );
               if (!nextNode) {
+                cacheLocalVariablesControl.delete(props.keyControl);
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 await props.actions?.onExecutedNode?.({
@@ -2532,6 +2583,7 @@ export const NodeControler = ({
                   s.sourceHandle?.includes(action),
                 );
                 if (!nextNode) {
+                  cacheLocalVariablesControl.delete(props.keyControl);
                   cacheFlowInExecution.delete(keyMap);
                   if (props.forceFinish) await props.actions?.onFinish?.("110");
                   await props.actions?.onExecutedNode?.({
@@ -2555,6 +2607,7 @@ export const NodeControler = ({
                   (s) => s.sourceHandle === "#b99909 action",
                 );
                 if (!nextNode) {
+                  cacheLocalVariablesControl.delete(props.keyControl);
                   cacheFlowInExecution.delete(keyMap);
                   if (props.forceFinish) await props.actions?.onFinish?.("110");
                   await props.actions?.onExecutedNode?.({
@@ -2626,6 +2679,7 @@ export const NodeControler = ({
               s.sourceHandle?.includes(action === "ok" ? "main" : action),
             );
             if (!nextNode) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -2699,6 +2753,7 @@ export const NodeControler = ({
               s.sourceHandle?.includes(action === "ok" ? "main" : action),
             );
             if (!nextNode) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -2776,6 +2831,7 @@ export const NodeControler = ({
             );
 
             if (!isNextNodeMain) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -2820,6 +2876,7 @@ export const NodeControler = ({
               (nd) => nd.sourceHandle === "debounce",
             );
             if (!nextNodeId) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
                 id: "0",
@@ -2851,6 +2908,7 @@ export const NodeControler = ({
             id: "0",
             flowId: props.flowId,
           });
+          cacheLocalVariablesControl.delete(props.keyControl);
           cacheFlowInExecution.delete(keyMap);
           return res();
         }
@@ -2904,6 +2962,7 @@ export const NodeControler = ({
             id: "0",
             flowId: props.flowId,
           });
+          cacheLocalVariablesControl.delete(props.keyControl);
           cacheFlowInExecution.delete(keyMap);
           return res();
         }
@@ -2947,6 +3006,7 @@ export const NodeControler = ({
             }
             if (!nextEdgesIds.length) {
               cacheFlowInExecution.delete(keyMap);
+              cacheLocalVariablesControl.delete(props.keyControl);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
                 id: "0",
@@ -2969,7 +3029,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
-        return res();
+        return;
       }
       if (currentNode.type === "NodeRemoveTrelloCard") {
         if (props.mode === "testing") {
@@ -3000,6 +3060,7 @@ export const NodeControler = ({
               });
             }
             if (!nextEdgesIds.length) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -3023,7 +3084,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
-        return res();
+        return;
       }
       if (currentNode.type === "NodeMoveTrelloCard") {
         if (props.mode === "testing") {
@@ -3054,6 +3115,7 @@ export const NodeControler = ({
               });
             }
             if (!nextEdgesIds.length) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -3077,7 +3139,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
-        return res();
+        return;
       }
       if (currentNode.type === "NodeUpdateTrelloCard") {
         if (props.mode === "testing") {
@@ -3111,6 +3173,7 @@ export const NodeControler = ({
               });
             }
             if (!nextEdgesIds.length) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -3134,7 +3197,7 @@ export const NodeControler = ({
             props.actions?.onErrorNumber && props.actions?.onErrorNumber();
             return res();
           });
-        return res();
+        return;
       }
       if (currentNode.type === "NodeWebhookTrelloCard") {
         if (props.mode === "testing") {
@@ -3176,6 +3239,7 @@ export const NodeControler = ({
                 });
               }
               if (!nextEdgesIds.length) {
+                cacheLocalVariablesControl.delete(props.keyControl);
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 await props.actions?.onExecutedNode?.({
@@ -3200,7 +3264,7 @@ export const NodeControler = ({
               return res();
             });
         }
-        return res();
+        return;
       }
       if (props.mode === "prod" && currentNode.type === "NodeDeleteMessage") {
         if (props.actions?.onEnterNode) {
@@ -3218,6 +3282,7 @@ export const NodeControler = ({
         })
           .then(async () => {
             if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -3279,6 +3344,7 @@ export const NodeControler = ({
             id: "0",
             flowId: props.flowId,
           });
+          cacheLocalVariablesControl.delete(props.keyControl);
           cacheFlowInExecution.delete(keyMap);
           return res();
         }
@@ -3347,6 +3413,7 @@ export const NodeControler = ({
               (s) => s.sourceHandle === "main",
             );
             if (!nextNode) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -3419,6 +3486,7 @@ export const NodeControler = ({
         })
           .then(async (action) => {
             if (action.n === "not_found") {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -3429,6 +3497,7 @@ export const NodeControler = ({
             }
             if (action.n === "ok") {
               if (!nextEdgesIds.length || nextEdgesIds.length > 1) {
+                cacheLocalVariablesControl.delete(props.keyControl);
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 await props.actions?.onExecutedNode?.({
@@ -3460,6 +3529,7 @@ export const NodeControler = ({
               );
 
               if (!currentNode) {
+                cacheLocalVariablesControl.delete(props.keyControl);
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 await props.actions?.onExecutedNode?.({
@@ -3483,6 +3553,7 @@ export const NodeControler = ({
               );
               if (!nextNode) {
                 if (action.n === "transfer") {
+                  cacheLocalVariablesControl.delete(props.keyControl);
                   cacheFlowInExecution.delete(keyMap);
                   if (props.forceFinish) await props.actions?.onFinish?.("110");
                   await props.actions?.onExecutedNode?.({
@@ -3589,6 +3660,7 @@ export const NodeControler = ({
                 (s) => s.sourceHandle === "main",
               );
               if (!nextNode) {
+                cacheLocalVariablesControl.delete(props.keyControl);
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 await props.actions?.onExecutedNode?.({
@@ -3610,6 +3682,7 @@ export const NodeControler = ({
                 s.sourceHandle?.includes(action),
               );
               if (!nextNode) {
+                cacheLocalVariablesControl.delete(props.keyControl);
                 cacheFlowInExecution.delete(keyMap);
                 if (props.forceFinish) await props.actions?.onFinish?.("110");
                 await props.actions?.onExecutedNode?.({
@@ -3676,6 +3749,7 @@ export const NodeControler = ({
             );
 
             if (!isNextNodeMain) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -3743,6 +3817,7 @@ export const NodeControler = ({
               s.sourceHandle?.includes(action === "ok" ? "main" : action),
             );
             if (!nextNode) {
+              cacheLocalVariablesControl.delete(props.keyControl);
               cacheFlowInExecution.delete(keyMap);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
@@ -3817,6 +3892,7 @@ export const NodeControler = ({
             );
             if (!nextNode) {
               cacheFlowInExecution.delete(keyMap);
+              cacheLocalVariablesControl.delete(props.keyControl);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
                 id: "0",
@@ -3893,6 +3969,7 @@ export const NodeControler = ({
 
             if (!isNextNodeMain) {
               cacheFlowInExecution.delete(keyMap);
+              cacheLocalVariablesControl.delete(props.keyControl);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
                 id: "0",
@@ -3957,6 +4034,7 @@ export const NodeControler = ({
 
             if (!isNextNodeMain) {
               cacheFlowInExecution.delete(keyMap);
+              cacheLocalVariablesControl.delete(props.keyControl);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
                 id: "0",
@@ -4026,6 +4104,7 @@ export const NodeControler = ({
 
             if (!isNextNodeMain) {
               cacheFlowInExecution.delete(keyMap);
+              cacheLocalVariablesControl.delete(props.keyControl);
               if (props.forceFinish) await props.actions?.onFinish?.("110");
               await props.actions?.onExecutedNode?.({
                 id: "0",
