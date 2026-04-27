@@ -532,6 +532,7 @@ export type NodeGetMenuOnlineData = {
     | "whatsapp_contact"
     | "delivery_fee"
     | "city"
+    | "is_accepting_motoboys"
   )[];
 
   varId_save_identifier?: number;
@@ -550,6 +551,7 @@ export type NodeGetMenuOnlineData = {
   varId_save_device_online?: number;
   varId_save_have_deliveries_started?: number;
   varId_save_deliveries_begin_at?: number;
+  varId_save_is_accepting_motoboys?: number;
 
   save_locale_var_name_identifier?: string;
   save_locale_var_name_desc?: string;
@@ -567,6 +569,7 @@ export type NodeGetMenuOnlineData = {
   save_locale_var_name_device_online?: string;
   save_locale_var_name_have_deliveries_started?: string;
   save_locale_var_name_deliveries_begin_at?: string;
+  save_locale_var_name_is_accepting_motoboys?: string;
 };
 
 export type TypeNodesPayload =

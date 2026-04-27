@@ -18,6 +18,7 @@ export const updateMenuOnlineValidation = (
     desc: Joi.string().optional().allow("", null),
     fileNameImage: Joi.string().optional().allow("", null),
     fileNameCapaImage: Joi.string().optional().allow("", null),
+    is_accepting_motoboys: Joi.boolean().optional(),
     bg_primary: Joi.custom((value) => {
       if (value === "null") return null;
       return value;

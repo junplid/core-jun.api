@@ -95,6 +95,7 @@ export class GetMenuOnlineUseCase {
         titlePage: true,
         bg_capa: true,
         connectionWAId: true,
+        is_accepting_motoboys: true,
         deviceId_app_agent: true,
         MenuInfo: {
           select: {

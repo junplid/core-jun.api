@@ -60,6 +60,7 @@ export const NodeGetMenuOnline = async (
         deviceId_app_agent: true,
         identifier: true,
         titlePage: true,
+        is_accepting_motoboys: true,
       },
     });
 
@@ -233,6 +234,57 @@ export const NodeGetMenuOnline = async (
       localVariables.upsert(props.keyControl, [
         restData.save_locale_var_name_desc,
         getmenu.desc || "",
+      ]);
+    }
+
+    if (
+      fields.includes("is_accepting_motoboys") &&
+      restData.varId_save_is_accepting_motoboys
+    ) {
+      const exist = await prisma.variable.findFirst({
+        where: {
+          id: restData.varId_save_is_accepting_motoboys,
+          type: "dynamics",
+        },
+        select: { id: true },
+      });
+
+      if (exist) {
+        const picked = await prisma.contactsWAOnAccountVariable.findFirst({
+          where: {
+            contactsWAOnAccountId: props.contactsWAOnAccountId,
+            variableId: exist.id,
+          },
+          select: { id: true },
+        });
+        if (!picked) {
+          await prisma.contactsWAOnAccountVariable.create({
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: getmenu.is_accepting_motoboys ? "Sim" : "Não",
+            },
+          });
+        } else {
+          await prisma.contactsWAOnAccountVariable.update({
+            where: { id: picked.id },
+            data: {
+              contactsWAOnAccountId: props.contactsWAOnAccountId,
+              variableId: exist.id,
+              value: getmenu.is_accepting_motoboys ? "Sim" : "Não",
+            },
+          });
+        }
+      }
+    }
+
+    if (
+      fields.includes("is_accepting_motoboys") &&
+      restData.save_locale_var_name_is_accepting_motoboys
+    ) {
+      localVariables.upsert(props.keyControl, [
+        restData.save_locale_var_name_is_accepting_motoboys,
+        getmenu.is_accepting_motoboys ? "Sim" : "Não",
       ]);
     }
 

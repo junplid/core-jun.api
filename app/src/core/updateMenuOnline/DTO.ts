@@ -10,6 +10,7 @@ export interface UpdateMenuOnlineBodyDTO_I {
   bg_tertiary: string | null;
   bg_capa: string | null;
   connectionWAId: number;
+  is_accepting_motoboys: boolean;
 }
 
 export interface UpdateMenuOnlineParamsDTO_I {
