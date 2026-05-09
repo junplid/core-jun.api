@@ -65,6 +65,7 @@ export class GetAccountUseCase {
         status: 200,
         account: {
           ...rest,
+          email: rest.emailEncrypted ? decrypte(rest.emailEncrypted) : null,
           isPremium: !!rest.isPremium,
           id: dto.accountId,
           name,
