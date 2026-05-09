@@ -18,49 +18,49 @@ export const NodeExtractVariable = async ({
   ...props
 }: PropsNodeExtractVariable): Promise<void> => {
   try {
-    const target = await prisma.variable.findUnique({
-      where: { id: data.var1Id },
-      select: {
-        name: true,
-        ContactsWAOnAccountVariable: {
-          where: { contactsWAOnAccountId: props.contactsWAOnAccountId },
-          select: { value: true },
-        },
-      },
-    });
-    const source = await prisma.variable.findFirst({
-      where: { id: data.var2Id, accountId: props.accountId },
-      select: {
-        ContactsWAOnAccountVariable: {
-          where: { contactsWAOnAccountId: props.contactsWAOnAccountId },
-          select: { id: true, value: true },
-        },
-      },
-    });
-    if (!target || !source) return;
-    let targetValue: string = "";
+    let targetName = "";
+    let sourceLocal = "";
+    let sourceId: number | null = null;
+    if (data.var1Id) {
+      const target = await prisma.variable.findUnique({
+        where: { id: data.var1Id },
+        select: { name: true },
+      });
+      if (target?.name) targetName = `{{${target.name}}}`;
+    }
+    if (data.locale_var_name_var1) {
+      targetName = `$.${data.locale_var_name_var1}`;
+    }
 
-    if (target.name) {
-      targetValue = await resolveTextVariables({
-        accountId: props.accountId,
-        contactsWAOnAccountId: props.contactsWAOnAccountId,
-        text: `{{${target.name}}}`,
-        numberLead: props.numberLead,
-        nodeId: props.nodeId,
-        keyControl: props.keyControl,
+    if (data.var2Id) {
+      const source = await prisma.contactsWAOnAccountVariable.findFirst({
+        where: {
+          variableId: data.var2Id,
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+        },
+        select: {
+          id: true,
+        },
       });
-    } else if (target.ContactsWAOnAccountVariable?.[0]?.value) {
-      targetValue = await resolveTextVariables({
-        accountId: props.accountId,
-        contactsWAOnAccountId: props.contactsWAOnAccountId,
-        text: target.ContactsWAOnAccountVariable?.[0]?.value,
-        numberLead: props.numberLead,
-        nodeId: props.nodeId,
-        keyControl: props.keyControl,
-      });
-    } else {
+      if (source?.id) sourceId = source.id;
+    }
+    if (data.save_locale_var_name_var2Id) {
+      sourceLocal = data.save_locale_var_name_var2Id;
+    }
+
+    if (!targetName || (!sourceLocal && !sourceId)) {
       return;
     }
+
+    const targetValue = await resolveTextVariables({
+      accountId: props.accountId,
+      contactsWAOnAccountId: props.contactsWAOnAccountId,
+      text: targetName,
+      numberLead: props.numberLead,
+      nodeId: props.nodeId,
+      keyControl: props.keyControl,
+    });
+
     const flags = data.flags?.length ? data.flags.join("") : undefined;
     let regex: RE2;
 
@@ -110,29 +110,24 @@ export const NodeExtractVariable = async ({
       numberLead: props.numberLead,
       nodeId: props.nodeId,
     });
-    if (data.save_locale_var_name_var2Id) {
-      localVariables.upsert(props.keyControl, [
-        data.save_locale_var_name_var2Id,
-        nextValueResolved,
-      ]);
+    if (sourceLocal) {
+      localVariables.upsert(props.keyControl, [sourceLocal, nextValueResolved]);
     }
-    if (!source.ContactsWAOnAccountVariable.length) {
-      await prisma.contactsWAOnAccountVariable.create({
-        data: {
+    if (sourceId && data.var2Id) {
+      await prisma.contactsWAOnAccountVariable.upsert({
+        where: { id: sourceId },
+        update: {
+          contactsWAOnAccountId: props.contactsWAOnAccountId,
+          variableId: data.var2Id,
+          value: nextValueResolved,
+        },
+        create: {
           contactsWAOnAccountId: props.contactsWAOnAccountId,
           variableId: data.var2Id,
           value: nextValueResolved,
         },
       });
-    } else {
-      if (source.ContactsWAOnAccountVariable[0].value === nextValueResolved)
-        return;
-      await prisma.contactsWAOnAccountVariable.update({
-        where: { id: source.ContactsWAOnAccountVariable[0].id },
-        data: { value: nextValueResolved },
-      });
     }
-
     return;
   } catch (e) {
     console.error("Error in NodeExtractVariable:", e);

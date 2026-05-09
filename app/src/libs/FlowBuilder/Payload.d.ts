@@ -181,16 +181,18 @@ export interface NodeListenReactionData {
 }
 
 export type NodeSwitchVariableData = {
-  id: number;
+  id?: number;
+  locale_var_name?: string;
   values: { v: string; key: string }[];
 };
 
 export type NodeExtractVariableData = {
-  var1Id: number;
+  var1Id?: number;
+  locale_var_name_var1?: string;
   regex: string;
   flags: string[];
   value: string;
-  var2Id: number;
+  var2Id?: number;
   save_locale_var_name_var2Id?: string;
   tools?: "match" | "replace";
 };

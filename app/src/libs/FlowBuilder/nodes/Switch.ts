@@ -17,18 +17,34 @@ export const NodeSwitchVariable = async (
 ): Promise<ResultPromise> => {
   const { data } = props;
 
-  const get = await prisma.variable.findFirst({
-    where: { id: data.id },
-    select: {
-      name: true,
-    },
-  });
+  if (!data.id && !data.locale_var_name) {
+    return { handleId: undefined };
+  }
 
-  if (!get) return { handleId: undefined };
+  let nameVar = "";
+
+  if (data.id) {
+    const get = await prisma.variable.findFirst({
+      where: { id: data.id },
+      select: { name: true },
+    });
+    if (!get) return { handleId: undefined };
+    nameVar = get.name;
+  }
+
+  if (data.locale_var_name) {
+    nameVar = await resolveTextVariables({
+      accountId: props.accountId,
+      contactsWAOnAccountId: props.contactsWAOnAccountId,
+      text: data.locale_var_name || "",
+      numberLead: props.numberLead,
+      keyControl: props.keyControl,
+    });
+  }
 
   const valueVar = await resolveTextVariables({
     accountId: props.accountId,
-    text: `{{${get.name}}}`,
+    text: `{{${nameVar}}}`,
     contactsWAOnAccountId: props.contactsWAOnAccountId,
     numberLead: props.numberLead,
     keyControl: props.keyControl,
