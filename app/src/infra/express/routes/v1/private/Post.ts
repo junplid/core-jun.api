@@ -61,10 +61,8 @@ import { createDeltaValidation } from "../../../../../core/createDelta/Validatio
 import { createDeltaController } from "../../../../../core/createDelta";
 import { closeAccountValidation } from "../../../../../core/closeAccount/Validation";
 import { closeAccountController } from "../../../../../core/closeAccount";
-import { testAgentTemplateController } from "../../../../../core/testAgentTemplate";
-import { testAgentTemplateValidation } from "../../../../../core/testAgentTemplate/Validation";
-import { createAgentTemplateValidation } from "../../../../../core/createAgentTemplate/Validation";
-import { createAgentTemplateController } from "../../../../../core/createAgentTemplate";
+import { createTemplateValidation } from "../../../../../core/createTemplate/Validation";
+import { createTemplateController } from "../../../../../core/createTemplate";
 import { createAppointmentValidation } from "../../../../../core/createAppointment/Validation";
 import { createAppointmentController } from "../../../../../core/createAppointment";
 import { getAccountsIgValidation } from "../../../../../core/getMetaAccountsIg/Validation";
@@ -333,17 +331,10 @@ RouterV1Private_Post.post(
 );
 
 RouterV1Private_Post.post(
-  "/agent-template/test",
+  "/templates",
   csrfMiddleware,
-  testAgentTemplateValidation,
-  testAgentTemplateController,
-);
-
-RouterV1Private_Post.post(
-  "/agent-template",
-  csrfMiddleware,
-  createAgentTemplateValidation,
-  createAgentTemplateController,
+  createTemplateValidation,
+  createTemplateController,
 );
 
 RouterV1Private_Post.post(

@@ -8,8 +8,8 @@ import { updateShootingSpeedController } from "../../../../../core/updateShootin
 import { updateAccountToPremiumValidation } from "../../../../../core/updateAccountToPremium/Validation";
 import { updateAccountToPremiumController } from "../../../../../core/updateAccountToPremium";
 import { csrfMiddleware } from "../../../../middlewares/csrf";
-import { updateAgentTemplate_root_Validation } from "../../../../../core/updateAgentTemplate_root/Validation";
-import { updateAgentTemplate_root_Controller } from "../../../../../core/updateAgentTemplate_root";
+import { updateTemplate_root_Validation } from "../../../../../core/updateTemplate_root/Validation";
+import { updateTemplate_root_Controller } from "../../../../../core/updateTemplate_root";
 
 const RouterV1Root_Put = Router();
 
@@ -42,10 +42,10 @@ RouterV1Root_Put.put(
 );
 
 RouterV1Root_Put.put(
-  "/agent-templates/:id",
+  "/templates/:id",
   csrfMiddleware,
-  updateAgentTemplate_root_Validation,
-  updateAgentTemplate_root_Controller,
+  updateTemplate_root_Validation,
+  updateTemplate_root_Controller,
 );
 
 export default RouterV1Root_Put;

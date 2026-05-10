@@ -24,13 +24,13 @@ export const TypingDelay = async (props: Props): Promise<void> => {
   if (props.mode === "testing") {
     const { emit } = webSocketEmitToRoom().account(props.accountId);
     emit(
-      `test-agent-template-${props.token_modal_chat_template}`,
+      `test-template-${props.token_modal_chat_template}`,
       { role: "agent", content: "", compose: true },
       [],
     );
     await wait(delay * 1_000);
     emit(
-      `test-agent-template-${props.token_modal_chat_template}`,
+      `test-template-${props.token_modal_chat_template}`,
       { role: "agent", content: "", compose: false },
       [],
     );

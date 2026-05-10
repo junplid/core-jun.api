@@ -33,7 +33,7 @@ import { metaAccountsCache } from "../../services/meta/cache";
 import { decrypte } from "../../libs/encryption";
 import { getSocketIo } from "../express";
 import { resolveHourAndMinute } from "../../utils/resolveHour:mm";
-import { cacheTestAgentTemplate } from "../../libs/FlowBuilder/cache";
+import { cacheTestTemplate } from "../../libs/FlowBuilder/cache";
 import { remove } from "remove-accents";
 import { formatToBRL, parseToNumber } from "brazilian-values";
 
@@ -203,8 +203,8 @@ export const WebSocketIo = (io: Server) => {
       }
     });
 
-    socket.on("agent-template:clear-tokenTest", async (tokenTest: string) => {
-      cacheTestAgentTemplate.del(tokenTest);
+    socket.on("template:clear-tokenTest", async (tokenTest: string) => {
+      cacheTestTemplate.del(tokenTest);
     });
 
     socket.on("disconnect", async (reason) => {

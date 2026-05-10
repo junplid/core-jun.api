@@ -39,8 +39,7 @@ import { NodeCharge } from "../Charge";
 import { speedUpAudioFile } from "./speedUpAudio";
 import { handleFileTemp } from "../../../../utils/handleFileTemp";
 import { createReadStream } from "fs-extra";
-import { cacheTestAgentTemplate } from "../../cache";
-import { ICacheTestAgentTemplate } from "../../../../core/testAgentTemplate/UseCase";
+import { cacheTestTemplate } from "../../cache";
 import { NodeMessage } from "../Message";
 import { Joi } from "express-validation";
 
@@ -1008,13 +1007,7 @@ type ResultPromise =
   | { action: "failAttempt" }
   | { action: "sucess"; sourceHandle: string };
 
-async function getAgent(id: number | string, accountId: number) {
-  if (typeof id === "string") {
-    let testInProgress =
-      cacheTestAgentTemplate.get<ICacheTestAgentTemplate>(id);
-    if (!testInProgress) throw new Error("AgentAI not found");
-    return testInProgress.agent;
-  }
+async function getAgent(id: number, accountId: number) {
   let agentAIf = cacheInfoAgentAI.get(id);
   if (!agentAIf) {
     const agent = await prisma.agentAI.findFirst({
@@ -1111,8 +1104,6 @@ export const NodeAgentAI = async ({
   let agent: any = null;
   if (props.mode === "prod") {
     agent = await getAgent(props.data.agentId, props.accountId);
-  } else {
-    agent = await getAgent(props.token_modal_chat_template, props.accountId);
   }
 
   if (!agent) throw new Error("AgentAI not found");
@@ -1215,11 +1206,6 @@ export const NodeAgentAI = async ({
           let agent: any = null;
           if (props.mode === "prod") {
             agent = await getAgent(props.data.agentId, props.accountId);
-          } else {
-            agent = await getAgent(
-              props.token_modal_chat_template,
-              props.accountId,
-            );
           }
 
           if (!agent) throw new Error("AgentAI not found");
@@ -3018,20 +3004,6 @@ export const NodeAgentAI = async ({
                           },
                         },
                       });
-                    } else {
-                      const current =
-                        cacheTestAgentTemplate.get<ICacheTestAgentTemplate>(
-                          props.token_modal_chat_template,
-                        );
-                      if (current) {
-                        cacheTestAgentTemplate.set(
-                          props.token_modal_chat_template,
-                          {
-                            ...current,
-                            previous_response_id: nextresponse.id,
-                          },
-                        );
-                      }
                     }
                     if (nextresponse.restart) {
                       const getNewMessages =

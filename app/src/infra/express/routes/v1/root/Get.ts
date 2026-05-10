@@ -5,10 +5,10 @@ import { getShootingSpeedValidation } from "../../../../../core/getShootingSpeed
 import { getShootingSpeedController } from "../../../../../core/getShootingSpeed";
 import { getGeralLogsValidation } from "../../../../../core/getGeralLogs/Validation";
 import { getGeralLogsController } from "../../../../../core/getGeralLogs";
-import { getAgentTemplate_root_Validation } from "../../../../../core/getAgentTemplate_root/Validation";
-import { getAgentTemplate_root_Controller } from "../../../../../core/getAgentTemplate_root";
-import { getAgentTemplates_root_Validation } from "../../../../../core/getAgentTemplates_root/Validation";
-import { getAgentTemplates_root_Controller } from "../../../../../core/getAgentTemplates_root";
+import { getTemplate_root_Validation } from "../../../../../core/getTemplate_root/Validation";
+import { getTemplate_root_Controller } from "../../../../../core/getTemplate_root";
+import { getTemplates_root_Validation } from "../../../../../core/getTemplates_root/Validation";
+import { getTemplates_root_Controller } from "../../../../../core/getTemplates_root";
 import { randomBytes } from "crypto";
 import moment from "moment";
 
@@ -50,15 +50,15 @@ RouterV1Root_Get.get(
 );
 
 RouterV1Root_Get.get(
-  "/agent-templates/:id",
-  getAgentTemplate_root_Validation,
-  getAgentTemplate_root_Controller,
+  "/templates/:id",
+  getTemplate_root_Validation,
+  getTemplate_root_Controller,
 );
 
 RouterV1Root_Get.get(
-  "/agent-templates",
-  getAgentTemplates_root_Validation,
-  getAgentTemplates_root_Controller,
+  "/templates",
+  getTemplates_root_Validation,
+  getTemplates_root_Controller,
 );
 
 export default RouterV1Root_Get;

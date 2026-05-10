@@ -18,10 +18,7 @@ import {
   cacheFlowsMap,
 } from "../../../../../adapters/Baileys/Cache";
 import { ModelFlows } from "../../../../../adapters/mongo/models/flows";
-import {
-  IPropsControler,
-  NodeControler,
-} from "../../../../../libs/FlowBuilder/Control";
+import { NodeControler } from "../../../../../libs/FlowBuilder/Control";
 import { sessionsBaileysWA } from "../../../../../adapters/Baileys";
 import { createMenuOnlineOrderValidation } from "../../../../../core/createMenuOnlineOrder/Validation";
 import { createMenuOnlineOrderController } from "../../../../../core/createMenuOnlineOrder";

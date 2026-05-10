@@ -16,8 +16,8 @@ import {
   // metaIgCallbackWebhook,
   metaVerifyWebhook,
 } from "../../../../../services/meta/meta.webhook";
-import { getAgentTemplatesValidation } from "../../../../../core/getAgentTemplates/Validation";
-import { getAgentTemplatesController } from "../../../../../core/getAgentTemplates";
+import { getTemplatesValidation } from "../../../../../core/getTemplates/Validation";
+import { getTemplatesController } from "../../../../../core/getTemplates";
 import { getRouterOrdersValidation } from "../../../../../core/getRouterOrders/Validation";
 import { getRouterOrdersController } from "../../../../../core/getRouterOrders";
 
@@ -192,9 +192,9 @@ RouterV1Public_Get.get("/meta/webhook", metaVerifyWebhook);
 // RouterV1Public_Get.get("/meta/auth/instagram/callback", metaIgCallbackWebhook);
 
 RouterV1Public_Get.get(
-  "/template-agents",
-  getAgentTemplatesValidation,
-  getAgentTemplatesController,
+  "/templates",
+  getTemplatesValidation,
+  getTemplatesController,
 );
 
 RouterV1Public_Get.get(

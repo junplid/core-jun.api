@@ -129,10 +129,10 @@ import { getAppointmentDetailsValidation } from "../../../../../core/getAppointm
 import { getAppointmentDetailsController } from "../../../../../core/getAppointmentDetails";
 import { getServicesTodayValidation } from "../../../../../core/getServicesToday/Validation";
 import { getServicesTodayController } from "../../../../../core/getServicesToday";
-import { getAgentTemplatesValidation } from "../../../../../core/getAgentTemplates/Validation";
-import { getAgentTemplatesController } from "../../../../../core/getAgentTemplates";
-import { getAgentTemplateValidation } from "../../../../../core/getAgentTemplate/Validation";
-import { getAgentTemplateController } from "../../../../../core/getAgentTemplate";
+import { getTemplatesValidation } from "../../../../../core/getTemplates/Validation";
+import { getTemplatesController } from "../../../../../core/getTemplates";
+import { getTemplateValidation } from "../../../../../core/getTemplate/Validation";
+import { getTemplateController } from "../../../../../core/getTemplate";
 import { getMenuOnlineCategoriesForSelectValidation } from "../../../../../core/getMenuOnlineCategoriesForSelect/Validation";
 import { getMenuOnlineCategoriesForSelectController } from "../../../../../core/getMenuOnlineCategoriesForSelect";
 import { getMenuOnlineSectionsOfItemValidation } from "../../../../../core/getMenuOnlineSectionsOfItem/Validation";
@@ -607,17 +607,17 @@ RouterV1Private_Get.get(
 );
 
 RouterV1Private_Get.get(
-  "/template-agents",
+  "/templates",
   csrfMiddleware,
-  getAgentTemplatesValidation,
-  getAgentTemplatesController,
+  getTemplatesValidation,
+  getTemplatesController,
 );
 
 RouterV1Private_Get.get(
-  "/template-agents/:id",
+  "/templates/:id",
   csrfMiddleware,
-  getAgentTemplateValidation,
-  getAgentTemplateController,
+  getTemplateValidation,
+  getTemplateController,
 );
 
 RouterV1Private_Get.get(

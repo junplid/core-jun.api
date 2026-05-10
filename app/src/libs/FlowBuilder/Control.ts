@@ -6,12 +6,11 @@ import {
   cacheFlowInExecution,
   cacheLocalVariablesControl,
 } from "../../adapters/Baileys/Cache";
-import { cacheExecuteTimeoutAgentAI, cacheTestAgentTemplate } from "./cache";
+import { cacheExecuteTimeoutAgentAI, cacheTestTemplate } from "./cache";
 import { webSocketEmitToRoom } from "../../infra/websocket";
 import { resolveHourAndMinute } from "../../utils/resolveHour:mm";
 import { handleFileTemp } from "../../utils/handleFileTemp";
 import { SendMessageText } from "../../adapters/Baileys/modules/sendMessage";
-import { ICacheTestAgentTemplate } from "../../core/testAgentTemplate/UseCase";
 import { v4 } from "uuid";
 
 interface Edges {
@@ -1872,20 +1871,6 @@ export const NodeControler = ({
                     });
                   },
                   onFinishService: async () => {
-                    const testInProgress =
-                      cacheTestAgentTemplate.get<ICacheTestAgentTemplate>(
-                        props.token_modal_chat_template,
-                      );
-                    if (testInProgress) {
-                      cacheTestAgentTemplate.set(
-                        props.token_modal_chat_template,
-                        {
-                          ...testInProgress,
-                          nodeId: "0",
-                          previous_response_id: null,
-                        },
-                      );
-                    }
                     await SendMessageText({
                       token_modal_chat_template:
                         props.token_modal_chat_template,

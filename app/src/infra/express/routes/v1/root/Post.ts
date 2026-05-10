@@ -9,8 +9,8 @@ import { resolve } from "path";
 import { uploadImageRootController } from "../../../../../core/uploadImageRoot";
 import { uploadImageRootValidation } from "../../../../../core/uploadImageRoot/Validation";
 import multer from "multer";
-import { createAgentTemplate_root_Validation } from "../../../../../core/createAgentTemplate_root/Validation";
-import { createAgentTemplate_root_Controller } from "../../../../../core/createAgentTemplate_root";
+import { createTemplate_root_Validation } from "../../../../../core/createTemplate_root/Validation";
+import { createTemplate_root_Controller } from "../../../../../core/createTemplate_root";
 
 const RouterV1Root_Post = Router();
 
@@ -45,10 +45,10 @@ RouterV1Root_Post.post(
 );
 
 RouterV1Root_Post.post(
-  "/template-agents",
+  "/templates",
   csrfMiddleware,
-  createAgentTemplate_root_Validation,
-  createAgentTemplate_root_Controller,
+  createTemplate_root_Validation,
+  createTemplate_root_Controller,
 );
 
 export default RouterV1Root_Post;

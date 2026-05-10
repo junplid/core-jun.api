@@ -27,7 +27,7 @@ export const SendMessageText = async (
     webSocketEmitToRoom()
       .account(props.accountId)
       .emit(
-        `test-agent-template-${props.token_modal_chat_template}`,
+        `test-template-${props.token_modal_chat_template}`,
         { role: props.role, content: props.text },
         [],
       );
