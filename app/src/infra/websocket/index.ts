@@ -927,8 +927,11 @@ export const webSocketEmitToRoom = () => {
         agent_app: (deviceId: string) => {
           const socketDevice = connectedDevices.get(deviceId);
           return {
-            print: (args: any, ignore: string[]) => {
+            print_order: (args: any, ignore: string[]) => {
               return socketDevice?.emit(`PRINT_ORDER`, args);
+            },
+            print_report: (args: any, ignore: string[]) => {
+              return socketDevice?.emit(`PRINT_REPORT`, args);
             },
           };
         },

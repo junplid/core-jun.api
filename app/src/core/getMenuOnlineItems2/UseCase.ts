@@ -36,11 +36,18 @@ export class GetMenuOnlineItems2UseCase {
   constructor() {}
 
   async run({ accountId, ...dto }: GetMenuOnlineItems2DTO_I) {
+    const momento = moment.tz("America/Sao_Paulo");
+    const dayweek = momento.weekday();
+
     const categories = await prisma.menuOnlineCategory.findMany({
       orderBy: { sequence: "asc" },
       where: {
         Menu: { uuid: dto.uuid, accountId },
         Items: { some: {} },
+        OR: [
+          { days_in_the_week: { isEmpty: true } },
+          { days_in_the_week: { has: dayweek } },
+        ],
       },
       select: {
         name: true,

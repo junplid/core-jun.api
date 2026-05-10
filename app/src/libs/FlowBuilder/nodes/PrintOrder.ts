@@ -131,7 +131,7 @@ export const NodePrintOrder = async (
     webSocketEmitToRoom()
       .account(props.accountId)
       .agent_app(getorder.menuOnline.deviceId_app_agent)
-      .print(
+      .print_order(
         {
           notify: true,
           menu_title: remove(getorder.menuOnline.titlePage || ""),

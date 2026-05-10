@@ -8,6 +8,8 @@ import moment from "moment-timezone";
 import { resolve } from "path";
 import { Decimal } from "@prisma/client/runtime/library";
 import { remove } from "remove-accents";
+import { webSocketEmitToRoom } from "../../infra/websocket";
+import { connectedDevices } from "../../infra/websocket/cache";
 
 const PAYMENT_OPTIONS: { [s: string]: string } = {
   PIX: "PIX",
@@ -32,6 +34,7 @@ export class GenerateMenuOnlineReportUseCase {
       select: {
         id: true,
         logoImg: true,
+        deviceId_app_agent: true,
         titlePage: true,
         Orders: {
           where: {
@@ -285,6 +288,56 @@ export class GenerateMenuOnlineReportUseCase {
     });
 
     doc.end();
+
+    if (exist.deviceId_app_agent) {
+      const socket = connectedDevices.get(exist.deviceId_app_agent);
+      if (socket) {
+        webSocketEmitToRoom()
+          .account(rest.accountId)
+          .agent_app(exist.deviceId_app_agent)
+          .print_report(
+            {
+              store_name: remove(exist.titlePage || ""),
+              type: "report_day",
+              date: data_formatada,
+              resumo: {
+                vendas: totalDeVendas,
+                taxaEntrega: totalTaxasDeEntrega,
+                bruto: totalBruto,
+                liquido: totalLiquido,
+                qntVendas: countOrders,
+                taxaPlataforma: totalTaxasPlataforma,
+              },
+              pagamentos: [
+                {
+                  tipo: "PIX",
+                  total: totalPix.amount,
+                  vendas: totalPix.qnt,
+                },
+                {
+                  tipo: "Dinheiro",
+                  total: totalDinheiro.amount,
+                  vendas: totalDinheiro.qnt,
+                },
+                {
+                  tipo: remove("C Credito"),
+                  total: totalCredito.amount,
+                  vendas: totalCredito.qnt,
+                },
+                {
+                  tipo: "C Debito",
+                  total: totalDebito.amount,
+                  vendas: totalDebito.qnt,
+                },
+              ],
+              relatorio_motoboy: relatorio_motoboy.sort(
+                (a, b) => b.amount - a.amount,
+              ),
+            },
+            [],
+          );
+      }
+    }
 
     try {
       return {

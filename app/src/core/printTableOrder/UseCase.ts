@@ -91,7 +91,7 @@ export class PrintTableOrderUseCase {
       webSocketEmitToRoom()
         .account(accountId)
         .agent_app(order.menuOnline.deviceId_app_agent)
-        .print(
+        .print_order(
           {
             notify: false,
             type: "presencial",
