@@ -1,6 +1,6 @@
-export interface GenerateMenuOnlineReportParamsDTO_I {
-  uuid: string;
-}
+// export interface GenerateMenuOnlineReportParamsDTO_I {
+//   uuid: string;
+// }
 
 export interface GenerateMenuOnlineReportBodyDTO_I {
   accountId: number;
@@ -8,5 +8,4 @@ export interface GenerateMenuOnlineReportBodyDTO_I {
   end: Date | null;
 }
 
-export type GenerateMenuOnlineReportDTO_I =
-  GenerateMenuOnlineReportParamsDTO_I & GenerateMenuOnlineReportBodyDTO_I;
+export type GenerateMenuOnlineReportDTO_I = GenerateMenuOnlineReportBodyDTO_I;

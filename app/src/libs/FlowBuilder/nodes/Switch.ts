@@ -22,6 +22,7 @@ export const NodeSwitchVariable = async (
   }
 
   let nameVar = "";
+  let valueVar = "";
 
   if (data.id) {
     const get = await prisma.variable.findFirst({
@@ -42,13 +43,25 @@ export const NodeSwitchVariable = async (
     });
   }
 
-  const valueVar = await resolveTextVariables({
-    accountId: props.accountId,
-    text: `{{${nameVar}}}`,
-    contactsWAOnAccountId: props.contactsWAOnAccountId,
-    numberLead: props.numberLead,
-    keyControl: props.keyControl,
-  });
+  if (data.id) {
+    valueVar = await resolveTextVariables({
+      accountId: props.accountId,
+      text: `{{${nameVar}}}`,
+      contactsWAOnAccountId: props.contactsWAOnAccountId,
+      numberLead: props.numberLead,
+      keyControl: props.keyControl,
+    });
+  }
+
+  if (data.locale_var_name) {
+    valueVar = await resolveTextVariables({
+      accountId: props.accountId,
+      text: nameVar,
+      contactsWAOnAccountId: props.contactsWAOnAccountId,
+      numberLead: props.numberLead,
+      keyControl: props.keyControl,
+    });
+  }
 
   for await (const { v, key } of data.values) {
     const nextV = await resolveTextVariables({

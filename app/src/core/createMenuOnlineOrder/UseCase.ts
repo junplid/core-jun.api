@@ -337,6 +337,7 @@ export class CreateMenuOnlineOrderUseCase {
           data: {
             rank: newRank,
             n_order,
+            type: "MENU",
             delivery_code: tracking_code,
             accountId: exist.accountId,
             businessId: exist.ConnectionWA.businessId,

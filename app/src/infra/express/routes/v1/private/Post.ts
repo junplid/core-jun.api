@@ -287,6 +287,13 @@ RouterV1Private_Post.post(
 );
 
 RouterV1Private_Post.post(
+  "/menus-online/report",
+  csrfMiddleware,
+  generateMenuOnlineReportValidation,
+  generateMenuOnlineReportController,
+);
+
+RouterV1Private_Post.post(
   "/menus-online/:uuid/items",
   csrfMiddleware,
   createMenuOnlineItemValidation,
@@ -392,13 +399,6 @@ RouterV1Private_Post.post(
   csrfMiddleware,
   unpairCodeDeviceValidation,
   unpairCodeDeviceController,
-);
-
-RouterV1Private_Post.post(
-  "/menus-online/:uuid/report",
-  csrfMiddleware,
-  generateMenuOnlineReportValidation,
-  generateMenuOnlineReportController,
 );
 
 RouterV1Private_Post.post(

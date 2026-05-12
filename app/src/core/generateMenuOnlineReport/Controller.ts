@@ -1,8 +1,5 @@
 import { Request, Response } from "express";
-import {
-  GenerateMenuOnlineReportBodyDTO_I,
-  GenerateMenuOnlineReportParamsDTO_I,
-} from "./DTO";
+import { GenerateMenuOnlineReportBodyDTO_I } from "./DTO";
 import { GenerateMenuOnlineReportUseCase } from "./UseCase";
 import { ErrorResponse } from "../../utils/ErrorResponse";
 
@@ -10,11 +7,7 @@ export const GenerateMenuOnlineReportController = (
   useCase: GenerateMenuOnlineReportUseCase,
 ) => {
   const execute = async (
-    req: Request<
-      GenerateMenuOnlineReportParamsDTO_I,
-      any,
-      GenerateMenuOnlineReportBodyDTO_I
-    >,
+    req: Request<any, any, GenerateMenuOnlineReportBodyDTO_I>,
     res: Response,
   ): Promise<Response | undefined> => {
     try {

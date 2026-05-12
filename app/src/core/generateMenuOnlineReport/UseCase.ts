@@ -23,14 +23,14 @@ const path = resolve(process.env.STORAGE_PATH!, "static", "image");
 export class GenerateMenuOnlineReportUseCase {
   constructor() {}
 
-  async run({ uuid, ...rest }: GenerateMenuOnlineReportDTO_I, res: Response) {
+  async run({ ...rest }: GenerateMenuOnlineReportDTO_I, res: Response) {
     const start = moment.utc(new Date(rest.start));
     const end = rest.end
       ? moment.utc(new Date(rest.end))
       : moment.utc(new Date(rest.start));
 
     const exist = await prisma.menusOnline.findFirst({
-      where: { uuid },
+      where: { accountId: rest.accountId },
       select: {
         id: true,
         logoImg: true,

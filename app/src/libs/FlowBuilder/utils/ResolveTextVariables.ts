@@ -138,7 +138,7 @@ export async function resolveTextVariables(
       ];
 
       for await (const varTemp of list) {
-        const regex = new RegExp(`(\$\.${varTemp.name})`, "g");
+        const regex = new RegExp(`(\\$\\.${varTemp.name})`, "g");
         if (varTemp.value) {
           newMessage = newMessage.replace(regex, varTemp.value);
         }

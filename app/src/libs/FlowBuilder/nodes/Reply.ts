@@ -118,8 +118,8 @@ export const NodeReply = async (
       localVariables.upsert(props.keyControl, [name, message]);
     }
 
-    await new Promise((s) => setTimeout(s, 3000));
-
+    // await new Promise((s) => setTimeout(s, 3000));
+    
     return { action: "NEXT", line: "68" };
   }
 
